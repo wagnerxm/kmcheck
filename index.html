@@ -82,16 +82,16 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #scr-cam{position:relative}
 #camwrap{position:fixed;inset:0;background:#000;z-index:10;display:none;flex-direction:column}
 #camwrap.on{display:flex}
-#camvideo{flex:1;object-fit:cover;width:100%;min-height:0;background:#000}
-#camlogo{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;height:46px;max-width:40vw;object-fit:contain;z-index:5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
-#liveplate{position:absolute;left:14px;right:14px;bottom:calc(112px + env(safe-area-inset-bottom));pointer-events:none}
-#liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;font-size:15px;line-height:1.38;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55)}
+#camvideo{flex:1;object-fit:contain;width:100%;min-height:0;background:#000}
+/* #camframe é posicionado por JS para coincidir exatamente com o retângulo de imagem
+   exibido pelo vídeo (object-fit:contain) — a mesma proporção do arquivo final.
+   Tudo dentro dele usa px absolutos calculados na mesma escala da foto gravada. */
+#camframe{position:absolute;pointer-events:none;overflow:visible}
+#camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+#liveplate{position:absolute;pointer-events:none}
+#liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
 #liveplate.err .l1{color:#ff9d8a}
-@media (orientation: landscape){
-  #liveplate{bottom:calc(96px + env(safe-area-inset-bottom));left:calc(14px + env(safe-area-inset-left))}
-  #camtxt{top:calc(10px + env(safe-area-inset-top));bottom:auto;left:50%;transform:translateX(-50%);width:min(60vw,420px);right:auto}
-}
-#camtxt{position:absolute;left:12px;right:12px;bottom:calc(216px + env(safe-area-inset-bottom));background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(167,209,35,.45);border-radius:999px;color:#fff;padding:11px 16px;font-size:15px;font-family:var(--sans);width:auto}
+#camtxt{position:absolute;pointer-events:auto;background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(167,209,35,.45);border-radius:999px;color:#fff;font-family:var(--sans);width:auto}
 #camtxt::placeholder{color:#9aa2af}
 #cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:16px 28px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
 #shutter{width:72px;height:72px;border-radius:50%;border:4px solid rgba(255,255,255,.95);background:var(--gold);cursor:pointer;box-shadow:0 0 0 6px rgba(167,209,35,.22), 0 0 28px rgba(167,209,35,.35)}
@@ -252,9 +252,11 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <!-- câmera fullscreen -->
 <div id="camwrap">
   <video id="camvideo" autoplay playsinline muted></video>
-  <img id="camlogo" alt="" style="display:none">
-  <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
-  <div id="liveplate"></div>
+  <div id="camframe">
+    <img id="camlogo" alt="" style="display:none">
+    <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
+    <div id="liveplate"></div>
+  </div>
   <div id="cambar">
     <button id="camclose">✕</button>
     <button id="shutter" aria-label="Tirar foto"></button>
@@ -445,18 +447,33 @@ const UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA'
 async function fetchTimeout(url, ms){
   const ctl=new AbortController();
   const t=setTimeout(()=>ctl.abort(), ms);
-  try{ return await fetch(url, {signal:ctl.signal}) } finally{ clearTimeout(t) }
+  try{ return await fetch(url, {signal:ctl.signal, mode:'cors'}) } finally{ clearTimeout(t) }
 }
-async function dnitLatestLayer(base){
+/* alguns servidores do governo não liberam CORS para outros sites — nesse caso
+   tentamos por uma ponte pública (mesmo conteúdo, só reencaminha a requisição) */
+async function fetchSmart(url, ms, log){
+  try{
+    const r=await fetchTimeout(url, ms);
+    if(r.ok) return r;
+    log.push('direto: HTTP '+r.status);
+  }catch(e){ log.push('direto: '+(e.name==='AbortError'?'tempo esgotado':e.message)) }
+  const proxied='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+  try{
+    const r=await fetchTimeout(proxied, ms);
+    if(r.ok) return r;
+    log.push('ponte: HTTP '+r.status);
+  }catch(e){ log.push('ponte: '+(e.name==='AbortError'?'tempo esgotado':e.message)) }
+  throw new Error(log[log.length-2]+' / '+log[log.length-1]);
+}
+async function dnitLatestLayer(base, log){
   const ck='kc-snvlayer:'+base;
   try{ const c=JSON.parse(localStorage.getItem(ck)); if(c && Date.now()-c.t < 7*864e5) return c.layer }catch(e){}
-  const r=await fetchTimeout(base+'?service=WFS&version=1.0.0&request=GetCapabilities', 45000);
-  if(!r.ok) throw new Error('HTTP '+r.status);
+  const r=await fetchSmart(base+'?service=WFS&version=1.0.0&request=GetCapabilities', 45000, log);
   const xml=await r.text();
   const names=[...xml.matchAll(/<Name>([^<]*SNV[^<]*)<\/Name>/gi)].map(m=>m[1].trim());
   const vers=names.map(n=>{ const m=n.match(/SNV[_ ]?(20\d{2})[_ ]?([01]\d)?[_ ]?([A-E])?/i);
     return m?{n, k:(m[1]||'0000')+(m[2]||'00')+(m[3]||'A')}:null }).filter(Boolean);
-  if(!vers.length) throw new Error('camada SNV não encontrada');
+  if(!vers.length) throw new Error('camada SNV não encontrada na resposta do servidor');
   vers.sort((a,b)=>b.k.localeCompare(a.k));
   localStorage.setItem(ck, JSON.stringify({t:Date.now(), layer:vers[0].n}));
   return vers[0].n;
@@ -466,20 +483,21 @@ function propFind(p, res){
   return null;
 }
 async function dnitDownload(uf, brs){
-  let lastErr=null;
+  let lastErr=null, log=[];
   for(const base of DNIT_WFS){
     try{
-      const layer=await dnitLatestLayer(base);
+      const layer=await dnitLatestLayer(base, log);
       const cql=encodeURIComponent(`sg_uf='${uf}' AND vl_br IN (${brs.map(b=>`'${b}'`).join(',')})`);
       const url=`${base}?service=WFS&version=1.0.0&request=GetFeature&typeName=${encodeURIComponent(layer)}&outputFormat=application%2Fjson&srsName=EPSG:4326&CQL_FILTER=${cql}`;
-      const r=await fetchTimeout(url, 120000);
-      if(!r.ok) throw new Error('HTTP '+r.status);
+      const r=await fetchSmart(url, 120000, log);
       const gj=await r.json();
-      if(!gj.features || !gj.features.length) throw new Error('nenhum trecho encontrado para '+uf);
+      if(!gj.features || !gj.features.length) throw new Error('nenhum trecho encontrado para '+uf+'/'+brs.join(','));
       return {gj, layer};
-    }catch(e){ lastErr=e; localStorage.removeItem('kc-snvlayer:'+base) }
+    }catch(e){ lastErr=e; localStorage.removeItem('kc-snvlayer:'+base); log.push(base+' → '+e.message) }
   }
-  throw lastErr || new Error('sem resposta dos servidores do DNIT');
+  const err=lastErr || new Error('sem resposta dos servidores do DNIT');
+  err.log=log;
+  throw err;
 }
 document.getElementById('dl-go').onclick=async()=>{
   const btn=document.getElementById('dl-go');
@@ -510,7 +528,9 @@ document.getElementById('dl-go').onclick=async()=>{
     renderBases();
     toast(n?`${n} rodovia(s) instalada(s) — SNV ${layer.replace(/^.*?(SNV)/i,'$1')}.`:'Nada instalado — confira BR e UF.');
   }catch(err){
-    toast('Falha ao baixar do DNIT: '+err.message+'. Se persistir, use "Importar arquivo" com o KMZ do VGeo.');
+    console.error('KM Check — download DNIT:', err, err.log);
+    const detail=(err.log&&err.log.length)?err.log.slice(-2).join(' · '):err.message;
+    toast('Falha ao baixar do DNIT ('+detail+'). Use "Importar arquivo" com o KMZ do VGeo.');
   }
   btn.disabled=false; btn.textContent='Buscar e instalar';
 };
@@ -1022,14 +1042,43 @@ document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo');
 document.getElementById('btn-opencam').onclick=openCam;
+/* posiciona logo, texto livre e legenda exatamente sobre o retângulo de imagem
+   exibido pelo vídeo (object-fit:contain) — a mesma proporção da foto gravada.
+   Reage às dimensões REAIS do sensor da câmera (video.videoWidth/Height), que
+   mudam quando o aparelho gira fisicamente, mesmo com a rotação de tela travada. */
+function layoutCamFrame(){
+  const vw=video.videoWidth, vh=video.videoHeight;
+  const cw=camwrap.clientWidth, ch=camwrap.clientHeight;
+  if(!vw||!vh||!cw||!ch) return;
+  const scale=Math.min(cw/vw, ch/vh);
+  const dw=vw*scale, dh=vh*scale, ox=(cw-dw)/2, oy=(ch-dh)/2;
+  const frame=document.getElementById('camframe');
+  frame.style.left=ox+'px'; frame.style.top=oy+'px';
+  frame.style.width=dw+'px'; frame.style.height=dh+'px';
+  const u=Math.max(dw,dh)/1000;               // mesma fórmula usada em burnLegend
+  const pad=20*u, size=22*u;
+  const cl=document.getElementById('camlogo');
+  cl.style.top=pad+'px'; cl.style.left=pad+'px'; cl.style.height=Math.min(95*u,dh*0.28)+'px'; cl.style.maxWidth=(dw*0.6)+'px';
+  const lp=document.getElementById('liveplate');
+  lp.style.left=pad+'px'; lp.style.right=pad+'px'; lp.style.bottom=pad+'px';
+  lp.querySelectorAll('.l1,.l2').forEach(el=>{ el.style.fontSize=size+'px'; el.style.lineHeight=(size*1.38)+'px' });
+  const ct=document.getElementById('camtxt');
+  ct.style.left=pad+'px'; ct.style.right=pad+'px'; ct.style.top=(pad+Math.min(95*u,dh*0.28)+pad*0.8)+'px';
+  ct.style.padding=(size*0.5)+'px '+(size*0.75)+'px'; ct.style.fontSize=Math.max(13,size*0.95)+'px';
+}
 let camTick=null;
 async function openCam(){
   startGps();
-  clearInterval(camTick); camTick=setInterval(paintGps, 1000);
+  clearInterval(camTick); camTick=setInterval(()=>{ paintGps(); layoutCamFrame() }, 1000);
   try{
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:4096}, height:{ideal:2160}}, audio:false});
     video.srcObject=S.stream;
     camwrap.classList.add('on');
+    video.addEventListener('loadedmetadata', layoutCamFrame);
+    video.addEventListener('resize', layoutCamFrame);       // dispara quando o sensor gira, mesmo com tela travada
+    window.addEventListener('resize', layoutCamFrame);
+    window.addEventListener('orientationchange', layoutCamFrame);
+    layoutCamFrame();
   }catch(e){
     toast('Câmera negada ou indisponível — use a opção "câmera nativa".');
   }
