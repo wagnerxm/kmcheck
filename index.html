@@ -55,6 +55,13 @@ label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercas
 .tag{display:inline-block;font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--gold2)}
 .base-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .base-item:last-child{border-bottom:none}
+.ct-item{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.ct-item:last-child{border-bottom:none}
+.ct-item .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--mut);flex:0 0 auto}
+.ct-item.sel .dot{border-color:var(--gold);background:var(--gold);box-shadow:inset 0 0 0 3px #16191d}
+.ct-item .num{font-family:var(--mono);font-size:15px;flex:1}
+.ct-item.sel .num{color:var(--gold2);font-weight:700}
+.ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
 .base-item .bname{font-weight:800;font-size:16px;letter-spacing:.04em}
 .base-item .bmeta{font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:3px}
 .base-item .del{margin-left:auto;background:none;border:1px solid var(--line);color:var(--err);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer}
@@ -173,9 +180,20 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <!-- ============ CÂMERA (tela inicial) ============ -->
 <div class="screen on" id="scr-cam">
 <section class="pad">
+  <h2 class="sec">Contratos</h2>
+  <div class="card">
+    <div id="ctlist"></div>
+    <div class="row" style="margin-top:10px">
+      <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" style="flex:1">
+      <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
+    </div>
+    <p class="hint">Escolha o contrato antes de fotografar — o número entra na legenda, logo após o KM.</p>
+  </div>
+
   <h2 class="sec">Modo foto</h2>
   <div class="card">
     <div class="hint" style="margin:0 0 12px">
+      <span id="ct-active" style="font-family:var(--mono);color:var(--gold2)"></span><br>
       <span class="gpsdot" id="gpsdot"></span><span id="gpsline">GPS aguardando…</span><br>
       <span id="kmline" style="font-family:var(--mono);color:var(--gold2)"></span>
     </div>
@@ -196,7 +214,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
 </main>
 <nav>
-  <button data-scr="scr-cam" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg></span>Câmera</button>
+  <button data-scr="scr-cam" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg></span>Início</button>
   <button data-scr="scr-bases"><span class="ic"><svg viewBox="0 0 24 24"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg></span>Rodovias</button>
   <button data-scr="scr-query"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>Consulta</button>
 </nav>
@@ -621,6 +639,8 @@ function legendLines(info){
     if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
     L.push(l1);
   } else { L.push(info.lat!=null?'SEM RODOVIA INSTALADA':'— aguardando GPS —'); err=true }
+  const ct=getContract();
+  if(ct) L.push('Contrato '+ct);
   let l2=info.custom;
   if(!l2 && CFG.oae && info.km!=null){
     const o=findOae(info.br,info.uf,info.km);
@@ -705,6 +725,53 @@ function parseTiff(v, base){
   }
   return (lat!=null||date)?{lat,lon,date}:null;
 }
+
+/* ================= contratos ================= */
+function getContracts(){ try{ return JSON.parse(localStorage.getItem('kc-contracts')||'[]') }catch(e){ return [] } }
+function getContract(){ return localStorage.getItem('kc-contract')||'' }
+function renderContracts(){
+  const list=getContracts(), act=getContract();
+  const el=document.getElementById('ctlist');
+  if(!list.length){
+    el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
+  } else {
+    el.innerHTML=list.map(c=>`
+      <div class="ct-item ${c===act?'sel':''}" data-ct="${c.replace(/"/g,'&quot;')}">
+        <span class="dot"></span><span class="num">${c}</span>
+        <button class="del">remover</button>
+      </div>`).join('');
+    el.querySelectorAll('.ct-item').forEach(item=>{
+      item.onclick=e=>{
+        if(e.target.classList.contains('del')) return;
+        const c=item.dataset.ct;
+        localStorage.setItem('kc-contract', c===getContract()?'':c);
+        renderContracts(); paintGps();
+      };
+      item.querySelector('.del').onclick=()=>{
+        const c=item.dataset.ct;
+        if(!confirm('Remover o contrato '+c+'?')) return;
+        localStorage.setItem('kc-contracts', JSON.stringify(getContracts().filter(x=>x!==c)));
+        if(getContract()===c) localStorage.removeItem('kc-contract');
+        renderContracts(); paintGps();
+      };
+    });
+  }
+  const badge=document.getElementById('ct-active');
+  badge.textContent=act?('Contrato '+act):'(sem contrato selecionado)';
+  badge.style.color=act?'':'var(--mut)';
+}
+document.getElementById('ct-add').onclick=()=>{
+  const inp=document.getElementById('ct-new');
+  const c=inp.value.trim();
+  if(!c){ toast('Digite o número do contrato.'); return }
+  const list=getContracts();
+  if(!list.includes(c)) list.push(c);
+  localStorage.setItem('kc-contracts', JSON.stringify(list));
+  localStorage.setItem('kc-contract', c);
+  inp.value='';
+  renderContracts(); paintGps();
+  toast('Contrato '+c+' selecionado.');
+};
 
 /* ================= logo da empresa ================= */
 function loadLogo(){
@@ -1003,6 +1070,7 @@ md.onchange=()=>localStorage.setItem('kc-maxdist', md.value);
   try{ await Promise.all([document.fonts.load("400 20px Carlito"), document.fonts.load("700 20px Carlito")]) }catch(e){}
   try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
   renderBases();
+  renderContracts();
   loadLogo();
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
