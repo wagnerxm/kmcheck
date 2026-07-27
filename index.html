@@ -140,7 +140,17 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
   <h2 class="sec">Adicionar rodovia</h2>
   <div class="card">
-    <button class="btn gold" id="btn-import">Importar arquivo (KMZ do SNV, KML ou CSV)</button>
+    <label class="f" style="margin-top:0">Baixar direto do DNIT · VGeo (SNV mais recente)</label>
+    <div class="row">
+      <select id="dl-uf" style="flex:0 0 92px"></select>
+      <input type="text" id="dl-br" inputmode="numeric" placeholder="226, 304, 405" style="flex:1">
+    </div>
+    <button class="btn gold" id="dl-go" style="margin-top:10px">Buscar e instalar</button>
+    <p class="hint">Digite uma ou mais BRs separadas por vírgula. Requer internet apenas neste momento — depois de instalada, a rodovia funciona offline. O app localiza sozinho a versão mais nova do SNV publicada pelo DNIT.</p>
+  </div>
+  <div class="card">
+    <label class="f" style="margin-top:0">Ou importe um arquivo</label>
+    <button class="btn" id="btn-import">Importar arquivo (KMZ do SNV, KML ou CSV)</button>
     <p class="hint">KMZ/KML: baixado do DNIT (VGeo ou DNIT Cloud) — o app lê o eixo e a quilometragem do SNV automaticamente.<br>
     CSV/TXT: tabela com colunas KM, LAT e LONG (aceita vírgula decimal e colagem do Excel).</p>
     <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv" style="display:none">
@@ -420,6 +430,90 @@ function renderBases(){
   for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
   document.getElementById('nobase-warn').style.display = S.bases.length?'none':'block';
 }
+
+/* ================= download direto do DNIT (WFS/VGeo) ================= */
+const DNIT_WFS=[
+  'https://geoservicos.inde.gov.br/geoserver/DNIT/ows',
+  'https://servicos.dnit.gov.br/dnitgeo/geoserver/ows'
+];
+const UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+(function(){ const s=document.getElementById('dl-uf');
+  UFS.forEach(u=>{ const o=document.createElement('option'); o.value=o.textContent=u; s.appendChild(o) });
+  s.value=localStorage.getItem('kc-dluf')||'RN';
+  s.onchange=()=>localStorage.setItem('kc-dluf', s.value);
+})();
+async function fetchTimeout(url, ms){
+  const ctl=new AbortController();
+  const t=setTimeout(()=>ctl.abort(), ms);
+  try{ return await fetch(url, {signal:ctl.signal}) } finally{ clearTimeout(t) }
+}
+async function dnitLatestLayer(base){
+  const ck='kc-snvlayer:'+base;
+  try{ const c=JSON.parse(localStorage.getItem(ck)); if(c && Date.now()-c.t < 7*864e5) return c.layer }catch(e){}
+  const r=await fetchTimeout(base+'?service=WFS&version=1.0.0&request=GetCapabilities', 45000);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const xml=await r.text();
+  const names=[...xml.matchAll(/<Name>([^<]*SNV[^<]*)<\/Name>/gi)].map(m=>m[1].trim());
+  const vers=names.map(n=>{ const m=n.match(/SNV[_ ]?(20\d{2})[_ ]?([01]\d)?[_ ]?([A-E])?/i);
+    return m?{n, k:(m[1]||'0000')+(m[2]||'00')+(m[3]||'A')}:null }).filter(Boolean);
+  if(!vers.length) throw new Error('camada SNV não encontrada');
+  vers.sort((a,b)=>b.k.localeCompare(a.k));
+  localStorage.setItem(ck, JSON.stringify({t:Date.now(), layer:vers[0].n}));
+  return vers[0].n;
+}
+function propFind(p, res){
+  for(const k in p){ if(res.some(r=>r.test(k))) return p[k] }
+  return null;
+}
+async function dnitDownload(uf, brs){
+  let lastErr=null;
+  for(const base of DNIT_WFS){
+    try{
+      const layer=await dnitLatestLayer(base);
+      const cql=encodeURIComponent(`sg_uf='${uf}' AND vl_br IN (${brs.map(b=>`'${b}'`).join(',')})`);
+      const url=`${base}?service=WFS&version=1.0.0&request=GetFeature&typeName=${encodeURIComponent(layer)}&outputFormat=application%2Fjson&srsName=EPSG:4326&CQL_FILTER=${cql}`;
+      const r=await fetchTimeout(url, 120000);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const gj=await r.json();
+      if(!gj.features || !gj.features.length) throw new Error('nenhum trecho encontrado para '+uf);
+      return {gj, layer};
+    }catch(e){ lastErr=e; localStorage.removeItem('kc-snvlayer:'+base) }
+  }
+  throw lastErr || new Error('sem resposta dos servidores do DNIT');
+}
+document.getElementById('dl-go').onclick=async()=>{
+  const btn=document.getElementById('dl-go');
+  const uf=document.getElementById('dl-uf').value;
+  const brs=[...new Set((document.getElementById('dl-br').value.match(/\d{1,3}/g)||[]).map(b=>b.padStart(3,'0')))];
+  if(!brs.length){ toast('Digite o número da BR (ex.: 226).'); return }
+  btn.disabled=true; btn.textContent='Baixando do DNIT…';
+  try{
+    const {gj, layer}=await dnitDownload(uf, brs);
+    const groups={};
+    for(const f of gj.features){
+      const p=f.properties||{};
+      const kmi=num(propFind(p,[/km.*ini/i]));
+      const kmf=num(propFind(p,[/km.*fin/i, /km.*fim/i]));
+      if(kmi==null||kmf==null||!f.geometry) continue;
+      const brv=String(propFind(p,[/^vl_?br$/i, /\bbr\b/i])||'').match(/\d{1,3}/);
+      const key='BR-'+(brv?brv[0].padStart(3,'0'):'???')+'/'+uf;
+      const geoms=f.geometry.type==='MultiLineString'?f.geometry.coordinates:[f.geometry.coordinates];
+      for(const line of geoms){
+        const pts=line.filter(c=>Array.isArray(c)&&c.length>=2);
+        if(pts.length>=2) (groups[key]=groups[key]||[]).push({kmi, kmf, pts});
+      }
+    }
+    let n=0;
+    for(const k of Object.keys(groups)){
+      if(await installFromSegs(k, groups[k], 'DNIT VGeo · '+layer)) n++;
+    }
+    renderBases();
+    toast(n?`${n} rodovia(s) instalada(s) — SNV ${layer.replace(/^.*?(SNV)/i,'$1')}.`:'Nada instalado — confira BR e UF.');
+  }catch(err){
+    toast('Falha ao baixar do DNIT: '+err.message+'. Se persistir, use "Importar arquivo" com o KMZ do VGeo.');
+  }
+  btn.disabled=false; btn.textContent='Buscar e instalar';
+};
 
 /* ================= importação ================= */
 document.getElementById('btn-import').onclick=()=>document.getElementById('filein').click();
