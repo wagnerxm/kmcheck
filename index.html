@@ -140,19 +140,26 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
   <h2 class="sec">Adicionar rodovia</h2>
   <div class="card">
-    <label class="f" style="margin-top:0">Baixar direto do DNIT · VGeo (SNV mais recente)</label>
+    <label class="f" style="margin-top:0">Baixar direto do DNIT (SGPLAN)</label>
     <div class="row">
       <select id="dl-uf" style="flex:0 0 92px"></select>
-      <input type="text" id="dl-br" inputmode="numeric" placeholder="226, 304, 405" style="flex:1">
+      <input type="text" id="dl-br" inputmode="numeric" placeholder="BR ex.: 226" style="flex:1">
     </div>
-    <button class="btn gold" id="dl-go" style="margin-top:10px">Buscar e instalar</button>
-    <p class="hint">Digite uma ou mais BRs separadas por vírgula. Requer internet apenas neste momento — depois de instalada, a rodovia funciona offline. O app localiza sozinho a versão mais nova do SNV publicada pelo DNIT.</p>
+    <div class="row" style="margin-top:10px">
+      <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
+      <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
+    </div>
+    <label class="f">Intervalo entre pontos (m)</label>
+    <input type="number" id="dl-step" value="50" min="10" step="10">
+    <button class="btn gold" id="dl-go" style="margin-top:12px">Buscar e instalar</button>
+    <p class="hint" id="dl-status">Deixe "Km final" em branco para o app detectar sozinho o fim da rodovia. Requer internet só neste momento — depois de instalada, funciona offline.</p>
   </div>
   <div class="card">
     <label class="f" style="margin-top:0">Ou importe um arquivo</label>
     <button class="btn" id="btn-import">Importar arquivo (KMZ do SNV, KML ou CSV)</button>
     <p class="hint">KMZ/KML: baixado do DNIT (VGeo ou DNIT Cloud) — o app lê o eixo e a quilometragem do SNV automaticamente.<br>
     CSV/TXT: tabela com colunas KM, LAT e LONG (aceita vírgula decimal e colagem do Excel).</p>
+
     <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv" style="display:none">
   </div>
 
@@ -433,104 +440,115 @@ function renderBases(){
   document.getElementById('nobase-warn').style.display = S.bases.length?'none':'block';
 }
 
-/* ================= download direto do DNIT (WFS/VGeo) ================= */
-const DNIT_WFS=[
-  'https://geoservicos.inde.gov.br/geoserver/DNIT/ows',
-  'https://servicos.dnit.gov.br/dnitgeo/geoserver/ows'
-];
+/* ================= download direto do DNIT (API SGPLAN, ponto a ponto) =================
+   Mesma API usada pelo utilitário SNV to KML: devolve a coordenada de UM km por vez.
+   http://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarponto
+     ?br=110&tipo=B&uf=RN&cd_tipo=null&data=AAAA-MM-DD&km=0.46                        */
 const UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
 (function(){ const s=document.getElementById('dl-uf');
   UFS.forEach(u=>{ const o=document.createElement('option'); o.value=o.textContent=u; s.appendChild(o) });
   s.value=localStorage.getItem('kc-dluf')||'RN';
   s.onchange=()=>localStorage.setItem('kc-dluf', s.value);
 })();
+function pointUrl(br, uf, km, dataStr){
+  return `http://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarponto?br=${br}&tipo=B&uf=${uf}&cd_tipo=null&data=${dataStr}&km=${km.toFixed(2)}`;
+}
+/* extrai {lat,lon} de qualquer formato de resposta plausível (schema da API não documentado) */
+function extractLatLon(body){
+  const tryNums=(a,b)=>{
+    if(typeof a!=='number'||typeof b!=='number') return null;
+    if(a>=-35&&a<=6&&b>=-75&&b<=-32) return {lat:a, lon:b};
+    if(b>=-35&&b<=6&&a>=-75&&a<=-32) return {lat:b, lon:a};
+    return null;
+  };
+  try{
+    const j=JSON.parse(body);
+    const flat=(o,out)=>{ if(o&&typeof o==='object'){ for(const k in o){ const v=o[k];
+      if(typeof v==='number') out.push([k.toLowerCase(),v]); else if(v&&typeof v==='object') flat(v,out); } } return out };
+    const nums=flat(j,[]);
+    const byKey=re=>{ const f=nums.find(([k])=>re.test(k)); return f?f[1]:null };
+    let lat=byKey(/^(lat|latitude|y)$/), lon=byKey(/^(lon|lng|longitude|x)$/);
+    if(lat!=null&&lon!=null){ const r=tryNums(lat,lon); if(r) return r }
+    if(Array.isArray(j)&&j.length>=2){ const r=tryNums(j[0],j[1]); if(r) return r }
+    if(j.coordinates&&j.coordinates.length>=2){ const r=tryNums(j.coordinates[1],j.coordinates[0]); if(r) return r }
+    for(let i=0;i<nums.length-1;i++){ const r=tryNums(nums[i][1], nums[i+1][1]); if(r) return r }
+  }catch(e){}
+  const m=body.match(/(-?\d{1,3}[.,]\d+)/g);
+  if(m&&m.length>=2){
+    const a=parseFloat(m[0].replace(',','.')), b=parseFloat(m[1].replace(',','.'));
+    return tryNums(a,b);
+  }
+  return null;
+}
+async function fetchPoint(url, ms){
+  try{
+    const r=await fetchTimeout(url, ms);
+    if(r.ok) return extractLatLon(await r.text());
+  }catch(e){}
+  try{
+    const r=await fetchTimeout('https://api.allorigins.win/raw?url='+encodeURIComponent(url), ms);
+    if(r.ok) return extractLatLon(await r.text());
+  }catch(e){}
+  return null;
+}
 async function fetchTimeout(url, ms){
   const ctl=new AbortController();
   const t=setTimeout(()=>ctl.abort(), ms);
   try{ return await fetch(url, {signal:ctl.signal, mode:'cors'}) } finally{ clearTimeout(t) }
 }
-/* alguns servidores do governo não liberam CORS para outros sites — nesse caso
-   tentamos por uma ponte pública (mesmo conteúdo, só reencaminha a requisição) */
-async function fetchSmart(url, ms, log){
-  try{
-    const r=await fetchTimeout(url, ms);
-    if(r.ok) return r;
-    log.push('direto: HTTP '+r.status);
-  }catch(e){ log.push('direto: '+(e.name==='AbortError'?'tempo esgotado':e.message)) }
-  const proxied='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
-  try{
-    const r=await fetchTimeout(proxied, ms);
-    if(r.ok) return r;
-    log.push('ponte: HTTP '+r.status);
-  }catch(e){ log.push('ponte: '+(e.name==='AbortError'?'tempo esgotado':e.message)) }
-  throw new Error(log[log.length-2]+' / '+log[log.length-1]);
-}
-async function dnitLatestLayer(base, log){
-  const ck='kc-snvlayer:'+base;
-  try{ const c=JSON.parse(localStorage.getItem(ck)); if(c && Date.now()-c.t < 7*864e5) return c.layer }catch(e){}
-  const r=await fetchSmart(base+'?service=WFS&version=1.0.0&request=GetCapabilities', 45000, log);
-  const xml=await r.text();
-  const names=[...xml.matchAll(/<Name>([^<]*SNV[^<]*)<\/Name>/gi)].map(m=>m[1].trim());
-  const vers=names.map(n=>{ const m=n.match(/SNV[_ ]?(20\d{2})[_ ]?([01]\d)?[_ ]?([A-E])?/i);
-    return m?{n, k:(m[1]||'0000')+(m[2]||'00')+(m[3]||'A')}:null }).filter(Boolean);
-  if(!vers.length) throw new Error('camada SNV não encontrada na resposta do servidor');
-  vers.sort((a,b)=>b.k.localeCompare(a.k));
-  localStorage.setItem(ck, JSON.stringify({t:Date.now(), layer:vers[0].n}));
-  return vers[0].n;
-}
-function propFind(p, res){
-  for(const k in p){ if(res.some(r=>r.test(k))) return p[k] }
-  return null;
-}
-async function dnitDownload(uf, brs){
-  let lastErr=null, log=[];
-  for(const base of DNIT_WFS){
-    try{
-      const layer=await dnitLatestLayer(base, log);
-      const cql=encodeURIComponent(`sg_uf='${uf}' AND vl_br IN (${brs.map(b=>`'${b}'`).join(',')})`);
-      const url=`${base}?service=WFS&version=1.0.0&request=GetFeature&typeName=${encodeURIComponent(layer)}&outputFormat=application%2Fjson&srsName=EPSG:4326&CQL_FILTER=${cql}`;
-      const r=await fetchSmart(url, 120000, log);
-      const gj=await r.json();
-      if(!gj.features || !gj.features.length) throw new Error('nenhum trecho encontrado para '+uf+'/'+brs.join(','));
-      return {gj, layer};
-    }catch(e){ lastErr=e; localStorage.removeItem('kc-snvlayer:'+base); log.push(base+' → '+e.message) }
+/* baixa uma BR inteira chamando a API ponto a ponto, com concorrência limitada;
+   se km final não for informado, para sozinho após várias falhas seguidas */
+async function downloadRoute(br, uf, kmi, kmf, stepM, onProgress){
+  const dataStr=new Date().toISOString().slice(0,10);
+  const step=stepM/1000;
+  const autoEnd = kmf==null;
+  const maxKm = kmf!=null ? kmf : kmi + 2000;   // teto de segurança se "auto"
+  const pts=[]; let km=kmi, consecFail=0, tried=0;
+  const CONC=10;
+  while(km<=maxKm+1e-9){
+    const batch=[];
+    for(let i=0;i<CONC && km<=maxKm+1e-9; i++, km+=step) batch.push(km);
+    const results=await Promise.all(batch.map(k=>fetchPoint(pointUrl(br,uf,k,dataStr), 15000).then(r=>({k,r}))));
+    tried+=batch.length;
+    let batchOk=0;
+    for(const {k,r} of results){
+      if(r){ pts.push({km:k, lat:r.lat, lon:r.lon}); batchOk++; consecFail=0 }
+      else consecFail++;
+    }
+    if(onProgress) onProgress(pts.length, tried);
+    if(autoEnd && batchOk===0 && consecFail>=CONC*3) break;  // três lotes seguidos sem nenhum ponto = fim da rodovia
   }
-  const err=lastErr || new Error('sem resposta dos servidores do DNIT');
-  err.log=log;
-  throw err;
+  pts.sort((a,b)=>a.km-b.km);
+  return pts;
 }
 document.getElementById('dl-go').onclick=async()=>{
-  const btn=document.getElementById('dl-go');
+  const btn=document.getElementById('dl-go'), status=document.getElementById('dl-status');
   const uf=document.getElementById('dl-uf').value;
-  const brs=[...new Set((document.getElementById('dl-br').value.match(/\d{1,3}/g)||[]).map(b=>b.padStart(3,'0')))];
-  if(!brs.length){ toast('Digite o número da BR (ex.: 226).'); return }
-  btn.disabled=true; btn.textContent='Baixando do DNIT…';
+  const br=(document.getElementById('dl-br').value.match(/\d{1,3}/)||[])[0];
+  if(!br){ toast('Digite o número da BR (ex.: 226).'); return }
+  const kmi=num(document.getElementById('dl-kmi').value) ?? 0;
+  const kmfRaw=document.getElementById('dl-kmf').value.trim();
+  const kmf=kmfRaw?num(kmfRaw):null;
+  const step=Math.max(10, +document.getElementById('dl-step').value||50);
+  btn.disabled=true; btn.textContent='Baixando…';
+  const brPad=br.padStart(3,'0');
   try{
-    const {gj, layer}=await dnitDownload(uf, brs);
-    const groups={};
-    for(const f of gj.features){
-      const p=f.properties||{};
-      const kmi=num(propFind(p,[/km.*ini/i]));
-      const kmf=num(propFind(p,[/km.*fin/i, /km.*fim/i]));
-      if(kmi==null||kmf==null||!f.geometry) continue;
-      const brv=String(propFind(p,[/^vl_?br$/i, /\bbr\b/i])||'').match(/\d{1,3}/);
-      const key='BR-'+(brv?brv[0].padStart(3,'0'):'???')+'/'+uf;
-      const geoms=f.geometry.type==='MultiLineString'?f.geometry.coordinates:[f.geometry.coordinates];
-      for(const line of geoms){
-        const pts=line.filter(c=>Array.isArray(c)&&c.length>=2);
-        if(pts.length>=2) (groups[key]=groups[key]||[]).push({kmi, kmf, pts});
-      }
-    }
-    let n=0;
-    for(const k of Object.keys(groups)){
-      if(await installFromSegs(k, groups[k], 'DNIT VGeo · '+layer)) n++;
-    }
+    const pts=await downloadRoute(brPad, uf, kmi, kmf, step, (ok,tried)=>{
+      status.textContent=`Baixando… ${ok} pontos obtidos (${tried} consultados)`;
+    });
+    if(pts.length<2) throw new Error('nenhum ponto retornado — confira BR, UF e o km inicial');
+    const key='BR-'+brPad+'/'+uf;
+    const b={id:key, br:'BR-'+brPad, uf, fonte:'DNIT SGPLAN · '+new Date().toISOString().slice(0,10),
+      kmMin:pts[0].km, kmMax:pts[pts.length-1].km,
+      lat:pts.map(p=>p.lat), lon:pts.map(p=>p.lon), km:pts.map(p=>p.km)};
+    await dbPut(b);
+    S.bases=S.bases.filter(x=>x.id!==key); S.bases.push(b);
     renderBases();
-    toast(n?`${n} rodovia(s) instalada(s) — SNV ${layer.replace(/^.*?(SNV)/i,'$1')}.`:'Nada instalado — confira BR e UF.');
+    status.textContent='Deixe "Km final" em branco para o app detectar sozinho o fim da rodovia. Requer internet só neste momento — depois de instalada, funciona offline.';
+    toast(`${key} instalada — ${pts.length} pontos (km ${fkm(b.kmMin)} a ${fkm(b.kmMax)}).`);
   }catch(err){
-    console.error('KM Check — download DNIT:', err, err.log);
-    const detail=(err.log&&err.log.length)?err.log.slice(-2).join(' · '):err.message;
-    toast('Falha ao baixar do DNIT ('+detail+'). Use "Importar arquivo" com o KMZ do VGeo.');
+    status.textContent='Deixe "Km final" em branco para o app detectar sozinho o fim da rodovia. Requer internet só neste momento — depois de instalada, funciona offline.';
+    toast('Falha ao baixar do DNIT: '+err.message+'. Alternativa: peça o KML pronto no programa SNV to KML e use "Importar arquivo".');
   }
   btn.disabled=false; btn.textContent='Buscar e instalar';
 };
