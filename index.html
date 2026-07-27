@@ -116,11 +116,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camtop{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:6;display:flex;gap:10px}
 #camflip,#camback{background:rgba(15,18,20,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #camflip svg,#camback svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-#preview{position:fixed;inset:0;background:#0a0c0e;z-index:20;display:none;flex-direction:column}
-#preview.on{display:flex}
-#preview img{flex:1;object-fit:contain;min-height:0;width:100%}
-#preview .acts{display:flex;gap:10px;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
-#preview .acts .btn{flex:1}
 .gpsdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);margin-right:7px;vertical-align:1px}
 .gpsdot.ok{background:var(--ok);box-shadow:0 0 8px rgba(167,209,35,.7)}
 .gpsdot.mid{background:var(--warn)}
@@ -289,16 +284,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
   </div>
   <div id="cambar">
     <button id="shutter" aria-label="Tirar foto"></button>
-  </div>
-</div>
-
-<!-- preview da foto -->
-<div id="preview">
-  <img id="pimg" alt="Foto com legenda">
-  <div class="acts">
-    <button class="btn ghost" id="p-again">Refazer</button>
-    <button class="btn" id="p-save">Salvar</button>
-    <button class="btn gold" id="p-share">Compartilhar</button>
   </div>
 </div>
 
@@ -1225,7 +1210,7 @@ function positionCamText(){
   const {pad,size}=camGeom;
   const linesCount=legendLines(buildInfo()).L.length;
   const legendH=linesCount*size*1.38;
-  document.getElementById('camtxt').style.bottom=(pad+legendH+size*0.6)+'px';
+  document.getElementById('camtxt').style.bottom=(pad+legendH+size*1.3)+'px';
 }
 let camTick=null;
 async function openCam(){
@@ -1257,7 +1242,7 @@ document.getElementById('shutter').onclick=()=>{
   ctx.drawImage(video,0,0);
   const info=buildInfo(); S.lastInfo=info;
   burnLegend(ctx,c.width,c.height,info);
-  c.toBlob(b=>showPreview(b), 'image/jpeg', .92);
+  c.toBlob(b=>autoSave(b), 'image/jpeg', .92);
 };
 
 
@@ -1291,26 +1276,26 @@ function burnLegend(ctx,W,H,info){
   ctx.fillText('KM CHECK · SNV/DNIT', W-14*u, H-14*u);
   ctx.textAlign='left';
 }
-function showPreview(blob){
-  S.lastBlob=blob;
+function autoSave(blob){
   const info=S.lastInfo||{}, t=new Date();
   const kmTxt=(info.km!=null)?('km'+fkm(info.km).replace(',','+').replace(/\./g,'')):'semkm';
   const br=info.br?info.br.replace('-',''):'FOTO';
-  S.lastName=`${br}_${kmTxt}_${t.toISOString().slice(0,10)}_${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.jpg`;
-  document.getElementById('pimg').src=URL.createObjectURL(blob);
-  document.getElementById('preview').classList.add('on');
-}
-document.getElementById('p-again').onclick=()=>document.getElementById('preview').classList.remove('on');
-document.getElementById('p-save').onclick=()=>{
-  const a=document.createElement('a'); a.href=URL.createObjectURL(S.lastBlob); a.download=S.lastName; a.click();
-  toast('Foto salva: '+S.lastName);
-};
-document.getElementById('p-share').onclick=async()=>{
-  const file=new File([S.lastBlob], S.lastName, {type:'image/jpeg'});
+  const name=`${br}_${kmTxt}_${t.toISOString().slice(0,10)}_${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.jpg`;
+  const file=new File([blob], name, {type:'image/jpeg'});
+  const download=()=>{
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  };
+  // iPhone/iOS: sem menu de compartilhar, o navegador não consegue gravar direto no álbum de Fotos
+  // (trava do próprio sistema). Abrindo o menu nativo, "Salvar Imagem" grava direto lá, em 1 toque.
   if(navigator.canShare && navigator.canShare({files:[file]})){
-    try{ await navigator.share({files:[file]}) }catch(e){}
-  } else { document.getElementById('p-save').click() }
-};
+    navigator.share({files:[file]}).catch(()=>download());
+    toast('Toque em "Salvar Imagem" para guardar no álbum de Fotos');
+  } else {
+    download();
+    toast('Foto salva — pronta pra próxima');
+  }
+}
 
 /* ================= consulta ================= */
 const qc=document.getElementById('q-coords');
