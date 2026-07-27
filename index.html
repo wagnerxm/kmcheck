@@ -61,10 +61,11 @@ label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercas
 #camwrap.on{display:flex}
 #camvideo{flex:1;object-fit:cover;width:100%;min-height:0;background:#000}
 #liveplate{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));padding:10px 14px;background:rgba(10,12,16,.72);border-top:2px solid var(--gold)}
-#liveplate .l1{font-family:var(--mono);font-weight:800;font-size:17px;color:var(--gold2);letter-spacing:.02em}
-#liveplate .l2,#liveplate .l3{font-family:var(--mono);font-size:12px;color:#e9e7e1;margin-top:2px}
-#liveplate .l3{color:#aeb6c2}
+#liveplate .l1{font-family:var(--mono);font-weight:800;font-size:17px;color:#fff;letter-spacing:.02em}
+#liveplate .l2{font-family:var(--mono);font-size:13px;color:#f0eee9;margin-top:2px}
 #liveplate.err .l1{color:var(--err)}
+#camtxt{position:absolute;left:10px;right:10px;bottom:calc(214px + env(safe-area-inset-bottom));background:rgba(10,12,16,.65);border:1px solid rgba(201,162,75,.6);border-radius:10px;color:#fff;padding:10px 12px;font-size:15px;font-family:var(--sans);width:auto}
+#camtxt::placeholder{color:#9aa2af}
 #cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:14px 26px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
 #shutter{width:68px;height:68px;border-radius:50%;border:4px solid #fff;background:var(--gold);cursor:pointer}
 #camclose,#camflip{background:rgba(20,24,31,.7);border:1px solid var(--line);color:#fff;border-radius:50%;width:46px;height:46px;font-size:18px;cursor:pointer}
@@ -164,6 +165,9 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
       <span class="gpsdot" id="gpsdot"></span><span id="gpsline">GPS aguardando…</span><br>
       <span id="kmline" style="font-family:var(--mono);color:var(--gold2)"></span>
     </div>
+    <label class="f">Texto livre da legenda (2ª linha da foto)</label>
+    <input type="text" id="customtxt" placeholder="ex.: Pintura de guarda-corpo — Ponte Riacho do Açude">
+    <div style="height:12px"></div>
     <button class="btn gold" id="btn-opencam">📷 Abrir câmera com legenda</button>
     <div style="height:10px"></div>
     <button class="btn" id="btn-nativecam">Tirar com a câmera nativa (queimar legenda depois)</button>
@@ -187,11 +191,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 <!-- câmera fullscreen -->
 <div id="camwrap">
   <video id="camvideo" autoplay playsinline muted></video>
-  <div id="liveplate">
-    <div class="l1" id="lp1">— aguardando GPS —</div>
-    <div class="l2" id="lp2"></div>
-    <div class="l3" id="lp3"></div>
-  </div>
+  <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
+  <div id="liveplate"></div>
   <div id="cambar">
     <button id="camclose">✕</button>
     <button id="shutter" aria-label="Tirar foto"></button>
@@ -316,7 +317,7 @@ function findOae(br, uf, km){
 function fkm(km){ return km.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}) }
 function fc(v){ return v.toFixed(6).replace('.',',') }
 function now(){ const d=new Date(); return {
-  data:d.toLocaleDateString('pt-BR'), hora:d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) } }
+  data:d.toLocaleDateString('pt-BR'), hora:d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) } }
 
 /* ================= navegação ================= */
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
@@ -554,29 +555,125 @@ function paintGps(){
     } else kl.textContent=S.bases.length?'':'(instale uma rodovia para calcular o KM)';
   }
   // placa da câmera
-  const state=legendState();
-  document.getElementById('lp1').textContent=state.l1;
-  document.getElementById('lp2').textContent=state.l2;
-  document.getElementById('lp3').textContent=state.l3;
-  document.getElementById('liveplate').classList.toggle('err', state.err);
+  const {L,err}=legendLines(buildInfo());
+  const lp=document.getElementById('liveplate');
+  lp.innerHTML=L.map((t,i)=>`<div class="${i===0?'l1':'l2'}"></div>`).join('');
+  [...lp.children].forEach((el,i)=>el.textContent=L[i]);
+  lp.classList.toggle('err', err);
 }
-function legendState(){
+/* texto livre da legenda (sincronizado entre os dois campos) */
+function getCustom(){ return (localStorage.getItem('kc-custom')||'').trim() }
+function bindCustom(){
+  const a=document.getElementById('customtxt'), b=document.getElementById('camtxt');
+  a.value=b.value=getCustom();
+  const sync=src=>()=>{ localStorage.setItem('kc-custom', src.value); (src===a?b:a).value=src.value; paintGps() };
+  a.addEventListener('input', sync(a)); b.addEventListener('input', sync(b));
+}
+bindCustom();
+
+/* monta as informações da legenda (fonte: GPS ao vivo) */
+function buildInfo(){
   const t=now();
-  if(!S.pos) return {l1:'— aguardando GPS —', l2:'', l3:t.data+'  '+t.hora, err:true, ok:false};
-  if(!S.fix) return {l1:'sem rodovia instalada', l2:CFG.coord?`LAT ${fc(S.pos.lat)}   LONG ${fc(S.pos.lon)}`:'', l3:t.data+'  '+t.hora, err:true, ok:false};
-  const off=S.fix.dist>CFG.maxdist;
-  let l1=`${S.fix.br}/${S.fix.uf}  ·  km ${fkm(S.fix.km)}`;
-  let oaeLine='';
-  if(CFG.oae){
-    const o=findOae(S.fix.br,S.fix.uf,S.fix.km);
-    if(o) oaeLine=(o.mode==='sobre'?'OAE: ':'OAE próx.: ')+o.o.nome+' (km '+fkm(o.o.km)+')';
+  const info={custom:getCustom(), data:t.data, hora:t.hora, src:'gps'};
+  if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc }
+  if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist }
+  return info;
+}
+/* formato da legenda (padrão do exemplo do usuário):
+   BR-110/RN - KM 91,85
+   [texto livre ou nome da OAE]
+   -5.591172,-37.301907
+   21/07/2026, 14:15                              */
+function legendLines(info){
+  const L=[]; let err=false;
+  if(info.km!=null){
+    let l1=`${info.br}/${info.uf} - KM ${fkm(info.km)}`;
+    if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
+    L.push(l1);
+  } else { L.push(info.lat!=null?'SEM RODOVIA INSTALADA':'— aguardando GPS —'); err=true }
+  let l2=info.custom;
+  if(!l2 && CFG.oae && info.km!=null){
+    const o=findOae(info.br,info.uf,info.km);
+    if(o && o.mode==='sobre') l2=o.o.nome;
   }
-  let l2=oaeLine || (CFG.coord?`LAT ${fc(S.pos.lat)}   LONG ${fc(S.pos.lon)}`:'');
-  let l3=[t.data+'  '+t.hora];
-  if(oaeLine && CFG.coord) l3.unshift(`LAT ${fc(S.pos.lat)}  LONG ${fc(S.pos.lon)}`);
-  if(CFG.acc) l3.push(`GPS ±${Math.round(S.pos.acc)}m`);
-  if(off) l1+='  ⚠';
-  return {l1, l2, l3:l3.join('  ·  '), err:off, ok:true, oaeLine};
+  if(l2) L.push(l2);
+  if(info.lat!=null && CFG.coord){
+    let lc=`${info.lat.toFixed(6)},${info.lon.toFixed(6)}`;
+    if(CFG.acc && info.src==='gps' && info.acc!=null) lc+=` (±${Math.round(info.acc)}m)`;
+    L.push(lc);
+  }
+  L.push(info.data+', '+info.hora);
+  return {L,err};
+}
+
+/* leitor de EXIF (GPS + data original) embutido */
+function readExif(buf){
+  try{
+    const v=new DataView(buf);
+    if(v.getUint16(0)!==0xFFD8) return null;
+    let off=2;
+    while(off+4<v.byteLength){
+      const marker=v.getUint16(off);
+      if((marker&0xFF00)!==0xFF00) return null;
+      const size=v.getUint16(off+2);
+      if(marker===0xFFE1 && v.getUint32(off+4)===0x45786966){ return parseTiff(v, off+10) }
+      if(marker===0xFFDA) return null; // início dos dados da imagem
+      off+=2+size;
+    }
+  }catch(e){}
+  return null;
+}
+function parseTiff(v, base){
+  const little=v.getUint16(base)===0x4949;
+  const U16=o=>v.getUint16(base+o,little), U32=o=>v.getUint32(base+o,little);
+  function ifd(off){
+    const n=U16(off), tags={};
+    for(let i=0;i<n;i++){
+      const e=off+2+i*12;
+      tags[U16(e)]={type:U16(e+2), count:U32(e+4), off:e+8};
+    }
+    return tags;
+  }
+  function val(t){
+    const sz={1:1,2:1,3:2,4:4,5:8,10:8}[t.type]||1;
+    const total=sz*t.count;
+    return total<=4 ? t.off : U32(t.off)+0; // offset relativo à base
+  }
+  function ascii(t){
+    const o=(2*t.count<=4)?t.off:U32(t.off);
+    let s='';
+    for(let i=0;i<t.count-1;i++) s+=String.fromCharCode(v.getUint8(base+o+i));
+    return s;
+  }
+  function rats(t){
+    const o=U32(t.off), out=[];
+    for(let i=0;i<t.count;i++){
+      const num=U32(o+i*8), den=U32(o+i*8+4);
+      out.push(den?num/den:0);
+    }
+    return out;
+  }
+  const ifd0=ifd(U32(4));
+  let lat=null, lon=null, date=null;
+  if(ifd0[0x8825]){
+    const g=ifd(U32(ifd0[0x8825].off));
+    if(g[0x0002]&&g[0x0004]){
+      const la=rats(g[0x0002]), lo=rats(g[0x0004]);
+      lat=la[0]+la[1]/60+la[2]/3600;
+      lon=lo[0]+lo[1]/60+lo[2]/3600;
+      if(g[0x0001]&&ascii(g[0x0001]).toUpperCase().startsWith('S')) lat=-lat;
+      if(g[0x0003]&&ascii(g[0x0003]).toUpperCase().startsWith('W')) lon=-lon;
+    }
+  }
+  if(ifd0[0x8769]){
+    const ex=ifd(U32(ifd0[0x8769].off));
+    const dt=ex[0x9003]||ex[0x9004];
+    if(dt){
+      const m=ascii(dt).match(/(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2})/);
+      if(m) date={data:`${m[3]}/${m[2]}/${m[1]}`, hora:`${m[4]}:${m[5]}`};
+    }
+  }
+  return (lat!=null||date)?{lat,lon,date}:null;
 }
 
 /* ================= câmera ================= */
@@ -601,7 +698,8 @@ document.getElementById('shutter').onclick=()=>{
   c.width=video.videoWidth; c.height=video.videoHeight;
   const ctx=c.getContext('2d');
   ctx.drawImage(video,0,0);
-  burnLegend(ctx,c.width,c.height);
+  const info=buildInfo(); S.lastInfo=info;
+  burnLegend(ctx,c.width,c.height,info);
   c.toBlob(b=>showPreview(b), 'image/jpeg', .92);
 };
 
@@ -610,46 +708,61 @@ document.getElementById('btn-nativecam').onclick=()=>{ startGps(); document.getE
 document.getElementById('nativein').onchange=async e=>{
   const f=e.target.files[0]; e.target.value=''; if(!f) return;
   try{
-    const bmp=await createImageBitmap(f,{imageOrientation:'from-image'});
+    const buf=await f.arrayBuffer();
+    const ex=readExif(buf);
+    let info;
+    if(ex && ex.lat!=null){
+      // coordenadas do EXIF da própria foto
+      const fix=S.bases.length?findKm(ex.lat,ex.lon):null;
+      const t=ex.date||{data:new Date(f.lastModified).toLocaleDateString('pt-BR'),hora:new Date(f.lastModified).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+      info={custom:getCustom(), lat:ex.lat, lon:ex.lon, data:t.data, hora:t.hora, src:'exif'};
+      if(fix){ info.br=fix.br; info.uf=fix.uf; info.km=fix.km; info.dist=fix.dist }
+      toast('Coordenadas e data lidas do EXIF da foto.');
+    } else {
+      info=buildInfo();
+      toast('Foto sem GPS no EXIF — usando a posição atual do aparelho.');
+    }
+    S.lastInfo=info;
+    const bmp=await createImageBitmap(new Blob([buf]),{imageOrientation:'from-image'});
     const c=document.createElement('canvas'); c.width=bmp.width; c.height=bmp.height;
     const ctx=c.getContext('2d'); ctx.drawImage(bmp,0,0);
-    burnLegend(ctx,c.width,c.height);
+    burnLegend(ctx,c.width,c.height,info);
     c.toBlob(b=>showPreview(b),'image/jpeg',.92);
   }catch(err){ toast('Não consegui processar a imagem: '+err.message) }
 };
 
-/* legenda queimada na foto */
-function burnLegend(ctx,W,H){
-  const st=legendState();
-  const u=Math.max(W,H)/1000;            // unidade de escala
-  const pad=14*u, lh1=30*u, lh2=19*u, lh3=15*u;
-  const lines=[st.l2, st.l3].filter(x=>x);
-  const bandH=pad*2 + lh1 + lines.length*(lh2+6*u) + 6*u;
-  const y0=H-bandH;
-  ctx.fillStyle='rgba(10,12,16,0.72)'; ctx.fillRect(0,y0,W,bandH);
-  ctx.fillStyle='#c9a24b'; ctx.fillRect(0,y0,W,3.5*u);
-  ctx.textBaseline='top';
-  ctx.fillStyle=st.err?'#e2704f':'#e3c987';
-  ctx.font=`800 ${lh1}px ui-monospace, Menlo, monospace`;
-  ctx.fillText(st.l1, pad, y0+pad);
-  let y=y0+pad+lh1+8*u;
-  ctx.font=`600 ${lh2}px ui-monospace, Menlo, monospace`;
-  ctx.fillStyle='#efece5';
-  if(st.l2){ ctx.fillText(st.l2, pad, y); y+=lh2+6*u }
-  ctx.font=`500 ${lh3+2*u}px ui-monospace, Menlo, monospace`;
-  ctx.fillStyle='#b7bdc8';
-  if(st.l3){ ctx.fillText(st.l3, pad, y) }
+/* legenda queimada na foto — texto branco simples, canto inferior esquerdo */
+function burnLegend(ctx,W,H,info){
+  const {L}=legendLines(info);
+  const u=Math.max(W,H)/1000;
+  const pad=22*u;
+  const sizes=L.map((_,i)=>i===0?34*u:28*u);
+  ctx.textBaseline='alphabetic'; ctx.textAlign='left';
+  ctx.lineJoin='round';
+  let y=H-pad;
+  for(let i=L.length-1;i>=0;i--){
+    ctx.font=`${i===0?700:400} ${sizes[i]}px Arial, Helvetica, sans-serif`;
+    ctx.lineWidth=Math.max(2, 3.2*u);
+    ctx.strokeStyle='rgba(0,0,0,.55)';
+    ctx.strokeText(L[i], pad, y);
+    ctx.fillStyle='#ffffff';
+    ctx.fillText(L[i], pad, y);
+    y-=sizes[i]*1.32;
+  }
   // marca discreta
-  ctx.font=`700 ${13*u}px ui-monospace, Menlo, monospace`;
-  ctx.fillStyle='rgba(201,162,75,.9)'; ctx.textAlign='right';
-  ctx.fillText('KM CHECK · SNV/DNIT', W-pad, y0+pad);
+  ctx.font=`700 ${12*u}px Arial, Helvetica, sans-serif`;
+  ctx.textAlign='right';
+  ctx.lineWidth=Math.max(1.5, 2.2*u); ctx.strokeStyle='rgba(0,0,0,.45)';
+  ctx.strokeText('KM CHECK · SNV/DNIT', W-14*u, H-14*u);
+  ctx.fillStyle='rgba(255,255,255,.85)';
+  ctx.fillText('KM CHECK · SNV/DNIT', W-14*u, H-14*u);
   ctx.textAlign='left';
 }
 function showPreview(blob){
   S.lastBlob=blob;
-  const st=legendState(), t=new Date();
-  const kmTxt=S.fix?('km'+fkm(S.fix.km).replace(',','+').replace(/\./g,'')):'semkm';
-  const br=S.fix?S.fix.br.replace('-',''):'FOTO';
+  const info=S.lastInfo||{}, t=new Date();
+  const kmTxt=(info.km!=null)?('km'+fkm(info.km).replace(',','+').replace(/\./g,'')):'semkm';
+  const br=info.br?info.br.replace('-',''):'FOTO';
   S.lastName=`${br}_${kmTxt}_${t.toISOString().slice(0,10)}_${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.jpg`;
   document.getElementById('pimg').src=URL.createObjectURL(blob);
   document.getElementById('preview').classList.add('on');
