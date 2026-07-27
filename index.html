@@ -1192,10 +1192,15 @@ document.getElementById('btn-opencam').onclick=openCam;
    exibido pelo vídeo (object-fit:contain) — a mesma proporção da foto gravada.
    Reage às dimensões REAIS do sensor da câmera (video.videoWidth/Height), que
    mudam quando o aparelho gira fisicamente, mesmo com a rotação de tela travada. */
-function layoutCamFrame(){
+let camGeom=null; // cache: {u,pad,size,dw,dh} — só recalculado quando o quadro da câmera realmente muda de forma
+function layoutCamFrame(force){
   const vw=video.videoWidth, vh=video.videoHeight;
   const cw=camwrap.clientWidth, ch=camwrap.clientHeight;
   if(!vw||!vh||!cw||!ch) return;
+  // só refaz a geometria se a proporção do sensor mudou de verdade (rotação física),
+  // ignorando oscilações da barra de endereço do navegador (que muda a altura da tela sem o celular ter girado)
+  const aspect=vw/vh;
+  if(!force && camGeom && Math.abs(camGeom.aspect-aspect)<0.02) return;
   const scale=Math.min(cw/vw, ch/vh);
   const dw=vw*scale, dh=vh*scale, ox=(cw-dw)/2, oy=(ch-dh)/2;
   const frame=document.getElementById('camframe');
@@ -1208,27 +1213,34 @@ function layoutCamFrame(){
   const lp=document.getElementById('liveplate');
   lp.style.left=pad+'px'; lp.style.right=pad+'px'; lp.style.bottom=pad+'px';
   lp.querySelectorAll('.l1,.l2').forEach(el=>{ el.style.fontSize=size+'px'; el.style.lineHeight=(size*1.38)+'px' });
-  const linesCount=legendLines(buildInfo()).L.length;
-  const legendH=linesCount*size*1.38;
   const ct=document.getElementById('camtxt');
   ct.style.left=pad+'px'; ct.style.right=pad+'px'; ct.style.top='auto';
-  ct.style.bottom=(pad+legendH+size*0.6)+'px';
   ct.style.padding=(size*0.5)+'px '+(size*0.75)+'px'; ct.style.fontSize=Math.max(13,size*0.95)+'px';
+  camGeom={aspect, u, pad, size};
+  positionCamText();
+}
+function positionCamText(){
+  // só reposiciona o campo de texto (acompanha o nº de linhas da legenda), sem alterar tamanhos
+  if(!camGeom) return;
+  const {pad,size}=camGeom;
+  const linesCount=legendLines(buildInfo()).L.length;
+  const legendH=linesCount*size*1.38;
+  document.getElementById('camtxt').style.bottom=(pad+legendH+size*0.6)+'px';
 }
 let camTick=null;
 async function openCam(){
   startGps();
   document.querySelector('nav').style.display='none';
-  clearInterval(camTick); camTick=setInterval(()=>{ paintGps(); layoutCamFrame() }, 1000);
+  clearInterval(camTick); camTick=setInterval(()=>{ paintGps(); positionCamText() }, 1000);
   try{
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:4096}, height:{ideal:2160}}, audio:false});
     video.srcObject=S.stream;
     camwrap.classList.add('on');
-    video.addEventListener('loadedmetadata', layoutCamFrame);
-    video.addEventListener('resize', layoutCamFrame);       // dispara quando o sensor gira, mesmo com tela travada
-    window.addEventListener('resize', layoutCamFrame);
-    window.addEventListener('orientationchange', layoutCamFrame);
-    layoutCamFrame();
+    camGeom=null;
+    video.addEventListener('loadedmetadata', ()=>layoutCamFrame(true));
+    video.addEventListener('resize', ()=>layoutCamFrame());  // dispara quando o sensor gira, mesmo com tela travada
+    window.addEventListener('orientationchange', ()=>setTimeout(()=>layoutCamFrame(),300));
+    layoutCamFrame(true);
   }catch(e){
     document.querySelector('nav').style.display='';
     toast('Câmera negada ou indisponível.');
