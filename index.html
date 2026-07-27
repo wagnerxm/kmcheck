@@ -110,10 +110,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #liveplate.err .l1{color:#ff9d8a}
 #camtxt{position:absolute;pointer-events:auto;background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(167,209,35,.45);border-radius:999px;color:#fff;font-family:var(--sans);width:auto}
 #camtxt::placeholder{color:#9aa2af}
-#cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:16px 28px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
+#cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;padding:16px 28px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
 #shutter{width:72px;height:72px;border-radius:50%;border:4px solid rgba(255,255,255,.95);background:var(--gold);cursor:pointer;box-shadow:0 0 0 6px rgba(167,209,35,.22), 0 0 28px rgba(167,209,35,.35)}
 #shutter:active{transform:scale(.94)}
-#camclose,#camflip{background:rgba(15,18,20,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:50%;width:46px;height:46px;font-size:18px;cursor:pointer}
+#camtop{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:6;display:flex;gap:10px}
+#camflip,#camback{background:rgba(15,18,20,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#camflip svg,#camback svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #preview{position:fixed;inset:0;background:#0a0c0e;z-index:20;display:none;flex-direction:column}
 #preview.on{display:flex}
 #preview img{flex:1;object-fit:contain;min-height:0;width:100%}
@@ -281,10 +283,12 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
     <div id="liveplate"></div>
   </div>
+  <div id="camtop">
+    <button id="camflip" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
+    <button id="camback" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+  </div>
   <div id="cambar">
-    <button id="camclose">✕</button>
     <button id="shutter" aria-label="Tirar foto"></button>
-    <button id="camflip">⟲</button>
   </div>
 </div>
 
@@ -1198,19 +1202,23 @@ function layoutCamFrame(){
   frame.style.left=ox+'px'; frame.style.top=oy+'px';
   frame.style.width=dw+'px'; frame.style.height=dh+'px';
   const u=Math.max(dw,dh)/1000;               // mesma fórmula usada em burnLegend
-  const pad=20*u, size=22*u;
+  const pad=20*u, size=17*u;
   const cl=document.getElementById('camlogo');
-  cl.style.top=pad+'px'; cl.style.left=pad+'px'; cl.style.height=Math.min(95*u,dh*0.28)+'px'; cl.style.maxWidth=(dw*0.6)+'px';
+  cl.style.top=pad+'px'; cl.style.left=pad+'px'; cl.style.height=Math.min(118*u,dh*0.30)+'px'; cl.style.maxWidth=(dw*0.65)+'px';
   const lp=document.getElementById('liveplate');
   lp.style.left=pad+'px'; lp.style.right=pad+'px'; lp.style.bottom=pad+'px';
   lp.querySelectorAll('.l1,.l2').forEach(el=>{ el.style.fontSize=size+'px'; el.style.lineHeight=(size*1.38)+'px' });
+  const linesCount=legendLines(buildInfo()).L.length;
+  const legendH=linesCount*size*1.38;
   const ct=document.getElementById('camtxt');
-  ct.style.left=pad+'px'; ct.style.right=pad+'px'; ct.style.top=(pad+Math.min(95*u,dh*0.28)+pad*0.8)+'px';
+  ct.style.left=pad+'px'; ct.style.right=pad+'px'; ct.style.top='auto';
+  ct.style.bottom=(pad+legendH+size*0.6)+'px';
   ct.style.padding=(size*0.5)+'px '+(size*0.75)+'px'; ct.style.fontSize=Math.max(13,size*0.95)+'px';
 }
 let camTick=null;
 async function openCam(){
   startGps();
+  document.querySelector('nav').style.display='none';
   clearInterval(camTick); camTick=setInterval(()=>{ paintGps(); layoutCamFrame() }, 1000);
   try{
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:4096}, height:{ideal:2160}}, audio:false});
@@ -1222,11 +1230,12 @@ async function openCam(){
     window.addEventListener('orientationchange', layoutCamFrame);
     layoutCamFrame();
   }catch(e){
-    toast('Câmera negada ou indisponível — use a opção "câmera nativa".');
+    document.querySelector('nav').style.display='';
+    toast('Câmera negada ou indisponível.');
   }
 }
-function closeCam(){ camwrap.classList.remove('on'); clearInterval(camTick); camTick=null; if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
-document.getElementById('camclose').onclick=closeCam;
+function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; clearInterval(camTick); camTick=null; if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
+document.getElementById('camback').onclick=closeCam;
 document.getElementById('camflip').onclick=async()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
@@ -1245,7 +1254,7 @@ function burnLegend(ctx,W,H,info){
   const {L}=legendLines(info);
   const u=Math.max(W,H)/1000;
   const pad=20*u;
-  const size=22*u;                      // Calibri 10 — igual nas 4 linhas
+  const size=17*u;                      // Calibri 10 — igual nas 4 linhas
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
   ctx.fillStyle='#ffffff';
   ctx.font=`400 ${size}px Arial, Helvetica, sans-serif`;
@@ -1256,7 +1265,7 @@ function burnLegend(ctx,W,H,info){
   }
   // logo da empresa (canto superior esquerdo)
   if(S.logoImg && S.logoImg.complete && S.logoImg.naturalWidth){
-    const maxH=95*u, maxW=380*u;
+    const maxH=118*u, maxW=440*u;
     const s=Math.min(maxH/S.logoImg.naturalHeight, maxW/S.logoImg.naturalWidth);
     ctx.save();
     ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=6*u; ctx.shadowOffsetY=2*u;
