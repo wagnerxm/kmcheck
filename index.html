@@ -47,7 +47,12 @@ h2.sec::after{content:none}
 .microlabel{font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
 .heroval{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--gold2);letter-spacing:.01em;min-height:28px;word-break:break-word}
 .herosub{font-size:12.5px;color:var(--mut);margin-top:7px;font-family:var(--mono)}
-.hero .btn{margin-top:16px}
+.camrow{display:flex;align-items:center;gap:14px;margin-top:18px}
+.iconbtn{width:64px;height:64px;border-radius:50%;background:var(--panel2);border:1px solid rgba(255,255,255,.08);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+.iconbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.iconbtn.primary{width:76px;height:76px;background:var(--gold);border-color:var(--gold);color:#0d0f08}
+.iconbtn.primary svg{width:30px;height:30px}
+.iconbtn:active{filter:brightness(1.15)}
 /* ---------- botões ---------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);color:var(--text);border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:14px 18px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%;transition:filter .15s}
 .btn:active{filter:brightness(1.15)}
@@ -156,11 +161,12 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
   </div>
   <div class="card">
     <label class="f" style="margin-top:0">Ou importe um arquivo</label>
-    <button class="btn" id="btn-import">Importar arquivo (KMZ do SNV, KML ou CSV)</button>
-    <p class="hint">KMZ/KML: baixado do DNIT (VGeo ou DNIT Cloud) — o app lê o eixo e a quilometragem do SNV automaticamente.<br>
+    <button class="btn" id="btn-import">Importar arquivo (Shapefile, ZIP, KMZ ou CSV)</button>
+    <p class="hint">Shapefile oficial do SNV (.shp + .dbf, ou o .zip do DNIT Cloud) — selecione os dois arquivos juntos, ou o .zip. É a fonte mais confiável, sempre atualizada pelo DNIT.<br>
+    KMZ/KML: baixado do VGeo.<br>
     CSV/TXT: tabela com colunas KM, LAT e LONG (aceita vírgula decimal e colagem do Excel).</p>
 
-    <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv" style="display:none">
+    <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv,.zip,.shp,.dbf,.shx" multiple style="display:none">
   </div>
 
   <h2 class="sec">Ajustes</h2>
@@ -220,7 +226,11 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <div class="heroval" id="kmline">— aguardando GPS —</div>
     <div class="herosub"><span class="gpsdot" id="gpsdot"></span><span id="gpsline">buscando satélites…</span></div>
     <div class="herosub"><span id="ct-active"></span></div>
-    <button class="btn gold" id="btn-opencam">Abrir câmera</button>
+    <div class="camrow">
+      <button class="iconbtn primary" id="btn-opencam" aria-label="Abrir câmera"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
+      <button class="iconbtn" id="btn-nativecam" aria-label="Usar foto da câmera nativa"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2.6"/><path d="m21 15-4.5-4.5L13 14"/></svg></button>
+    </div>
+    <input type="file" id="nativein" accept="image/*" capture="environment" style="display:none">
   </div>
 
 
@@ -234,14 +244,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <p class="hint">Escolha o contrato antes de fotografar — o número entra na legenda, logo após o KM.</p>
   </div>
 
-  <h2 class="sec">Legenda</h2>
-  <div class="card">
-    <label class="f" style="margin-top:0">Texto livre (linha após o contrato)</label>
-    <input type="text" id="customtxt" placeholder="ex.: Pintura de guarda-corpo">
-    <div style="height:12px"></div>
-    <button class="btn" id="btn-nativecam">Usar foto da câmera nativa (lê o EXIF)</button>
-    <input type="file" id="nativein" accept="image/*" capture="environment" style="display:none">
-  </div>
   <div class="card" id="nobase-warn" style="display:none">
     <p class="empty">Nenhuma rodovia instalada ainda.<br>Vá em <b>Rodovias</b> e importe o KMZ do SNV ou um CSV com o eixo.</p>
   </div>
@@ -509,18 +511,28 @@ function extractLatLon(body){
   return null;
 }
 async function fetchPoint(url, ms, diag){
-  try{
-    const r=await fetchTimeout(url, ms);
-    const body=await r.text();
-    if(diag) Object.assign(diag, {mode:'direto', status:r.status, body:body.slice(0,180)});
-    if(r.ok){ const p=extractLatLon(body); if(p) return p; if(diag) diag.parseFail=true }
-  }catch(e){ if(diag) Object.assign(diag, {mode:'direto', err:e.message}) }
-  try{
-    const r=await fetchTimeout('https://api.allorigins.win/raw?url='+encodeURIComponent(url), ms);
-    const body=await r.text();
-    if(diag) Object.assign(diag, {mode:'ponte', status:r.status, body:body.slice(0,180)});
-    if(r.ok){ const p=extractLatLon(body); if(p) return p; if(diag) diag.parseFail=true }
-  }catch(e){ if(diag) Object.assign(diag, {mode:'ponte', err:e.message}) }
+  const httpsUrl=url.replace(/^http:/, 'https:');
+  const attempts=[
+    ['direto https', httpsUrl],
+    ['direto http', url],
+    ['ponte 1', 'https://api.allorigins.win/raw?url='+encodeURIComponent(url)],
+    ['ponte 2', 'https://corsproxy.io/?url='+encodeURIComponent(url)],
+    ['ponte 3', 'https://thingproxy.freeboard.io/fetch/'+url],
+  ];
+  const trail=[];
+  for(const [label, target] of attempts){
+    try{
+      const r=await fetchTimeout(target, ms);
+      const body=await r.text();
+      trail.push(`${label}: HTTP ${r.status}`);
+      if(r.ok){
+        const p=extractLatLon(body);
+        if(p) return p;
+        trail.push(`${label}: resposta não reconhecida — "${body.slice(0,140)}"`);
+      }
+    }catch(e){ trail.push(`${label}: ${e.message}`) }
+  }
+  if(diag) diag.trail=trail;
   return null;
 }
 /* testa 1 ponto conhecido antes de varrer milhares — evita "tentar tudo e falhar tudo" sem explicação */
@@ -577,10 +589,9 @@ document.getElementById('dl-go').onclick=async()=>{
   try{
     const probe=await probeDnit(brPad, uf, tipo, dataStr, kmi);
     if(!probe.ok){
-      const d=probe.diag;
-      const detail=d.err ? `${d.mode}: ${d.err}` : d.parseFail ? `${d.mode}: resposta HTTP ${d.status} não reconhecida — "${d.body}"` : `${d.mode}: HTTP ${d.status||'?'}`;
+      const detail=(probe.diag.trail||[]).join(' · ');
       status.textContent='Falha na conexão com o DNIT: '+detail;
-      toast('Não consegui falar com o servidor do DNIT ('+detail+'). Print dessa tela me ajuda a corrigir.');
+      toast('Não consegui falar com o servidor do DNIT. Veja o detalhe abaixo do botão e me manda um print.');
       btn.disabled=false; btn.textContent='Buscar e instalar';
       return;
     }
@@ -608,18 +619,34 @@ document.getElementById('dl-go').onclick=async()=>{
 /* ================= importação ================= */
 document.getElementById('btn-import').onclick=()=>document.getElementById('filein').click();
 document.getElementById('filein').onchange=async e=>{
-  const f=e.target.files[0]; e.target.value='';
-  if(!f) return;
-  const name=f.name.toLowerCase();
+  const files=[...e.target.files]; e.target.value='';
+  if(!files.length) return;
+  const byExt=ext=>files.find(f=>f.name.toLowerCase().endsWith(ext));
   try{
-    if(name.endsWith('.kmz')||name.endsWith('.kml')){
+    if(byExt('.shp') && byExt('.dbf')){
+      await importShapefile(byExt('.shp'), byExt('.dbf'), byExt('.shx'), byExt('.shp').name);
+      return;
+    }
+    const f=files[0], name=f.name.toLowerCase();
+    if(name.endsWith('.zip')){
+      const buf=new Uint8Array(await f.arrayBuffer());
+      const zf=fflate.unzipSync(buf);
+      const names=Object.keys(zf);
+      const find=ext=>names.find(n=>n.toLowerCase().endsWith(ext));
+      if(find('.shp') && find('.dbf')){
+        const mk=n=>new File([zf[n]], n);
+        await importShapefile(mk(find('.shp')), mk(find('.dbf')), find('.shx')?mk(find('.shx')):null, f.name);
+      } else if(find('.kml')){
+        importKml(new TextDecoder('utf-8').decode(zf[find('.kml')]), f.name);
+      } else throw new Error('ZIP sem .shp+.dbf nem .kml reconhecido.');
+    } else if(name.endsWith('.kmz')||name.endsWith('.kml')){
       let xml;
       if(name.endsWith('.kmz')){
         const buf=new Uint8Array(await f.arrayBuffer());
-        const files=fflate.unzipSync(buf);
-        const kmlName=Object.keys(files).find(k=>k.toLowerCase().endsWith('.kml'));
+        const zf=fflate.unzipSync(buf);
+        const kmlName=Object.keys(zf).find(k=>k.toLowerCase().endsWith('.kml'));
         if(!kmlName) throw new Error('KMZ sem arquivo KML interno.');
-        xml=new TextDecoder('utf-8').decode(files[kmlName]);
+        xml=new TextDecoder('utf-8').decode(zf[kmlName]);
       } else xml=await f.text();
       importKml(xml, f.name);
     } else {
@@ -627,6 +654,107 @@ document.getElementById('filein').onchange=async e=>{
     }
   }catch(err){ toast('Falha ao ler o arquivo: '+err.message) }
 };
+
+/* ---- Shapefile oficial do SNV (.shp geometria + .dbf atributos) ----
+   Leitura por fatias (File.slice), sem carregar o .shp inteiro na memória —
+   importante porque o arquivo nacional passa de 90 MB. */
+function readDbfBuf(buf){
+  const v=new DataView(buf);
+  const numRecords=v.getInt32(4,true);
+  const headerLen=v.getUint16(8,true);
+  const recordLen=v.getUint16(10,true);
+  const fields=[]; let off=32;
+  while(v.getUint8(off)!==0x0D){
+    let nm=''; for(let i=0;i<11;i++){ const c=v.getUint8(off+i); if(c) nm+=String.fromCharCode(c) }
+    fields.push({name:nm, type:String.fromCharCode(v.getUint8(off+11)), len:v.getUint8(off+16)});
+    off+=32;
+  }
+  const dec=new TextDecoder('latin1'); const records=[]; let ro=headerLen;
+  for(let r=0;r<numRecords;r++){
+    if(v.getUint8(ro)===0x2A){ ro+=recordLen; continue }
+    let fo=ro+1; const rec={};
+    for(const f of fields){
+      const raw=dec.decode(new Uint8Array(buf, fo, f.len)).trim();
+      rec[f.name]= f.type==='N' ? (raw===''?null:parseFloat(raw)) : raw;
+      fo+=f.len;
+    }
+    records.push(rec); ro+=recordLen;
+  }
+  return records;
+}
+function readShxOffsets(buf){
+  const v=new DataView(buf), n=(buf.byteLength-100)/8, out=[];
+  for(let i=0;i<n;i++) out.push([v.getInt32(100+i*8,false)*2, v.getInt32(100+i*8+4,false)*2]);
+  return out;
+}
+function parseShpRecord(buf){ // buf = bytes daquele registro (inclui os 8 bytes de cabeçalho: recNum+contentLen)
+  const v=new DataView(buf);
+  const type=v.getInt32(8,true);
+  if(type!==3 && type!==5) return null; // só PolyLine/Polygon
+  const numParts=v.getInt32(8+36,true), numPoints=v.getInt32(8+40,true);
+  const ptsOff=8+44+numParts*4, points=[];
+  for(let i=0;i<numPoints;i++) points.push([v.getFloat64(ptsOff+i*16,true), v.getFloat64(ptsOff+i*16+8,true)]);
+  return points;
+}
+async function importShapefile(shpFile, dbfFile, shxFile, fname){
+  const recs=readDbfBuf(await dbfFile.arrayBuffer());
+  if(!recs.length || recs[0].vl_br===undefined) throw new Error('.dbf não tem os campos esperados do SNV (vl_br, sg_uf, vl_km_inic...).');
+  let offsets;
+  if(shxFile) offsets=readShxOffsets(await shxFile.arrayBuffer());
+  const segsByKey={};
+  for(let i=0;i<recs.length;i++){
+    const r=recs[i];
+    if(r.sg_tipo_tr!=='B') continue; // só eixo principal — trechos acessórios têm km próprio
+    const kmi=r.vl_km_inic, kmf=r.vl_km_fina;
+    if(kmi==null||kmf==null) continue;
+    let points;
+    if(offsets){
+      const [off,len]=offsets[i];
+      const chunk=await shpFile.slice(off, off+8+len).arrayBuffer();
+      points=parseShpRecord(chunk);
+    } else {
+      // sem .shx: precisa varrer o .shp sequencialmente (mais lento, mas funciona)
+      if(!importShapefile._full){
+        importShapefile._full=readShpSequential(await shpFile.arrayBuffer());
+      }
+      points=importShapefile._full[i];
+    }
+    if(!points||points.length<2) continue;
+    const key='BR-'+r.vl_br.padStart(3,'0')+'/'+r.sg_uf;
+    (segsByKey[key]=segsByKey[key]||[]).push({kmi, kmf, pts:points});
+  }
+  const keys=Object.keys(segsByKey);
+  if(!keys.length) throw new Error('Nenhum trecho de eixo principal (tipo B) encontrado no arquivo.');
+  const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
+  list.innerHTML=keys.sort().map(k=>{
+    const g=segsByKey[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
+    return `<div class="switch"><span><b>${k}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${k}" checked></div>`;
+  }).join('');
+  dlg.showModal();
+  document.getElementById('kmz-cancel').onclick=()=>dlg.close();
+  document.getElementById('kmz-ok').onclick=async()=>{
+    const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
+    let n=0;
+    for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
+    dlg.close(); renderBases();
+    toast(n+' rodovia(s) instalada(s) do shapefile oficial.');
+  };
+}
+function readShpSequential(buf){
+  const v=new DataView(buf), feats=[]; let off=100;
+  while(off<buf.byteLength){
+    const contentLen=v.getInt32(off+4,false), recStart=off+8;
+    const type=v.getInt32(recStart,true);
+    if(type===3||type===5){
+      const numParts=v.getInt32(recStart+36,true), numPoints=v.getInt32(recStart+40,true);
+      const ptsOff=recStart+44+numParts*4, points=[];
+      for(let i=0;i<numPoints;i++) points.push([v.getFloat64(ptsOff+i*16,true), v.getFloat64(ptsOff+i*16+8,true)]);
+      feats.push(points);
+    } else feats.push(null);
+    off=recStart+contentLen*2;
+  }
+  return feats;
+}
 
 /* ---- KML/KMZ do SNV ---- */
 function num(v){ if(v==null) return null; const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n }
@@ -815,10 +943,9 @@ function paintGps(){
 /* texto livre da legenda (sincronizado entre os dois campos) */
 function getCustom(){ return (localStorage.getItem('kc-custom')||'').trim() }
 function bindCustom(){
-  const a=document.getElementById('customtxt'), b=document.getElementById('camtxt');
-  a.value=b.value=getCustom();
-  const sync=src=>()=>{ localStorage.setItem('kc-custom', src.value); (src===a?b:a).value=src.value; paintGps() };
-  a.addEventListener('input', sync(a)); b.addEventListener('input', sync(b));
+  const b=document.getElementById('camtxt');
+  b.value=getCustom();
+  b.addEventListener('input', ()=>{ localStorage.setItem('kc-custom', b.value); paintGps() });
 }
 bindCustom();
 
