@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>KM Check — guia rápido</title>
+<style>body{font-family:Segoe UI,Arial,sans-serif;max-width:720px;margin:30px auto;padding:0 18px;color:#222;line-height:1.6}
+h1{color:#22304a;border-bottom:3px solid #c9a24b;padding-bottom:8px}h2{color:#22304a;margin-top:28px}
+code{background:#f1ecdf;border:1px solid #dfd6bd;border-radius:4px;padding:1px 6px;font-size:14px}
+li{margin:6px 0}</style></head><body><h1>KM Check — guia rápido</h1>
+<p>App de campo: tira foto com legenda gravada na imagem (rodovia, KM interpolado do SNV/DNIT, OAE, coordenadas, data/hora). Funciona offline no iPhone e no Android depois de instalado.</p>
+<h2>1. Publicar (uma vez só, grátis — GitHub Pages)</h2>
+<p>O celular só libera câmera e GPS para páginas em HTTPS, por isso o app precisa estar hospedado (de graça):</p>
+<ul>
+<li>Crie uma conta em github.com (se ainda não tiver).</li>
+<li>Crie um repositório novo chamado <code>kmcheck</code> (público).</li>
+<li>Clique em <b>Add file → Upload files</b> e arraste TODOS os arquivos desta pasta (index.html, sw.js, fflate.js, manifest.webmanifest e os 3 ícones). Commit.</li>
+<li>Vá em <b>Settings → Pages</b> → em "Branch" escolha <code>main</code> e <code>/ (root)</code> → Save.</li>
+<li>Em 1–2 minutos o app estará em: <code>https://SEU_USUARIO.github.io/kmcheck/</code></li>
+</ul>
+<h2>2. Instalar no celular</h2>
+<ul>
+<li><b>iPhone (Safari):</b> abra o endereço → botão Compartilhar → <b>Adicionar à Tela de Início</b>.</li>
+<li><b>Android (Chrome):</b> abra o endereço → menu ⋮ → <b>Instalar aplicativo</b> (ou "Adicionar à tela inicial").</li>
+</ul>
+<p>Abra o app instalado uma vez com internet (ele guarda tudo no aparelho). Depois disso funciona offline.</p>
+<h2>3. Instalar as rodovias</h2>
+<p>Aba <b>Rodovias → Importar arquivo</b>:</p>
+<ul>
+<li><b>KMZ/KML do SNV</b> (baixado do VGeo ou DNIT Cloud): o app lê o eixo e o km inicial/final de cada trecho e lista as BRs encontradas — marque as que quiser instalar (pode várias).</li>
+<li><b>CSV/TXT</b> com colunas KM, LAT, LONG (aceita vírgula decimal, colagem do Excel, prefixos tipo "DS - 305,610").</li>
+</ul>
+<p>As OAEs do contrato (55 pontes/viadutos das BR-110, 226, 304 e 405/RN) já vêm embutidas: quando você estiver sobre uma, o nome dela entra na legenda da foto.</p>
+<h2>4. Uso em campo (offline)</h2>
+<ul>
+<li><b>Câmera:</b> abre a câmera com a placa de dados ao vivo; o disparo grava a legenda na foto. "Salvar" baixa o arquivo (ex.: <code>BR226_km409+120_2026-07-27_143210.jpg</code>); "Compartilhar" manda direto pro WhatsApp/Fotos.</li>
+<li><b>Consulta:</b> cole coordenadas (até em lote, direto do Excel) → KM + distância ao eixo; ou digite um KM → coordenada.</li>
+<li>Alerta automático quando você estiver a mais que a distância configurada do eixo (padrão 300 m).</li>
+</ul>
+<p>Observações: o GPS funciona sem internet (só o sinal de satélite). Precisão típica de celular: 3–15 m — a legenda mostra o ±. Quando o DNIT publicar SNV novo, reimporte o KMZ atualizado.</p></body></html>

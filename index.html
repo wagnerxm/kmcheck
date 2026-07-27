@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>KM Check</title>
+<meta name="theme-color" content="#14181f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KM Check">
+<style>
+:root{
+  --bg:#14181f; --panel:#1c222c; --panel2:#232b38; --navy:#22304a;
+  --gold:#c9a24b; --gold2:#e3c987; --text:#e9e7e1; --mut:#8b93a1;
+  --ok:#57b878; --warn:#d9822b; --err:#d05353; --line:#2c3542;
+  --mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none}
+#app{display:flex;flex-direction:column;height:100dvh}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+header.top{padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);background:var(--bg)}
+header.top h1{font-size:20px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+header.top h1 b{color:var(--gold)}
+header.top .sub{font-size:11px;color:var(--mut);letter-spacing:.06em}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#10141b;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:40}
+nav button{flex:1;background:none;border:none;color:var(--mut);font-family:var(--sans);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav button .ic{font-size:20px;line-height:1}
+nav button.on{color:var(--gold)}
+.screen{display:none}.screen.on{display:block}
+section.pad{padding:16px}
+h2.sec{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:18px 0 10px;display:flex;align-items:center;gap:10px}
+h2.sec::after{content:'';flex:1;height:1px;background:var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--navy);color:var(--text);border:1px solid #35507c;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#191919}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--mut)}
+.btn.small{width:auto;padding:8px 12px;font-size:12px}
+.btn:disabled{opacity:.45}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+input[type=text],input[type=number],textarea,select{width:100%;background:#10141b;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;font-size:15px;font-family:var(--mono)}
+textarea{min-height:110px;resize:vertical}
+label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:10px 0 5px}
+.hint{font-size:12px;color:var(--mut);line-height:1.5;margin-top:8px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--gold2)}
+.base-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.base-item:last-child{border-bottom:none}
+.base-item .bname{font-weight:800;font-size:16px;letter-spacing:.04em}
+.base-item .bmeta{font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:3px}
+.base-item .del{margin-left:auto;background:none;border:1px solid var(--line);color:var(--err);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer}
+.empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
+/* ------- câmera ------- */
+#scr-cam{position:relative}
+#camwrap{position:fixed;inset:0;bottom:0;background:#000;z-index:10;display:none;flex-direction:column}
+#camwrap.on{display:flex}
+#camvideo{flex:1;object-fit:cover;width:100%;min-height:0;background:#000}
+#liveplate{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));padding:10px 14px;background:rgba(10,12,16,.72);border-top:2px solid var(--gold)}
+#liveplate .l1{font-family:var(--mono);font-weight:800;font-size:17px;color:var(--gold2);letter-spacing:.02em}
+#liveplate .l2,#liveplate .l3{font-family:var(--mono);font-size:12px;color:#e9e7e1;margin-top:2px}
+#liveplate .l3{color:#aeb6c2}
+#liveplate.err .l1{color:var(--err)}
+#cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:14px 26px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
+#shutter{width:68px;height:68px;border-radius:50%;border:4px solid #fff;background:var(--gold);cursor:pointer}
+#camclose,#camflip{background:rgba(20,24,31,.7);border:1px solid var(--line);color:#fff;border-radius:50%;width:46px;height:46px;font-size:18px;cursor:pointer}
+#preview{position:fixed;inset:0;background:#0b0d11;z-index:20;display:none;flex-direction:column}
+#preview.on{display:flex}
+#preview img{flex:1;object-fit:contain;min-height:0;width:100%}
+#preview .acts{display:flex;gap:10px;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
+#preview .acts .btn{flex:1}
+.gpsdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--err);margin-right:6px;vertical-align:1px}
+.gpsdot.ok{background:var(--ok)}
+.gpsdot.mid{background:var(--warn)}
+/* ------- resultados consulta ------- */
+table.res{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:10px}
+table.res th{position:sticky;top:0;background:var(--panel2);color:var(--gold);text-align:left;padding:7px 8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+table.res td{padding:7px 8px;border-bottom:1px solid var(--line)}
+.scrollbox{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.okc{color:var(--ok)}.warnc{color:var(--warn)}.errc{color:var(--err)}
+.switch{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.switch:last-child{border-bottom:none}
+.switch input{width:20px;height:20px;accent-color:var(--gold)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:min(92vw,480px);width:100%}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--navy);border:1px solid var(--gold);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+.kmzlist{max-height:260px;overflow:auto;margin:10px 0}
+.kmzlist .switch{padding:9px 0}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+<header class="top"><h1>KM <b>CHECK</b></h1><span class="sub">SNV · DNIT · offline</span></header>
+<main>
+
+<!-- ============ RODOVIAS ============ -->
+<div class="screen" id="scr-bases">
+<section class="pad">
+  <h2 class="sec">Rodovias instaladas</h2>
+  <div class="card"><div id="baselist"></div></div>
+
+  <h2 class="sec">Adicionar rodovia</h2>
+  <div class="card">
+    <button class="btn gold" id="btn-import">Importar arquivo (KMZ do SNV, KML ou CSV)</button>
+    <p class="hint">KMZ/KML: baixado do DNIT (VGeo ou DNIT Cloud) — o app lê o eixo e a quilometragem do SNV automaticamente.<br>
+    CSV/TXT: tabela com colunas KM, LAT e LONG (aceita vírgula decimal e colagem do Excel).</p>
+    <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv" style="display:none">
+  </div>
+
+  <h2 class="sec">Ajustes</h2>
+  <div class="card">
+    <div class="switch"><span>Nome da OAE na legenda da foto</span><input type="checkbox" id="cfg-oae" checked></div>
+    <div class="switch"><span>Coordenadas na legenda</span><input type="checkbox" id="cfg-coord" checked></div>
+    <div class="switch"><span>Precisão do GPS na legenda</span><input type="checkbox" id="cfg-acc" checked></div>
+    <label class="f">Distância máxima ao eixo (m) antes de alertar</label>
+    <input type="number" id="cfg-maxdist" value="300" min="20" step="10">
+  </div>
+  <p class="hint" style="text-align:center">KM Check · base geométrica: SNV/DNIT · OAEs do contrato embutidas (55)</p>
+</section>
+</div>
+
+<!-- ============ CONSULTA ============ -->
+<div class="screen" id="scr-query">
+<section class="pad">
+  <h2 class="sec">Coordenada → KM</h2>
+  <div class="card">
+    <label class="f">Cole coordenadas (uma por linha · direto do Excel)</label>
+    <textarea id="q-coords" placeholder="-6,077710&#9;-37,891500&#10;-6.081234 -37.902000"></textarea>
+    <div class="hint" id="q-count">0 pontos detectados</div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn gold" id="q-run">Calcular KM</button>
+      <button class="btn small ghost" id="q-gps" style="flex:0 0 auto">📍 Usar GPS</button>
+    </div>
+    <div class="scrollbox" id="q-out" style="display:none;margin-top:12px">
+      <table class="res"><thead><tr><th>LAT</th><th>LONG</th><th>BR</th><th>KM</th><th>DIST</th></tr></thead><tbody id="q-tbody"></tbody></table>
+    </div>
+    <button class="btn ghost small" id="q-copy" style="display:none;margin-top:10px">Copiar resultado (colar no Excel)</button>
+  </div>
+
+  <h2 class="sec">KM → Coordenada</h2>
+  <div class="card">
+    <label class="f">Rodovia</label>
+    <select id="k-base"></select>
+    <label class="f">KM</label>
+    <input type="text" id="k-km" inputmode="decimal" placeholder="409,120">
+    <button class="btn gold" id="k-run" style="margin-top:12px">Localizar coordenada</button>
+    <div id="k-out" class="hint" style="font-family:var(--mono);font-size:14px;color:var(--text)"></div>
+  </div>
+</section>
+</div>
+
+<!-- ============ CÂMERA (tela inicial) ============ -->
+<div class="screen on" id="scr-cam">
+<section class="pad">
+  <h2 class="sec">Modo foto</h2>
+  <div class="card">
+    <div class="hint" style="margin:0 0 12px">
+      <span class="gpsdot" id="gpsdot"></span><span id="gpsline">GPS aguardando…</span><br>
+      <span id="kmline" style="font-family:var(--mono);color:var(--gold2)"></span>
+    </div>
+    <button class="btn gold" id="btn-opencam">📷 Abrir câmera com legenda</button>
+    <div style="height:10px"></div>
+    <button class="btn" id="btn-nativecam">Tirar com a câmera nativa (queimar legenda depois)</button>
+    <input type="file" id="nativein" accept="image/*" capture="environment" style="display:none">
+    <p class="hint">A legenda gravada na foto traz: rodovia, KM interpolado do SNV, OAE (se estiver sobre uma), coordenadas, data e hora. Tudo calculado no aparelho, sem internet.</p>
+  </div>
+  <div class="card" id="nobase-warn" style="display:none">
+    <p class="empty">Nenhuma rodovia instalada ainda.<br>Vá em <b>Rodovias</b> e importe o KMZ do SNV ou um CSV com o eixo.</p>
+  </div>
+</section>
+</div>
+
+</main>
+<nav>
+  <button data-scr="scr-cam" class="on"><span class="ic">📷</span>Câmera</button>
+  <button data-scr="scr-bases"><span class="ic">🛣️</span>Rodovias</button>
+  <button data-scr="scr-query"><span class="ic">🔎</span>Consulta</button>
+</nav>
+</div>
+
+<!-- câmera fullscreen -->
+<div id="camwrap">
+  <video id="camvideo" autoplay playsinline muted></video>
+  <div id="liveplate">
+    <div class="l1" id="lp1">— aguardando GPS —</div>
+    <div class="l2" id="lp2"></div>
+    <div class="l3" id="lp3"></div>
+  </div>
+  <div id="cambar">
+    <button id="camclose">✕</button>
+    <button id="shutter" aria-label="Tirar foto"></button>
+    <button id="camflip">⟲</button>
+  </div>
+</div>
+
+<!-- preview da foto -->
+<div id="preview">
+  <img id="pimg" alt="Foto com legenda">
+  <div class="acts">
+    <button class="btn ghost" id="p-again">Refazer</button>
+    <button class="btn" id="p-save">Salvar</button>
+    <button class="btn gold" id="p-share">Compartilhar</button>
+  </div>
+</div>
+
+<!-- diálogo de importação KMZ: escolher BRs -->
+<dialog id="dlg-kmz">
+  <h2 class="sec" style="margin-top:0">Rodovias encontradas no arquivo</h2>
+  <div class="kmzlist" id="kmz-list"></div>
+  <div class="row">
+    <button class="btn ghost" id="kmz-cancel">Cancelar</button>
+    <button class="btn gold" id="kmz-ok">Instalar selecionadas</button>
+  </div>
+</dialog>
+
+<!-- diálogo de importação CSV: identificar rodovia -->
+<dialog id="dlg-csv">
+  <h2 class="sec" style="margin-top:0">Identificar a rodovia do CSV</h2>
+  <label class="f">BR (ex.: BR-226)</label>
+  <input type="text" id="csv-br" placeholder="BR-226">
+  <label class="f">UF</label>
+  <input type="text" id="csv-uf" placeholder="RN" maxlength="2">
+  <p class="hint" id="csv-info"></p>
+  <div class="row" style="margin-top:12px">
+    <button class="btn ghost" id="csv-cancel">Cancelar</button>
+    <button class="btn gold" id="csv-ok">Instalar</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="fflate.js"></script>
+<script>
+/* ================= dados embutidos: OAEs do contrato ================= */
+const OAES = [{"n":1,"nome":"Ponte sobre o Riacho Poço dos Bois","br":"BR-110","uf":"RN","km":36.28,"mun":"Mossoró","ext":90.0,"larg":11.9},{"n":2,"nome":"Ponte sobre o Riacho Baixa Grande","br":"BR-110","uf":"RN","km":91.85,"mun":"Upanema","ext":53.0,"larg":13.0},{"n":3,"nome":"Ponte km 109,25","br":"BR-110","uf":"RN","km":109.25,"mun":"Campo Grande","ext":30.0,"larg":8.8},{"n":4,"nome":"Ponte sobre o Riacho do Silva","br":"BR-110","uf":"RN","km":114.96,"mun":"Campo Grande","ext":30.0,"larg":8.8},{"n":5,"nome":"Ponte km 127,34","br":"BR-110","uf":"RN","km":127.34,"mun":"Campo Grande","ext":7.0,"larg":10.2},{"n":6,"nome":"Ponte km 128,01","br":"BR-110","uf":"RN","km":128.01,"mun":"Campo Grande","ext":50.0,"larg":13.0},{"n":7,"nome":"Ponte sobre o Riacho da Cachoeirinha","br":"BR-110","uf":"RN","km":128.28,"mun":"Campo Grande","ext":120.0,"larg":10.0},{"n":8,"nome":"Ponte sobre o Riacho das Cacimbas","br":"BR-226","uf":"RN","km":303.19,"mun":"Campo Grande","ext":10.9,"larg":10.8},{"n":9,"nome":"Ponte sobre o Riacho do Livramento","br":"BR-226","uf":"RN","km":305.61,"mun":"Janduís","ext":21.9,"larg":8.3},{"n":10,"nome":"Ponte sobre o Riacho Cacimba de Baixo","br":"BR-226","uf":"RN","km":328.29,"mun":"Messias Targino","ext":13.0,"larg":10.2},{"n":11,"nome":"Ponte km 355,45","br":"BR-226","uf":"RN","km":355.45,"mun":"Almino Afonso","ext":32.5,"larg":12.0},{"n":12,"nome":"Ponte km 358,64","br":"BR-226","uf":"RN","km":358.64,"mun":"Almino Afonso","ext":35.0,"larg":12.0},{"n":13,"nome":"Ponte km 364,51","br":"BR-226","uf":"RN","km":364.51,"mun":"Frutuoso Gomes","ext":32.5,"larg":12.0},{"n":14,"nome":"Ponte km 364,92","br":"BR-226","uf":"RN","km":364.92,"mun":"Frutuoso Gomes","ext":16.0,"larg":12.0},{"n":15,"nome":"Ponte km 379,27","br":"BR-226","uf":"RN","km":379.27,"mun":"Antônio Martins","ext":32.5,"larg":12.0},{"n":16,"nome":"Ponte km 382,25","br":"BR-226","uf":"RN","km":382.25,"mun":"Serrinha dos Pintos","ext":6.0,"larg":19.4},{"n":17,"nome":"Ponte km 384,35","br":"BR-226","uf":"RN","km":384.35,"mun":"Serrinha dos Pintos","ext":32.8,"larg":12.0},{"n":18,"nome":"Ponte km 398,96","br":"BR-226","uf":"RN","km":398.96,"mun":"Serrinha dos Pintos","ext":16.0,"larg":12.0},{"n":19,"nome":"Pontilhão km 402,99","br":"BR-226","uf":"RN","km":402.99,"mun":"Pau dos Ferros","ext":5.8,"larg":12.5},{"n":20,"nome":"Ponte sobre o Rio Apodi","br":"BR-226","uf":"RN","km":409.12,"mun":"Pau dos Ferros","ext":190.0,"larg":12.0},{"n":21,"nome":"Ponte sobre o Rio Cachoeirinha","br":"BR-226","uf":"RN","km":416.7,"mun":"Pau dos Ferros","ext":49.0,"larg":12.0},{"n":22,"nome":"Ponte sobre o Riacho do Cabelo","br":"BR-226","uf":"RN","km":419.4,"mun":"Pau dos Ferros","ext":70.4,"larg":12.0},{"n":23,"nome":"Viaduto km 34,35 (LE)","br":"BR-304","uf":"RN","km":34.35,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":24,"nome":"Viaduto km 34,35 (LD)","br":"BR-304","uf":"RN","km":34.35,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":25,"nome":"Viaduto km 36,10 (LD)","br":"BR-304","uf":"RN","km":36.1,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":26,"nome":"Viaduto km 36,10 (LE)","br":"BR-304","uf":"RN","km":36.1,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":27,"nome":"Viaduto km 37,59 (LD)","br":"BR-304","uf":"RN","km":37.59,"mun":"Mossoró","ext":60.4,"larg":12.0},{"n":28,"nome":"Viaduto km 37,59 (LE)","br":"BR-304","uf":"RN","km":37.59,"mun":"Mossoró","ext":60.4,"larg":12.0},{"n":29,"nome":"Viaduto km 39,69","br":"BR-304","uf":"RN","km":39.69,"mun":"Mossoró","ext":40.0,"larg":12.0},{"n":30,"nome":"Ponte sobre o Rio Apodi (LD)","br":"BR-304","uf":"RN","km":43.76,"mun":"Mossoró","ext":165.0,"larg":12.9},{"n":31,"nome":"Ponte sobre o Rio Apodi (LE)","br":"BR-304","uf":"RN","km":43.76,"mun":"Mossoró","ext":160.0,"larg":12.9},{"n":32,"nome":"Viaduto km 47,59","br":"BR-304","uf":"RN","km":47.59,"mun":"Mossoró","ext":22.0,"larg":12.0},{"n":33,"nome":"Ponte sobre o Riacho do Inferno","br":"BR-304","uf":"RN","km":55.67,"mun":"Mossoró","ext":151.0,"larg":10.1},{"n":34,"nome":"Ponte sobre o Rio Assú","br":"BR-304","uf":"RN","km":115.18,"mun":"Açu","ext":585.0,"larg":17.2},{"n":35,"nome":"Ponte sobre o Riacho Acauã","br":"BR-304","uf":"RN","km":116.58,"mun":"Itajá","ext":11.0,"larg":8.7},{"n":36,"nome":"Ponte sobre o Riacho Latadinha","br":"BR-304","uf":"RN","km":127.89,"mun":"Itajá","ext":30.0,"larg":10.1},{"n":37,"nome":"Ponte sobre o Riacho da Bisca","br":"BR-304","uf":"RN","km":132.22,"mun":"Itajá","ext":30.0,"larg":10.1},{"n":38,"nome":"Ponte sobre o Rio Sombra","br":"BR-304","uf":"RN","km":133.63,"mun":"Itajá","ext":90.0,"larg":10.1},{"n":39,"nome":"Ponte sobre o Riacho Grande","br":"BR-405","uf":"RN","km":3.57,"mun":"Mossoró","ext":20.0,"larg":10.0},{"n":40,"nome":"Ponte sobre o Riacho dos Buracos","br":"BR-405","uf":"RN","km":31.35,"mun":"Governador Dix-Sept Rosado","ext":40.0,"larg":12.9},{"n":41,"nome":"Ponte sobre o Rio Tapuio","br":"BR-405","uf":"RN","km":49.2,"mun":"Felipe Guerra","ext":40.0,"larg":12.9},{"n":42,"nome":"Ponte sobre o Córrego do Apodi","br":"BR-405","uf":"RN","km":77.87,"mun":"Apodi","ext":21.5,"larg":22.0},{"n":43,"nome":"Pontilhão km 92,77","br":"BR-405","uf":"RN","km":92.77,"mun":"Apodi","ext":4.5,"larg":7.0},{"n":44,"nome":"Ponte sobre o Rio Malhada Vermelha","br":"BR-405","uf":"RN","km":98.87,"mun":"Severiano Melo","ext":22.0,"larg":8.0},{"n":45,"nome":"Ponte km 107,39","br":"BR-405","uf":"RN","km":107.39,"mun":"Itaú","ext":11.1,"larg":5.8},{"n":46,"nome":"Ponte sobre o Rio Umari","br":"BR-405","uf":"RN","km":114.36,"mun":"Rodolfo Fernandes","ext":32.0,"larg":8.0},{"n":47,"nome":"Ponte sobre o Riacho Santana","br":"BR-405","uf":"RN","km":117.49,"mun":"Rodolfo Fernandes","ext":22.0,"larg":8.0},{"n":48,"nome":"Ponte sobre o Riacho do Meio","br":"BR-405","uf":"RN","km":121.81,"mun":"Rodolfo Fernandes","ext":22.0,"larg":8.0},{"n":49,"nome":"Ponte sobre o Riacho do Sabino","br":"BR-405","uf":"RN","km":124.74,"mun":"Rodolfo Fernandes","ext":22.0,"larg":8.0},{"n":50,"nome":"Ponte sobre o Riacho da Gangorra","br":"BR-405","uf":"RN","km":129.89,"mun":"Rodolfo Fernandes","ext":32.0,"larg":8.0},{"n":51,"nome":"Ponte sobre o Riacho do Juazeiro","br":"BR-405","uf":"RN","km":133.83,"mun":"Pau dos Ferros","ext":22.0,"larg":8.0},{"n":52,"nome":"Ponte sobre o Rio Apodi-Mossoró","br":"BR-405","uf":"RN","km":137.74,"mun":"Pau dos Ferros","ext":110.0,"larg":12.0},{"n":53,"nome":"Pontilhão km 145,70","br":"BR-405","uf":"RN","km":145.7,"mun":"Pau dos Ferros","ext":5.0,"larg":10.0},{"n":54,"nome":"Ponte sobre o Riacho Cachoeirinha","br":"BR-405","uf":"RN","km":151.87,"mun":"Rafael Fernandes","ext":24.0,"larg":10.0},{"n":55,"nome":"Ponte sobre o Rio Encanto","br":"BR-405","uf":"RN","km":157.4,"mun":"Encanto","ext":36.0,"larg":10.0}];
+
+/* ================= estado ================= */
+const S = {
+  bases: [],           // {id, br, uf, fonte, kmMin, kmMax, n, lat[], lon[], km[]}
+  pos: null,           // {lat, lon, acc, t}
+  fix: null,           // resultado findKm mais recente
+  watchId: null,
+  stream: null,
+  facing: 'environment',
+  lastBlob: null, lastName: 'foto.jpg'
+};
+const CFG = {
+  get oae(){ return ls('oae', true) }, get coord(){ return ls('coord', true) },
+  get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 }
+};
+function ls(id, def){ const v = localStorage.getItem('kc-'+id); return v===null?def:v==='1' }
+
+/* ================= IndexedDB ================= */
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('bases',{keyPath:'id'});
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })}
+async function dbAll(){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases').objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
+async function dbPut(b){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').put(b); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
+async function dbDel(id){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').delete(id); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
+
+/* ================= geometria ================= */
+const R=6371008.8, D2R=Math.PI/180;
+function findKm(lat,lon){
+  let best=null;
+  for(const b of S.bases){
+    const cos=Math.cos(lat*D2R), px=lon, py=lat;
+    for(let i=0;i<b.lat.length-1;i++){
+      const ax=b.lon[i],ay=b.lat[i],bx=b.lon[i+1],by=b.lat[i+1];
+      const dx=(bx-ax)*cos, dy=by-ay, ex=(px-ax)*cos, ey=py-ay;
+      const L2=dx*dx+dy*dy; if(L2===0) continue;
+      let t=(ex*dx+ey*dy)/L2; t=t<0?0:(t>1?1:t);
+      const fx=ex-t*dx, fy=ey-t*dy;
+      const d2=fx*fx+fy*fy;
+      if(!best || d2<best.d2){
+        best={d2, t, i, b};
+      }
+    }
+  }
+  if(!best) return null;
+  const {t,i,b}=best;
+  const km=b.km[i]+t*(b.km[i+1]-b.km[i]);
+  const dist=Math.sqrt(best.d2)*D2R*R;
+  const lat2=b.lat[i]+t*(b.lat[i+1]-b.lat[i]), lon2=b.lon[i]+t*(b.lon[i+1]-b.lon[i]);
+  return {km, dist, br:b.br, uf:b.uf, axLat:lat2, axLon:lon2};
+}
+function kmToCoord(base, km){
+  const a=base.km;
+  for(let i=0;i<a.length-1;i++){
+    const lo=Math.min(a[i],a[i+1]), hi=Math.max(a[i],a[i+1]);
+    if(km>=lo && km<=hi){
+      const t=(a[i+1]===a[i])?0:(km-a[i])/(a[i+1]-a[i]);
+      return {lat:base.lat[i]+t*(base.lat[i+1]-base.lat[i]), lon:base.lon[i]+t*(base.lon[i+1]-base.lon[i])};
+    }
+  }
+  return null;
+}
+function findOae(br, uf, km){
+  let on=null, near=null;
+  for(const o of OAES){
+    if(o.br!==br || o.uf!==uf) continue;
+    const half=(o.ext/1000)/2 + 0.03;
+    const d=Math.abs(km-o.km);
+    if(d<=half){ if(!on || d<on.d) on={o,d,mode:'sobre'}; }
+    else if(d<=1.0){ if(!near || d<near.d) near={o,d,mode:'prox'}; }
+  }
+  return on || near;
+}
+
+/* ================= formatação ================= */
+function fkm(km){ return km.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}) }
+function fc(v){ return v.toFixed(6).replace('.',',') }
+function now(){ const d=new Date(); return {
+  data:d.toLocaleDateString('pt-BR'), hora:d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) } }
+
+/* ================= navegação ================= */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.dataset.scr).classList.add('on');
+});
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2600) }
+
+/* ================= lista de bases ================= */
+function renderBases(){
+  const el=document.getElementById('baselist');
+  const sel=document.getElementById('k-base');
+  sel.innerHTML='';
+  if(!S.bases.length){
+    el.innerHTML='<p class="empty">Nenhuma rodovia instalada.<br>Importe o KMZ do SNV/DNIT ou um CSV com o eixo (KM · LAT · LONG).</p>';
+  } else {
+    el.innerHTML=S.bases.map(b=>`
+      <div class="base-item">
+        <div>
+          <div class="bname">${b.br}<span style="color:var(--mut)">/</span>${b.uf}</div>
+          <div class="bmeta">km ${fkm(b.kmMin)} – ${fkm(b.kmMax)} · ${b.lat.length.toLocaleString('pt-BR')} vértices · ${b.fonte}</div>
+        </div>
+        <button class="del" data-id="${b.id}">remover</button>
+      </div>`).join('');
+    el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
+      if(!confirm('Remover '+btn.dataset.id+'?')) return;
+      await dbDel(btn.dataset.id);
+      S.bases=S.bases.filter(x=>x.id!==btn.dataset.id);
+      renderBases();
+    });
+  }
+  for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
+  document.getElementById('nobase-warn').style.display = S.bases.length?'none':'block';
+}
+
+/* ================= importação ================= */
+document.getElementById('btn-import').onclick=()=>document.getElementById('filein').click();
+document.getElementById('filein').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value='';
+  if(!f) return;
+  const name=f.name.toLowerCase();
+  try{
+    if(name.endsWith('.kmz')||name.endsWith('.kml')){
+      let xml;
+      if(name.endsWith('.kmz')){
+        const buf=new Uint8Array(await f.arrayBuffer());
+        const files=fflate.unzipSync(buf);
+        const kmlName=Object.keys(files).find(k=>k.toLowerCase().endsWith('.kml'));
+        if(!kmlName) throw new Error('KMZ sem arquivo KML interno.');
+        xml=new TextDecoder('utf-8').decode(files[kmlName]);
+      } else xml=await f.text();
+      importKml(xml, f.name);
+    } else {
+      importCsv(await f.text(), f.name);
+    }
+  }catch(err){ toast('Falha ao ler o arquivo: '+err.message) }
+};
+
+/* ---- KML/KMZ do SNV ---- */
+function num(v){ if(v==null) return null; const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n }
+function importKml(xml, fname){
+  const doc=new DOMParser().parseFromString(xml,'text/xml');
+  const pms=[...doc.getElementsByTagName('Placemark')];
+  const segs=[];
+  for(const pm of pms){
+    const lines=[...pm.getElementsByTagName('LineString')];
+    if(!lines.length) continue;
+    // atributos: ExtendedData (SimpleData/Data) + description
+    const attrs={};
+    [...pm.getElementsByTagName('SimpleData')].forEach(sd=>attrs[sd.getAttribute('name').toLowerCase()]=sd.textContent.trim());
+    [...pm.getElementsByTagName('Data')].forEach(d=>{
+      const v=d.getElementsByTagName('value')[0];
+      if(v) attrs[d.getAttribute('name').toLowerCase()]=v.textContent.trim();
+    });
+    let desc=''; const de=pm.getElementsByTagName('description')[0]; if(de) desc=de.textContent.replace(/<[^>]+>/g,' ');
+    const get=(res)=>{ for(const k in attrs){ if(res.some(r=>r.test(k))) return attrs[k]; }
+      for(const r of res){ const m=desc.match(new RegExp(r.source.replace(/[\^$]/g,'')+String.raw`\w*[\s:="']+([\-\d.,]+)`,'i')); if(m) return m[1]; }
+      return null };
+    const getS=(res)=>{ for(const k in attrs){ if(res.some(r=>r.test(k))) return attrs[k]; }
+      for(const r of res){ const m=desc.match(new RegExp(r.source.replace(/[\^$]/g,'')+String.raw`\w*[\s:="']+([\w\-]+)`,'i')); if(m) return m[1]; }
+      return null };
+    const kmi=num(get([/km[_ ]?ini/, /vl_km_?ini/i]));
+    const kmf=num(get([/km[_ ]?fina/, /km[_ ]?fim/, /vl_km_?fin/i]));
+    let br=getS([/^(?:vl_)?br$/, /rodovia/]);
+    let uf=getS([/^(?:sg_)?uf$/]);
+    const cod=getS([/codigo/, /^ds_cod/, /cod_?trecho/]);
+    if((!br||!uf) && cod && /^(\d{3})([A-Z]{3})(\d{4})/.test(cod)){ const m=cod.match(/^(\d{3})([A-Z]{3})/); br=br||m[1]; uf=uf||m[2].slice(1); }
+    if(kmi==null||kmf==null) continue;
+    for(const ln of lines){
+      const ce=ln.getElementsByTagName('coordinates')[0];
+      if(!ce) continue;
+      const pts=ce.textContent.trim().split(/\s+/).map(s=>s.split(',').map(Number)).filter(p=>p.length>=2&&!isNaN(p[0])&&!isNaN(p[1]));
+      if(pts.length<2) continue;
+      segs.push({br:normBr(br), uf:(uf||'?').toUpperCase().slice(-2), kmi, kmf, pts});
+    }
+  }
+  if(!segs.length){ toast('Nenhum trecho com km inicial/final encontrado no KML.'); return }
+  // agrupar por BR/UF
+  const groups={};
+  for(const s of segs){ const k=s.br+'/'+s.uf; (groups[k]=groups[k]||[]).push(s) }
+  const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
+  list.innerHTML=Object.keys(groups).sort().map(k=>{
+    const g=groups[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
+    return `<div class="switch"><span><b>${k}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${k}" checked></div>`;
+  }).join('');
+  dlg.showModal();
+  document.getElementById('kmz-cancel').onclick=()=>dlg.close();
+  document.getElementById('kmz-ok').onclick=async()=>{
+    const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
+    let n=0;
+    for(const k of sel){ if(await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')')) n++ }
+    dlg.close(); renderBases();
+    toast(n+' rodovia(s) instalada(s).');
+  };
+}
+function normBr(v){
+  if(!v) return 'BR-???';
+  const m=String(v).match(/(\d{3})/);
+  return m?('BR-'+m[1]):String(v).toUpperCase();
+}
+async function installFromSegs(key, segs, fonte){
+  // ordenar por km inicial; dentro de cada trecho, km linear por comprimento de arco
+  segs.sort((a,b)=>Math.min(a.kmi,a.kmf)-Math.min(b.kmi,b.kmf));
+  const lat=[], lon=[], km=[];
+  for(const s of segs){
+    const pts=s.pts;
+    // comprimento acumulado
+    const acc=[0];
+    for(let i=1;i<pts.length;i++){
+      const cos=Math.cos(pts[i][1]*D2R);
+      const dx=(pts[i][0]-pts[i-1][0])*cos, dy=pts[i][1]-pts[i-1][1];
+      acc.push(acc[i-1]+Math.sqrt(dx*dx+dy*dy));
+    }
+    const total=acc[acc.length-1]||1;
+    for(let i=0;i<pts.length;i++){
+      lat.push(pts[i][1]); lon.push(pts[i][0]);
+      km.push(s.kmi + (s.kmf-s.kmi)*(acc[i]/total));
+    }
+  }
+  if(lat.length<2) return false;
+  const [br,uf]=key.split('/');
+  const b={id:key, br, uf, fonte, kmMin:Math.min(...km), kmMax:Math.max(...km), lat, lon, km};
+  await dbPut(b);
+  S.bases=S.bases.filter(x=>x.id!==key); S.bases.push(b);
+  return true;
+}
+
+/* ---- CSV: KM LAT LONG ---- */
+function parseCoordLines(text){
+  // devolve {rows:[{km?,lat,lon}], skipped}
+  const rows=[]; let skipped=0;
+  for(const raw of text.split(/\r?\n/)){
+    const line=raw.trim(); if(!line) continue;
+    let cells=line.split(/\t|;/);
+    if(cells.length===1) cells=line.split(/\s{1,}|,(?=\s)/);
+    // números: tratar vírgula decimal quando separador não é vírgula
+    const nums=[];
+    for(let c of cells){
+      c=c.trim(); if(!c) continue;
+      // dentro de uma célula, vírgula é sempre decimal (padrão brasileiro)
+      let cell=c;
+      if(!/^[-+]?[\d.,]+$/.test(cell)){
+        const m=cell.match(/[-+]?\d+(?:[.,]\d+)?\s*$/); // ex.: "DS - 305,610"
+        if(!m) continue;
+        cell=m[0].trim();
+      }
+      const v=cell.includes(',')?cell.replace(/\./g,'').replace(',','.'):cell;
+      const n=parseFloat(v);
+      if(!isNaN(n)) nums.push(n);
+    }
+    if(nums.length<2){ skipped++; continue }
+    // classificar: lon ∈ [-75,-32]; lat ∈ [-35,6] (preferindo negativos com casas decimais); km = restante
+    const cand=nums.slice();
+    let lat=null,lon=null,km=null;
+    const li=cand.findIndex(n=>n>=-75&&n<=-32);
+    if(li>=0) lon=cand.splice(li,1)[0];
+    const score=n=>(n<0?2:0)+(Math.abs(n%1)>1e-9?1:0);
+    let bi=-1,bs=-1;
+    cand.forEach((n,i)=>{ if(n>=-35&&n<=6&&score(n)>bs){bs=score(n);bi=i} });
+    if(bi>=0) lat=cand.splice(bi,1)[0];
+    let ki=-1,ks=-1;
+    cand.forEach((n,i)=>{ if(n>=0){ const s=(Math.abs(n%1)>1e-9?2:0)+(n>=10?1:0); if(s>ks){ks=s;ki=i} } });
+    if(ki>=0) km=cand[ki];
+    if(lat===null||lon===null){ skipped++; continue }
+    rows.push({km,lat,lon});
+  }
+  return {rows,skipped};
+}
+function importCsv(text, fname){
+  const {rows}=parseCoordLines(text);
+  const withKm=rows.filter(r=>r.km!=null);
+  if(withKm.length<2){ toast('CSV precisa de colunas KM, LAT e LONG (mín. 2 linhas válidas).'); return }
+  const dlg=document.getElementById('dlg-csv');
+  document.getElementById('csv-info').textContent=withKm.length.toLocaleString('pt-BR')+' pontos válidos em '+fname;
+  // pré-preencher a partir do nome do arquivo
+  const mbr=fname.match(/(\d{3})/); document.getElementById('csv-br').value=mbr?('BR-'+mbr[1]):'';
+  const muf=fname.toUpperCase().match(/[_\- ]([A-Z]{2})[_\-. ]/); document.getElementById('csv-uf').value=muf?muf[1]:'';
+  dlg.showModal();
+  document.getElementById('csv-cancel').onclick=()=>dlg.close();
+  document.getElementById('csv-ok').onclick=async()=>{
+    const br=normBr(document.getElementById('csv-br').value), uf=(document.getElementById('csv-uf').value||'?').toUpperCase();
+    withKm.sort((a,b)=>a.km-b.km);
+    const b={id:br+'/'+uf, br, uf, fonte:'CSV ('+fname+')',
+      kmMin:withKm[0].km, kmMax:withKm[withKm.length-1].km,
+      lat:withKm.map(r=>r.lat), lon:withKm.map(r=>r.lon), km:withKm.map(r=>r.km)};
+    await dbPut(b);
+    S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
+    dlg.close(); renderBases();
+    toast(b.id+' instalada ('+withKm.length.toLocaleString('pt-BR')+' pontos).');
+  };
+}
+
+/* ================= GPS ================= */
+function startGps(){
+  if(S.watchId!=null || !navigator.geolocation) return;
+  S.watchId=navigator.geolocation.watchPosition(p=>{
+    S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy, t:Date.now()};
+    S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
+    paintGps();
+  }, err=>{
+    document.getElementById('gpsline').textContent='GPS indisponível: '+err.message;
+    paintGps();
+  }, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
+}
+function paintGps(){
+  const dot=document.getElementById('gpsdot'), gl=document.getElementById('gpsline'), kl=document.getElementById('kmline');
+  if(S.pos){
+    dot.className='gpsdot '+(S.pos.acc<=10?'ok':(S.pos.acc<=25?'mid':''));
+    gl.textContent=`GPS ±${Math.round(S.pos.acc)} m · ${fc(S.pos.lat)}  ${fc(S.pos.lon)}`;
+    if(S.fix){
+      const off=S.fix.dist>CFG.maxdist;
+      kl.textContent=`${S.fix.br}/${S.fix.uf} · km ${fkm(S.fix.km)} · ${Math.round(S.fix.dist)} m do eixo`+(off?' ⚠ fora do eixo':'');
+      kl.className=off?'errc':'';
+    } else kl.textContent=S.bases.length?'':'(instale uma rodovia para calcular o KM)';
+  }
+  // placa da câmera
+  const state=legendState();
+  document.getElementById('lp1').textContent=state.l1;
+  document.getElementById('lp2').textContent=state.l2;
+  document.getElementById('lp3').textContent=state.l3;
+  document.getElementById('liveplate').classList.toggle('err', state.err);
+}
+function legendState(){
+  const t=now();
+  if(!S.pos) return {l1:'— aguardando GPS —', l2:'', l3:t.data+'  '+t.hora, err:true, ok:false};
+  if(!S.fix) return {l1:'sem rodovia instalada', l2:CFG.coord?`LAT ${fc(S.pos.lat)}   LONG ${fc(S.pos.lon)}`:'', l3:t.data+'  '+t.hora, err:true, ok:false};
+  const off=S.fix.dist>CFG.maxdist;
+  let l1=`${S.fix.br}/${S.fix.uf}  ·  km ${fkm(S.fix.km)}`;
+  let oaeLine='';
+  if(CFG.oae){
+    const o=findOae(S.fix.br,S.fix.uf,S.fix.km);
+    if(o) oaeLine=(o.mode==='sobre'?'OAE: ':'OAE próx.: ')+o.o.nome+' (km '+fkm(o.o.km)+')';
+  }
+  let l2=oaeLine || (CFG.coord?`LAT ${fc(S.pos.lat)}   LONG ${fc(S.pos.lon)}`:'');
+  let l3=[t.data+'  '+t.hora];
+  if(oaeLine && CFG.coord) l3.unshift(`LAT ${fc(S.pos.lat)}  LONG ${fc(S.pos.lon)}`);
+  if(CFG.acc) l3.push(`GPS ±${Math.round(S.pos.acc)}m`);
+  if(off) l1+='  ⚠';
+  return {l1, l2, l3:l3.join('  ·  '), err:off, ok:true, oaeLine};
+}
+
+/* ================= câmera ================= */
+const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo');
+document.getElementById('btn-opencam').onclick=openCam;
+async function openCam(){
+  startGps();
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:4096}, height:{ideal:2160}}, audio:false});
+    video.srcObject=S.stream;
+    camwrap.classList.add('on');
+  }catch(e){
+    toast('Câmera negada ou indisponível — use a opção "câmera nativa".');
+  }
+}
+function closeCam(){ camwrap.classList.remove('on'); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
+document.getElementById('camclose').onclick=closeCam;
+document.getElementById('camflip').onclick=async()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
+document.getElementById('shutter').onclick=()=>{
+  if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
+  const c=document.createElement('canvas');
+  c.width=video.videoWidth; c.height=video.videoHeight;
+  const ctx=c.getContext('2d');
+  ctx.drawImage(video,0,0);
+  burnLegend(ctx,c.width,c.height);
+  c.toBlob(b=>showPreview(b), 'image/jpeg', .92);
+};
+
+/* câmera nativa (fallback) */
+document.getElementById('btn-nativecam').onclick=()=>{ startGps(); document.getElementById('nativein').click() };
+document.getElementById('nativein').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{
+    const bmp=await createImageBitmap(f,{imageOrientation:'from-image'});
+    const c=document.createElement('canvas'); c.width=bmp.width; c.height=bmp.height;
+    const ctx=c.getContext('2d'); ctx.drawImage(bmp,0,0);
+    burnLegend(ctx,c.width,c.height);
+    c.toBlob(b=>showPreview(b),'image/jpeg',.92);
+  }catch(err){ toast('Não consegui processar a imagem: '+err.message) }
+};
+
+/* legenda queimada na foto */
+function burnLegend(ctx,W,H){
+  const st=legendState();
+  const u=Math.max(W,H)/1000;            // unidade de escala
+  const pad=14*u, lh1=30*u, lh2=19*u, lh3=15*u;
+  const lines=[st.l2, st.l3].filter(x=>x);
+  const bandH=pad*2 + lh1 + lines.length*(lh2+6*u) + 6*u;
+  const y0=H-bandH;
+  ctx.fillStyle='rgba(10,12,16,0.72)'; ctx.fillRect(0,y0,W,bandH);
+  ctx.fillStyle='#c9a24b'; ctx.fillRect(0,y0,W,3.5*u);
+  ctx.textBaseline='top';
+  ctx.fillStyle=st.err?'#e2704f':'#e3c987';
+  ctx.font=`800 ${lh1}px ui-monospace, Menlo, monospace`;
+  ctx.fillText(st.l1, pad, y0+pad);
+  let y=y0+pad+lh1+8*u;
+  ctx.font=`600 ${lh2}px ui-monospace, Menlo, monospace`;
+  ctx.fillStyle='#efece5';
+  if(st.l2){ ctx.fillText(st.l2, pad, y); y+=lh2+6*u }
+  ctx.font=`500 ${lh3+2*u}px ui-monospace, Menlo, monospace`;
+  ctx.fillStyle='#b7bdc8';
+  if(st.l3){ ctx.fillText(st.l3, pad, y) }
+  // marca discreta
+  ctx.font=`700 ${13*u}px ui-monospace, Menlo, monospace`;
+  ctx.fillStyle='rgba(201,162,75,.9)'; ctx.textAlign='right';
+  ctx.fillText('KM CHECK · SNV/DNIT', W-pad, y0+pad);
+  ctx.textAlign='left';
+}
+function showPreview(blob){
+  S.lastBlob=blob;
+  const st=legendState(), t=new Date();
+  const kmTxt=S.fix?('km'+fkm(S.fix.km).replace(',','+').replace(/\./g,'')):'semkm';
+  const br=S.fix?S.fix.br.replace('-',''):'FOTO';
+  S.lastName=`${br}_${kmTxt}_${t.toISOString().slice(0,10)}_${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.jpg`;
+  document.getElementById('pimg').src=URL.createObjectURL(blob);
+  document.getElementById('preview').classList.add('on');
+}
+document.getElementById('p-again').onclick=()=>document.getElementById('preview').classList.remove('on');
+document.getElementById('p-save').onclick=()=>{
+  const a=document.createElement('a'); a.href=URL.createObjectURL(S.lastBlob); a.download=S.lastName; a.click();
+  toast('Foto salva: '+S.lastName);
+};
+document.getElementById('p-share').onclick=async()=>{
+  const file=new File([S.lastBlob], S.lastName, {type:'image/jpeg'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file]}) }catch(e){}
+  } else { document.getElementById('p-save').click() }
+};
+
+/* ================= consulta ================= */
+const qc=document.getElementById('q-coords');
+qc.addEventListener('input',()=>{
+  const {rows,skipped}=parseCoordLines(qc.value);
+  document.getElementById('q-count').textContent=`${rows.length} ponto(s) detectado(s)`+(skipped?` · ${skipped} linha(s) ignorada(s)`:'');
+});
+let qres=[];
+document.getElementById('q-run').onclick=()=>{
+  if(!S.bases.length){ toast('Instale uma rodovia primeiro.'); return }
+  const {rows}=parseCoordLines(qc.value);
+  if(!rows.length){ toast('Nenhuma coordenada válida.'); return }
+  qres=rows.map(r=>{ const f=findKm(r.lat,r.lon); return {...r, f} });
+  const tb=document.getElementById('q-tbody');
+  tb.innerHTML=qres.map(r=>{
+    if(!r.f) return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td colspan="3" class="errc">sem eixo</td></tr>`;
+    const off=r.f.dist>CFG.maxdist;
+    return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td>${r.f.br}/${r.f.uf}</td><td class="${off?'warnc':'okc'}">${fkm(r.f.km)}</td><td>${Math.round(r.f.dist)} m</td></tr>`;
+  }).join('');
+  document.getElementById('q-out').style.display='block';
+  document.getElementById('q-copy').style.display='block';
+};
+document.getElementById('q-copy').onclick=async()=>{
+  const tsv='LAT\tLONG\tBR\tKM\tDIST_M\n'+qres.map(r=>[
+    fc(r.lat), fc(r.lon), r.f?`${r.f.br}/${r.f.uf}`:'', r.f?fkm(r.f.km):'', r.f?Math.round(r.f.dist):''
+  ].join('\t')).join('\n');
+  try{ await navigator.clipboard.writeText(tsv); toast('Resultado copiado — cole no Excel.') }
+  catch(e){ toast('Não consegui copiar automaticamente.') }
+};
+document.getElementById('q-gps').onclick=()=>{
+  startGps();
+  if(S.pos){ qc.value=(qc.value?qc.value+'\n':'')+`${fc(S.pos.lat)}\t${fc(S.pos.lon)}`; qc.dispatchEvent(new Event('input')) }
+  else toast('Aguardando posição do GPS…');
+};
+document.getElementById('k-run').onclick=()=>{
+  const base=S.bases.find(b=>b.id===document.getElementById('k-base').value);
+  if(!base){ toast('Instale uma rodovia primeiro.'); return }
+  const km=num(document.getElementById('k-km').value);
+  const out=document.getElementById('k-out');
+  if(km==null){ out.textContent='KM inválido.'; return }
+  const c=kmToCoord(base,km);
+  out.textContent = c ? `LAT ${fc(c.lat)}   LONG ${fc(c.lon)}` : `km ${fkm(km)} fora da faixa instalada (${fkm(base.kmMin)}–${fkm(base.kmMax)}).`;
+};
+
+/* ================= ajustes ================= */
+for(const id of ['cfg-oae','cfg-coord','cfg-acc']){
+  const el=document.getElementById(id);
+  el.checked=ls(id.replace('cfg-',''),true);
+  el.onchange=()=>localStorage.setItem('kc-'+id.replace('cfg-',''), el.checked?'1':'0');
+}
+const md=document.getElementById('cfg-maxdist');
+md.value=CFG.maxdist;
+md.onchange=()=>localStorage.setItem('kc-maxdist', md.value);
+
+/* ================= boot ================= */
+(async function(){
+  try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
+  renderBases();
+  startGps();
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
