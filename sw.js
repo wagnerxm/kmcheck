@@ -1,5 +1,5 @@
-const CACHE = 'kmcheck-v2';
-const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+const CACHE = 'kmcheck-v9';
+const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'carlito-400.woff2', 'carlito-700.woff2', 'logo-header.jpg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

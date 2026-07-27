@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>KM Check</title>
-<meta name="theme-color" content="#14181f">
+<meta name="theme-color" content="#0e1013">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,32 +13,36 @@
 <meta name="apple-mobile-web-app-title" content="KM Check">
 <style>
 :root{
-  --bg:#14181f; --panel:#1c222c; --panel2:#232b38; --navy:#22304a;
-  --gold:#c9a24b; --gold2:#e3c987; --text:#e9e7e1; --mut:#8b93a1;
-  --ok:#57b878; --warn:#d9822b; --err:#d05353; --line:#2c3542;
+  --bg:#0e1013; --panel:#16191d; --panel2:#1d2126; --navy:#1d2126;
+  --gold:#a7d123; --gold2:#c6e858; --text:#ecedee; --mut:#8f959c;
+  --ok:#a7d123; --warn:#d9a22b; --err:#e05c5c; --line:#24282d;
   --mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --legend:'Carlito','Calibri','Segoe UI',Arial,sans-serif;
 }
+@font-face{font-family:'Carlito';font-weight:400;font-style:normal;font-display:swap;src:url('carlito-400.woff2') format('woff2')}
+@font-face{font-family:'Carlito';font-weight:700;font-style:normal;font-display:swap;src:url('carlito-700.woff2') format('woff2')}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none}
 #app{display:flex;flex-direction:column;height:100dvh}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
-header.top{padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);background:var(--bg)}
-header.top h1{font-size:20px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
-header.top h1 b{color:var(--gold)}
-header.top .sub{font-size:11px;color:var(--mut);letter-spacing:.06em}
+header.top{padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);background:var(--bg)}
+header.top img{height:38px;border-radius:9px;display:block}
+header.top .sub{font-size:11px;color:var(--mut);letter-spacing:.14em;text-transform:uppercase}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#10141b;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:40}
-nav button{flex:1;background:none;border:none;color:var(--mut);font-family:var(--sans);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
-nav button .ic{font-size:20px;line-height:1}
+nav button{flex:1;background:none;border:none;color:var(--mut);font-family:var(--sans);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;position:relative}
+nav button .ic{line-height:0}
+nav button .ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--gold)}
+nav button.on::before{content:'';position:absolute;top:0;left:30%;right:30%;height:2px;background:var(--gold);border-radius:0 0 3px 3px}
 .screen{display:none}.screen.on{display:block}
 section.pad{padding:16px}
 h2.sec{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:18px 0 10px;display:flex;align-items:center;gap:10px}
 h2.sec::after{content:'';flex:1;height:1px;background:var(--line)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--navy);color:var(--text);border:1px solid #35507c;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%}
-.btn.gold{background:var(--gold);border-color:var(--gold);color:#191919}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);color:var(--text);border:1px solid #2c3138;border-radius:12px;padding:13px 16px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%;transition:filter .15s}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#0d0f08;font-weight:700}
 .btn.ghost{background:transparent;border-color:var(--line);color:var(--mut)}
 .btn.small{width:auto;padding:8px 12px;font-size:12px}
 .btn:disabled{opacity:.45}
@@ -60,14 +64,14 @@ label.f{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercas
 #camwrap{position:fixed;inset:0;bottom:0;background:#000;z-index:10;display:none;flex-direction:column}
 #camwrap.on{display:flex}
 #camvideo{flex:1;object-fit:cover;width:100%;min-height:0;background:#000}
-#liveplate{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));padding:10px 14px;background:rgba(10,12,16,.72);border-top:2px solid var(--gold)}
-#liveplate .l1{font-family:var(--mono);font-weight:800;font-size:17px;color:#fff;letter-spacing:.02em}
-#liveplate .l2{font-family:var(--mono);font-size:13px;color:#f0eee9;margin-top:2px}
+#liveplate{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));padding:10px 14px;background:rgba(10,12,16,.66);border-top:2px solid var(--gold)}
+#liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;font-size:15px;color:#fff;margin-top:1px}
 #liveplate.err .l1{color:var(--err)}
-#camtxt{position:absolute;left:10px;right:10px;bottom:calc(214px + env(safe-area-inset-bottom));background:rgba(10,12,16,.65);border:1px solid rgba(201,162,75,.6);border-radius:10px;color:#fff;padding:10px 12px;font-size:15px;font-family:var(--sans);width:auto}
+#camtxt{position:absolute;left:10px;right:10px;bottom:calc(214px + env(safe-area-inset-bottom));background:rgba(10,12,16,.65);border:1px solid rgba(167,209,35,.55);border-radius:10px;color:#fff;padding:10px 12px;font-size:15px;font-family:var(--sans);width:auto}
 #camtxt::placeholder{color:#9aa2af}
+#camlogo{position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px;height:46px;max-width:40vw;object-fit:contain;z-index:5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;padding:14px 26px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
-#shutter{width:68px;height:68px;border-radius:50%;border:4px solid #fff;background:var(--gold);cursor:pointer}
+#shutter{width:70px;height:70px;border-radius:50%;border:4px solid rgba(255,255,255,.92);background:var(--gold);cursor:pointer;box-shadow:0 0 0 5px rgba(167,209,35,.25)}
 #camclose,#camflip{background:rgba(20,24,31,.7);border:1px solid var(--line);color:#fff;border-radius:50%;width:46px;height:46px;font-size:18px;cursor:pointer}
 #preview{position:fixed;inset:0;background:#0b0d11;z-index:20;display:none;flex-direction:column}
 #preview.on{display:flex}
@@ -88,6 +92,9 @@ table.res td{padding:7px 8px;border-bottom:1px solid var(--line)}
 .switch input{width:20px;height:20px;accent-color:var(--gold)}
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:min(92vw,480px);width:100%}
 dialog::backdrop{background:rgba(0,0,0,.6)}
+.checker{background:repeating-conic-gradient(#3a3f45 0 25%, #22262b 0 50%) 0 0/18px 18px;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
+.checker canvas{max-width:100%;max-height:240px}
+input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--navy);border:1px solid var(--gold);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s}
 .toast.on{opacity:1}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
@@ -97,7 +104,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 </head>
 <body>
 <div id="app">
-<header class="top"><h1>KM <b>CHECK</b></h1><span class="sub">SNV · DNIT · offline</span></header>
+<header class="top"><img src="logo-header.jpg" alt="KM Check"><span class="sub">SNV · DNIT · offline</span></header>
 <main>
 
 <!-- ============ RODOVIAS ============ -->
@@ -119,6 +126,13 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <div class="switch"><span>Nome da OAE na legenda da foto</span><input type="checkbox" id="cfg-oae" checked></div>
     <div class="switch"><span>Coordenadas na legenda</span><input type="checkbox" id="cfg-coord" checked></div>
     <div class="switch"><span>Precisão do GPS na legenda</span><input type="checkbox" id="cfg-acc" checked></div>
+    <label class="f">Logo da empresa (canto superior esquerdo da foto)</label>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <img id="logo-thumb" alt="" style="height:44px;max-width:120px;object-fit:contain;border-radius:8px;background:#0b0d0f;border:1px solid var(--line);padding:4px;display:none">
+      <button class="btn small" id="logo-add" style="flex:0 0 auto">Escolher logo</button>
+      <button class="btn small ghost" id="logo-del" style="flex:0 0 auto;display:none">Remover</button>
+    </div>
+    <input type="file" id="logoin" accept="image/*" style="display:none">
     <label class="f">Distância máxima ao eixo (m) antes de alertar</label>
     <input type="number" id="cfg-maxdist" value="300" min="20" step="10">
   </div>
@@ -168,7 +182,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <label class="f">Texto livre da legenda (2ª linha da foto)</label>
     <input type="text" id="customtxt" placeholder="ex.: Pintura de guarda-corpo — Ponte Riacho do Açude">
     <div style="height:12px"></div>
-    <button class="btn gold" id="btn-opencam">📷 Abrir câmera com legenda</button>
+    <button class="btn gold" id="btn-opencam">Abrir câmera com legenda</button>
     <div style="height:10px"></div>
     <button class="btn" id="btn-nativecam">Tirar com a câmera nativa (queimar legenda depois)</button>
     <input type="file" id="nativein" accept="image/*" capture="environment" style="display:none">
@@ -182,15 +196,16 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 
 </main>
 <nav>
-  <button data-scr="scr-cam" class="on"><span class="ic">📷</span>Câmera</button>
-  <button data-scr="scr-bases"><span class="ic">🛣️</span>Rodovias</button>
-  <button data-scr="scr-query"><span class="ic">🔎</span>Consulta</button>
+  <button data-scr="scr-cam" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg></span>Câmera</button>
+  <button data-scr="scr-bases"><span class="ic"><svg viewBox="0 0 24 24"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg></span>Rodovias</button>
+  <button data-scr="scr-query"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>Consulta</button>
 </nav>
 </div>
 
 <!-- câmera fullscreen -->
 <div id="camwrap">
   <video id="camvideo" autoplay playsinline muted></video>
+  <img id="camlogo" alt="" style="display:none">
   <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
   <div id="liveplate"></div>
   <div id="cambar">
@@ -231,6 +246,21 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <div class="row" style="margin-top:12px">
     <button class="btn ghost" id="csv-cancel">Cancelar</button>
     <button class="btn gold" id="csv-ok">Instalar</button>
+  </div>
+</dialog>
+
+<!-- diálogo: recorte do fundo da logo -->
+<dialog id="dlg-logo">
+  <h2 class="sec" style="margin-top:0">Recorte do fundo da logo</h2>
+  <div class="checker"><canvas id="logo-cv"></canvas></div>
+  <div class="switch" style="border-bottom:none;padding:4px 0"><span>Vazar áreas internas do fundo</span><input type="checkbox" id="logo-holes" checked></div>
+  <label class="f">Tolerância do recorte</label>
+  <input type="range" id="logo-tol" min="5" max="80" value="32">
+  <p class="hint">O fundo detectado vira transparência. "Vazar áreas internas" remove o fundo também dentro de círculos e letras (desligue se a logo tiver detalhes da mesma cor do fundo). Se sumir parte da logo, diminua a tolerância; se sobrar resíduo, aumente.</p>
+  <div class="row" style="margin-top:12px">
+    <button class="btn ghost" id="logo-cancel">Cancelar</button>
+    <button class="btn" id="logo-orig">Usar original</button>
+    <button class="btn gold" id="logo-use">Usar recorte</button>
   </div>
 </dialog>
 
@@ -676,6 +706,139 @@ function parseTiff(v, base){
   return (lat!=null||date)?{lat,lon,date}:null;
 }
 
+/* ================= logo da empresa ================= */
+function loadLogo(){
+  const d=localStorage.getItem('kc-logo');
+  const cl=document.getElementById('camlogo'), th=document.getElementById('logo-thumb'),
+        del=document.getElementById('logo-del'), add=document.getElementById('logo-add');
+  if(d){
+    S.logoImg=new Image(); S.logoImg.src=d;
+    cl.src=d; th.src=d;
+    cl.style.display='block'; th.style.display='block'; del.style.display='inline-flex';
+    add.textContent='Trocar logo';
+  } else {
+    S.logoImg=null;
+    cl.style.display='none'; th.style.display='none'; del.style.display='none';
+    add.textContent='Escolher logo';
+  }
+}
+document.getElementById('logo-add').onclick=()=>document.getElementById('logoin').click();
+document.getElementById('logo-del').onclick=()=>{ localStorage.removeItem('kc-logo'); loadLogo(); toast('Logo removida.') };
+/* remoção de fundo v2: vazado opcional, borda suave (feather) e remoção de halo */
+function removeBackground(src, tol, holes){
+  const w=src.width, h=src.height, s=src.data;
+  const out=new Uint8ClampedArray(s);
+  // 1) cor de fundo = mediana das bordas
+  const rs=[],gs=[],bs=[];
+  const step=Math.max(1, Math.round((w+h)/300));
+  const grab=(x,y)=>{ const i=(y*w+x)*4; rs.push(s[i]); gs.push(s[i+1]); bs.push(s[i+2]) };
+  for(let x=0;x<w;x+=step){ grab(x,0); grab(x,h-1) }
+  for(let y=0;y<h;y+=step){ grab(0,y); grab(w-1,y) }
+  const med=a=>{ a.sort((p,q)=>p-q); return a[a.length>>1] };
+  const br=med(rs), bg=med(gs), bb=med(bs);
+  // 2) limiares (distância de cor 0–441)
+  const t1=tol*2.4, t2=t1*1.9;
+  const dist=i=>{ const dr=s[i]-br, dg=s[i+1]-bg, db=s[i+2]-bb; return Math.sqrt(dr*dr+dg*dg+db*db) };
+  // 3) máscara do fundo
+  const seen=new Uint8Array(w*h);
+  if(holes){
+    // vazado: TODO pixel na cor do fundo vira transparência (inclusive áreas fechadas)
+    for(let p=0;p<w*h;p++) if(dist(p*4)<t2) seen[p]=1;
+  } else {
+    // conservador: só o fundo conectado às bordas
+    const stack=[];
+    const push=(x,y)=>{ const p=y*w+x; if(!seen[p] && dist(p*4)<t2){ seen[p]=1; stack.push(p) } };
+    for(let x=0;x<w;x++){ push(x,0); push(x,h-1) }
+    for(let y=0;y<h;y++){ push(0,y); push(w-1,y) }
+    while(stack.length){
+      const p=stack.pop(), x=p%w, y=(p/w)|0;
+      if(x>0) push(x-1,y); if(x<w-1) push(x+1,y);
+      if(y>0) push(x,y-1); if(y<h-1) push(x,y+1);
+    }
+  }
+  // 4) alfa + remoção de halo (defringe)
+  const A=new Float32Array(w*h);
+  for(let p=0;p<w*h;p++){
+    const i=p*4;
+    if(!seen[p]){ A[p]=s[i+3]; continue }
+    const dd=dist(i);
+    if(dd<=t1){ A[p]=0; continue }
+    const a=Math.min(1,(dd-t1)/(t2-t1));
+    A[p]=s[i+3]*a;
+    out[i]  =(s[i]  -br*(1-a))/a;
+    out[i+1]=(s[i+1]-bg*(1-a))/a;
+    out[i+2]=(s[i+2]-bb*(1-a))/a;
+  }
+  // 5) acabamento: feather de 1 px na fronteira (borda suave e definida)
+  const F=new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const p=y*w+x;
+      let sum=0,n=0,mn=255,mx=0;
+      for(let dy=-1;dy<=1;dy++){
+        const yy=y+dy; if(yy<0||yy>=h) continue;
+        for(let dx=-1;dx<=1;dx++){
+          const xx=x+dx; if(xx<0||xx>=w) continue;
+          const v=A[yy*w+xx]; sum+=v; n++;
+          if(v<mn)mn=v; if(v>mx)mx=v;
+        }
+      }
+      // só suaviza onde há transição (fronteira logo/fundo)
+      F[p]=(mx-mn>64)? sum/n : A[p];
+    }
+  }
+  for(let p=0;p<w*h;p++) out[p*4+3]=F[p];
+  return new ImageData(out, w, h);
+}
+const LOGO={src:null};
+document.getElementById('logoin').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{
+    const bmp=await createImageBitmap(f);
+    const max=1000, sc=Math.min(1, max/Math.max(bmp.width,bmp.height));
+    const c=document.createElement('canvas');
+    c.width=Math.round(bmp.width*sc); c.height=Math.round(bmp.height*sc);
+    const cx=c.getContext('2d'); cx.drawImage(bmp,0,0,c.width,c.height);
+    LOGO.src=cx.getImageData(0,0,c.width,c.height);
+    const cv=document.getElementById('logo-cv');
+    cv.width=c.width; cv.height=c.height;
+    logoPreview();
+    document.getElementById('dlg-logo').showModal();
+  }catch(err){ toast('Não consegui ler a imagem da logo: '+err.message) }
+};
+function logoPreview(){
+  if(!LOGO.src) return;
+  const tol=+document.getElementById('logo-tol').value;
+  const holes=document.getElementById('logo-holes').checked;
+  const cv=document.getElementById('logo-cv');
+  cv.getContext('2d').putImageData(removeBackground(LOGO.src, tol, holes), 0, 0);
+}
+let logoTolT=null;
+document.getElementById('logo-tol').addEventListener('input',()=>{ clearTimeout(logoTolT); logoTolT=setTimeout(logoPreview, 60) });
+document.getElementById('logo-holes').addEventListener('change', logoPreview);
+function saveLogoFromCanvas(cv){
+  let data;
+  try{ data=cv.toDataURL('image/png'); localStorage.setItem('kc-logo', data) }
+  catch(err){
+    // cota do armazenamento: reduzir e tentar de novo
+    const c2=document.createElement('canvas');
+    const sc=600/Math.max(cv.width,cv.height);
+    c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
+    c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
+    localStorage.setItem('kc-logo', c2.toDataURL('image/png'));
+  }
+  loadLogo(); toast('Logo salva — sairá no canto superior esquerdo das fotos.');
+}
+document.getElementById('logo-use').onclick=()=>{ document.getElementById('dlg-logo').close(); saveLogoFromCanvas(document.getElementById('logo-cv')) };
+document.getElementById('logo-orig').onclick=()=>{
+  document.getElementById('dlg-logo').close();
+  const c=document.createElement('canvas');
+  c.width=LOGO.src.width; c.height=LOGO.src.height;
+  c.getContext('2d').putImageData(LOGO.src,0,0);
+  saveLogoFromCanvas(c);
+};
+document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-logo').close();
+
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo');
 document.getElementById('btn-opencam').onclick=openCam;
@@ -735,25 +898,28 @@ document.getElementById('nativein').onchange=async e=>{
 function burnLegend(ctx,W,H,info){
   const {L}=legendLines(info);
   const u=Math.max(W,H)/1000;
-  const pad=22*u;
-  const sizes=L.map((_,i)=>i===0?34*u:28*u);
+  const pad=20*u;
+  const size=22*u;                      // Calibri 10 — igual nas 4 linhas
   ctx.textBaseline='alphabetic'; ctx.textAlign='left';
-  ctx.lineJoin='round';
+  ctx.fillStyle='#ffffff';
+  ctx.font=`400 ${size}px Carlito, Calibri, 'Segoe UI', Arial, sans-serif`;
   let y=H-pad;
   for(let i=L.length-1;i>=0;i--){
-    ctx.font=`${i===0?700:400} ${sizes[i]}px Arial, Helvetica, sans-serif`;
-    ctx.lineWidth=Math.max(2, 3.2*u);
-    ctx.strokeStyle='rgba(0,0,0,.55)';
-    ctx.strokeText(L[i], pad, y);
-    ctx.fillStyle='#ffffff';
     ctx.fillText(L[i], pad, y);
-    y-=sizes[i]*1.32;
+    y-=size*1.38;
+  }
+  // logo da empresa (canto superior esquerdo)
+  if(S.logoImg && S.logoImg.complete && S.logoImg.naturalWidth){
+    const maxH=95*u, maxW=380*u;
+    const s=Math.min(maxH/S.logoImg.naturalHeight, maxW/S.logoImg.naturalWidth);
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=6*u; ctx.shadowOffsetY=2*u;
+    ctx.drawImage(S.logoImg, 20*u, 20*u, S.logoImg.naturalWidth*s, S.logoImg.naturalHeight*s);
+    ctx.restore();
   }
   // marca discreta
-  ctx.font=`700 ${12*u}px Arial, Helvetica, sans-serif`;
+  ctx.font=`400 ${11*u}px Carlito, Calibri, Arial, sans-serif`;
   ctx.textAlign='right';
-  ctx.lineWidth=Math.max(1.5, 2.2*u); ctx.strokeStyle='rgba(0,0,0,.45)';
-  ctx.strokeText('KM CHECK · SNV/DNIT', W-14*u, H-14*u);
   ctx.fillStyle='rgba(255,255,255,.85)';
   ctx.fillText('KM CHECK · SNV/DNIT', W-14*u, H-14*u);
   ctx.textAlign='left';
@@ -834,8 +1000,10 @@ md.onchange=()=>localStorage.setItem('kc-maxdist', md.value);
 
 /* ================= boot ================= */
 (async function(){
+  try{ await Promise.all([document.fonts.load("400 20px Carlito"), document.fonts.load("700 20px Carlito")]) }catch(e){}
   try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
   renderBases();
+  loadLogo();
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
