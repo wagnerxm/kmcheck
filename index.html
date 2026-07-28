@@ -26,7 +26,7 @@
   --glassrimtop:rgba(230,245,190,.5); --glassrimbot:rgba(167,209,35,.1);
 }
 :root[data-theme="light"]{
-  --bg:#f4f5fa; --panel:#f8fafc; --panel2:#e9eff4; --navy:#e9eff4;
+  --bg:#f1f2f6; --panel:#f8fafc; --panel2:#e9eff4; --navy:#e9eff4;
   --gold:#3b4559; --gold2:#5c7690; --text:#1c2333; --mut:#66748a;
   --ok:#3b4559; --warn:#b5790f; --err:#c23d3d; --line:#dde5ec;
   --btnbg:#3b4559; --btntext:#f4f6fa; --btnborder:#3b4559;
@@ -38,12 +38,19 @@
 :root[data-theme="light"] .gcard,
 :root[data-theme="light"] dialog,
 :root[data-theme="light"] nav{
-  --panel:#1b1f22; --panel2:#22262b; --text:#eef1f6; --mut:#8791a3; --line:#33383f;
+  --panel:#1b1f22; --panel2:#22262b; --text:#eef1f6; --mut:#9aa2ac; --line:#33383f;
   --gold:#a7d123; --gold2:#c6e858; --ok:#a7d123;
   --btnbg:#22262b; --btntext:#eef1f6; --btnborder:rgba(255,255,255,.1);
-  --glassbg:rgba(20,23,25,.86); --glassbg2:rgba(24,27,29,.78); --glassborder:rgba(255,255,255,.08);
+  --glassbg:#22282c; --glassbg2:#1c2227; --glassborder:rgba(255,255,255,.07);
   --glassrimtop:rgba(255,255,255,.14); --glassrimbot:rgba(255,255,255,.04);
 }
+/* sem essa transparência, o branco de fora vazaria pra dentro dos cartões */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .gcard,
+:root[data-theme="light"] dialog{backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-theme="light"] nav{background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-theme="light"] .camcaption{color:#7b838d}
+:root[data-theme="light"] nav button.camnav{background:#1c2227}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;transition:background .2s,color .2s;position:relative}
@@ -72,13 +79,18 @@ nav button{background:none;border:none;color:var(--mut);font-family:var(--sans);
 nav button .ic{line-height:0}
 nav button .ic svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:#0d0f08;background:var(--gold)}
-nav button.camnav{background:linear-gradient(155deg,#2a4f8f,#0d2038);color:#fff;padding:18px;box-shadow:0 0 0 8px rgba(20,45,85,.22), 0 0 22px rgba(42,79,143,.4), 0 6px 20px rgba(9,20,38,.6)}
+nav button.camnav{background:#181b1e;color:#fff;padding:18px;border:1px solid rgba(255,255,255,.08)}
 nav button.camnav .ic svg{width:30px;height:30px}
 nav.nav2{gap:28px;padding:8px 10px}
 nav.nav2 button[data-scr]{padding:12px 20px}
 nav.nav2 button[data-scr] .ic svg{width:24px;height:24px}
-nav.nav1{padding:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
-nav.nav1 button.camnav{box-shadow:0 0 0 6px #0a1220, 0 10px 24px rgba(0,0,0,.5)}
+nav.nav1{padding:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;flex-direction:column}
+.camwrap2{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px}
+.camglow{position:absolute;top:50%;left:50%;width:104px;height:104px;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle, rgba(167,209,35,.45) 0%, rgba(167,209,35,.18) 55%, transparent 75%);
+  filter:blur(6px);pointer-events:none}
+.camwrap2 .camnav{position:relative;box-shadow:0 0 0 2px var(--gold), 0 10px 24px rgba(0,0,0,.5)}
+.camcaption{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);position:relative;z-index:1}
 .screen{display:none}.screen.on{display:block}
 section.pad{padding:18px 18px 8px}
 /* ---------- tipografia de seção ---------- */
@@ -90,7 +102,7 @@ h2.sec::after{content:none}
     var(--glassbg);
   backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
   border-left:1px solid var(--glassborder); border-right:1px solid var(--glassborder);
-  border-radius:20px;padding:18px;margin-bottom:14px;
+  border-radius:20px;padding:20px;margin-bottom:15px;
   box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 14px 34px rgba(0,0,0,.4)}
 /* ---------- hero: leitura ao vivo ---------- */
 .hero{background:
@@ -98,18 +110,30 @@ h2.sec::after{content:none}
     linear-gradient(135deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.03) 38%, rgba(0,0,0,.05) 100%),
     var(--glassbg);
   text-align:left;padding:22px}
-.herotop{display:flex;align-items:center;gap:18px}
-.kmsign{width:104px;height:auto;flex:0 0 auto;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+.heroPhoto{background:
+    linear-gradient(180deg, rgba(10,12,10,.05) 0%, rgba(8,10,8,.75) 78%, rgba(6,8,6,.92) 100%),
+    radial-gradient(140% 90% at 8% 0%, rgba(90,110,60,.28), transparent 55%),
+    linear-gradient(200deg, #232a22 0%, #171c17 45%, #0c0f0c 100%);
+  position:relative}
+.heroPhoto::after{content:'';position:absolute;left:0;right:0;bottom:0;height:55%;pointer-events:none;
+  background:linear-gradient(15deg, transparent 46%, rgba(255,255,255,.05) 47%, transparent 48%),
+             linear-gradient(0deg, rgba(0,0,0,.35), transparent 70%)}
+.herotop{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
+.kmsign{width:124px;height:auto;flex:0 0 auto;margin-left:-8px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
 .herotext{flex:1;min-width:0}
-.herokm{font-family:var(--mono);font-size:38px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.05;margin-top:6px}
+.herolabelrow{display:flex;align-items:center;gap:7px;color:var(--gold2)}
+.heropinsm{width:15px;height:15px;flex:0 0 auto;stroke:var(--gold);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.herolabelrow span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.herokm{font-family:var(--mono);font-size:44px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.08;margin-top:6px}
 .herounit{font-size:13px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
-.herodiv{height:1px;background:var(--line);margin:18px 4px}
-.herostats{display:flex;align-items:center;justify-content:center;gap:22px}
+.herodiv{height:1px;background:var(--line);margin:16px 4px;position:relative;z-index:1}
+.herostatusrow{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--gold2);position:relative;z-index:1}
+.herogpsline{font-size:12px;color:var(--mut);margin-top:6px;font-family:var(--mono);position:relative;z-index:1}
+.herostats{display:flex;align-items:center;justify-content:center;gap:22px;position:relative;z-index:1}
 .herostat{flex:1;max-width:150px}
 .hslabel{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold2)}
-.hsval{font-family:var(--mono);font-size:15px;color:var(--text);margin-top:4px}
+.hsval{font-family:var(--mono);font-size:16px;color:var(--text);margin-top:4px}
 .herosep{width:1px;height:34px;background:var(--line)}
-.herosub2{font-size:11.5px;color:var(--mut);margin-top:16px;font-family:var(--mono)}
 .gridcards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
 .gcard{position:relative;overflow:hidden;background:
     linear-gradient(135deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.02) 40%, rgba(0,0,0,.05) 100%),
@@ -117,11 +141,17 @@ h2.sec::after{content:none}
   backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
   border-left:1px solid var(--glassborder); border-right:1px solid var(--glassborder);
   border-radius:18px;padding:16px;text-align:left;cursor:pointer;color:var(--text);
-  display:flex;flex-direction:column;gap:8px;min-height:108px;
+  display:flex;flex-direction:column;gap:8px;min-height:124px;
   box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 10px 24px rgba(0,0,0,.35)}
-.gcard .gicon{width:24px;height:24px;stroke:var(--gold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.gcard .gtitle{font-size:14px;font-weight:700;margin-top:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gcard .glink{font-size:11.5px;color:var(--gold2)}
+.gcard::after{content:'';position:absolute;right:-10px;bottom:-10px;width:70px;height:70px;pointer-events:none;
+  background-image:radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 1.4px);
+  background-size:9px 9px; -webkit-mask-image:radial-gradient(circle at 100% 100%, #000 0%, transparent 70%);
+  mask-image:radial-gradient(circle at 100% 100%, #000 0%, transparent 70%)}
+.gbadge{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--glassborder);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.gcard .gicon{width:19px;height:19px;stroke:var(--gold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.gcard .gtitle{font-size:15px;font-weight:700;margin-top:6px}
+.gcard .glink{font-size:11px;color:var(--mut);line-height:1.4}
+.garrow{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-top:auto}
 .camrow{display:flex;align-items:center;gap:14px;margin-top:18px}
 .iconbtn{width:64px;height:64px;border-radius:50%;background:var(--btnbg);border:1px solid var(--btnborder);color:var(--btntext);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
 .iconbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -129,7 +159,7 @@ h2.sec::after{content:none}
 .iconbtn.primary svg{width:30px;height:30px}
 .iconbtn:active{filter:brightness(1.15)}
 /* ---------- botões ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--btnbg);color:var(--btntext);border:1px solid var(--btnborder);border-radius:999px;padding:14px 18px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%;transition:filter .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--btnbg);color:var(--btntext);border:1px solid var(--btnborder);border-radius:999px;padding:15px 18px;font-size:15px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%;transition:filter .15s}
 .btn:active{filter:brightness(1.15)}
 .btn.gold{background:var(--gold);border-color:var(--gold);color:#0d0f08;font-weight:700}
 .btn.ghost{background:transparent;border-color:rgba(255,255,255,.1);color:var(--mut)}
@@ -287,23 +317,25 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <!-- ============ INÍCIO ============ -->
 <div class="screen on" id="scr-cam">
 <section class="pad">
-  <div class="card hero">
+  <div class="card hero heroPhoto">
     <div class="herotop">
-      <svg id="kmsign" viewBox="0 0 130 158" class="kmsign">
-        <rect x="1" y="1" width="128" height="156" rx="10" fill="#fff" stroke="#c7cdd4" stroke-width="1"/>
-        <rect x="8" y="8" width="114" height="142" rx="6" fill="#18487e"/>
-        <text id="sign-br" x="65" y="42" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="26" fill="#fff">—</text>
-        <line x1="20" y1="58" x2="110" y2="58" stroke="#ffffff" stroke-width="2" opacity=".85"/>
-        <text x="65" y="84" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="20" fill="#fff">KM</text>
-        <text id="sign-km" x="65" y="128" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="40" fill="#fff">—</text>
+      <svg id="kmsign" viewBox="0 0 150 186" class="kmsign">
+        <rect x="3" y="3" width="144" height="180" rx="14" fill="#fff"/>
+        <rect x="11" y="11" width="128" height="164" rx="8" fill="#052c54"/>
+        <text id="sign-br" x="75" y="52" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="30" fill="#fff">—</text>
+        <line x1="18" y1="70" x2="132" y2="70" stroke="#ffffff" stroke-width="3"/>
+        <text x="75" y="112" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="34" fill="#fff">KM</text>
+        <text id="sign-km" x="75" y="162" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="44" fill="#fff">—</text>
       </svg>
       <div class="herotext">
-        <div class="microlabel">Marco quilométrico</div>
+        <div class="herolabelrow"><svg class="heropinsm" viewBox="0 0 24 24"><path d="M12 22s7-7.4 7-12.6A7 7 0 0 0 5 9.4C5 14.6 12 22 12 22z"/><circle cx="12" cy="9.4" r="2.6"/></svg><span>Marco quilométrico</span></div>
         <div class="herokm" id="kmbig">—</div>
-        <div class="heroroad" id="gc-road">Nenhuma rodovia</div>
-        <div class="herosub2" style="margin-top:10px"><span class="gpsdot" id="gpsdot"></span><span id="gpsline">buscando satélites…</span></div>
+        <div class="herounit">KM</div>
       </div>
     </div>
+    <div class="herodiv"></div>
+    <div class="herostatusrow"><span class="gpsdot" id="gpsdot"></span><span id="gc-road">Nenhuma rodovia</span></div>
+    <div class="herogpsline" id="gpsline">buscando satélites…</div>
     <div class="herodiv"></div>
     <div class="herostats">
       <div class="herostat"><div class="hslabel">Latitude</div><div class="hsval" id="latval">—</div></div>
@@ -314,14 +346,16 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
   <div class="gridcards">
     <button class="gcard" data-goto="scr-settings">
-      <svg class="gicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg>
+      <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></span>
       <div class="gtitle">Configurações</div>
-      <div class="glink">Legenda, câmera e tema ›</div>
+      <div class="glink">Legenda, câmera e tema</div>
+      <svg class="garrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
     <button class="gcard" data-goto="scr-bases">
-      <svg class="gicon" viewBox="0 0 24 24"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg>
+      <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg></span>
       <div class="gtitle">Gestão de Eixo</div>
-      <div class="glink">Baixar/gerenciar rodovias ›</div>
+      <div class="glink">Baixar/gerenciar rodovias</div>
+      <svg class="garrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
   </div>
 
@@ -374,7 +408,11 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
 </main>
 <nav class="nav2 nav1">
-  <button id="nav-cam" class="camnav" aria-label="Abrir câmera"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 5.2 9.6 3.6a1 1 0 0 1 .83-.44h3.14a1 1 0 0 1 .83.44l1.1 1.6H17A2.5 2.5 0 0 1 19.5 8v8.5A2.5 2.5 0 0 1 17 19H7a2.5 2.5 0 0 1-2.5-2.5V8A2.5 2.5 0 0 1 7 5.5z" stroke-width="1.6"/><circle cx="12" cy="12.4" r="3.3" stroke-width="1.6"/></svg></span></button>
+  <div class="camwrap2">
+    <span class="camglow"></span>
+    <button id="nav-cam" class="camnav" aria-label="Abrir câmera"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 5.2 9.6 3.6a1 1 0 0 1 .83-.44h3.14a1 1 0 0 1 .83.44l1.1 1.6H17A2.5 2.5 0 0 1 19.5 8v8.5A2.5 2.5 0 0 1 17 19H7a2.5 2.5 0 0 1-2.5-2.5V8A2.5 2.5 0 0 1 7 5.5z" stroke-width="1.6"/><circle cx="12" cy="12.4" r="3.3" stroke-width="1.6"/></svg></span></button>
+    <div class="camcaption">Registrar evidência</div>
+  </div>
 </nav>
 </div>
 
@@ -1513,10 +1551,10 @@ const md=document.getElementById('cfg-maxdist');
 md.value=CFG.maxdist;
 md.onchange=()=>localStorage.setItem('kc-maxdist', md.value);
 
-/* ================= tema claro/escuro ================= */
+/* ================= tema claro/escuro (claro é o padrão) ================= */
 (function(){
   const saved=localStorage.getItem('kc-theme');
-  const light=saved==='light';
+  const light = saved!=='dark';   // padrão: claro
   if(light) document.documentElement.setAttribute('data-theme','light');
   const sw=document.getElementById('cfg-lighttheme');
   sw.checked=light;
