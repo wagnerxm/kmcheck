@@ -1709,9 +1709,16 @@ function updateBarSide(){
   // sem nunca reorganizar a posição relativa dos botões (o polegar sempre encontra o obturador no mesmo lugar).
   const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
   if(!wrap||!bar) return;
+  const wasLandscape=wrap.classList.contains('cam-landscape');
   wrap.classList.remove('cam-landscape'); bar.classList.remove('bar-left','bar-right');
   if(S.tilt===90){ wrap.classList.add('cam-landscape'); bar.classList.add('bar-left') }
   else if(S.tilt===-90){ wrap.classList.add('cam-landscape'); bar.classList.add('bar-right') }
+  const isLandscape=wrap.classList.contains('cam-landscape');
+  if(isLandscape!==wasLandscape){
+    // a barra virando faixa lateral muda o TAMANHO do palco (camstage) — a legenda/logo
+    // precisam ser recalculadas pro novo formato, senão ficam com a posição antiga (o bug real)
+    requestAnimationFrame(()=>layoutCamFrame(true));
+  }
 }
 async function enableTiltSensor(){
   try{
