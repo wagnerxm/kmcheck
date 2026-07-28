@@ -25,13 +25,17 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+// espaçamento entre pontos, em metros — 30m já é bem mais preciso do que a
+// margem de erro típica de um GPS de celular (~5-10m); pode reduzir via env
+// se quiser mais densidade, ao custo de mais chamadas à API do DNIT.
 const STEP_M = Number(process.env.STEP_M || 30);
-const CONC = 10;
+const CONC = 10; // requisições em paralelo por lote
 
 function pointUrl(br, uf, km, dataStr, tipo) {
   return `https://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarponto?br=${br}&tipo=${tipo}&uf=${uf}&cd_tipo=null&data=${dataStr}&km=${km.toFixed(2)}`;
 }
 
+// extrai {lat,lon} de qualquer formato de resposta plausível (schema da API não documentado)
 function extractLatLon(body) {
   const tryNums = (a, b) => {
     if (typeof a !== 'number' || typeof b !== 'number') return null;
@@ -67,15 +71,21 @@ function extractLatLon(body) {
   return null;
 }
 
-async function fetchPoint(url, ms) {
+async function fetchPoint(url, ms, diag) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms);
   try {
     const r = await fetch(url, { signal: ctl.signal });
     const body = await r.text();
-    if (r.ok) return extractLatLon(body);
+    if (diag) diag.push(`HTTP ${r.status} — corpo: "${body.slice(0, 200)}"`);
+    if (r.ok) {
+      const p = extractLatLon(body);
+      if (!p && diag) diag.push('resposta OK, mas não reconheci coordenadas nela');
+      return p;
+    }
     return null;
   } catch (e) {
+    if (diag) diag.push(`erro de rede/timeout: ${e.name} — ${e.message}`);
     return null;
   } finally {
     clearTimeout(t);
@@ -83,14 +93,18 @@ async function fetchPoint(url, ms) {
 }
 
 async function probeDnit(br, uf, tipo, dataStr, kmi) {
-  return !!(await fetchPoint(pointUrl(br, uf, kmi, dataStr, tipo), 15000));
+  const diag = [];
+  const p = await fetchPoint(pointUrl(br, uf, kmi, dataStr, tipo), 15000, diag);
+  return { ok: !!p, diag };
 }
 
+// baixa uma BR inteira chamando a API ponto a ponto; se km final não for
+// informado, para sozinha após várias falhas seguidas (fim da rodovia)
 async function downloadRoute(br, uf, tipo, kmi, kmf, stepM) {
   const dataStr = new Date().toISOString().slice(0, 10);
   const step = stepM / 1000;
   const autoEnd = kmf == null;
-  const maxKm = kmf != null ? kmf : kmi + 2000;
+  const maxKm = kmf != null ? kmf : kmi + 2000; // teto de segurança
   const pts = [];
   let km = kmi, consecFail = 0, tried = 0;
   while (km <= maxKm + 1e-9) {
@@ -106,7 +120,7 @@ async function downloadRoute(br, uf, tipo, kmi, kmf, stepM) {
       else consecFail++;
     }
     if (tried % 200 === 0) console.log(`  ...${pts.length} pontos obtidos (${tried} consultados)`);
-    if (autoEnd && batchOk === 0 && consecFail >= CONC * 3) break;
+    if (autoEnd && batchOk === 0 && consecFail >= CONC * 3) break; // 3 lotes seguidos sem ponto = fim da rodovia
   }
   pts.sort((a, b) => a.km - b.km);
   return pts;
@@ -118,9 +132,10 @@ async function syncRodovia({ br, uf, tipo, kmi, kmf }) {
   console.log(`\n=== ${rodoviaId} ===`);
 
   const dataStr = new Date().toISOString().slice(0, 10);
-  const ok = await probeDnit(brPad, uf, tipo, dataStr, kmi ?? 0);
+  const { ok, diag } = await probeDnit(brPad, uf, tipo, dataStr, kmi ?? 0);
   if (!ok) {
     console.warn(`  falha ao contatar a API do DNIT para ${rodoviaId} — pulando (mantém dados antigos).`);
+    console.warn(`  detalhe: ${diag.join(' · ') || 'nenhuma resposta / sem detalhe'}`);
     return { rodoviaId, status: 'falhou_conexao' };
   }
 
@@ -131,6 +146,7 @@ async function syncRodovia({ br, uf, tipo, kmi, kmf }) {
   }
   console.log(`  ${pts.length} pontos (km ${pts[0].km} a ${pts[pts.length - 1].km})`);
 
+  // troca os pontos antigos dessa rodovia pelos novos (delete + insert em lotes)
   const { error: delErr } = await supabase.from('pontos_rodovia').delete().eq('rodovia_id', rodoviaId);
   if (delErr) throw new Error(`Falha ao limpar pontos antigos de ${rodoviaId}: ${delErr.message}`);
 
