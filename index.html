@@ -14,48 +14,62 @@
 <style>
 :root{
   --bg:#0a0c0e; --panel:#141719; --panel2:#1b1f22; --navy:#1b1f22;
-  --gold:#a7d123; --gold2:#c6e858; --text:#eef1f6; --mut:#8791a3;
-  --ok:#a7d123; --warn:#d9a22b; --err:#e05c5c; --line:#212528;
-  --btnbg:var(--panel2); --btntext:var(--text); --btnborder:rgba(167,209,35,.14);
-  --mono:Arial,Helvetica,sans-serif;
-  --sans:Arial,Helvetica,sans-serif;
+  --gold:#b7d92d; --gold2:#c9e463; --text:#eef1f6; --mut:#8791a3;
+  --ok:#b7d92d; --warn:#d9a22b; --err:#e05c5c; --line:#212528;
+  --btnbg:var(--panel2); --btntext:var(--text); --btnborder:rgba(255,255,255,.14);
+  --mono:-apple-system,'SF Pro Display','SF Pro Text','Inter Variable',Inter,Helvetica,Arial,sans-serif;
+  --sans:-apple-system,'SF Pro Display','SF Pro Text','Inter Variable',Inter,Helvetica,Arial,sans-serif;
   --legend:Arial,Helvetica,sans-serif;
 }
 :root{
-  --glassbg:rgba(20,23,25,.6); --glassbg2:rgba(24,27,29,.52); --glassborder:rgba(200,230,140,.14);
-  --glassrimtop:rgba(230,245,190,.5); --glassrimbot:rgba(167,209,35,.1);
+  --glassbg:rgba(18,18,18,.78); --glassbg2:rgba(18,18,18,.74); --glassborder:rgba(255,255,255,.18);
+  --glassrimtop:rgba(255,255,255,.16); --glassrimbot:rgba(255,255,255,.05);
 }
 :root[data-theme="light"]{
-  --bg:#f1f2f6; --panel:#f8fafc; --panel2:#e9eff4; --navy:#e9eff4;
+  --bg:#f4f4f2; --panel:#f8fafc; --panel2:#e9eff4; --navy:#e9eff4;
   --gold:#3b4559; --gold2:#5c7690; --text:#1c2333; --mut:#66748a;
   --ok:#3b4559; --warn:#b5790f; --err:#c23d3d; --line:#dde5ec;
   --btnbg:#3b4559; --btntext:#f4f6fa; --btnborder:#3b4559;
   --glassbg:rgba(255,255,255,.66); --glassbg2:rgba(255,255,255,.54); --glassborder:rgba(59,69,89,.14);
   --glassrimtop:rgba(255,255,255,.9); --glassrimbot:rgba(59,69,89,.08);
 }
-/* tema claro: fundo e cabeçalho brancos, mas os cartões continuam escuros (referência do usuário) */
+/* tema claro: fundo em degradê gelo, cartões pretos sólidos (opacos — não dependem de blur) */
 :root[data-theme="light"] .card,
 :root[data-theme="light"] .gcard,
 :root[data-theme="light"] dialog,
 :root[data-theme="light"] nav{
-  --panel:#1b1f22; --panel2:#22262b; --text:#eef1f6; --mut:#9aa2ac; --line:#33383f;
-  --gold:#a7d123; --gold2:#c6e858; --ok:#a7d123;
-  --btnbg:#22262b; --btntext:#eef1f6; --btnborder:rgba(255,255,255,.1);
-  --glassbg:#22282c; --glassbg2:#1c2227; --glassborder:rgba(255,255,255,.07);
-  --glassrimtop:rgba(255,255,255,.14); --glassrimbot:rgba(255,255,255,.04);
+  --panel:#101010; --panel2:#141414; --text:#ffffff; --mut:#d8d8d8; --line:rgba(255,255,255,.14);
+  --gold:#b7d92d; --gold2:#c9e463; --ok:#b7d92d;
+  --btnbg:#141414; --btntext:#ffffff; --btnborder:rgba(255,255,255,.14);
+  --glassbg:#121212; --glassbg2:#151515; --glassborder:rgba(255,255,255,.18);
+  --glassrimtop:rgba(255,255,255,.16); --glassrimbot:rgba(255,255,255,.05);
 }
-/* sem essa transparência, o branco de fora vazaria pra dentro dos cartões */
+/* opacos: sem blur, o fundo claro não vaza para dentro do cartão */
 :root[data-theme="light"] .card,
 :root[data-theme="light"] .gcard,
-:root[data-theme="light"] dialog{backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-theme="light"] dialog{
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
+    linear-gradient(200deg, transparent 55%, rgba(255,255,255,.03) 60%, transparent 68%),
+    #121212;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+:root[data-theme="light"] .heroPhoto{
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.09) 0%, transparent 28%),
+    linear-gradient(200deg, transparent 52%, rgba(255,255,255,.035) 58%, transparent 66%),
+    linear-gradient(180deg, #1a1a1a 0%, #101010 55%, #080808 100%);
+}
 :root[data-theme="light"] nav{background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-:root[data-theme="light"] .camcaption{color:#7b838d}
-:root[data-theme="light"] nav button.camnav{background:#1c2227}
+:root[data-theme="light"] .camcaption{color:#5a5a5a}
+:root[data-theme="light"] nav button.camnav{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-theme="light"] #search-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;transition:background .2s,color .2s;position:relative}
+:root[data-theme="light"] body{background:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
 body::before{content:'';position:fixed;inset:-15%;z-index:-1;pointer-events:none;
-  background:radial-gradient(60% 40% at 50% 0%, rgba(167,209,35,.08), transparent 70%);
+  background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%);
   transition:opacity .2s}
 #app{display:flex;flex-direction:column;height:100dvh}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
@@ -66,7 +80,14 @@ header.top{padding:calc(14px + env(safe-area-inset-top)) 20px 12px;display:flex;
   box-shadow:inset 0 -1.5px 0 var(--glassrimbot);position:sticky;top:0;z-index:30}
 header.top img{height:30px;display:block;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5))}
 header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.24em;text-transform:uppercase}
-#search-toggle{margin-left:10px;width:34px;height:34px;border-radius:50%;background:var(--btnbg);border:1px solid var(--btnborder);color:var(--btntext);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+#header-back{display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--gold);
+  font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0}
+#header-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#search-toggle{margin-left:10px;width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.85);
+  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+  border:1px solid rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.18)}
 #search-toggle svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .heroroad{font-size:12px;letter-spacing:.1em;color:var(--gold2);font-family:var(--mono);margin-bottom:2px}
 /* ---------- navegação: dock flutuante ---------- */
@@ -79,74 +100,88 @@ nav button{background:none;border:none;color:var(--mut);font-family:var(--sans);
 nav button .ic{line-height:0}
 nav button .ic svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:#0d0f08;background:var(--gold)}
-nav button.camnav{background:#181b1e;color:#fff;padding:18px;border:1px solid rgba(255,255,255,.08)}
-nav button.camnav .ic svg{width:30px;height:30px}
+nav button.camnav{background:
+    linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%),
+    rgba(255,255,255,.04),
+    rgba(16,16,16,.85);
+  backdrop-filter:blur(35px) saturate(150%);-webkit-backdrop-filter:blur(35px) saturate(150%);
+  color:#fff;padding:18px;border:1px solid rgba(255,255,255,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 20px 45px rgba(0,0,0,.30), 0 8px 18px rgba(0,0,0,.18);
+  transition:transform .16s ease}
+nav button.camnav:active{transform:scale(1.02)}
+nav button.camnav .ic svg{width:30px;height:30px;stroke-width:2.2}
 nav.nav2{gap:28px;padding:8px 10px}
 nav.nav2 button[data-scr]{padding:12px 20px}
 nav.nav2 button[data-scr] .ic svg{width:24px;height:24px}
 nav.nav1{padding:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;flex-direction:column}
 .camwrap2{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px}
-.camglow{position:absolute;top:50%;left:50%;width:104px;height:104px;transform:translate(-50%,-50%);border-radius:50%;
-  background:radial-gradient(circle, rgba(167,209,35,.45) 0%, rgba(167,209,35,.18) 55%, transparent 75%);
-  filter:blur(6px);pointer-events:none}
-.camwrap2 .camnav{position:relative;box-shadow:0 0 0 2px var(--gold), 0 10px 24px rgba(0,0,0,.5)}
 .camcaption{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);position:relative;z-index:1}
 .screen{display:none}.screen.on{display:block}
 section.pad{padding:18px 18px 8px}
 /* ---------- tipografia de seção ---------- */
 h2.sec{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--mut);margin:22px 2px 10px;font-weight:600}
 h2.sec::after{content:none}
-/* ---------- superfícies ---------- */
+/* ---------- superfícies: Dark Glass Premium ---------- */
 .card{position:relative;overflow:hidden;background:
-    linear-gradient(135deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.03) 38%, rgba(0,0,0,.05) 100%),
+    linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
+    linear-gradient(200deg, transparent 55%, rgba(255,255,255,.03) 60%, transparent 68%),
+    rgba(255,255,255,.04),
     var(--glassbg);
   backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
-  border-left:1px solid var(--glassborder); border-right:1px solid var(--glassborder);
-  border-radius:20px;padding:20px;margin-bottom:15px;
-  box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 14px 34px rgba(0,0,0,.4)}
+  border:1px solid var(--glassborder);
+  border-radius:32px;padding:22px;margin-bottom:16px;
+  box-shadow:inset 0 1px 0 var(--glassrimtop), 0 20px 45px rgba(0,0,0,.30), 0 8px 18px rgba(0,0,0,.18);
+  transition:transform .16s ease, box-shadow .16s ease}
+.card::before{content:'';position:absolute;left:0;right:0;bottom:0;height:110px;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20160%22%20preserveAspectRatio%3D%22none%22%3E%0A%3Cpath%20d%3D%22M0%2C90%20C80%2C40%20140%2C130%20220%2C80%20C300%2C35%20340%2C110%20400%2C70%20L400%2C160%20L0%2C160%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22/%3E%0A%3Cpath%20d%3D%22M0%2C120%20C90%2C80%20160%2C150%20240%2C110%20C310%2C78%20350%2C140%20400%2C105%20L400%2C160%20L0%2C160%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.045%22/%3E%0A%3C/svg%3E");
+  background-size:100% 100%;background-repeat:no-repeat}
+.card:active{transform:scale(1.02);box-shadow:inset 0 1px 0 var(--glassrimtop), 0 24px 50px rgba(0,0,0,.34), 0 10px 20px rgba(0,0,0,.2)}
 /* ---------- hero: leitura ao vivo ---------- */
 .hero{background:
-    radial-gradient(120% 90% at 50% 0%, rgba(167,209,35,.10), transparent 60%),
-    linear-gradient(135deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.03) 38%, rgba(0,0,0,.05) 100%),
+    linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
+    rgba(255,255,255,.04),
     var(--glassbg);
   text-align:left;padding:22px}
 .heroPhoto{background:
-    linear-gradient(180deg, rgba(10,12,10,.05) 0%, rgba(8,10,8,.75) 78%, rgba(6,8,6,.92) 100%),
-    radial-gradient(140% 90% at 8% 0%, rgba(90,110,60,.28), transparent 55%),
-    linear-gradient(200deg, #232a22 0%, #171c17 45%, #0c0f0c 100%);
+    linear-gradient(135deg, rgba(255,255,255,.09) 0%, transparent 28%),
+    linear-gradient(200deg, transparent 52%, rgba(255,255,255,.035) 58%, transparent 66%),
+    rgba(255,255,255,.04),
+    linear-gradient(180deg, #1a1a1a 0%, #101010 55%, #080808 100%);
   position:relative}
-.heroPhoto::after{content:'';position:absolute;left:0;right:0;bottom:0;height:55%;pointer-events:none;
-  background:linear-gradient(15deg, transparent 46%, rgba(255,255,255,.05) 47%, transparent 48%),
-             linear-gradient(0deg, rgba(0,0,0,.35), transparent 70%)}
+.heroPhoto::after{content:'';position:absolute;left:0;right:0;bottom:0;height:62%;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20200%22%20preserveAspectRatio%3D%22none%22%3E%0A%3Cpath%20d%3D%22M0%2C110%20C90%2C50%20150%2C150%20240%2C95%20C310%2C52%20350%2C120%20400%2C80%20L400%2C200%20L0%2C200%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.055%22/%3E%0A%3Cpath%20d%3D%22M0%2C150%20C100%2C100%20170%2C180%20255%2C135%20C325%2C98%20360%2C160%20400%2C125%20L400%2C200%20L0%2C200%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.045%22/%3E%0A%3C/svg%3E");
+  background-size:100% 100%;background-repeat:no-repeat}
 .herotop{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
 .kmsign{width:124px;height:auto;flex:0 0 auto;margin-left:-8px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
 .herotext{flex:1;min-width:0}
 .herolabelrow{display:flex;align-items:center;gap:7px;color:var(--gold2)}
 .heropinsm{width:15px;height:15px;flex:0 0 auto;stroke:var(--gold);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .herolabelrow span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
-.herokm{font-family:var(--mono);font-size:44px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.08;margin-top:6px}
+.herokm{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.08;margin-top:6px}
 .herounit{font-size:13px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
 .herodiv{height:1px;background:var(--line);margin:16px 4px;position:relative;z-index:1}
-.herostatusrow{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--gold2);position:relative;z-index:1}
+.herostatusrow{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--gold);position:relative;z-index:1}
 .herogpsline{font-size:12px;color:var(--mut);margin-top:6px;font-family:var(--mono);position:relative;z-index:1}
 .herostats{display:flex;align-items:center;justify-content:center;gap:22px;position:relative;z-index:1}
 .herostat{flex:1;max-width:150px}
-.hslabel{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold2)}
-.hsval{font-family:var(--mono);font-size:16px;color:var(--text);margin-top:4px}
+.hslabel{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.hsval{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text);margin-top:5px;font-variant-numeric:tabular-nums}
 .herosep{width:1px;height:34px;background:var(--line)}
 .gridcards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
 .gcard{position:relative;overflow:hidden;background:
-    linear-gradient(135deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.02) 40%, rgba(0,0,0,.05) 100%),
+    linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
+    rgba(255,255,255,.04),
     var(--glassbg2);
   backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
-  border-left:1px solid var(--glassborder); border-right:1px solid var(--glassborder);
-  border-radius:18px;padding:16px;text-align:left;cursor:pointer;color:var(--text);
+  border:1px solid var(--glassborder);
+  border-radius:26px;padding:18px;text-align:left;cursor:pointer;color:var(--text);
   display:flex;flex-direction:column;gap:8px;min-height:124px;
-  box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 10px 24px rgba(0,0,0,.35)}
-.gcard::after{content:'';position:absolute;right:-10px;bottom:-10px;width:70px;height:70px;pointer-events:none;
-  background-image:radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 1.4px);
-  background-size:9px 9px; -webkit-mask-image:radial-gradient(circle at 100% 100%, #000 0%, transparent 70%);
-  mask-image:radial-gradient(circle at 100% 100%, #000 0%, transparent 70%)}
+  box-shadow:inset 0 1px 0 var(--glassrimtop), 0 20px 45px rgba(0,0,0,.26), 0 8px 18px rgba(0,0,0,.16);
+  transition:transform .16s ease, box-shadow .16s ease}
+.gcard:active{transform:scale(1.02)}
+.gcard::after{content:'';position:absolute;left:0;right:0;bottom:0;height:70px;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20160%22%20preserveAspectRatio%3D%22none%22%3E%0A%3Cpath%20d%3D%22M0%2C90%20C80%2C40%20140%2C130%20220%2C80%20C300%2C35%20340%2C110%20400%2C70%20L400%2C160%20L0%2C160%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22/%3E%0A%3Cpath%20d%3D%22M0%2C120%20C90%2C80%20160%2C150%20240%2C110%20C310%2C78%20350%2C140%20400%2C105%20L400%2C160%20L0%2C160%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.045%22/%3E%0A%3C/svg%3E");
+  background-size:100% 100%;background-repeat:no-repeat}
 .gbadge{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--glassborder);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .gcard .gicon{width:19px;height:19px;stroke:var(--gold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .gcard .gtitle{font-size:15px;font-weight:700;margin-top:6px}
@@ -169,7 +204,7 @@ h2.sec::after{content:none}
 .row .btn{flex:1}
 /* ---------- campos ---------- */
 input[type=text],input[type=number],textarea,select{width:100%;background:#0b0d0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;color:var(--text);padding:12px 14px;font-size:15px;font-family:var(--mono);outline:none}
-input:focus,textarea:focus,select:focus{border-color:rgba(167,209,35,.5)}
+input:focus,textarea:focus,select:focus{border-color:rgba(183,217,45,.5)}
 textarea{min-height:110px;resize:vertical}
 label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin:12px 0 6px}
 .hint{font-size:12px;color:var(--mut);line-height:1.55;margin-top:8px}
@@ -183,7 +218,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}
 .ct-item:last-child{border-bottom:none}
 .ct-item .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--mut);flex:0 0 auto;transition:all .15s}
-.ct-item.sel .dot{border-color:var(--gold);background:var(--gold);box-shadow:0 0 10px rgba(167,209,35,.5), inset 0 0 0 3px #141719}
+.ct-item.sel .dot{border-color:var(--gold);background:var(--gold);box-shadow:0 0 10px rgba(183,217,45,.5), inset 0 0 0 3px #141719}
 .ct-item .num{font-family:var(--mono);font-size:15px;flex:1}
 .ct-item.sel .num{color:var(--gold2);font-weight:700}
 .ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer}
@@ -192,7 +227,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #scr-cam{position:relative}
 #camwrap{position:fixed;inset:0;background:#000;z-index:10;display:none;flex-direction:column}
 #camwrap.on{display:flex}
-#camvideo{flex:1;object-fit:contain;width:100%;min-height:0;background:#000}
+#camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+#camvideo{width:100%;height:100%;object-fit:contain;background:#000}
 /* #camframe é posicionado por JS para coincidir exatamente com o retângulo de imagem
    exibido pelo vídeo (object-fit:contain) — a mesma proporção do arquivo final.
    Tudo dentro dele usa px absolutos calculados na mesma escala da foto gravada. */
@@ -201,16 +237,60 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
 #liveplate.err .l1{color:#ff9d8a}
-#camtxt{position:absolute;pointer-events:auto;background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(167,209,35,.45);border-radius:999px;color:#fff;font-family:var(--sans);width:auto}
+#camtxt{position:absolute;pointer-events:auto;background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(183,217,45,.45);border-radius:999px;color:#fff;font-family:var(--sans);width:auto}
 #camtxt::placeholder{color:#9aa2af}
-#cambar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;padding:16px 28px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55))}
-#shutter{width:72px;height:72px;border-radius:50%;border:4px solid rgba(255,255,255,.95);background:var(--gold);cursor:pointer;box-shadow:0 0 0 6px rgba(167,209,35,.22), 0 0 28px rgba(167,209,35,.35)}
-#shutter:active{transform:scale(.94)}
-#camtop{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:6;display:flex;gap:10px}
-#camflip,#camback{background:rgba(15,18,20,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#camflip svg,#camback svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:6;
+  background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.78);
+  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+  border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:50%;width:42px;height:42px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.camstagebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* ---------- barra inferior: Dark Glass Premium, fora da área da foto ---------- */
+#cambar2{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:6px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(135deg, rgba(255,255,255,.06) 0%, transparent 35%), rgba(16,16,16,.86);
+  backdrop-filter:blur(35px) saturate(150%);-webkit-backdrop-filter:blur(35px) saturate(150%);
+  border-top:1px solid rgba(255,255,255,.14);
+  box-shadow:0 -8px 24px rgba(0,0,0,.3)}
+.cbside{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.cbside.cbleft{justify-content:flex-start}
+.cbside.cbright{justify-content:flex-end}
+.cbtn{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-family:var(--sans);
+  font-size:13px;font-weight:700;transition:background .15s,transform .15s}
+.cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cbtn.on{background:var(--gold);color:#0d0f08;border-color:var(--gold)}
+.cbtn:active{transform:scale(1.06)}
+/* botões laterais bem pequenos e discretos, para o obturador ser o foco */
+.cbmini{width:34px;height:34px;font-size:10px}
+.cbmini svg{width:15px;height:15px}
+#shutter{width:76px;height:76px;flex:0 0 76px;border-radius:50%;
+  background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 35%), rgba(20,20,20,.92);
+  border:1px solid rgba(255,255,255,.22);cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 22px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
+#shutter::before{content:'';width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
+#shutter:active{transform:scale(1.04)}
+/* o layout da barra nunca muda com a rotação — os botões ficam sempre no mesmo lugar */
+@media (orientation: landscape){
+  #cambar2{grid-template-columns:1fr auto 1fr}
+}
+/* ---------- diálogo de serviço ---------- */
+.svcgrid{display:flex;flex-wrap:wrap;gap:8px;max-height:50vh;overflow:auto;padding:4px 2px}
+.svcchip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:9px 15px;font-size:13px;cursor:pointer;font-family:var(--sans)}
+.svcchip.on{background:var(--gold);color:#0d0f08;border-color:var(--gold);font-weight:700}
+/* ---------- galeria de fotos registradas ---------- */
+#gallerywrap{position:fixed;inset:0;background:#000;z-index:25;display:none;flex-direction:column}
+#gallerywrap.on{display:flex}
+#gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
+  background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
+  color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#gal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#gal-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:pan-y}
+#gal-img{max-width:100%;max-height:100%;object-fit:contain}
+#gal-caption{text-align:center;color:#d8d8d8;font-size:12px;letter-spacing:.05em;padding:12px 0 calc(12px + env(safe-area-inset-bottom))}
 .gpsdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);margin-right:7px;vertical-align:1px}
-.gpsdot.ok{background:var(--ok);box-shadow:0 0 8px rgba(167,209,35,.7)}
+.gpsdot.ok{background:var(--ok);box-shadow:0 0 8px rgba(183,217,45,.7)}
 .gpsdot.mid{background:var(--warn)}
 /* ---------- tabelas / consulta ---------- */
 table.res{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:10px}
@@ -254,7 +334,7 @@ dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px)}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(167,209,35,.55);color:var(--text);padding:11px 20px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s;max-width:88vw;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:var(--text);padding:11px 20px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s;max-width:88vw;text-align:center}
 .toast.on{opacity:1}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
@@ -263,7 +343,9 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 </head>
 <body>
 <div id="app">
-<header class="top"><img id="logo-home" src="logo-header.png" alt="KM Check" style="cursor:pointer"><span class="sub">Versão 1.0.0</span>
+<header class="top">
+  <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
+  <img id="logo-home" src="logo-header.png" alt="KM Check" style="cursor:pointer"><span class="sub">Versão 1.0.0</span>
   <button id="search-toggle" aria-label="Consulta">
     <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
   </button>
@@ -342,7 +424,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <div class="herotop">
       <svg id="kmsign" viewBox="0 0 150 186" class="kmsign">
         <rect x="3" y="3" width="144" height="180" rx="14" fill="#fff"/>
-        <rect x="11" y="11" width="128" height="164" rx="8" fill="#052c54"/>
+        <rect x="11" y="11" width="128" height="164" rx="8" fill="#1d3557"/>
         <text id="sign-br" x="75" y="52" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="30" fill="#fff">—</text>
         <line x1="18" y1="70" x2="132" y2="70" stroke="#ffffff" stroke-width="3"/>
         <text x="75" y="112" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="34" fill="#fff">KM</text>
@@ -522,7 +604,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <select id="cfg-legcolor" class="lsel">
           <option value="#ffffff" selected>Branco</option>
           <option value="#ffe600">Amarelo</option>
-          <option value="#a7d123">Verde</option>
+          <option value="#b7d92d">Verde</option>
           <option value="#ff6b3d">Laranja</option>
           <option value="#111111">Preto</option>
         </select>
@@ -581,7 +663,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 </main>
 <nav class="nav2 nav1">
   <div class="camwrap2">
-    <span class="camglow"></span>
     <button id="nav-cam" class="camnav" aria-label="Abrir câmera"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8.5 5.2 9.6 3.6a1 1 0 0 1 .83-.44h3.14a1 1 0 0 1 .83.44l1.1 1.6H17A2.5 2.5 0 0 1 19.5 8v8.5A2.5 2.5 0 0 1 17 19H7a2.5 2.5 0 0 1-2.5-2.5V8A2.5 2.5 0 0 1 7 5.5z" stroke-width="1.6"/><circle cx="12" cy="12.4" r="3.3" stroke-width="1.6"/></svg></span></button>
     <div class="camcaption">Registrar evidência</div>
   </div>
@@ -590,19 +671,48 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
 <!-- câmera fullscreen -->
 <div id="camwrap">
-  <video id="camvideo" autoplay playsinline muted></video>
-  <div id="camframe">
-    <img id="camlogo" alt="" style="display:none">
-    <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
-    <div id="liveplate"></div>
+  <div id="camstage">
+    <video id="camvideo" autoplay playsinline muted></video>
+    <div id="camframe">
+      <img id="camlogo" alt="" style="display:none">
+      <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
+      <div id="liveplate"></div>
+    </div>
+    <button id="camback" class="camstagebtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
   </div>
-  <div id="camtop">
-    <button id="camflip" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
-    <button id="camback" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
-  </div>
-  <div id="cambar">
+  <div id="cambar2">
+    <div class="cbside cbleft">
+      <button class="cbtn cbtag cbmini" id="cam-ld">LD</button>
+      <button class="cbtn cbtag cbmini" id="cam-le">LE</button>
+      <button class="cbtn cbtag cbmini" id="cam-svc">S</button>
+    </div>
     <button id="shutter" aria-label="Tirar foto"></button>
+    <div class="cbside cbright">
+      <button class="cbtn cbmini" id="cam-settings" aria-label="Configurações"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></button>
+      <button class="cbtn cbmini" id="cam-flash" aria-label="Flash"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
+      <button class="cbtn cbmini" id="cam-gallery" aria-label="Galeria"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 17 5-5 4.5 4.5L16 14l4 4"/></svg></button>
+    </div>
   </div>
+</div>
+
+<!-- diálogo: seleção de serviço -->
+<dialog id="dlg-svc">
+  <h2 class="sec" style="margin-top:0">Serviço</h2>
+  <div class="svcgrid" id="svc-grid"></div>
+  <div class="row" style="margin-top:12px">
+    <input type="text" id="svc-new2" placeholder="Adicionar novo serviço" style="flex:1">
+    <button class="btn small gold" id="svc-add2" style="flex:0 0 auto">Adicionar</button>
+  </div>
+  <button class="btn ghost" id="svc-close" style="margin-top:12px">Fechar</button>
+</dialog>
+
+<!-- galeria de fotos registradas -->
+<div id="gallerywrap">
+  <button id="gal-close" aria-label="Fechar galeria"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+  <div id="gal-stage">
+    <img id="gal-img" alt="Foto registrada">
+  </div>
+  <div id="gal-caption"></div>
 </div>
 
 <!-- diálogo de importação KMZ: escolher BRs -->
@@ -679,8 +789,11 @@ const CFG = {
 function ls(id, def){ const v = localStorage.getItem('kc-'+id); return v===null?def:v==='1' }
 
 /* ================= IndexedDB ================= */
-function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',1);
-  r.onupgradeneeded=()=>r.result.createObjectStore('bases',{keyPath:'id'});
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',2);
+  r.onupgradeneeded=()=>{ const d=r.result;
+    if(!d.objectStoreNames.contains('bases')) d.createObjectStore('bases',{keyPath:'id'});
+    if(!d.objectStoreNames.contains('photos')) d.createObjectStore('photos',{keyPath:'id', autoIncrement:true});
+  };
   r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })}
 async function dbAll(){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases').objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
 async function dbPut(b){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').put(b); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
@@ -749,10 +862,15 @@ function goToScreen(id){
   document.getElementById(id).classList.add('on');
   // o botão "Registrar evidência" só faz sentido na tela inicial
   document.querySelector('nav').style.display = (id==='scr-cam') ? '' : 'none';
+  // padrão iOS: botão "< Voltar" no lugar da logo sempre que sair da tela inicial
+  const isHome = id==='scr-cam';
+  document.getElementById('header-back').style.display = isHome ? 'none' : 'flex';
+  document.getElementById('logo-home').style.display = isHome ? '' : 'none';
 }
 document.querySelectorAll('nav button[data-scr]').forEach(b=>b.onclick=()=>goToScreen(b.dataset.scr));
 document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>goToScreen(b.dataset.goto));
 document.getElementById('logo-home').onclick=()=>goToScreen('scr-cam');
+document.getElementById('header-back').onclick=()=>goToScreen('scr-cam');
 document.getElementById('search-toggle').onclick=()=>goToScreen('scr-query');
 document.getElementById('nav-cam').onclick=openCam;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2600) }
@@ -1295,7 +1413,12 @@ function paintGps(){
   lp.classList.toggle('err', err);
 }
 /* texto livre da legenda (sincronizado entre os dois campos) */
-function getCustom(){ return (localStorage.getItem('kc-custom')||'').trim() }
+function getCustom(){
+  const free=(localStorage.getItem('kc-custom')||'').trim();
+  const side=localStorage.getItem('kc-side')||'';
+  const svc=localStorage.getItem('kc-svcsel')||'';
+  return [side, svc, free].filter(Boolean).join(' · ');
+}
 function bindCustom(){
   const b=document.getElementById('camtxt');
   b.value=getCustom();
@@ -1526,7 +1649,7 @@ document.getElementById('logo-orig').onclick=()=>{
 document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-logo').close();
 
 /* ================= câmera ================= */
-const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo');
+const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
 /* posiciona logo, texto livre e legenda exatamente sobre o retângulo de imagem
    exibido pelo vídeo (object-fit:contain) — a mesma proporção da foto gravada.
    Reage às dimensões REAIS do sensor da câmera (video.videoWidth/Height), que
@@ -1567,7 +1690,7 @@ function disableTiltSensor(){ window.removeEventListener('deviceorientation', on
 let camGeom=null; // cache: {u,pad,size,dw,dh} — só recalculado quando o quadro da câmera realmente muda de forma
 function layoutCamFrame(force){
   const vw=video.videoWidth, vh=video.videoHeight;
-  const cw=camwrap.clientWidth, ch=camwrap.clientHeight;
+  const cw=camstage.clientWidth, ch=camstage.clientHeight;
   if(!vw||!vh||!cw||!ch) return;
   // só refaz a geometria se a proporção do sensor mudou de verdade (rotação física),
   // ignorando oscilações da barra de endereço do navegador (que muda a altura da tela sem o celular ter girado)
@@ -1612,6 +1735,7 @@ async function openCam(){
     camwrap.classList.add('on');
     camGeom=null;
     enableTiltSensor();
+    initFlashSupport();
     video.addEventListener('loadedmetadata', ()=>layoutCamFrame(true));
     video.addEventListener('resize', ()=>layoutCamFrame());  // dispara quando o sensor gira, mesmo com tela travada
     window.addEventListener('orientationchange', ()=>setTimeout(()=>layoutCamFrame(),300));
@@ -1623,7 +1747,6 @@ async function openCam(){
 }
 function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
 document.getElementById('camback').onclick=closeCam;
-document.getElementById('camflip').onclick=async()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
   const c=document.createElement('canvas');
@@ -1634,6 +1757,112 @@ document.getElementById('shutter').onclick=()=>{
   burnLegend(ctx,c.width,c.height,info,S.tilt);
   c.toBlob(b=>autoSave(b), 'image/jpeg', CFG.qual);
 };
+
+/* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
+function getSide(){ return localStorage.getItem('kc-side')||'' }
+function getSvcSel(){ return localStorage.getItem('kc-svcsel')||'' }
+function paintTags(){
+  document.getElementById('cam-ld').classList.toggle('on', getSide()==='LD');
+  document.getElementById('cam-le').classList.toggle('on', getSide()==='LE');
+  document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel());
+}
+document.getElementById('cam-ld').onclick=()=>{
+  localStorage.setItem('kc-side', getSide()==='LD'?'':'LD'); paintTags(); paintGps(); positionCamText();
+};
+document.getElementById('cam-le').onclick=()=>{
+  localStorage.setItem('kc-side', getSide()==='LE'?'':'LE'); paintTags(); paintGps(); positionCamText();
+};
+const SVC_PADRAO=['Roçada','Limpeza','Placa','Defensa','Pintura','Drenagem','Ponte','Marco quilométrico','Outros'];
+function renderSvcGrid(){
+  const g=document.getElementById('svc-grid');
+  const custom=getServices();
+  const all=[...SVC_PADRAO, ...custom.filter(s=>!SVC_PADRAO.includes(s))];
+  const sel=getSvcSel();
+  g.innerHTML=all.map(s=>`<button class="svcchip ${s===sel?'on':''}" data-s="${s.replace(/"/g,'&quot;')}">${s}</button>`).join('');
+  g.querySelectorAll('.svcchip').forEach(b=>b.onclick=()=>{
+    const s=b.dataset.s;
+    localStorage.setItem('kc-svcsel', s===sel?'':s);
+    document.getElementById('dlg-svc').close();
+    paintTags(); paintGps(); positionCamText();
+  });
+}
+document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); document.getElementById('dlg-svc').showModal() };
+document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
+document.getElementById('svc-add2').onclick=()=>{
+  const inp=document.getElementById('svc-new2');
+  const s=inp.value.trim();
+  if(!s){ toast('Digite o nome do serviço.'); return }
+  const list=getServices();
+  if(!list.includes(s)) list.push(s);
+  localStorage.setItem('kc-services', JSON.stringify(list));
+  inp.value=''; renderSvcGrid(); renderServices();
+};
+
+/* ---- atalho de Configurações direto da câmera ---- */
+document.getElementById('cam-settings').onclick=()=>{ closeCam(); goToScreen('scr-settings') };
+
+/* ---- flash/lanterna (nem todo aparelho/navegador permite controlar via web) ---- */
+let flashOn=false, flashSupported=false;
+function initFlashSupport(){
+  flashOn=false; flashSupported=false;
+  try{
+    const track=S.stream && S.stream.getVideoTracks()[0];
+    const caps=track && track.getCapabilities && track.getCapabilities();
+    flashSupported=!!(caps && caps.torch);
+  }catch(e){}
+  paintFlashIcon();
+}
+function paintFlashIcon(){
+  document.getElementById('cam-flash').classList.toggle('on', flashOn);
+}
+document.getElementById('cam-flash').onclick=async()=>{
+  if(!flashSupported){ toast('Este aparelho/navegador não permite controlar o flash pelo app.'); return }
+  try{
+    const track=S.stream.getVideoTracks()[0];
+    flashOn=!flashOn;
+    await track.applyConstraints({advanced:[{torch:flashOn}]});
+    paintFlashIcon();
+  }catch(e){ toast('Não consegui controlar o flash.'); }
+};
+
+/* ---- galeria de fotos registradas pelo app (IndexedDB + swipe) ---- */
+async function savePhotoToGallery(blob, name){
+  const d=await idb();
+  return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now()});
+    t.onsuccess=res; t.onerror=()=>rej(t.error) });
+}
+async function getAllPhotos(){
+  const d=await idb();
+  return new Promise((res,rej)=>{ const t=d.transaction('photos').objectStore('photos').getAll();
+    t.onsuccess=()=>res(t.result.sort((a,b)=>b.ts-a.ts)); t.onerror=()=>rej(t.error) });
+}
+let galPhotos=[], galIdx=0;
+async function openGallery(){
+  galPhotos=await getAllPhotos();
+  if(!galPhotos.length){ toast('Nenhuma foto registrada ainda.'); return }
+  galIdx=0; paintGalPhoto();
+  document.getElementById('gallerywrap').classList.add('on');
+}
+function paintGalPhoto(){
+  const p=galPhotos[galIdx];
+  const img=document.getElementById('gal-img');
+  img.src=URL.createObjectURL(p.blob);
+  const d=new Date(p.ts);
+  document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galPhotos.length}  ·  ${p.name}`;
+}
+document.getElementById('cam-gallery').onclick=openGallery;
+document.getElementById('gal-close').onclick=()=>document.getElementById('gallerywrap').classList.remove('on');
+(function(){
+  const stage=document.getElementById('gal-stage');
+  let sx=0;
+  stage.addEventListener('touchstart', e=>{ sx=e.touches[0].clientX }, {passive:true});
+  stage.addEventListener('touchend', e=>{
+    const dx=e.changedTouches[0].clientX - sx;
+    if(Math.abs(dx)<40 || !galPhotos.length) return;
+    if(dx<0 && galIdx<galPhotos.length-1){ galIdx++; paintGalPhoto() }      // esquerda: próxima (mais antiga)
+    else if(dx>0 && galIdx>0){ galIdx--; paintGalPhoto() }                   // direita: anterior (mais recente)
+  }, {passive:true});
+})();
 
 
 /* legenda queimada na foto — texto branco simples, canto inferior esquerdo.
@@ -1691,6 +1920,7 @@ function autoSave(blob){
   const br=info.br?info.br.replace('-',''):'FOTO';
   const name=`${br}_${kmTxt}_${t.toISOString().slice(0,10)}_${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
+  savePhotoToGallery(blob, name).catch(()=>{});   // galeria interna do app, sempre grava, mesmo com "envio automático" desligado
   const download=()=>{
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
@@ -1839,6 +2069,7 @@ if(svcAdd) svcAdd.onclick=()=>{
   renderBases();
   renderContracts();
   renderServices();
+  paintTags();
   loadLogo();
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
