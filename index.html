@@ -225,7 +225,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
-#camwrap{position:fixed;inset:0;background:#000;z-index:10;display:none;flex-direction:column}
+#camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
 #camwrap.on{display:flex}
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 #camvideo{width:100%;height:100%;object-fit:contain;background:#000}
@@ -239,11 +239,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #liveplate.err .l1{color:#ff9d8a}
 #camtxt{position:absolute;pointer-events:auto;background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(183,217,45,.45);border-radius:999px;color:#fff;font-family:var(--sans);width:auto}
 #camtxt::placeholder{color:#9aa2af}
-.camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:6;
+.camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));z-index:6;
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.78);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
   border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:50%;width:42px;height:42px;
   display:flex;align-items:center;justify-content:center;cursor:pointer}
+.camstagebtn-left{left:14px}
+.camstagebtn-right{right:14px}
 .camstagebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 /* ---------- barra inferior: Dark Glass Premium, fora da área da foto ---------- */
 #cambar2{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
@@ -280,7 +282,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .svcchip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:9px 15px;font-size:13px;cursor:pointer;font-family:var(--sans)}
 .svcchip.on{background:var(--gold);color:#0d0f08;border-color:var(--gold);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
-#gallerywrap{position:fixed;inset:0;background:#000;z-index:25;display:none;flex-direction:column}
+#gallerywrap{position:fixed;inset:0;background:#000;z-index:51;display:none;flex-direction:column}
 #gallerywrap.on{display:flex}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
@@ -678,7 +680,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
       <div id="liveplate"></div>
     </div>
-    <button id="camback" class="camstagebtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+    <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+    <button id="camflip" class="camstagebtn camstagebtn-right" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -854,6 +857,7 @@ function now(){ const d=new Date(); return {
   data:d.toLocaleDateString('pt-BR'), hora:d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) } }
 
 /* ================= navegação ================= */
+let settingsFromCam=false;
 function goToScreen(id){
   document.querySelectorAll('nav button[data-scr]').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
@@ -866,11 +870,17 @@ function goToScreen(id){
   const isHome = id==='scr-cam';
   document.getElementById('header-back').style.display = isHome ? 'none' : 'flex';
   document.getElementById('logo-home').style.display = isHome ? '' : 'none';
+  settingsFromCam=false;   // qualquer navegação "normal" limpa a marca de "veio da câmera"
 }
 document.querySelectorAll('nav button[data-scr]').forEach(b=>b.onclick=()=>goToScreen(b.dataset.scr));
 document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>goToScreen(b.dataset.goto));
 document.getElementById('logo-home').onclick=()=>goToScreen('scr-cam');
-document.getElementById('header-back').onclick=()=>goToScreen('scr-cam');
+document.getElementById('header-back').onclick=()=>{
+  if(settingsFromCam && document.getElementById('scr-settings').classList.contains('on')){
+    settingsFromCam=false; openCam(); return;
+  }
+  goToScreen('scr-cam');
+};
 document.getElementById('search-toggle').onclick=()=>goToScreen('scr-query');
 document.getElementById('nav-cam').onclick=openCam;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2600) }
@@ -1747,6 +1757,7 @@ async function openCam(){
 }
 function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
 document.getElementById('camback').onclick=closeCam;
+document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
   const c=document.createElement('canvas');
@@ -1799,7 +1810,7 @@ document.getElementById('svc-add2').onclick=()=>{
 };
 
 /* ---- atalho de Configurações direto da câmera ---- */
-document.getElementById('cam-settings').onclick=()=>{ closeCam(); goToScreen('scr-settings') };
+document.getElementById('cam-settings').onclick=()=>{ closeCam(); goToScreen('scr-settings'); settingsFromCam=true; };
 
 /* ---- flash/lanterna (nem todo aparelho/navegador permite controlar via web) ---- */
 let flashOn=false, flashSupported=false;
