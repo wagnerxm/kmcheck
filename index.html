@@ -1713,10 +1713,10 @@ async function enableTiltSensor(){
   try{
     if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
       const r=await DeviceOrientationEvent.requestPermission(); // iOS: pergunta 1x, depois lembra
-      if(r!=='granted') return;
+      if(r!=='granted'){ toast('Sem permissão de movimento — legenda não vai girar sozinha.'); return }
     }
     window.addEventListener('deviceorientation', onDeviceOrientation);
-  }catch(e){}
+  }catch(e){ toast('Sensor de movimento indisponível neste aparelho/navegador.') }
 }
 function disableTiltSensor(){ window.removeEventListener('deviceorientation', onDeviceOrientation); S.tilt=0;
   tiltCandidate=null; tiltCandidateSince=0;
@@ -1752,6 +1752,10 @@ function layoutCamFrame(force){
 }
 let camTick=null;
 async function openCam(){
+  // pede a permissão do giroscópio ANTES de qualquer "await" — no iPhone, a autorização de
+  // toque do usuário expira rápido, e se pedirmos depois de aguardar a câmera abrir, o pedido
+  // falha em silêncio (sem erro, sem aviso — só não gira nada, foi exatamente o que aconteceu)
+  enableTiltSensor();
   startGps();
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
@@ -1763,7 +1767,6 @@ async function openCam(){
     video.srcObject=S.stream;
     camwrap.classList.add('on');
     camGeom=null;
-    enableTiltSensor();
     initFlashSupport();
     video.addEventListener('loadedmetadata', ()=>layoutCamFrame(true));
     video.addEventListener('resize', ()=>layoutCamFrame());  // dispara quando o sensor gira, mesmo com tela travada
