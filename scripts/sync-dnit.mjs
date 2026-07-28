@@ -71,25 +71,49 @@ function extractLatLon(body) {
   return null;
 }
 
+import https from 'node:https';
+import http from 'node:http';
+
+// requisição de baixo nível, com opção de ignorar validação de certificado —
+// usada como diagnóstico/fallback pra sites .gov.br que às vezes usam cadeia
+// de certificado (ICP-Brasil) não reconhecida em servidores fora do Brasil.
+function rawRequest(url, ms, { insecure } = {}) {
+  return new Promise((resolve, reject) => {
+    const mod = url.startsWith('https:') ? https : http;
+    const opts = insecure ? { rejectUnauthorized: false } : {};
+    const req = mod.get(url, opts, (res) => {
+      let body = '';
+      res.on('data', (c) => (body += c));
+      res.on('end', () => resolve({ status: res.statusCode, body }));
+    });
+    req.on('error', reject);
+    req.setTimeout(ms, () => { req.destroy(new Error('timeout')); });
+  });
+}
+
 async function fetchPoint(url, ms, diag) {
-  const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), ms);
-  try {
-    const r = await fetch(url, { signal: ctl.signal });
-    const body = await r.text();
-    if (diag) diag.push(`HTTP ${r.status} — corpo: "${body.slice(0, 200)}"`);
-    if (r.ok) {
-      const p = extractLatLon(body);
-      if (!p && diag) diag.push('resposta OK, mas não reconheci coordenadas nela');
-      return p;
+  const httpsUrl = url.replace(/^http:/, 'https:');
+  const httpUrl = url.replace(/^https:/, 'http:');
+  const attempts = [
+    ['https', () => rawRequest(httpsUrl, ms)],
+    ['https (sem checar certificado)', () => rawRequest(httpsUrl, ms, { insecure: true })],
+    ['http', () => rawRequest(httpUrl, ms)],
+  ];
+  for (const [label, run] of attempts) {
+    try {
+      const { status, body } = await run();
+      if (diag) diag.push(`${label}: HTTP ${status} — corpo: "${body.slice(0, 200)}"`);
+      if (status >= 200 && status < 300) {
+        const p = extractLatLon(body);
+        if (p) return p;
+        if (diag) diag.push(`${label}: resposta OK, mas não reconheci coordenadas nela`);
+      }
+    } catch (e) {
+      const cause = e.cause ? ` (causa: ${e.cause.code || e.cause.message || e.cause})` : '';
+      if (diag) diag.push(`${label}: erro — ${e.name || 'Error'}: ${e.message}${cause}`);
     }
-    return null;
-  } catch (e) {
-    if (diag) diag.push(`erro de rede/timeout: ${e.name} — ${e.message}`);
-    return null;
-  } finally {
-    clearTimeout(t);
   }
+  return null;
 }
 
 async function probeDnit(br, uf, tipo, dataStr, kmi) {
