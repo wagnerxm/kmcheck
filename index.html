@@ -258,7 +258,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .cbtn{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-family:var(--sans);
   font-size:13px;font-weight:700;transition:background .15s,transform .15s}
-.cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease}
 .cbtn.on{background:var(--gold);color:#0d0f08;border-color:var(--gold)}
 .cbtn:active{transform:scale(1.06)}
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
@@ -1673,15 +1673,30 @@ function classifyTilt(beta, gamma, prev){
     return prev;
   }
 }
+/* estabilização temporal: uma nova orientação só é aceita depois de se manter
+   estável por ~350ms — evita a legenda "tremer" perto das bordas entre os quadrantes */
+let tiltCandidate=null, tiltCandidateSince=0;
+const TILT_DEBOUNCE_MS=350;
+function classifyTiltStable(beta, gamma, prev, now){
+  const cand=classifyTilt(beta, gamma, prev);
+  if(cand===prev){ tiltCandidate=null; return prev }
+  if(cand!==tiltCandidate){ tiltCandidate=cand; tiltCandidateSince=now; return prev }
+  if(now-tiltCandidateSince>=TILT_DEBOUNCE_MS){ tiltCandidate=null; return cand }
+  return prev;
+}
 function onDeviceOrientation(e){
   if(e.beta==null||e.gamma==null) return;
-  S.tilt=classifyTilt(e.beta, e.gamma, S.tilt);
+  const newTilt=classifyTiltStable(e.beta, e.gamma, S.tilt, Date.now());
+  if(newTilt===S.tilt) return;   // nada mudou de verdade — não mexe em nenhum elemento
+  S.tilt=newTilt;
   const frame=document.getElementById('camframe');
   if(frame) frame.style.transform='rotate('+S.tilt+'deg)';
-  // só a legenda/logo e os botões de canto acompanham a inclinação — a barra de comandos NUNCA se move
+  // só a legenda/logo, os botões de canto e os ícones internos da barra acompanham a
+  // inclinação — os BOTÕES da barra em si (posição, ordem, espaçamento) NUNCA se movem
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
   if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
+  document.querySelectorAll('#cambar2 .cbtn svg').forEach(svg=>svg.style.transform='rotate('+(-S.tilt)+'deg)');
   updateBarSide();
 }
 function updateBarSide(){
@@ -1704,9 +1719,11 @@ async function enableTiltSensor(){
   }catch(e){}
 }
 function disableTiltSensor(){ window.removeEventListener('deviceorientation', onDeviceOrientation); S.tilt=0;
+  tiltCandidate=null; tiltCandidateSince=0;
   const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
+  document.querySelectorAll('#cambar2 .cbtn svg').forEach(svg=>svg.style.transform='');
   const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
   if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right'); }
 
