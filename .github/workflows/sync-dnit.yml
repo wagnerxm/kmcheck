@@ -1,0 +1,29 @@
+name: Sincronizar DNIT -> Supabase
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'   # dia 1 de cada mês, 06:00 UTC (~03:00 no horário do Brasil)
+  workflow_dispatch: {}    # permite rodar manualmente pela aba "Actions" do GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        working-directory: scripts
+        run: npm install
+
+      - name: Rodar sincronização
+        working-directory: scripts
+        run: node sync-dnit.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
