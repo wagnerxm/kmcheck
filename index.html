@@ -257,8 +257,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .cbside.cbright{justify-content:flex-end}
 .cbtn{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-family:var(--sans);
-  font-size:13px;font-weight:700;transition:background .15s,transform .15s}
-.cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease}
+  font-size:13px;font-weight:700;transition:background .15s,transform .18s ease}
+.cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .cbtn.on{background:var(--gold);color:#0d0f08;border-color:var(--gold)}
 .cbtn:active{transform:scale(1.06)}
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
@@ -1700,20 +1700,19 @@ function onDeviceOrientation(e){
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
   if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
-  document.querySelectorAll('#cambar2 .cbtn svg').forEach(svg=>svg.style.transform='rotate('+(-S.tilt)+'deg)');
+  document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='rotate('+(-S.tilt)+'deg)');
   updateBarSide();
 }
 function updateBarSide(){
-  // a barra de comandos fica fisicamente fixa: sempre na borda que era "embaixo" quando o
-  // celular estava na vertical — vira uma faixa vertical do lado direito/esquerdo na horizontal,
-  // sem nunca reorganizar a posição relativa dos botões (o polegar sempre encontra o obturador no mesmo lugar).
+  // a barra de comandos fica fisicamente fixa SEMPRE no lado direito, não importa pra qual
+  // lado o celular seja girado — só os ícones internos e a legenda acompanham a inclinação.
   const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
   if(!wrap||!bar) return;
   const wasLandscape=wrap.classList.contains('cam-landscape');
-  wrap.classList.remove('cam-landscape'); bar.classList.remove('bar-left','bar-right');
-  if(S.tilt===90){ wrap.classList.add('cam-landscape'); bar.classList.add('bar-left') }
-  else if(S.tilt===-90){ wrap.classList.add('cam-landscape'); bar.classList.add('bar-right') }
-  const isLandscape=wrap.classList.contains('cam-landscape');
+  const isLandscape=(S.tilt===90||S.tilt===-90);
+  wrap.classList.toggle('cam-landscape', isLandscape);
+  bar.classList.toggle('bar-right', isLandscape);
+  bar.classList.remove('bar-left');
   if(isLandscape!==wasLandscape){
     // a barra virando faixa lateral muda o TAMANHO do palco (camstage) — a legenda/logo
     // precisam ser recalculadas pro novo formato, senão ficam com a posição antiga (o bug real)
@@ -1741,7 +1740,7 @@ function disableTiltSensor(){ window.removeEventListener('deviceorientation', on
   const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
-  document.querySelectorAll('#cambar2 .cbtn svg').forEach(svg=>svg.style.transform='');
+  document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='');
   const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
   if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right'); }
 
