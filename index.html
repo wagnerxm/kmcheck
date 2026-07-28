@@ -237,8 +237,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
 #liveplate.err .l1{color:#ff9d8a}
-#camtxt{position:absolute;pointer-events:auto;background:rgba(8,10,12,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(183,217,45,.45);border-radius:999px;color:#fff;font-family:var(--sans);width:auto}
-#camtxt::placeholder{color:#9aa2af}
 .camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));z-index:6;
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.78);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
@@ -273,10 +271,19 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
 #shutter::before{content:'';width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
-/* o layout da barra nunca muda com a rotação — os botões ficam sempre no mesmo lugar */
-@media (orientation: landscape){
-  #cambar2{grid-template-columns:1fr auto 1fr}
-}
+/* ---------- barra sempre fixa na borda física de "baixo": vira faixa vertical na horizontal,
+   sem NUNCA reorganizar a posição relativa dos botões — o polegar sempre acha o obturador no mesmo lugar.
+   Detectado pelo giroscópio (S.tilt), não pela orientação do navegador. ---------- */
+#camwrap.cam-landscape{flex-direction:row}
+#camwrap.cam-landscape #camstage{flex:1;min-width:0}
+#camwrap.cam-landscape #cambar2{
+  flex:0 0 auto;width:98px;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  padding:16px 8px;border-top:none}
+#cambar2.bar-left{order:-1;border-right:1px solid rgba(255,255,255,.14)}
+#cambar2.bar-right{order:2;border-left:1px solid rgba(255,255,255,.14)}
+#camwrap.cam-landscape .cbside{flex-direction:column}
+#camwrap.cam-landscape #shutter{flex:0 0 76px}
 /* ---------- diálogo de serviço ---------- */
 .svcgrid{display:flex;flex-wrap:wrap;gap:8px;max-height:50vh;overflow:auto;padding:4px 2px}
 .svcchip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:9px 15px;font-size:13px;cursor:pointer;font-family:var(--sans)}
@@ -677,7 +684,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <video id="camvideo" autoplay playsinline muted></video>
     <div id="camframe">
       <img id="camlogo" alt="" style="display:none">
-      <input type="text" id="camtxt" placeholder="Texto livre da legenda…" autocomplete="off">
       <div id="liveplate"></div>
     </div>
     <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
@@ -1422,24 +1428,10 @@ function paintGps(){
   [...lp.children].forEach((el,i)=>el.textContent=L[i]);
   lp.classList.toggle('err', err);
 }
-/* texto livre da legenda (sincronizado entre os dois campos) */
-function getCustom(){
-  const free=(localStorage.getItem('kc-custom')||'').trim();
-  const side=localStorage.getItem('kc-side')||'';
-  const svc=localStorage.getItem('kc-svcsel')||'';
-  return [side, svc, free].filter(Boolean).join(' · ');
-}
-function bindCustom(){
-  const b=document.getElementById('camtxt');
-  b.value=getCustom();
-  b.addEventListener('input', ()=>{ localStorage.setItem('kc-custom', b.value); paintGps() });
-}
-bindCustom();
-
 /* monta as informações da legenda (fonte: GPS ao vivo) */
 function buildInfo(){
   const t=now();
-  const info={custom:getCustom(), data:t.data, hora:t.hora, src:'gps'};
+  const info={data:t.data, hora:t.hora, src:'gps'};
   if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc }
   if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist }
   return info;
@@ -1461,12 +1453,14 @@ function legendLines(info){
   if(info.km!=null){
     let l1=`${info.br}/${info.uf} - KM ${fkm(info.km)}`;
     if(CFG.estaca) l1+='  ·  '+estacaDe(info.km);
+    const side=getSide();
+    if(side) l1+='  '+side;
     if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
     L.push(l1);
-  } else { L.push(info.lat!=null?'SEM RODOVIA INSTALADA':'— aguardando GPS —'); err=true }
+  }
   const ct=getContract();
   if(ct) L.push('Contrato '+ct);
-  let l2=info.custom;
+  let l2=getSvcSel();
   if(!l2 && CFG.oae && info.km!=null){
     const o=findOae(info.br,info.uf,info.km);
     if(o && o.mode==='sobre') l2=o.o.nome;
@@ -1684,6 +1678,21 @@ function onDeviceOrientation(e){
   S.tilt=classifyTilt(e.beta, e.gamma, S.tilt);
   const frame=document.getElementById('camframe');
   if(frame) frame.style.transform='rotate('+S.tilt+'deg)';
+  // só a legenda/logo e os botões de canto acompanham a inclinação — a barra de comandos NUNCA se move
+  const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
+  if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
+  if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
+  updateBarSide();
+}
+function updateBarSide(){
+  // a barra de comandos fica fisicamente fixa: sempre na borda que era "embaixo" quando o
+  // celular estava na vertical — vira uma faixa vertical do lado direito/esquerdo na horizontal,
+  // sem nunca reorganizar a posição relativa dos botões (o polegar sempre encontra o obturador no mesmo lugar).
+  const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
+  if(!wrap||!bar) return;
+  wrap.classList.remove('cam-landscape'); bar.classList.remove('bar-left','bar-right');
+  if(S.tilt===90){ wrap.classList.add('cam-landscape'); bar.classList.add('bar-left') }
+  else if(S.tilt===-90){ wrap.classList.add('cam-landscape'); bar.classList.add('bar-right') }
 }
 async function enableTiltSensor(){
   try{
@@ -1695,7 +1704,11 @@ async function enableTiltSensor(){
   }catch(e){}
 }
 function disableTiltSensor(){ window.removeEventListener('deviceorientation', onDeviceOrientation); S.tilt=0;
-  const frame=document.getElementById('camframe'); if(frame) frame.style.transform=''; }
+  const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
+  const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
+  if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
+  const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
+  if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right'); }
 
 let camGeom=null; // cache: {u,pad,size,dw,dh} — só recalculado quando o quadro da câmera realmente muda de forma
 function layoutCamFrame(force){
@@ -1718,25 +1731,14 @@ function layoutCamFrame(force){
   const lp=document.getElementById('liveplate');
   lp.style.left=pad+'px'; lp.style.right=pad+'px'; lp.style.bottom=pad+'px';
   lp.querySelectorAll('.l1,.l2').forEach(el=>{ el.style.fontSize=size+'px'; el.style.lineHeight=(size*1.38)+'px' });
-  const ct=document.getElementById('camtxt');
-  ct.style.left=pad+'px'; ct.style.right=pad+'px'; ct.style.top='auto';
-  ct.style.padding=(size*0.5)+'px '+(size*0.75)+'px'; ct.style.fontSize=Math.max(13,size*0.95)+'px';
   camGeom={aspect, u, pad, size};
-  positionCamText();
-}
-function positionCamText(){
-  // só reposiciona o campo de texto (acompanha o nº de linhas da legenda), sem alterar tamanhos
-  if(!camGeom) return;
-  const {pad,size}=camGeom;
-  const linesCount=legendLines(buildInfo()).L.length;
-  const legendH=linesCount*size*1.38;
-  document.getElementById('camtxt').style.bottom=(pad+legendH+size*1.3)+'px';
 }
 let camTick=null;
 async function openCam(){
   startGps();
   document.querySelector('nav').style.display='none';
-  clearInterval(camTick); camTick=setInterval(()=>{ paintGps(); positionCamText() }, 1000);
+  document.querySelector('header.top').style.display='none';
+  clearInterval(camTick); camTick=setInterval(()=>{ paintGps() }, 1000);
   try{
     const resMap={max:{w:4096,h:2160}, '1080':{w:1920,h:1080}, '1440':{w:2560,h:1440}, '2160':{w:3840,h:2160}};
     const R=resMap[CFG.res]||resMap.max;
@@ -1752,10 +1754,11 @@ async function openCam(){
     layoutCamFrame(true);
   }catch(e){
     document.querySelector('nav').style.display='';
+    document.querySelector('header.top').style.display='';
     toast('Câmera negada ou indisponível.');
   }
 }
-function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
+function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; document.querySelector('header.top').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
 document.getElementById('camback').onclick=closeCam;
 document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
 document.getElementById('shutter').onclick=()=>{
@@ -1778,10 +1781,10 @@ function paintTags(){
   document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel());
 }
 document.getElementById('cam-ld').onclick=()=>{
-  localStorage.setItem('kc-side', getSide()==='LD'?'':'LD'); paintTags(); paintGps(); positionCamText();
+  localStorage.setItem('kc-side', getSide()==='LD'?'':'LD'); paintTags(); paintGps();
 };
 document.getElementById('cam-le').onclick=()=>{
-  localStorage.setItem('kc-side', getSide()==='LE'?'':'LE'); paintTags(); paintGps(); positionCamText();
+  localStorage.setItem('kc-side', getSide()==='LE'?'':'LE'); paintTags(); paintGps();
 };
 const SVC_PADRAO=['Roçada','Limpeza','Placa','Defensa','Pintura','Drenagem','Ponte','Marco quilométrico','Outros'];
 function renderSvcGrid(){
@@ -1794,7 +1797,7 @@ function renderSvcGrid(){
     const s=b.dataset.s;
     localStorage.setItem('kc-svcsel', s===sel?'':s);
     document.getElementById('dlg-svc').close();
-    paintTags(); paintGps(); positionCamText();
+    paintTags(); paintGps();
   });
 }
 document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); document.getElementById('dlg-svc').showModal() };
