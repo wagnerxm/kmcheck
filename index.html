@@ -1685,7 +1685,11 @@ function classifyTiltStable(beta, gamma, prev, now){
   return prev;
 }
 function onDeviceOrientation(e){
-  if(e.beta==null||e.gamma==null) return;
+  if(e.beta==null||e.gamma==null){
+    if(!S._diagNull){ S._diagNull=true; toast('DIAG: evento chegou mas beta/gamma vêm nulos.') }
+    return;
+  }
+  if(!S._diagFirst){ S._diagFirst=true; toast('DIAG: sensor ativo (beta='+Math.round(e.beta)+' gamma='+Math.round(e.gamma)+')') }
   const newTilt=classifyTiltStable(e.beta, e.gamma, S.tilt, Date.now());
   if(newTilt===S.tilt) return;   // nada mudou de verdade — não mexe em nenhum elemento
   S.tilt=newTilt;
@@ -1711,14 +1715,21 @@ function updateBarSide(){
 }
 async function enableTiltSensor(){
   try{
-    if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
+    if(typeof DeviceOrientationEvent==='undefined'){
+      toast('DIAG: DeviceOrientationEvent não existe neste navegador.'); return;
+    }
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){
       const r=await DeviceOrientationEvent.requestPermission(); // iOS: pergunta 1x, depois lembra
-      if(r!=='granted'){ toast('Sem permissão de movimento — legenda não vai girar sozinha.'); return }
+      if(r!=='granted'){ toast('DIAG: permissão de movimento = "'+r+'" (negada).'); return }
+      toast('DIAG: permissão concedida — ligando o sensor.');
+    } else {
+      toast('DIAG: este navegador não pede permissão (API antiga) — ligando direto.');
     }
     window.addEventListener('deviceorientation', onDeviceOrientation);
-  }catch(e){ toast('Sensor de movimento indisponível neste aparelho/navegador.') }
+  }catch(e){ toast('DIAG: erro ao ligar o sensor — '+e.message) }
 }
 function disableTiltSensor(){ window.removeEventListener('deviceorientation', onDeviceOrientation); S.tilt=0;
+  S._diagFirst=false; S._diagNull=false;
   tiltCandidate=null; tiltCandidateSince=0;
   const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
