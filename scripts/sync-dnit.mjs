@@ -80,7 +80,14 @@ import http from 'node:http';
 function rawRequest(url, ms, { insecure } = {}) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https:') ? https : http;
-    const opts = insecure ? { rejectUnauthorized: false } : {};
+    const opts = {
+      ...(insecure ? { rejectUnauthorized: false } : {}),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+      },
+    };
     const req = mod.get(url, opts, (res) => {
       let body = '';
       res.on('data', (c) => (body += c));
@@ -98,8 +105,8 @@ const STRATEGIES = [
   // conexão direta do datacenter costuma ser bloqueada por sites .gov.br —
   // esses proxies fazem a requisição por trás com IPs próprios (mesmos usados no app do navegador)
   ['ponte allorigins', (httpsUrl, httpUrl, ms) => rawRequest('https://api.allorigins.win/raw?url=' + encodeURIComponent(httpsUrl), ms)],
+  ['ponte codetabs', (httpsUrl, httpUrl, ms) => rawRequest('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(httpsUrl), ms)],
   ['ponte corsproxy', (httpsUrl, httpUrl, ms) => rawRequest('https://corsproxy.io/?url=' + encodeURIComponent(httpsUrl), ms)],
-  ['ponte thingproxy', (httpsUrl, httpUrl, ms) => rawRequest('https://thingproxy.freeboard.io/fetch/' + httpsUrl, ms)],
 ];
 
 // onlyStrategy: quando informado (índice em STRATEGIES), pula direto pra esse método,
