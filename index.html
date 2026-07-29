@@ -230,6 +230,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 #camflashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
 #camflashfx.on{animation:camflash .28s ease}
+#camdbg{position:absolute;left:8px;top:calc(60px + env(safe-area-inset-top));z-index:61;
+  background:rgba(0,0,0,.65);color:#0f0;font-family:monospace;font-size:12px;line-height:1.5;
+  padding:6px 8px;border-radius:6px;white-space:pre;pointer-events:none}
 @keyframes camflash{0%{opacity:.85}100%{opacity:0}}
 /* #camrot agrupa vídeo + legenda/logo num único bloco que gira junto, acompanhando a
    inclinação física do aparelho — exatamente como apps de câmera nativos (ex.: Timestamp
@@ -747,6 +750,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       </div>
     </div>
     <div id="camflashfx"></div>
+    <div id="camdbg"></div>
     <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
     <button id="camflip" class="camstagebtn camstagebtn-right" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
@@ -1870,7 +1874,13 @@ function tiltFromGravity(ax, ay, current){
 function onDeviceMotion(e){
   const g=e.accelerationIncludingGravity;
   if(!g) return;
-  S.sensorTilt=tiltFromGravity(g.x, g.y, S.sensorTilt||0);
+  // Safari (iOS) reporta accelerationIncludingGravity com o sinal invertido em relação à
+  // especificação (bug antigo e conhecido do WebKit, nunca corrigido para não quebrar sites
+  // que já compensavam por conta própria) — sem negar aqui, retrato lia como 180°/paisagem.
+  const ax=-g.x, ay=-g.y;
+  S.sensorTilt=tiltFromGravity(ax, ay, S.sensorTilt||0);
+  const dbg=document.getElementById('camdbg');
+  if(dbg) dbg.textContent='ax:'+ax.toFixed(1)+' ay:'+ay.toFixed(1)+' ang:'+Math.round(Math.atan2(ax,ay)*180/Math.PI)+' tilt:'+S.sensorTilt;
   refreshTilt();
 }
 async function enableTiltSensor(){
