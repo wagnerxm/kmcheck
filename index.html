@@ -231,11 +231,15 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camflashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
 #camflashfx.on{animation:camflash .28s ease}
 @keyframes camflash{0%{opacity:.85}100%{opacity:0}}
-#camvideo{width:100%;height:100%;object-fit:contain;background:#000}
-/* #camframe é posicionado por JS para coincidir exatamente com o retângulo de imagem
-   exibido pelo vídeo (object-fit:contain) — a mesma proporção do arquivo final.
+/* #camrot agrupa vídeo + legenda/logo num único bloco que gira junto, acompanhando a
+   inclinação física do aparelho — exatamente como apps de câmera nativos (ex.: Timestamp
+   Camera): a imagem em si vira, não só o texto por cima dela. */
+#camrot{position:absolute;overflow:hidden;background:#000;transition:transform .28s ease}
+#camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+/* #camframe é posicionado por JS para coincidir exatamente com o retângulo do formato
+   escolhido (3:4, 1:1, 16:9), dentro do espaço já rotacionado de #camrot.
    Tudo dentro dele usa px absolutos calculados na mesma escala da foto gravada. */
-#camframe{position:absolute;pointer-events:none;overflow:visible;transition:transform .28s ease}
+#camframe{position:absolute;pointer-events:none;overflow:visible}
 #camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
@@ -735,10 +739,12 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <!-- câmera fullscreen -->
 <div id="camwrap">
   <div id="camstage">
-    <video id="camvideo" autoplay playsinline muted></video>
-    <div id="camframe">
-      <img id="camlogo" alt="" style="display:none">
-      <div id="liveplate"></div>
+    <div id="camrot">
+      <video id="camvideo" autoplay playsinline muted></video>
+      <div id="camframe">
+        <img id="camlogo" alt="" style="display:none">
+        <div id="liveplate"></div>
+      </div>
     </div>
     <div id="camflashfx"></div>
     <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
@@ -1772,21 +1778,17 @@ document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-
 
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
-/* posiciona logo, texto livre e legenda exatamente sobre o retângulo de imagem
-   exibido pelo vídeo (object-fit:contain) — a mesma proporção da foto gravada.
-   Reage às dimensões REAIS do sensor da câmera (video.videoWidth/Height), que
-   mudam quando o aparelho gira fisicamente, mesmo com a rotação de tela travada. */
-/* inclinação física do aparelho — gira a logo/legenda ao vivo acompanhando a orientação
-   real da tela do navegador (window.orientation / screen.orientation). Não depende de
-   permissão de sensor de movimento — só exige que a rotação automática do celular esteja
-   destravada, senão o navegador não sabe que o aparelho virou. */
+/* inclinação física do aparelho — gira o bloco #camrot (vídeo + logo + legenda) ao vivo,
+   acompanhando a orientação real do aparelho detectada pelo sensor de movimento (ou,
+   na falta dele, pela orientação da tela do navegador). Ver applyTilt/layoutCamFrame. */
 function applyTilt(newTilt){
   if(newTilt===S.tilt) return;
   S.tilt=newTilt;
-  const frame=document.getElementById('camframe');
-  if(frame) frame.style.transform='rotate('+S.tilt+'deg)';
+  // o vídeo e a legenda giram juntos, como um bloco só (ver layoutCamFrame/#camrot) — é a
+  // IMAGEM que acompanha a inclinação física do aparelho, não só o texto por cima dela.
+  layoutCamFrame(true);
   // Os botões NÃO saem do lugar (a barra fica fixa), mas os desenhos DENTRO deles giram
-  // junto com a legenda, pra continuarem "em pé" pra quem segura o celular deitado.
+  // junto, pra continuarem "em pé" pra quem segura o celular deitado.
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
   if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
@@ -1882,7 +1884,7 @@ function disableScreenLock(){
 function disableTiltSensor(){
   window.removeEventListener('deviceorientation', onDeviceOrientation);
   S.tilt=0; S.sensorTilt=0;
-  const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
+  layoutCamFrame(true);
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
   document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='');
@@ -1890,31 +1892,34 @@ function disableTiltSensor(){
   if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right');
 }
 
-let camGeom=null; // cache: {aspect,u,pad} — recalculado quando o quadro muda de forma
+let camGeom=null; // cache: {u,pad} — recalculado quando o quadro muda de forma ou de inclinação
 function layoutCamFrame(force){
-  const vw=video.videoWidth, vh=video.videoHeight;
   const cw=camstage.clientWidth, ch=camstage.clientHeight;
-  if(!vw||!vh||!cw||!ch) return;
-  // recorte central conforme o FORMATO escolhido nas configurações (3:4, 1:1, 16:9) —
-  // exatamente o mesmo recorte que o disparo grava, então o que aparece aqui é o que sai na foto
+  if(!cw||!ch) return;
+  // #camrot é o bloco que gira fisicamente junto com o aparelho (vídeo + legenda + logo).
+  // Antes de girar, ele recebe o formato TROCADO (largura<->altura) quando a inclinação é de
+  // 90°, do mesmo jeito que applyScreenLock troca largura/altura do app inteiro na rotação real
+  // da tela — assim, depois de girado, o bloco cai exatamente sobre a área do palco (camstage).
+  const rotated=Math.abs(S.tilt)===90;
+  const boxW=rotated?ch:cw, boxH=rotated?cw:ch;
+  const rot=document.getElementById('camrot');
+  rot.style.width=boxW+'px'; rot.style.height=boxH+'px';
+  rot.style.left='50%'; rot.style.top='50%'; rot.style.right='auto'; rot.style.bottom='auto';
+  rot.style.transform='translate(-50%,-50%) rotate('+S.tilt+'deg)';
+  // recorte central conforme o FORMATO escolhido nas configurações (3:4, 1:1, 16:9), calculado
+  // dentro do espaço AINDA NÃO girado de #camrot — exatamente o mesmo recorte que o disparo
+  // grava, então o que aparece aqui (depois de girar) é o que sai na foto.
   const [fw,fh]=(CFG.format||'3:4').split(':').map(Number);
-  const targetAspect=fw/fh, srcAspect=vw/vh;
-  let cropW=vw, cropH=vh;
-  if(srcAspect>targetAspect) cropW=vh*targetAspect; else cropH=vw/targetAspect;
-  const aspect=cropW/cropH;
-  const scale=Math.min(cw/cropW, ch/cropH);
-  const dw=cropW*scale, dh=cropH*scale, ox=(cw-dw)/2, oy=(ch-dh)/2;
-  // o vídeo passa a ocupar só o retângulo recortado (cover = corta as sobras do sensor)
-  video.style.position='absolute';
-  video.style.left=ox+'px'; video.style.top=oy+'px';
-  video.style.width=dw+'px'; video.style.height=dh+'px';
-  video.style.objectFit='cover';
+  const targetAspect=fw/fh;
+  let dw=boxW, dh=boxH;
+  if(boxW/boxH>targetAspect) dw=boxH*targetAspect; else dh=boxW/targetAspect;
+  const ox=(boxW-dw)/2, oy=(boxH-dh)/2;
   const frame=document.getElementById('camframe');
   frame.style.left=ox+'px'; frame.style.top=oy+'px';
   frame.style.width=dw+'px'; frame.style.height=dh+'px';
   const u=Math.max(dw,dh)/1000;               // mesma fórmula usada em burnLegend
   const pad=20*u;
-  camGeom={aspect, u, pad};
+  camGeom={u, pad};
   layoutCamLogo();
   styleLivePlate();
 }
@@ -1983,8 +1988,6 @@ async function openCam(){
     camGeom=null;
     enableScreenLock();
     initFlashSupport();
-    video.addEventListener('loadedmetadata', ()=>layoutCamFrame(true));
-    video.addEventListener('resize', ()=>layoutCamFrame());  // dispara quando o sensor gira, mesmo com tela travada
     layoutCamFrame(true);
   }catch(e){
     document.querySelector('nav').style.display='';
@@ -2016,12 +2019,20 @@ document.getElementById('shutter').onclick=()=>{
   let sx=0, sy=0, sw=vw, sh=vh;
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
   else { sh=vw/targetRatio; sy=(vh-sh)/2 }
+  // recorta o formato escolhido do sensor (sempre na orientação nativa da câmera) e SÓ DEPOIS
+  // gira o resultado conforme a inclinação física no momento do disparo — é isso que faz a foto
+  // salva sair realmente deitada quando o celular é segurado deitado, e não só a legenda virada.
+  const mid=document.createElement('canvas');
+  mid.width=sw; mid.height=sh;
+  mid.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  const tiltDeg=S.tilt||0, rotated=Math.abs(tiltDeg)===90;
+  const W=rotated?sh:sw, H=rotated?sw:sh;
   const c=document.createElement('canvas');
-  c.width=sw; c.height=sh;
+  c.width=W; c.height=H;
   const ctx=c.getContext('2d');
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  ctx.translate(W/2,H/2); ctx.rotate(tiltDeg*Math.PI/180); ctx.drawImage(mid,-sw/2,-sh/2); ctx.setTransform(1,0,0,1,0,0);
   const info=buildInfo(); S.lastInfo=info;
-  burnLegend(ctx,c.width,c.height,info,S.tilt);
+  burnLegend(ctx,W,H,info,0);
   c.toBlob(b=>autoSave(b), 'image/jpeg', CFG.qual);
   if(CFG.soundalert) playShutterSound();
 };
