@@ -91,21 +91,32 @@ function rawRequest(url, ms, { insecure } = {}) {
   });
 }
 
-async function fetchPoint(url, ms, diag) {
+const STRATEGIES = [
+  ['https', (httpsUrl, httpUrl, ms) => rawRequest(httpsUrl, ms)],
+  ['https (sem checar certificado)', (httpsUrl, httpUrl, ms) => rawRequest(httpsUrl, ms, { insecure: true })],
+  ['http', (httpsUrl, httpUrl, ms) => rawRequest(httpUrl, ms)],
+  // conexão direta do datacenter costuma ser bloqueada por sites .gov.br —
+  // esses proxies fazem a requisição por trás com IPs próprios (mesmos usados no app do navegador)
+  ['ponte allorigins', (httpsUrl, httpUrl, ms) => rawRequest('https://api.allorigins.win/raw?url=' + encodeURIComponent(httpsUrl), ms)],
+  ['ponte corsproxy', (httpsUrl, httpUrl, ms) => rawRequest('https://corsproxy.io/?url=' + encodeURIComponent(httpsUrl), ms)],
+  ['ponte thingproxy', (httpsUrl, httpUrl, ms) => rawRequest('https://thingproxy.freeboard.io/fetch/' + httpsUrl, ms)],
+];
+
+// onlyStrategy: quando informado (índice em STRATEGIES), pula direto pra esse método,
+// sem tentar os outros — usado depois que o probeDnit já descobriu qual funciona,
+// pra não perder tempo retentando conexões que sabemos que travam.
+async function fetchPoint(url, ms, diag, onlyStrategy) {
   const httpsUrl = url.replace(/^http:/, 'https:');
   const httpUrl = url.replace(/^https:/, 'http:');
-  const attempts = [
-    ['https', () => rawRequest(httpsUrl, ms)],
-    ['https (sem checar certificado)', () => rawRequest(httpsUrl, ms, { insecure: true })],
-    ['http', () => rawRequest(httpUrl, ms)],
-  ];
-  for (const [label, run] of attempts) {
+  const indices = onlyStrategy != null ? [onlyStrategy] : STRATEGIES.map((_, i) => i);
+  for (const i of indices) {
+    const [label, run] = STRATEGIES[i];
     try {
-      const { status, body } = await run();
+      const { status, body } = await run(httpsUrl, httpUrl, ms);
       if (diag) diag.push(`${label}: HTTP ${status} — corpo: "${body.slice(0, 200)}"`);
       if (status >= 200 && status < 300) {
         const p = extractLatLon(body);
-        if (p) return p;
+        if (p) return { point: p, strategy: i };
         if (diag) diag.push(`${label}: resposta OK, mas não reconheci coordenadas nela`);
       }
     } catch (e) {
@@ -118,13 +129,14 @@ async function fetchPoint(url, ms, diag) {
 
 async function probeDnit(br, uf, tipo, dataStr, kmi) {
   const diag = [];
-  const p = await fetchPoint(pointUrl(br, uf, kmi, dataStr, tipo), 15000, diag);
-  return { ok: !!p, diag };
+  const r = await fetchPoint(pointUrl(br, uf, kmi, dataStr, tipo), 15000, diag);
+  return { ok: !!r, diag, strategy: r ? r.strategy : null, strategyLabel: r ? STRATEGIES[r.strategy][0] : null };
 }
 
 // baixa uma BR inteira chamando a API ponto a ponto; se km final não for
-// informado, para sozinha após várias falhas seguidas (fim da rodovia)
-async function downloadRoute(br, uf, tipo, kmi, kmf, stepM) {
+// informado, para sozinha após várias falhas seguidas (fim da rodovia).
+// "strategy" vem do probeDnit — pula direto pro método que já sabemos que funciona.
+async function downloadRoute(br, uf, tipo, kmi, kmf, stepM, strategy) {
   const dataStr = new Date().toISOString().slice(0, 10);
   const step = stepM / 1000;
   const autoEnd = kmf == null;
@@ -135,12 +147,12 @@ async function downloadRoute(br, uf, tipo, kmi, kmf, stepM) {
     const batch = [];
     for (let i = 0; i < CONC && km <= maxKm + 1e-9; i++, km += step) batch.push(km);
     const results = await Promise.all(
-      batch.map((k) => fetchPoint(pointUrl(br, uf, k, dataStr, tipo), 15000).then((r) => ({ k, r })))
+      batch.map((k) => fetchPoint(pointUrl(br, uf, k, dataStr, tipo), 15000, null, strategy).then((r) => ({ k, r })))
     );
     tried += batch.length;
     let batchOk = 0;
     for (const { k, r } of results) {
-      if (r) { pts.push({ km: k, lat: r.lat, lon: r.lon }); batchOk++; consecFail = 0; }
+      if (r) { pts.push({ km: k, lat: r.point.lat, lon: r.point.lon }); batchOk++; consecFail = 0; }
       else consecFail++;
     }
     if (tried % 200 === 0) console.log(`  ...${pts.length} pontos obtidos (${tried} consultados)`);
@@ -156,14 +168,15 @@ async function syncRodovia({ br, uf, tipo, kmi, kmf }) {
   console.log(`\n=== ${rodoviaId} ===`);
 
   const dataStr = new Date().toISOString().slice(0, 10);
-  const { ok, diag } = await probeDnit(brPad, uf, tipo, dataStr, kmi ?? 0);
+  const { ok, diag, strategy, strategyLabel } = await probeDnit(brPad, uf, tipo, dataStr, kmi ?? 0);
   if (!ok) {
     console.warn(`  falha ao contatar a API do DNIT para ${rodoviaId} — pulando (mantém dados antigos).`);
     console.warn(`  detalhe: ${diag.join(' · ') || 'nenhuma resposta / sem detalhe'}`);
     return { rodoviaId, status: 'falhou_conexao' };
   }
+  console.log(`  conectado via: ${strategyLabel}`);
 
-  const pts = await downloadRoute(brPad, uf, tipo, kmi ?? 0, kmf ?? null, STEP_M);
+  const pts = await downloadRoute(brPad, uf, tipo, kmi ?? 0, kmf ?? null, STEP_M, strategy);
   if (pts.length < 2) {
     console.warn(`  poucos pontos retornados (${pts.length}) — pulando, sem sobrescrever dados antigos.`);
     return { rodoviaId, status: 'poucos_pontos' };
