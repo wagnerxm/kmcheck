@@ -230,25 +230,27 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 #camflashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
 #camflashfx.on{animation:camflash .28s ease}
-#camdbg{position:absolute;left:8px;top:calc(60px + env(safe-area-inset-top));z-index:61;
-  background:rgba(0,0,0,.65);color:#0f0;font-family:monospace;font-size:12px;line-height:1.5;
-  padding:6px 8px;border-radius:6px;white-space:pre;pointer-events:none}
 @keyframes camflash{0%{opacity:.85}100%{opacity:0}}
-/* #camrot agrupa vídeo + legenda/logo num único bloco que gira junto, acompanhando a
-   inclinação física do aparelho — exatamente como apps de câmera nativos (ex.: Timestamp
-   Camera): a imagem em si vira, não só o texto por cima dela. */
-#camrot{position:absolute;overflow:hidden;background:#000;transition:transform .28s ease}
+/* A prévia (#camvideo) preenche o palco e NUNCA gira — como nas câmeras nativas do iPhone/
+   Android: a imagem fica estável e apenas a INTERFACE (legenda, logo, botões) acompanha a
+   orientação física do aparelho. #camrot é só o contêiner fixo do vídeo. */
+#camrot{position:absolute;inset:0;overflow:hidden;background:#000}
 #camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
-/* #camframe é posicionado por JS para coincidir exatamente com o retângulo do formato
-   escolhido (3:4, 1:1, 16:9), dentro do espaço já rotacionado de #camrot.
-   Tudo dentro dele usa px absolutos calculados na mesma escala da foto gravada. */
-#camframe{position:absolute;pointer-events:none;overflow:visible}
+/* #camframe (legenda/logo) e #camtoprot (botões de topo) são CAMADAS que giram junto com o
+   aparelho — só a interface, não o vídeo. O JS troca largura<->altura e rotaciona por uiTilt,
+   então o "canto superior esquerdo" da camada é sempre o topo-esquerdo para o usuário, em
+   qualquer orientação. A transição suave deixa o giro imperceptível, sem travar. */
+#camframe{position:absolute;left:50%;top:50%;pointer-events:none;overflow:visible;z-index:2;
+  transition:transform .3s ease,width .3s ease,height .3s ease}
+#camtoprot{position:absolute;left:50%;top:50%;pointer-events:none;z-index:6;
+  transition:transform .3s ease,width .3s ease,height .3s ease}
+#camtoprot .camstagebtn{pointer-events:auto}
 #camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
 #liveplate.bold .l1,#liveplate.bold .l2{font-weight:700}
 #liveplate.err .l1{color:#ff9d8a}
-.camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));z-index:6;
+.camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.78);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
   border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:50%;width:42px;height:42px;
@@ -266,12 +268,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .cbside{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
 .cbside.cbleft{justify-content:flex-start}
 .cbside.cbright{justify-content:flex-end}
+/* a barra e os botões ficam SEMPRE no mesmo lugar (posição funcional preservada); só o glifo
+   interno de cada botão gira, pelo acelerômetro, para continuar "em pé" para o usuário. */
 .cbtn{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-family:var(--sans);
-  font-size:13px;font-weight:700;transition:background .15s,transform .18s ease}
+  font-size:13px;font-weight:700;transition:background .15s,transform .3s ease}
 .cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .cbtn.on{background:var(--gold);color:#0d0f08;border-color:var(--gold)}
-.cbtn:active{transform:scale(1.06)}
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
 .cbmini{width:34px;height:34px;font-size:10px}
 .cbmini svg{width:15px;height:15px}
@@ -282,19 +285,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
 #shutter::before{content:'';width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
-/* ---------- barra sempre fixa na borda física de "baixo": vira faixa vertical na horizontal,
-   sem NUNCA reorganizar a posição relativa dos botões — o polegar sempre acha o obturador no mesmo lugar.
-   Detectado pelo giroscópio (S.tilt), não pela orientação do navegador. ---------- */
-#camwrap.cam-landscape{flex-direction:row}
-#camwrap.cam-landscape #camstage{flex:1;min-width:0}
-#camwrap.cam-landscape #cambar2{
-  flex:0 0 auto;width:98px;height:100%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  padding:16px 8px;border-top:none}
-#cambar2.bar-left{order:-1;border-right:1px solid rgba(255,255,255,.14)}
-#cambar2.bar-right{order:2;border-left:1px solid rgba(255,255,255,.14)}
-#camwrap.cam-landscape .cbside{flex-direction:column}
-#camwrap.cam-landscape #shutter{flex:0 0 76px}
 /* ---------- diálogo de serviço ---------- */
 .svcgrid{display:flex;flex-wrap:wrap;gap:8px;max-height:50vh;overflow:auto;padding:4px 2px}
 .svcchip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:9px 15px;font-size:13px;cursor:pointer;font-family:var(--sans)}
@@ -744,15 +734,19 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
   <div id="camstage">
     <div id="camrot">
       <video id="camvideo" autoplay playsinline muted></video>
-      <div id="camframe">
-        <img id="camlogo" alt="" style="display:none">
-        <div id="liveplate"></div>
-      </div>
+    </div>
+    <!-- camada da legenda/logo: gira com o aparelho, o vídeo por baixo fica parado -->
+    <div id="camframe">
+      <img id="camlogo" alt="" style="display:none">
+      <div id="liveplate"></div>
+    </div>
+    <!-- camada dos botões de topo: gira e reposiciona (Voltar sempre no topo-esquerdo,
+         Trocar câmera sempre no topo-direito, do ponto de vista do usuário) -->
+    <div id="camtoprot">
+      <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+      <button id="camflip" class="camstagebtn camstagebtn-right" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
     </div>
     <div id="camflashfx"></div>
-    <div id="camdbg"></div>
-    <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
-    <button id="camflip" class="camstagebtn camstagebtn-right" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -1782,91 +1776,52 @@ document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-
 
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
-/* inclinação física do aparelho — gira o bloco #camrot (vídeo + logo + legenda) ao vivo,
-   acompanhando a orientação real do aparelho detectada pelo sensor de movimento (ou,
-   na falta dele, pela orientação da tela do navegador). Ver applyTilt/layoutCamFrame. */
+/* O VÍDEO nunca gira — fica estável preenchendo o palco (como câmera nativa). Só a INTERFACE
+   (camadas #camframe e #camtoprot + os glifos da barra) gira por 'uiTilt', acompanhando a
+   orientação física do aparelho. S.tilt guarda esse ângulo (0, 90 ou -90). */
 function applyTilt(newTilt){
-  if(newTilt===S.tilt) return;
+  if(newTilt===S.tilt && camGeom) return;
   S.tilt=newTilt;
-  // o vídeo e a legenda giram juntos, como um bloco só (ver layoutCamFrame/#camrot) — é a
-  // IMAGEM que acompanha a inclinação física do aparelho, não só o texto por cima dela.
-  layoutCamFrame(true);
-  // Os botões NÃO saem do lugar (a barra fica fixa), mas os desenhos DENTRO deles giram
-  // junto, pra continuarem "em pé" pra quem segura o celular deitado.
-  const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
-  if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
-  if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
+  layoutOverlays();
+  // barra inferior: posição fixa; só o glifo de cada botão gira para ficar "em pé".
   document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='rotate('+S.tilt+'deg)');
-  updateBarSide();
 }
-/* Ângulo final da legenda/ícones. Como o app é contra-girado (applyScreenLock), o conteúdo
-   precisa girar de volta o mesmo tanto pra ficar nivelado com o mundo real. Se a rotação
-   automática do celular estiver TRAVADA, a tela não gira (ângulo 0) e aí vale o sensor. */
-function refreshTilt(){
-  const a=screenAngle();
-  let t;
-  if(a===90) t=90;
-  else if(a===270) t=-90;
-  else t=S.sensorTilt||0;
-  applyTilt(t);
-}
-function updateBarSide(){
-  // O layout do app é mantido SEMPRE em retrato pela contra-rotação (applyScreenLock),
-  // então a barra de comandos nunca vira faixa lateral — os botões ficam fisicamente
-  // parados no mesmo lugar, não importa pra que lado o celular seja girado.
-  const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
-  if(!wrap||!bar) return;
-  wrap.classList.remove('cam-landscape');
-  bar.classList.remove('bar-left','bar-right');
-}
-/* ---------- trava de orientação por conta própria ----------
-   O iPhone IGNORA o "orientation":"portrait" do manifest (só o Android respeita), então a
-   página gira inteira e leva os botões junto. A solução que funciona nos dois: deixar a página
-   girar e CONTRA-GIRAR o app na mesma medida, trocando largura por altura. Visualmente o app
-   fica sempre em pé (botões parados), e só a legenda gira por cima, pelo sensor. */
+/* uiTilt = orientação física do aparelho (sensor) descontada a rotação que o navegador já
+   aplicou sozinho na página (screenTilt). No caso normal (app instalado, travado em retrato)
+   o navegador não gira nada -> screenTilt=0 -> uiTilt = sensor. Se por acaso a página girar
+   junto, o desconto evita girar a interface duas vezes. */
 function screenAngle(){
   if(window.screen && screen.orientation && typeof screen.orientation.angle==='number') return screen.orientation.angle;
   if(typeof window.orientation==='number'){ const o=window.orientation; return o<0 ? 360+o : o }
   return 0;
 }
-function applyScreenLock(){
-  const wrap=document.getElementById('camwrap');
-  if(!wrap || !wrap.classList.contains('on')) return;
+function screenTilt(){
   const a=screenAngle();
-  const w=window.innerWidth, h=window.innerHeight;
-  if(a===90 || a===270){
-    // a tela girou: contra-gira o app e troca largura/altura pra ele ocupar a tela toda
-    wrap.style.width=h+'px'; wrap.style.height=w+'px';
-    wrap.style.top='50%'; wrap.style.left='50%'; wrap.style.right='auto'; wrap.style.bottom='auto';
-    wrap.style.transform='translate(-50%,-50%) rotate('+(-a)+'deg)';
-  } else {
-    // retrato normal: sem contra-rotação
-    wrap.style.width=''; wrap.style.height='';
-    wrap.style.top=''; wrap.style.left=''; wrap.style.right=''; wrap.style.bottom='';
-    wrap.style.transform='';
-  }
-  requestAnimationFrame(()=>layoutCamFrame(true));
+  if(a===90) return 90;
+  if(a===270) return -90;
+  return 0;
 }
-function onScreenRotate(){ applyScreenLock(); refreshTilt() }
-/* leitura do acelerômetro (devicemotion) — funciona MESMO com a tela travada em retrato
-   (o app nunca gira de verdade; só a imagem e a legenda acompanham a inclinação física
-   real do aparelho, detectada pelo sensor de movimento, não pela tela) */
+function refreshTilt(){
+  let t=(S.sensorTilt||0) - screenTilt();
+  if(t>180) t-=360; else if(t<-180) t+=360;
+  if(Math.abs(t)===180) t=0;   // nunca vira a interface de cabeça para baixo
+  applyTilt(t);
+}
+function onScreenRotate(){ layoutOverlays(); refreshTilt() }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
    de volta pro estado vertical — exatamente o bug relatado ao fotografar o chão. A componente
    da gravidade no PLANO da tela (x,y) não depende de pra onde a câmera está apontando (pitch),
-   só de como o aparelho está girado (retrato/paisagem/de cabeça p/ baixo), o que resolve isso. */
+   só de como o aparelho está girado (retrato/paisagem), o que resolve isso. */
 function tiltFromGravity(ax, ay, current){
   if(ax==null || ay==null) return current;
   if(Math.hypot(ax,ay)<2.0) return current;   // câmera quase reto pro chão/céu: sem referência confiável, mantém o último ângulo
   const angle=Math.atan2(ax,ay)*180/Math.PI;  // 0=retrato normal, 90/-90=deitado
   const HYST=15;                              // graus extras de folga a favor do estado atual, pra não oscilar na fronteira
   const dist=a=>Math.abs(((angle-a+540)%360)-180);
-  // "de cabeça para baixo" (180°) foi removido de propósito: em vez de detectar esse estado
-  // (raro nesse uso e sensível a inversão de sinal do sensor em alguns navegadores), qualquer
-  // leitura perto de 180 agora cai no candidato de retrato/paisagem mais próximo, então o app
-  // nunca mais vira a imagem de cabeça para baixo por engano.
+  // "de cabeça para baixo" (180°) foi removido de propósito: qualquer leitura perto de 180 cai
+  // no candidato de retrato/paisagem mais próximo, então a interface nunca inverte por engano.
   let best=0, bestD=Infinity;
   for(const s of [0,90,-90]){ const d=dist(s)-(s===current?HYST:0); if(d<bestD){ best=s; bestD=d } }
   return best;
@@ -1875,80 +1830,60 @@ function onDeviceMotion(e){
   const g=e.accelerationIncludingGravity;
   if(!g) return;
   // Safari (iOS) reporta accelerationIncludingGravity com o sinal invertido em relação à
-  // especificação (bug antigo e conhecido do WebKit, nunca corrigido para não quebrar sites
-  // que já compensavam por conta própria) — sem negar aqui, retrato lia como 180°/paisagem.
-  const ax=-g.x, ay=-g.y;
-  S.sensorTilt=tiltFromGravity(ax, ay, S.sensorTilt||0);
-  const dbg=document.getElementById('camdbg');
-  if(dbg) dbg.textContent='ax:'+ax.toFixed(1)+' ay:'+ay.toFixed(1)+' ang:'+Math.round(Math.atan2(ax,ay)*180/Math.PI)+' tilt:'+S.sensorTilt;
+  // especificação (bug antigo e conhecido do WebKit) — sem negar aqui, retrato lia como paisagem.
+  S.sensorTilt=tiltFromGravity(-g.x, -g.y, S.sensorTilt||0);
   refreshTilt();
 }
 async function enableTiltSensor(){
   try{
     if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
       const res=await DeviceMotionEvent.requestPermission();
-      if(res!=='granted') return;   // usuário negou: legenda fica fixa, resto do app funciona normal
+      if(res!=='granted') return;   // usuário negou: interface fica fixa, resto do app funciona normal
     }
     window.addEventListener('devicemotion', onDeviceMotion);
-  }catch(e){ /* sensor indisponível neste aparelho/navegador — legenda simplesmente não acompanha */ }
+  }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
 function enableScreenLock(){
   window.addEventListener('orientationchange', onScreenRotate);
   window.addEventListener('resize', onScreenRotate);
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', onScreenRotate);
-  applyScreenLock(); refreshTilt();
+  layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('orientationchange', onScreenRotate);
   window.removeEventListener('resize', onScreenRotate);
   if(window.screen && screen.orientation) screen.orientation.removeEventListener('change', onScreenRotate);
-  const wrap=document.getElementById('camwrap');
-  if(wrap){ wrap.style.width=''; wrap.style.height=''; wrap.style.top=''; wrap.style.left='';
-            wrap.style.right=''; wrap.style.bottom=''; wrap.style.transform='' }
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
   S.tilt=0; S.sensorTilt=0;
-  layoutCamFrame(true);
-  const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
-  if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
   document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='');
-  const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
-  if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right');
 }
 
-let camGeom=null; // cache: {u,pad} — recalculado quando o quadro muda de forma ou de inclinação
-function layoutCamFrame(force){
+let camGeom=null; // cache: {u,pad,W,H} — recalculado quando o palco muda de forma ou de inclinação
+/* Posiciona e gira as CAMADAS de interface (#camframe = legenda/logo, #camtoprot = botões de
+   topo). O vídeo por baixo fica parado. Quando a inclinação é de 90°, a camada recebe o formato
+   TROCADO (largura<->altura) e é girada, caindo exatamente sobre o palco — assim o "topo" da
+   camada é sempre o topo para o usuário, e Voltar/Trocar reposicionam nos cantos corretos. */
+function layoutOverlays(){
   const cw=camstage.clientWidth, ch=camstage.clientHeight;
   if(!cw||!ch) return;
-  // #camrot é o bloco que gira fisicamente junto com o aparelho (vídeo + legenda + logo).
-  // Antes de girar, ele recebe o formato TROCADO (largura<->altura) quando a inclinação é de
-  // 90°, do mesmo jeito que applyScreenLock troca largura/altura do app inteiro na rotação real
-  // da tela — assim, depois de girado, o bloco cai exatamente sobre a área do palco (camstage).
   const rotated=Math.abs(S.tilt)===90;
   const boxW=rotated?ch:cw, boxH=rotated?cw:ch;
-  const rot=document.getElementById('camrot');
-  rot.style.width=boxW+'px'; rot.style.height=boxH+'px';
-  rot.style.left='50%'; rot.style.top='50%'; rot.style.right='auto'; rot.style.bottom='auto';
-  rot.style.transform='translate(-50%,-50%) rotate('+S.tilt+'deg)';
-  // a prévia ao vivo ocupa o palco INTEIRO, sem cortar pro formato escolhido (3:4, 1:1,
-  // 16:9) — esse corte só é aplicado na foto final (ver shutter.onclick). Assim a legenda
-  // é calculada em proporção à tela cheia da câmera, não a um retângulo menor e recortado.
-  const frame=document.getElementById('camframe');
-  frame.style.left='0px'; frame.style.top='0px';
-  frame.style.width=boxW+'px'; frame.style.height=boxH+'px';
+  const tf='translate(-50%,-50%) rotate('+S.tilt+'deg)';
+  for(const id of ['camframe','camtoprot']){
+    const el=document.getElementById(id); if(!el) continue;
+    el.style.width=boxW+'px'; el.style.height=boxH+'px'; el.style.transform=tf;
+  }
   const u=Math.max(boxW,boxH)/1000;
-  const pad=20*u;
-  camGeom={u, pad};
+  camGeom={u, pad:20*u, W:boxW, H:boxH};
   layoutCamLogo();
   styleLivePlate();
 }
 /* logo ao vivo: mesma posição/tamanho/opacidade que burnLegend vai gravar */
 function layoutCamLogo(){
   if(!camGeom) return;
-  const {u,pad}=camGeom;
-  const frame=document.getElementById('camframe');
-  const dw=parseFloat(frame.style.width)||0, dh=parseFloat(frame.style.height)||0;
+  const {u,pad,W:dw,H:dh}=camGeom;
   const cl=document.getElementById('camlogo');
   const maxH=118*u*CFG.logosz, maxW=440*u*CFG.logosz;
   cl.style.height=maxH+'px'; cl.style.maxWidth=maxW+'px'; cl.style.width='auto';
@@ -1982,7 +1917,7 @@ function styleLivePlate(){
 /* qualquer ajuste nas configurações reflete na hora na visualização ao vivo */
 function refreshLive(){
   if(!document.getElementById('camwrap').classList.contains('on')) return;
-  layoutCamFrame(true);
+  layoutOverlays();
   paintGps();
 }
 let camTick=null;
@@ -2008,7 +1943,10 @@ async function openCam(){
     camGeom=null;
     enableScreenLock();
     initFlashSupport();
-    layoutCamFrame(true);
+    // recalcula assim que o vídeo souber suas dimensões (e a cada giro físico do sensor)
+    video.addEventListener('loadedmetadata', layoutOverlays);
+    video.addEventListener('resize', layoutOverlays);
+    layoutOverlays();
   }catch(e){
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
@@ -2018,21 +1956,41 @@ async function openCam(){
 function closeCam(){ camwrap.classList.remove('on'); disableScreenLock(); document.querySelector('nav').style.display=''; document.querySelector('header.top').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
 document.getElementById('camback').onclick=closeCam;
 document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
+/* som clássico de obturador: dois "clicks" mecânicos curtos (ruído filtrado com envelope bem
+   rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular. */
 function playShutterSound(){
   try{
     const A=new (window.AudioContext||window.webkitAudioContext)();
-    const o=A.createOscillator(), g=A.createGain();
-    o.type='sine'; o.frequency.value=880;
-    g.gain.setValueAtTime(0.25, A.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, A.currentTime+0.15);
-    o.connect(g); g.connect(A.destination);
-    o.start(); o.stop(A.currentTime+0.15);
+    const t0=A.currentTime;
+    const click=(at, dur, freq, gain)=>{
+      const n=A.createBufferSource();
+      const buf=A.createBuffer(1, Math.max(1, Math.ceil(A.sampleRate*dur)), A.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+      n.buffer=buf;
+      const bp=A.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=freq; bp.Q.value=0.9;
+      const g=A.createGain();
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(gain, at+0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, at+dur);
+      n.connect(bp); bp.connect(g); g.connect(A.destination);
+      n.start(at); n.stop(at+dur);
+    };
+    click(t0,       0.045, 2600, 0.5);   // abre
+    click(t0+0.055, 0.06,  1700, 0.32);  // fecha
+    setTimeout(()=>{ try{A.close()}catch(e){} }, 400);
   }catch(e){}
 }
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
+  // feedback imediato no toque, sincronizado com o disparo: flash + vibração + som, ANTES do
+  // processamento pesado do canvas (senão o retorno chegaria com atraso perceptível)
   const fx=document.getElementById('camflashfx');
   fx.classList.remove('on'); void fx.offsetWidth; fx.classList.add('on');
+  // vibração curta e discreta (Android); iOS/Safari ainda não expõe vibração para a web, então
+  // lá simplesmente não vibra — o resto do feedback (flash + som) cobre a sensação de disparo.
+  if(navigator.vibrate) try{ navigator.vibrate(12) }catch(e){}
+  if(CFG.soundalert) playShutterSound();
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
   const targetRatio=rw/rh, srcRatio=vw/vh;
@@ -2054,7 +2012,6 @@ document.getElementById('shutter').onclick=()=>{
   const info=buildInfo(); S.lastInfo=info;
   burnLegend(ctx,W,H,info,0);
   c.toBlob(b=>autoSave(b), 'image/jpeg', CFG.qual);
-  if(CFG.soundalert) playShutterSound();
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
