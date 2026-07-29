@@ -15,11 +15,15 @@ jobs:
       - name: Configurar Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
 
       - name: Instalar dependências
         working-directory: scripts
         run: npm install
+
+      - name: Instalar navegador (Playwright)
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
 
       - name: Rodar sincronização
         working-directory: scripts
