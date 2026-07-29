@@ -14,6 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { chromium } from 'playwright';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -98,7 +99,28 @@ function rawRequest(url, ms, { insecure } = {}) {
   });
 }
 
+// requisição feita de DENTRO de um navegador Chromium real (Playwright) —
+// isso passa pela mesma pilha de rede/TLS de um navegador de verdade, o que
+// contorna proteções anti-robô que bloqueiam requisições "cruas" de servidor.
+async function fetchViaBrowser(page, url, ms) {
+  return page.evaluate(async ({ url, ms }) => {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), ms);
+    try {
+      const r = await fetch(url, { signal: ctl.signal });
+      const body = await r.text();
+      return { status: r.status, body };
+    } finally {
+      clearTimeout(t);
+    }
+  }, { url, ms });
+}
+
 const STRATEGIES = [
+  ['navegador real (playwright)', (httpsUrl, httpUrl, ms, ctx) => {
+    if (!ctx?.page) throw new Error('página do playwright indisponível');
+    return fetchViaBrowser(ctx.page, httpsUrl, ms);
+  }],
   ['https', (httpsUrl, httpUrl, ms) => rawRequest(httpsUrl, ms)],
   ['https (sem checar certificado)', (httpsUrl, httpUrl, ms) => rawRequest(httpsUrl, ms, { insecure: true })],
   ['http', (httpsUrl, httpUrl, ms) => rawRequest(httpUrl, ms)],
@@ -112,14 +134,14 @@ const STRATEGIES = [
 // onlyStrategy: quando informado (índice em STRATEGIES), pula direto pra esse método,
 // sem tentar os outros — usado depois que o probeDnit já descobriu qual funciona,
 // pra não perder tempo retentando conexões que sabemos que travam.
-async function fetchPoint(url, ms, diag, onlyStrategy) {
+async function fetchPoint(url, ms, diag, onlyStrategy, ctx) {
   const httpsUrl = url.replace(/^http:/, 'https:');
   const httpUrl = url.replace(/^https:/, 'http:');
   const indices = onlyStrategy != null ? [onlyStrategy] : STRATEGIES.map((_, i) => i);
   for (const i of indices) {
     const [label, run] = STRATEGIES[i];
     try {
-      const { status, body } = await run(httpsUrl, httpUrl, ms);
+      const { status, body } = await run(httpsUrl, httpUrl, ms, ctx);
       if (diag) diag.push(`${label}: HTTP ${status} — corpo: "${body.slice(0, 200)}"`);
       if (status >= 200 && status < 300) {
         const p = extractLatLon(body);
@@ -134,16 +156,16 @@ async function fetchPoint(url, ms, diag, onlyStrategy) {
   return null;
 }
 
-async function probeDnit(br, uf, tipo, dataStr, kmi) {
+async function probeDnit(br, uf, tipo, dataStr, kmi, ctx) {
   const diag = [];
-  const r = await fetchPoint(pointUrl(br, uf, kmi, dataStr, tipo), 15000, diag);
+  const r = await fetchPoint(pointUrl(br, uf, kmi, dataStr, tipo), 15000, diag, null, ctx);
   return { ok: !!r, diag, strategy: r ? r.strategy : null, strategyLabel: r ? STRATEGIES[r.strategy][0] : null };
 }
 
 // baixa uma BR inteira chamando a API ponto a ponto; se km final não for
 // informado, para sozinha após várias falhas seguidas (fim da rodovia).
 // "strategy" vem do probeDnit — pula direto pro método que já sabemos que funciona.
-async function downloadRoute(br, uf, tipo, kmi, kmf, stepM, strategy) {
+async function downloadRoute(br, uf, tipo, kmi, kmf, stepM, strategy, ctx) {
   const dataStr = new Date().toISOString().slice(0, 10);
   const step = stepM / 1000;
   const autoEnd = kmf == null;
@@ -154,7 +176,7 @@ async function downloadRoute(br, uf, tipo, kmi, kmf, stepM, strategy) {
     const batch = [];
     for (let i = 0; i < CONC && km <= maxKm + 1e-9; i++, km += step) batch.push(km);
     const results = await Promise.all(
-      batch.map((k) => fetchPoint(pointUrl(br, uf, k, dataStr, tipo), 15000, null, strategy).then((r) => ({ k, r })))
+      batch.map((k) => fetchPoint(pointUrl(br, uf, k, dataStr, tipo), 15000, null, strategy, ctx).then((r) => ({ k, r })))
     );
     tried += batch.length;
     let batchOk = 0;
@@ -169,13 +191,13 @@ async function downloadRoute(br, uf, tipo, kmi, kmf, stepM, strategy) {
   return pts;
 }
 
-async function syncRodovia({ br, uf, tipo, kmi, kmf }) {
+async function syncRodovia({ br, uf, tipo, kmi, kmf }, ctx) {
   const brPad = String(br).padStart(3, '0');
   const rodoviaId = `BR-${brPad}/${uf}`;
   console.log(`\n=== ${rodoviaId} ===`);
 
   const dataStr = new Date().toISOString().slice(0, 10);
-  const { ok, diag, strategy, strategyLabel } = await probeDnit(brPad, uf, tipo, dataStr, kmi ?? 0);
+  const { ok, diag, strategy, strategyLabel } = await probeDnit(brPad, uf, tipo, dataStr, kmi ?? 0, ctx);
   if (!ok) {
     console.warn(`  falha ao contatar a API do DNIT para ${rodoviaId} — pulando (mantém dados antigos).`);
     console.warn(`  detalhe: ${diag.join(' · ') || 'nenhuma resposta / sem detalhe'}`);
@@ -183,7 +205,7 @@ async function syncRodovia({ br, uf, tipo, kmi, kmf }) {
   }
   console.log(`  conectado via: ${strategyLabel}`);
 
-  const pts = await downloadRoute(brPad, uf, tipo, kmi ?? 0, kmf ?? null, STEP_M, strategy);
+  const pts = await downloadRoute(brPad, uf, tipo, kmi ?? 0, kmf ?? null, STEP_M, strategy, ctx);
   if (pts.length < 2) {
     console.warn(`  poucos pontos retornados (${pts.length}) — pulando, sem sobrescrever dados antigos.`);
     return { rodoviaId, status: 'poucos_pontos' };
@@ -212,15 +234,33 @@ async function main() {
   const lista = JSON.parse(readFileSync(listPath, 'utf8'));
   console.log(`Sincronizando ${lista.length} rodovia(s)...`);
 
+  console.log('Abrindo navegador (playwright)...');
+  const browser = await chromium.launch();
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    locale: 'pt-BR',
+  });
+  const page = await context.newPage();
+  try {
+    // visita o site principal primeiro — alguns sites de governo exigem uma sessão/cookie
+    // válida antes de aceitar chamadas à API, mesmo que a API em si não peça login
+    await page.goto('https://servicos.dnit.gov.br/', { waitUntil: 'domcontentloaded', timeout: 20000 });
+  } catch (e) {
+    console.warn(`  aviso: não consegui abrir a página principal do DNIT antes (${e.message}) — seguindo mesmo assim.`);
+  }
+  const ctx = { page };
+
   const resultados = [];
   for (const rodovia of lista) {
     try {
-      resultados.push(await syncRodovia(rodovia));
+      resultados.push(await syncRodovia(rodovia, ctx));
     } catch (e) {
       console.error(`  ❌ erro em BR-${rodovia.br}/${rodovia.uf}: ${e.message}`);
       resultados.push({ rodoviaId: `BR-${rodovia.br}/${rodovia.uf}`, status: 'erro', erro: e.message });
     }
   }
+
+  await browser.close();
 
   console.log('\n=== resumo ===');
   console.table(resultados);
