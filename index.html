@@ -2030,7 +2030,8 @@ document.getElementById('shutter').onclick=()=>{
   ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
   ctx.setTransform(1,0,0,1,0,0);
   const info=buildInfo(); S.lastInfo=info;
-  burnLegend(ctx,sw,sh,info,0);
+  // legenda acompanha a inclinação da imagem (mesma geometria da prévia ao vivo)
+  burnLegend(ctx,sw,sh,info,S.tilt||0);
   c.toBlob(b=>postCapture(b), 'image/jpeg', CFG.qual);
 };
 
@@ -2204,12 +2205,19 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
    inclinação física do aparelho no momento da foto, igual à prévia ao vivo. */
 function burnLegend(ctx,W,H,info,tiltDeg){
   const {L}=legendLines(info);
-  const u=Math.max(W,H)/1000;
+  // A legenda acompanha a INCLINAÇÃO da imagem, igual à prévia ao vivo: quando o celular está
+  // deitado (tilt ±90), a caixa da legenda troca largura<->altura e o grupo (legenda+logo) gira
+  // em torno do centro — assim ela cai "em pé" em relação à cena, no mesmo canto da prévia.
+  const rotated=Math.abs(tiltDeg)===90;
+  const BW=rotated?H:W, BH=rotated?W:H;
+  const u=Math.max(BW,BH)/1000;
   const pad=20*u;
   const size=17*u*CFG.legsz;
   const lh=size*1.38;
   ctx.save();
-  if(tiltDeg){ ctx.translate(W/2,H/2); ctx.rotate(tiltDeg*Math.PI/180); ctx.translate(-W/2,-H/2) }
+  ctx.translate(W/2,H/2);
+  if(tiltDeg) ctx.rotate(tiltDeg*Math.PI/180);
+  ctx.translate(-BW/2,-BH/2);   // a partir daqui o sistema é a caixa "em pé" BW×BH
   ctx.textBaseline='alphabetic';
   ctx.globalAlpha=CFG.legop;
   ctx.fillStyle=CFG.legcolor;
@@ -2217,12 +2225,12 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   const legRight = CFG.legpos==='br' || CFG.legpos==='tr';
   const legTop   = CFG.legpos==='tl' || CFG.legpos==='tr';
   ctx.textAlign = legRight ? 'right' : 'left';
-  const lx = legRight ? W-pad : pad;
+  const lx = legRight ? BW-pad : pad;
   if(legTop){
     let y=pad+size;
     for(let i=0;i<L.length;i++){ ctx.fillText(L[i], lx, y); y+=lh }
   } else {
-    let y=H-pad;
+    let y=BH-pad;
     for(let i=L.length-1;i>=0;i--){ ctx.fillText(L[i], lx, y); y-=lh }
   }
   ctx.globalAlpha=1;
@@ -2232,8 +2240,8 @@ function burnLegend(ctx,W,H,info,tiltDeg){
     const s=Math.min(maxH/S.logoImg.naturalHeight, maxW/S.logoImg.naturalWidth);
     const lw=S.logoImg.naturalWidth*s, lhh=S.logoImg.naturalHeight*s;
     const p=CFG.logopos;
-    const lgx = (p==='tr'||p==='br') ? W-pad-lw : pad;
-    const lgy = (p==='bl'||p==='br') ? H-pad-lhh : pad;
+    const lgx = (p==='tr'||p==='br') ? BW-pad-lw : pad;
+    const lgy = (p==='bl'||p==='br') ? BH-pad-lhh : pad;
     ctx.save();
     ctx.globalAlpha=CFG.logoop;
     ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=6*u; ctx.shadowOffsetY=2*u;
@@ -2244,7 +2252,7 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   ctx.font=`400 ${11*u}px Arial, Helvetica, sans-serif`;
   ctx.textAlign = legRight ? 'left' : 'right';
   ctx.fillStyle='rgba(255,255,255,.85)';
-  ctx.fillText('KM CHECK · SNV/DNIT', legRight ? 14*u : W-14*u, legTop ? H-14*u : (CFG.logopos==='bl'||CFG.logopos==='br' ? 20*u : H-14*u));
+  ctx.fillText('KM CHECK · SNV/DNIT', legRight ? 14*u : BW-14*u, legTop ? BH-14*u : (CFG.logopos==='bl'||CFG.logopos==='br' ? 20*u : BH-14*u));
   ctx.textAlign='left';
   ctx.restore();
 }
