@@ -630,8 +630,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <select id="cfg-legsz" class="lsel">
           <option value="80">Pequena</option>
           <option value="100" selected>Média</option>
-          <option value="150">Grande</option>
-          <option value="200">Extra grande</option>
+          <option value="130">Grande</option>
+          <option value="160">Extra grande</option>
         </select>
       </label>
       <label class="listrow">
@@ -1918,18 +1918,13 @@ function layoutCamFrame(force){
   rot.style.width=boxW+'px'; rot.style.height=boxH+'px';
   rot.style.left='50%'; rot.style.top='50%'; rot.style.right='auto'; rot.style.bottom='auto';
   rot.style.transform='translate(-50%,-50%) rotate('+S.tilt+'deg)';
-  // recorte central conforme o FORMATO escolhido nas configurações (3:4, 1:1, 16:9), calculado
-  // dentro do espaço AINDA NÃO girado de #camrot — exatamente o mesmo recorte que o disparo
-  // grava, então o que aparece aqui (depois de girar) é o que sai na foto.
-  const [fw,fh]=(CFG.format||'3:4').split(':').map(Number);
-  const targetAspect=fw/fh;
-  let dw=boxW, dh=boxH;
-  if(boxW/boxH>targetAspect) dw=boxH*targetAspect; else dh=boxW/targetAspect;
-  const ox=(boxW-dw)/2, oy=(boxH-dh)/2;
+  // a prévia ao vivo ocupa o palco INTEIRO, sem cortar pro formato escolhido (3:4, 1:1,
+  // 16:9) — esse corte só é aplicado na foto final (ver shutter.onclick). Assim a legenda
+  // é calculada em proporção à tela cheia da câmera, não a um retângulo menor e recortado.
   const frame=document.getElementById('camframe');
-  frame.style.left=ox+'px'; frame.style.top=oy+'px';
-  frame.style.width=dw+'px'; frame.style.height=dh+'px';
-  const u=Math.max(dw,dh)/1000;               // mesma fórmula usada em burnLegend
+  frame.style.left='0px'; frame.style.top='0px';
+  frame.style.width=boxW+'px'; frame.style.height=boxH+'px';
+  const u=Math.max(boxW,boxH)/1000;
   const pad=20*u;
   camGeom={u, pad};
   layoutCamLogo();
