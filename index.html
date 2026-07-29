@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>KM Check</title>
 <meta name="theme-color" content="#0a0c0e">
+<meta name="color-scheme" content="dark light">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="KM Check">
 <style>
 :root{
+  color-scheme: dark;
   --bg:#0a0c0e; --panel:#141719; --panel2:#1b1f22; --navy:#1b1f22;
   --gold:#b7d92d; --gold2:#c9e463; --text:#eef1f6; --mut:#8791a3;
   --ok:#b7d92d; --warn:#d9a22b; --err:#e05c5c; --line:#212528;
@@ -26,6 +28,7 @@
   --glassrimtop:rgba(255,255,255,.16); --glassrimbot:rgba(255,255,255,.05);
 }
 :root[data-theme="light"]{
+  color-scheme: light;
   --bg:#f4f4f2; --panel:#f8fafc; --panel2:#e9eff4; --navy:#e9eff4;
   --gold:#3b4559; --gold2:#5c7690; --text:#1c2333; --mut:#66748a;
   --ok:#3b4559; --warn:#b5790f; --err:#c23d3d; --line:#dde5ec;
@@ -838,7 +841,8 @@ const S = {
   watchId: null,
   stream: null,
   facing: 'environment',
-  lastBlob: null, lastName: 'foto.jpg'
+  lastBlob: null, lastName: 'foto.jpg',
+  tilt: 0
 };
 const CFG = {
   get oae(){ return ls('oae', true) }, get coord(){ return ls('coord', true) },
@@ -1769,45 +1773,17 @@ const camwrap=document.getElementById('camwrap'), video=document.getElementById(
    exibido pelo vídeo (object-fit:contain) — a mesma proporção da foto gravada.
    Reage às dimensões REAIS do sensor da câmera (video.videoWidth/Height), que
    mudam quando o aparelho gira fisicamente, mesmo com a rotação de tela travada. */
-/* inclinação física do aparelho (giroscópio) — gira a logo/legenda ao vivo mesmo
-   com a rotação de tela do celular travada, igual a um app de timestamp */
-S.tilt=0;
-function classifyTilt(beta, gamma, prev){
-  const absB=Math.abs(beta), absG=Math.abs(gamma), margin=15;
-  if(prev==null) return absG>absB ? (gamma>0?-90:90) : (beta>=0?0:180);
-  const prevLandscape = prev===90||prev===-90;
-  if(prevLandscape){
-    if(absB > absG+margin) return beta>=0?0:180;
-    return gamma>0?-90:90;
-  } else {
-    if(absG > absB+margin) return gamma>0?-90:90;
-    return prev;
-  }
-}
-/* estabilização temporal: uma nova orientação só é aceita depois de se manter
-   estável por ~350ms — evita a legenda "tremer" perto das bordas entre os quadrantes */
-let tiltCandidate=null, tiltCandidateSince=0;
-const TILT_DEBOUNCE_MS=350;
-function classifyTiltStable(beta, gamma, prev, now){
-  const cand=classifyTilt(beta, gamma, prev);
-  if(cand===prev){ tiltCandidate=null; return prev }
-  if(cand!==tiltCandidate){ tiltCandidate=cand; tiltCandidateSince=now; return prev }
-  if(now-tiltCandidateSince>=TILT_DEBOUNCE_MS){ tiltCandidate=null; return cand }
-  return prev;
-}
-function onDeviceOrientation(e){
-  if(e.beta==null||e.gamma==null){
-    if(!S._diagNull){ S._diagNull=true; toast('DIAG: evento chegou mas beta/gamma vêm nulos.') }
-    return;
-  }
-  if(!S._diagFirst){ S._diagFirst=true; toast('DIAG: sensor ativo (beta='+Math.round(e.beta)+' gamma='+Math.round(e.gamma)+')') }
-  const newTilt=classifyTiltStable(e.beta, e.gamma, S.tilt, Date.now());
-  if(newTilt===S.tilt) return;   // nada mudou de verdade — não mexe em nenhum elemento
+/* inclinação física do aparelho — gira a logo/legenda ao vivo acompanhando a orientação
+   real da tela do navegador (window.orientation / screen.orientation). Não depende de
+   permissão de sensor de movimento — só exige que a rotação automática do celular esteja
+   destravada, senão o navegador não sabe que o aparelho virou. */
+function applyTilt(newTilt){
+  if(newTilt===S.tilt) return;
   S.tilt=newTilt;
   const frame=document.getElementById('camframe');
   if(frame) frame.style.transform='rotate('+S.tilt+'deg)';
   // só a legenda/logo, os botões de canto e os ícones internos da barra acompanham a
-  // inclinação — os BOTÕES da barra em si (posição, ordem, espaçamento) NUNCA se movem
+  // inclinação física do aparelho — os BOTÕES da barra em si (posição, ordem, espaçamento) NUNCA se movem
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
   if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
@@ -1830,30 +1806,38 @@ function updateBarSide(){
     requestAnimationFrame(()=>layoutCamFrame(true));
   }
 }
+/* leitura do giroscópio/acelerômetro (deviceorientation) — funciona MESMO com a tela travada
+   em retrato (o app nunca gira de verdade; só a legenda e os ícones de canto acompanham a
+   inclinação física real do aparelho, detectada pelo sensor de movimento, não pela tela) */
+function tiltFromOrientation(beta, gamma, current){
+  if(beta==null || gamma==null) return current;
+  if(Math.abs(beta)>165) return current;        // aparelho deitado/de cabeça p/ baixo: leitura ambígua, mantém o ângulo anterior
+  const inLandscape=(current===90||current===-90);
+  const th=inLandscape?35:45;                    // histerese: mais fácil manter o estado atual do que trocar
+  if(gamma>th) return -90;
+  if(gamma<-th) return 90;
+  return (Math.abs(beta)<135) ? 0 : 180;
+}
+function onDeviceOrientation(e){ applyTilt(tiltFromOrientation(e.beta, e.gamma, S.tilt)); }
 async function enableTiltSensor(){
   try{
-    if(typeof DeviceOrientationEvent==='undefined'){
-      toast('DIAG: DeviceOrientationEvent não existe neste navegador.'); return;
-    }
-    if(typeof DeviceOrientationEvent.requestPermission==='function'){
-      const r=await DeviceOrientationEvent.requestPermission(); // iOS: pergunta 1x, depois lembra
-      if(r!=='granted'){ toast('DIAG: permissão de movimento = "'+r+'" (negada).'); return }
-      toast('DIAG: permissão concedida — ligando o sensor.');
-    } else {
-      toast('DIAG: este navegador não pede permissão (API antiga) — ligando direto.');
+    if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
+      const res=await DeviceOrientationEvent.requestPermission();
+      if(res!=='granted') return;   // usuário negou: legenda fica fixa, resto do app funciona normal
     }
     window.addEventListener('deviceorientation', onDeviceOrientation);
-  }catch(e){ toast('DIAG: erro ao ligar o sensor — '+e.message) }
+  }catch(e){ /* sensor indisponível neste aparelho/navegador — legenda simplesmente não acompanha */ }
 }
-function disableTiltSensor(){ window.removeEventListener('deviceorientation', onDeviceOrientation); S.tilt=0;
-  S._diagFirst=false; S._diagNull=false;
-  tiltCandidate=null; tiltCandidateSince=0;
+function disableTiltSensor(){
+  window.removeEventListener('deviceorientation', onDeviceOrientation);
+  S.tilt=0;
   const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
   document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='');
   const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
-  if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right'); }
+  if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right');
+}
 
 let camGeom=null; // cache: {u,pad,size,dw,dh} — só recalculado quando o quadro da câmera realmente muda de forma
 function layoutCamFrame(force){
