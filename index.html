@@ -228,9 +228,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
 #camwrap.on{display:flex}
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
-#camflashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
-#camflashfx.on{animation:camflash .28s ease}
-@keyframes camflash{0%{opacity:.85}100%{opacity:0}}
+/* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
+   nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
+#camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
+#camflashfx.on{animation:camflash .18s ease-out}
+@keyframes camflash{0%{opacity:0}18%{opacity:1}40%{opacity:1}100%{opacity:0}}
+#save-preview{display:block;width:100%;max-height:58vh;object-fit:contain;border-radius:12px;margin-bottom:14px;background:#000}
 /* A prévia (#camvideo) preenche o palco e NUNCA gira — como nas câmeras nativas do iPhone/
    Android: a imagem fica estável e apenas a INTERFACE (legenda, logo, botões) acompanha a
    orientação física do aparelho. #camrot é só o contêiner fixo do vídeo. */
@@ -790,6 +793,16 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
   </div>
   <div id="gal-caption"></div>
 </div>
+
+<!-- diálogo pós-captura: pré-visualização (se ativada) + salvar no álbum do celular -->
+<dialog id="dlg-save">
+  <img id="save-preview" alt="Pré-visualização da foto" style="display:none">
+  <h2 class="sec" id="save-title" style="margin-top:0">Deseja salvar a imagem?</h2>
+  <div class="row" style="gap:10px;margin-top:4px">
+    <button class="btn ghost" id="save-no" style="flex:1">NÃO</button>
+    <button class="btn gold" id="save-yes" style="flex:1">SIM</button>
+  </div>
+</dialog>
 
 <!-- diálogo de importação KMZ: escolher BRs -->
 <dialog id="dlg-kmz">
@@ -1945,6 +1958,9 @@ async function openCam(){
     const R=resMap[CFG.res]||resMap.max;
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false});
     video.srcObject=S.stream;
+    // câmera frontal costuma vir com o sensor invertido (imagem de cabeça para baixo na prévia)
+    // — gira 180° só nela, pra ficar em pé. A traseira fica sem transformação (prévia estável).
+    video.style.transform = S.facing==='user' ? 'rotate(180deg)' : '';
     camwrap.classList.add('on');
     camGeom=null;
     enableScreenLock();
@@ -1989,35 +2005,33 @@ function playShutterSound(){
 }
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
-  // feedback imediato no toque, sincronizado com o disparo: flash + vibração + som, ANTES do
+  // feedback imediato no toque, sincronizado com o disparo: piscada + vibração + som, ANTES do
   // processamento pesado do canvas (senão o retorno chegaria com atraso perceptível)
   const fx=document.getElementById('camflashfx');
   fx.classList.remove('on'); void fx.offsetWidth; fx.classList.add('on');
-  // vibração curta e discreta (Android); iOS/Safari ainda não expõe vibração para a web, então
-  // lá simplesmente não vibra — o resto do feedback (flash + som) cobre a sensação de disparo.
-  if(navigator.vibrate) try{ navigator.vibrate(12) }catch(e){}
+  // vibração mais firme (Android): dois toques curtos, mais fáceis de sentir que um só.
+  // iOS/Safari NÃO expõe vibração para a web (trava do sistema) — lá não vibra de jeito nenhum;
+  // a piscada da tela + o som de obturador cobrem a sensação de disparo no iPhone.
+  if(navigator.vibrate) try{ navigator.vibrate([40,25,40]) }catch(e){}
   if(CFG.soundalert) playShutterSound();
+  // A foto sai EXATAMENTE como a prévia que você vê (WYSIWYG): não giramos mais a imagem por
+  // conta própria (era o que deixava a foto de cabeça para baixo). Só recortamos o formato
+  // escolhido e, na câmera frontal, giramos 180° pra corrigir o sensor invertido dela.
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
   const targetRatio=rw/rh, srcRatio=vw/vh;
   let sx=0, sy=0, sw=vw, sh=vh;
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
   else { sh=vw/targetRatio; sy=(vh-sh)/2 }
-  // recorta o formato escolhido do sensor (sempre na orientação nativa da câmera) e SÓ DEPOIS
-  // gira o resultado conforme a inclinação física no momento do disparo — é isso que faz a foto
-  // salva sair realmente deitada quando o celular é segurado deitado, e não só a legenda virada.
-  const mid=document.createElement('canvas');
-  mid.width=sw; mid.height=sh;
-  mid.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-  const tiltDeg=S.tilt||0, rotated=Math.abs(tiltDeg)===90;
-  const W=rotated?sh:sw, H=rotated?sw:sh;
   const c=document.createElement('canvas');
-  c.width=W; c.height=H;
+  c.width=sw; c.height=sh;
   const ctx=c.getContext('2d');
-  ctx.translate(W/2,H/2); ctx.rotate(tiltDeg*Math.PI/180); ctx.drawImage(mid,-sw/2,-sh/2); ctx.setTransform(1,0,0,1,0,0);
+  if(S.facing==='user'){ ctx.translate(sw/2,sh/2); ctx.rotate(Math.PI); ctx.translate(-sw/2,-sh/2); }
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  ctx.setTransform(1,0,0,1,0,0);
   const info=buildInfo(); S.lastInfo=info;
-  burnLegend(ctx,W,H,info,0);
-  c.toBlob(b=>autoSave(b), 'image/jpeg', CFG.qual);
+  burnLegend(ctx,sw,sh,info,0);
+  c.toBlob(b=>postCapture(b), 'image/jpeg', CFG.qual);
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -2237,29 +2251,52 @@ function burnLegend(ctx,W,H,info,tiltDeg){
 function sanitizeFilename(s){
   return s.replace(/⚠/g,'').replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
 }
-function autoSave(blob){
+/* grava a imagem direto na galeria NATIVA do celular. iOS/Android não deixam um app web gravar
+   sozinho no álbum (trava de segurança do sistema): o caminho que funciona é o menu de
+   compartilhar nativo — no iPhone aparece "Salvar Imagem", que grava no álbum de Fotos em 1
+   toque; no Android o menu também oferece salvar/galeria. Sem o menu, cai para download. */
+function shareToGallery(file, blob){
+  const download=()=>{
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  };
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    navigator.share({files:[file]}).then(()=>toast('Imagem enviada para o álbum'))
+      .catch(()=>{ /* usuário cancelou ou falhou o share — tenta baixar */ download(); });
+    toast('Toque em "Salvar Imagem" para guardar no álbum');
+  } else {
+    download();
+    toast('Imagem salva');
+  }
+}
+let pendingSave=null;   // {file, blob} aguardando decisão no diálogo
+function postCapture(blob){
   const info=S.lastInfo||{}, t=new Date();
   const {L}=legendLines(info);
   const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
   const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
   const name=`${base} ${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
-  savePhotoToGallery(blob, name).catch(()=>{});   // galeria interna do app, sempre grava, mesmo com "envio automático" desligado
-  const download=()=>{
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
-  };
-  if(!CFG.autosave){ toast('Foto gerada (envio automático desligado)'); return }
-  // iPhone/iOS: sem menu de compartilhar, o navegador não consegue gravar direto no álbum de Fotos
-  // (trava do próprio sistema). Abrindo o menu nativo, "Salvar Imagem" grava direto lá, em 1 toque.
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({files:[file]}).catch(()=>download());
-    toast('Toque em "Salvar Imagem" para guardar no álbum de Fotos');
-  } else {
-    download();
-    toast('Foto salva — pronta pra próxima');
-  }
+  savePhotoToGallery(blob, name).catch(()=>{});   // backup sempre na galeria interna do app
+  pendingSave={file, blob};
+  const dlg=document.getElementById('dlg-save');
+  const img=document.getElementById('save-preview');
+  // se a pré-visualização estiver ligada nas Configurações, mostra a foto no diálogo
+  if(img.src){ URL.revokeObjectURL(img.src); img.removeAttribute('src'); }
+  if(CFG.preview){ img.src=URL.createObjectURL(blob); img.style.display='block'; }
+  else { img.style.display='none'; }
+  dlg.showModal();
 }
+document.getElementById('save-yes').onclick=()=>{
+  document.getElementById('dlg-save').close();
+  if(pendingSave) shareToGallery(pendingSave.file, pendingSave.blob);
+  pendingSave=null;
+};
+document.getElementById('save-no').onclick=()=>{
+  document.getElementById('dlg-save').close();
+  toast('Guardada só na galeria do app');
+  pendingSave=null;
+};
 
 /* ================= consulta ================= */
 const qc=document.getElementById('q-coords');
