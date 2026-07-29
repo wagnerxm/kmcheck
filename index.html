@@ -842,7 +842,7 @@ const S = {
   stream: null,
   facing: 'environment',
   lastBlob: null, lastName: 'foto.jpg',
-  tilt: 0
+  tilt: 0, sensorTilt: 0
 };
 const CFG = {
   get oae(){ return ls('oae', true) }, get coord(){ return ls('coord', true) },
@@ -1540,6 +1540,9 @@ function paintGps(){
   [...lp.children].forEach((el,i)=>el.textContent=L[i]);
   lp.classList.toggle('err', err);
   lp.classList.toggle('bold', CFG.legbold);
+  // as linhas acabaram de ser recriadas — sem reaplicar os estilos aqui elas voltariam
+  // ao tamanho/cor padrão do CSS (era por isso que a legenda "sumia" da prévia)
+  styleLivePlate();
 }
 /* monta as informações da legenda (fonte: GPS ao vivo) */
 function buildInfo(){
@@ -1782,13 +1785,25 @@ function applyTilt(newTilt){
   S.tilt=newTilt;
   const frame=document.getElementById('camframe');
   if(frame) frame.style.transform='rotate('+S.tilt+'deg)';
-  // só a legenda/logo, os botões de canto e os ícones internos da barra acompanham a
-  // inclinação física do aparelho — os BOTÕES da barra em si (posição, ordem, espaçamento) NUNCA se movem
+  // Os botões NÃO saem do lugar (a barra fica fixa), mas os desenhos DENTRO deles giram
+  // junto com a legenda, pra continuarem "em pé" pra quem segura o celular deitado.
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
   if(cf) cf.style.transform='rotate('+S.tilt+'deg)';
-  document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='rotate('+(-S.tilt)+'deg)');
+  document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='rotate('+S.tilt+'deg)');
   updateBarSide();
+}
+/* Ângulo final da legenda/ícones. Como o app é contra-girado (applyScreenLock), o conteúdo
+   precisa girar de volta o mesmo tanto pra ficar nivelado com o mundo real. Se a rotação
+   automática do celular estiver TRAVADA, a tela não gira (ângulo 0) e aí vale o sensor. */
+function refreshTilt(){
+  const a=screenAngle();
+  let t;
+  if(a===90) t=90;
+  else if(a===270) t=-90;
+  else if(a===180) t=180;
+  else t=S.sensorTilt||0;
+  applyTilt(t);
 }
 function updateBarSide(){
   // O layout do app é mantido SEMPRE em retrato pela contra-rotação (applyScreenLock),
@@ -1827,7 +1842,7 @@ function applyScreenLock(){
   }
   requestAnimationFrame(()=>layoutCamFrame(true));
 }
-function onScreenRotate(){ applyScreenLock() }
+function onScreenRotate(){ applyScreenLock(); refreshTilt() }
 /* leitura do giroscópio/acelerômetro (deviceorientation) — funciona MESMO com a tela travada
    em retrato (o app nunca gira de verdade; só a legenda e os ícones de canto acompanham a
    inclinação física real do aparelho, detectada pelo sensor de movimento, não pela tela) */
@@ -1840,7 +1855,7 @@ function tiltFromOrientation(beta, gamma, current){
   if(gamma<-th) return 90;
   return (Math.abs(beta)<135) ? 0 : 180;
 }
-function onDeviceOrientation(e){ applyTilt(tiltFromOrientation(e.beta, e.gamma, S.tilt)); }
+function onDeviceOrientation(e){ S.sensorTilt=tiltFromOrientation(e.beta, e.gamma, S.sensorTilt||0); refreshTilt(); }
 async function enableTiltSensor(){
   try{
     if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
@@ -1854,7 +1869,7 @@ function enableScreenLock(){
   window.addEventListener('orientationchange', onScreenRotate);
   window.addEventListener('resize', onScreenRotate);
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', onScreenRotate);
-  applyScreenLock();
+  applyScreenLock(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('orientationchange', onScreenRotate);
@@ -1866,7 +1881,7 @@ function disableScreenLock(){
 }
 function disableTiltSensor(){
   window.removeEventListener('deviceorientation', onDeviceOrientation);
-  S.tilt=0;
+  S.tilt=0; S.sensorTilt=0;
   const frame=document.getElementById('camframe'); if(frame) frame.style.transform='';
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
   if(cb) cb.style.transform=''; if(cf) cf.style.transform='';
@@ -1875,28 +1890,75 @@ function disableTiltSensor(){
   if(wrap) wrap.classList.remove('cam-landscape'); if(bar) bar.classList.remove('bar-left','bar-right');
 }
 
-let camGeom=null; // cache: {u,pad,size,dw,dh} — só recalculado quando o quadro da câmera realmente muda de forma
+let camGeom=null; // cache: {aspect,u,pad} — recalculado quando o quadro muda de forma
 function layoutCamFrame(force){
   const vw=video.videoWidth, vh=video.videoHeight;
   const cw=camstage.clientWidth, ch=camstage.clientHeight;
   if(!vw||!vh||!cw||!ch) return;
-  // só refaz a geometria se a proporção do sensor mudou de verdade (rotação física),
-  // ignorando oscilações da barra de endereço do navegador (que muda a altura da tela sem o celular ter girado)
-  const aspect=vw/vh;
-  if(!force && camGeom && Math.abs(camGeom.aspect-aspect)<0.02) return;
-  const scale=Math.min(cw/vw, ch/vh);
-  const dw=vw*scale, dh=vh*scale, ox=(cw-dw)/2, oy=(ch-dh)/2;
+  // recorte central conforme o FORMATO escolhido nas configurações (3:4, 1:1, 16:9) —
+  // exatamente o mesmo recorte que o disparo grava, então o que aparece aqui é o que sai na foto
+  const [fw,fh]=(CFG.format||'3:4').split(':').map(Number);
+  const targetAspect=fw/fh, srcAspect=vw/vh;
+  let cropW=vw, cropH=vh;
+  if(srcAspect>targetAspect) cropW=vh*targetAspect; else cropH=vw/targetAspect;
+  const aspect=cropW/cropH;
+  const scale=Math.min(cw/cropW, ch/cropH);
+  const dw=cropW*scale, dh=cropH*scale, ox=(cw-dw)/2, oy=(ch-dh)/2;
+  // o vídeo passa a ocupar só o retângulo recortado (cover = corta as sobras do sensor)
+  video.style.position='absolute';
+  video.style.left=ox+'px'; video.style.top=oy+'px';
+  video.style.width=dw+'px'; video.style.height=dh+'px';
+  video.style.objectFit='cover';
   const frame=document.getElementById('camframe');
   frame.style.left=ox+'px'; frame.style.top=oy+'px';
   frame.style.width=dw+'px'; frame.style.height=dh+'px';
   const u=Math.max(dw,dh)/1000;               // mesma fórmula usada em burnLegend
-  const pad=20*u, size=17*u;
+  const pad=20*u;
+  camGeom={aspect, u, pad};
+  layoutCamLogo();
+  styleLivePlate();
+}
+/* logo ao vivo: mesma posição/tamanho/opacidade que burnLegend vai gravar */
+function layoutCamLogo(){
+  if(!camGeom) return;
+  const {u,pad}=camGeom;
+  const frame=document.getElementById('camframe');
+  const dw=parseFloat(frame.style.width)||0, dh=parseFloat(frame.style.height)||0;
   const cl=document.getElementById('camlogo');
-  cl.style.top=pad+'px'; cl.style.left=pad+'px'; cl.style.height=Math.min(118*u,dh*0.30)+'px'; cl.style.maxWidth=(dw*0.65)+'px';
+  const maxH=118*u*CFG.logosz, maxW=440*u*CFG.logosz;
+  cl.style.height=maxH+'px'; cl.style.maxWidth=maxW+'px'; cl.style.width='auto';
+  cl.style.opacity=CFG.logoop;
+  const p=CFG.logopos;
+  const lw=cl.offsetWidth||0, lhh=cl.offsetHeight||maxH;
+  cl.style.left = (p==='tr'||p==='br') ? (dw-pad-lw)+'px' : pad+'px';
+  cl.style.top  = (p==='bl'||p==='br') ? (dh-pad-lhh)+'px' : pad+'px';
+}
+/* legenda ao vivo: posição, tamanho, cor, negrito e opacidade idênticos aos da foto final */
+function styleLivePlate(){
   const lp=document.getElementById('liveplate');
-  lp.style.left=pad+'px'; lp.style.right=pad+'px'; lp.style.bottom=pad+'px';
-  lp.querySelectorAll('.l1,.l2').forEach(el=>{ el.style.fontSize=size+'px'; el.style.lineHeight=(size*1.38)+'px' });
-  camGeom={aspect, u, pad, size};
+  if(!lp||!camGeom) return;
+  const {u,pad}=camGeom;
+  const size=17*u*CFG.legsz, lh=size*1.38;
+  const right = (CFG.legpos==='br'||CFG.legpos==='tr');
+  const top   = (CFG.legpos==='tl'||CFG.legpos==='tr');
+  lp.style.left=pad+'px'; lp.style.right=pad+'px';
+  lp.style.top    = top ? pad+'px' : 'auto';
+  lp.style.bottom = top ? 'auto'   : pad+'px';
+  lp.style.textAlign = right ? 'right' : 'left';
+  lp.style.opacity = CFG.legop;
+  const isErr = lp.classList.contains('err');
+  lp.querySelectorAll('.l1,.l2').forEach(el=>{
+    el.style.fontSize=size+'px';
+    el.style.lineHeight=lh+'px';
+    el.style.fontWeight=CFG.legbold?700:400;
+    el.style.color = (isErr && el.classList.contains('l1')) ? '#ff9d8a' : CFG.legcolor;
+  });
+}
+/* qualquer ajuste nas configurações reflete na hora na visualização ao vivo */
+function refreshLive(){
+  if(!document.getElementById('camwrap').classList.contains('on')) return;
+  layoutCamFrame(true);
+  paintGps();
 }
 let camTick=null;
 async function openCam(){
@@ -2263,7 +2325,7 @@ for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['c
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
-  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0'); paintGps() };
+  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0'); paintGps(); refreshLive() };
 }
 
 /* listas suspensas */
@@ -2275,7 +2337,7 @@ for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl
   if(saved!==null) el.value=saved;
   const paintLbl=()=>{ if(lbl){ const t=document.getElementById(lbl); if(t) t.textContent=el.options[el.selectedIndex].textContent } };
   paintLbl();
-  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.value); paintLbl(); paintGps() };
+  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.value); paintLbl(); paintGps(); refreshLive() };
 }
 
 /* controles deslizantes (%) */
@@ -2286,7 +2348,7 @@ for(const [id, key, lbl] of [['cfg-logoop','logoop','lbl-logoop'],['cfg-logosz',
   if(saved!==null) el.value=saved;
   const paint=()=>{ const t=document.getElementById(lbl); if(t) t.textContent=el.value };
   paint();
-  el.addEventListener('input', ()=>{ localStorage.setItem('kc-'+key, el.value); paint() });
+  el.addEventListener('input', ()=>{ localStorage.setItem('kc-'+key, el.value); paint(); refreshLive() });
 }
 
 const md=document.getElementById('cfg-maxdist');
