@@ -1958,9 +1958,8 @@ async function openCam(){
     const R=resMap[CFG.res]||resMap.max;
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false});
     video.srcObject=S.stream;
-    // câmera frontal costuma vir com o sensor invertido (imagem de cabeça para baixo na prévia)
-    // — gira 180° só nela, pra ficar em pé. A traseira fica sem transformação (prévia estável).
-    video.style.transform = S.facing==='user' ? 'rotate(180deg)' : '';
+    // frontal e traseira exibidas fiéis, sem rotação (a prévia fica estável e igual à foto).
+    video.style.transform = '';
     camwrap.classList.add('on');
     camGeom=null;
     enableScreenLock();
@@ -2014,9 +2013,8 @@ document.getElementById('shutter').onclick=()=>{
   // a piscada da tela + o som de obturador cobrem a sensação de disparo no iPhone.
   if(navigator.vibrate) try{ navigator.vibrate([40,25,40]) }catch(e){}
   if(CFG.soundalert) playShutterSound();
-  // A foto sai EXATAMENTE como a prévia que você vê (WYSIWYG): não giramos mais a imagem por
-  // conta própria (era o que deixava a foto de cabeça para baixo). Só recortamos o formato
-  // escolhido e, na câmera frontal, giramos 180° pra corrigir o sensor invertido dela.
+  // A foto sai EXATAMENTE como a prévia que você vê (WYSIWYG): não giramos a imagem por conta
+  // própria (era o que deixava a foto de cabeça para baixo). Só recortamos o formato escolhido.
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
   const targetRatio=rw/rh, srcRatio=vw/vh;
@@ -2026,9 +2024,7 @@ document.getElementById('shutter').onclick=()=>{
   const c=document.createElement('canvas');
   c.width=sw; c.height=sh;
   const ctx=c.getContext('2d');
-  if(S.facing==='user'){ ctx.translate(sw/2,sh/2); ctx.rotate(Math.PI); ctx.translate(-sw/2,-sh/2); }
   ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-  ctx.setTransform(1,0,0,1,0,0);
   const info=buildInfo(); S.lastInfo=info;
   // legenda acompanha a inclinação da imagem (mesma geometria da prévia ao vivo)
   burnLegend(ctx,sw,sh,info,S.tilt||0);
