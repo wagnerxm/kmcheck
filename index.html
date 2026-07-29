@@ -89,7 +89,6 @@ header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.
   border:1px solid rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.18)}
 #search-toggle svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.heroroad{font-size:12px;letter-spacing:.1em;color:var(--gold2);font-family:var(--mono);margin-bottom:2px}
 /* ---------- navegação: dock flutuante ---------- */
 nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:4px;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 55%), rgba(24,26,28,.68);
@@ -154,10 +153,8 @@ h2.sec::after{content:none}
 .herotop{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
 .kmsign{width:124px;height:auto;flex:0 0 auto;margin-left:-8px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
 .herotext{flex:1;min-width:0}
-.herolabelrow{display:flex;align-items:center;gap:7px;color:var(--gold2)}
-.heropinsm{width:15px;height:15px;flex:0 0 auto;stroke:var(--gold);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.herolabelrow span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
-.herokm{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.08;margin-top:6px}
+.heroroad{font-size:26px;font-weight:400;letter-spacing:.01em;line-height:1.1;color:#b7d92d}
+.herokm{font-family:var(--mono);font-size:40px;font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.08;margin-top:6px}
 .herounit{font-size:13px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
 .herodiv{height:1px;background:var(--line);margin:16px 4px;position:relative;z-index:1}
 .herostatusrow{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--gold);position:relative;z-index:1}
@@ -212,8 +209,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* ---------- listas ---------- */
 .base-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
 .base-item:last-child{border-bottom:none}
-.base-item .bname{font-weight:800;font-size:16px;letter-spacing:.03em}
-.base-item .bmeta{font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:3px}
+.base-item .bname{font-weight:800;font-size:16px;letter-spacing:.03em;color:#fff}
+.base-item .bmeta{font-size:11px;color:#fff;font-family:var(--mono);margin-top:3px}
 .base-item .del{margin-left:auto;background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:7px 12px;font-size:12px;cursor:pointer}
 .ct-item{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}
 .ct-item:last-child{border-bottom:none}
@@ -228,6 +225,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
 #camwrap.on{display:flex}
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+#camflashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
+#camflashfx.on{animation:camflash .28s ease}
+@keyframes camflash{0%{opacity:.85}100%{opacity:0}}
 #camvideo{width:100%;height:100%;object-fit:contain;background:#000}
 /* #camframe é posicionado por JS para coincidir exatamente com o retângulo de imagem
    exibido pelo vídeo (object-fit:contain) — a mesma proporção do arquivo final.
@@ -236,6 +236,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
+#liveplate.bold .l1,#liveplate.bold .l2{font-weight:700}
 #liveplate.err .l1{color:#ff9d8a}
 .camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));z-index:6;
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.78);
@@ -296,7 +297,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #gal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #gal-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:pan-y}
-#gal-img{max-width:100%;max-height:100%;object-fit:contain}
+#gal-img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .22s ease,opacity .22s ease}
+#gal-img.gal-noanim{transition:none}
+#gal-img.gal-out-l{transform:translateX(-60px);opacity:0}
+#gal-img.gal-out-r{transform:translateX(60px);opacity:0}
+#gal-img.gal-in-l{transform:translateX(-60px);opacity:0}
+#gal-img.gal-in-r{transform:translateX(60px);opacity:0}
 #gal-caption{text-align:center;color:#d8d8d8;font-size:12px;letter-spacing:.05em;padding:12px 0 calc(12px + env(safe-area-inset-bottom))}
 .gpsdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);margin-right:7px;vertical-align:1px}
 .gpsdot.ok{background:var(--ok);box-shadow:0 0 8px rgba(183,217,45,.7)}
@@ -364,7 +370,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <!-- ============ RODOVIAS ============ -->
 <div class="screen" id="scr-bases">
 <section class="pad">
-  <h2 class="sec">Rodovias instaladas</h2>
+  <h2 class="sec">Rodovias Baixadas</h2>
   <div class="card"><div id="baselist"></div></div>
 
   <h2 class="sec">Adicionar rodovia</h2>
@@ -380,7 +386,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
       <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
     </div>
-    <button class="btn gold" id="dl-go" style="margin-top:12px">Buscar e instalar</button>
+    <button class="btn gold" id="dl-go" style="margin-top:12px">Baixar</button>
     <p class="hint" id="dl-status">Deixe "Km final" em branco para o app detectar sozinho o fim da rodovia. Requer internet só neste momento — depois de instalada, funciona offline.</p>
   </div>
   <div class="card">
@@ -440,7 +446,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <text id="sign-km" x="75" y="162" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="44" fill="#fff">—</text>
       </svg>
       <div class="herotext">
-        <div class="herolabelrow"><svg class="heropinsm" viewBox="0 0 24 24"><path d="M12 22s7-7.4 7-12.6A7 7 0 0 0 5 9.4C5 14.6 12 22 12 22z"/><circle cx="12" cy="9.4" r="2.6"/></svg><span>Marco quilométrico</span></div>
+        <div class="heroroad" id="herobr">—</div>
         <div class="herokm" id="kmbig">—</div>
         <div class="herounit">KM</div>
       </div>
@@ -516,6 +522,20 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
           <option value="0.75">Econômica</option>
         </select>
       </label>
+      <div class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M12 3.5a4.5 4.5 0 0 0-4.5 4.5v3.2c0 .8-.3 1.6-.85 2.2L5 15.5h14l-1.65-2.1a3.4 3.4 0 0 1-.85-2.2V8a4.5 4.5 0 0 0-4.5-4.5z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg></span>
+        <span class="ltext"><b>Alerta sonoro</b><i>Som ao capturar a foto</i></span>
+        <input type="checkbox" id="cfg-soundalert">
+      </div>
+      <label class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M6 3v14a1 1 0 0 0 1 1h14"/><path d="M18 21V7a1 1 0 0 0-1-1H3"/></svg></span>
+        <span class="ltext"><b>Formato</b><i>Proporção da foto capturada</i></span>
+        <select id="cfg-format" class="lsel">
+          <option value="3:4" selected>3:4</option>
+          <option value="1:1">1:1</option>
+          <option value="16:9">16:9</option>
+        </select>
+      </label>
     </div>
 
     <h2 class="sec">Comportamento após o disparo</h2>
@@ -535,16 +555,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <span class="ltext"><b>Envio automático para a galeria</b><i>Salvar a foto automaticamente</i></span>
         <input type="checkbox" id="cfg-autosave" checked>
       </div>
-    </div>
-
-    <h2 class="sec">Contratos</h2>
-    <div class="card">
-      <div id="ctlist"></div>
-      <div class="row" style="margin-top:10px">
-        <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" style="flex:1">
-        <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
-      </div>
-      <p class="hint">Escolha o contrato antes de fotografar — o número entra na legenda, logo após o KM.</p>
     </div>
 
     <h2 class="sec">Aparência</h2>
@@ -608,6 +618,16 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         </select>
       </label>
       <label class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24"><text x="2.5" y="18" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="700" fill="currentColor" stroke="none">A</text><text x="12" y="19.5" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="currentColor" stroke="none">A</text></svg></span>
+        <span class="ltext"><b>Tamanho</b><i>Tamanho do texto gravado na foto</i></span>
+        <select id="cfg-legsz" class="lsel">
+          <option value="80">Pequena</option>
+          <option value="100" selected>Média</option>
+          <option value="130">Grande</option>
+          <option value="160">Extra grande</option>
+        </select>
+      </label>
+      <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/></svg></span>
         <span class="ltext"><b>Cor</b><i>Cor do texto gravado</i></span>
         <select id="cfg-legcolor" class="lsel">
@@ -618,13 +638,14 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
           <option value="#111111">Preto</option>
         </select>
       </label>
+      <div class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M7 4h6a4 4 0 0 1 0 8H7z"/><path d="M7 12h7a4 4 0 0 1 0 8H7z"/></svg></span>
+        <span class="ltext"><b>Negrito</b><i>Texto da legenda em negrito</i></span>
+        <input type="checkbox" id="cfg-legbold">
+      </div>
       <div class="listrow rangerow">
         <span class="ltext"><b>Opacidade</b><i><span id="lbl-legop">100</span>%</i></span>
         <input type="range" id="cfg-legop" min="30" max="100" value="100">
-      </div>
-      <div class="listrow rangerow">
-        <span class="ltext"><b>Tamanho</b><i><span id="lbl-legsz">100</span>%</i></span>
-        <input type="range" id="cfg-legsz" min="60" max="180" value="100">
       </div>
     </div>
 
@@ -642,10 +663,30 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <span class="ltext"><b>Coordenadas</b><i>Latitude e longitude na legenda</i></span>
         <input type="checkbox" id="cfg-coord" checked>
       </div>
+      <label class="listrow">
+        <span class="ltext"><b>Estilo das coordenadas</b><i>Como o valor aparece na legenda</i></span>
+        <select id="cfg-coordstyle" class="lsel">
+          <option value="decimal" selected>-6,077710, -37,891500</option>
+          <option value="decimal_label">Lat -6,077710  Long -37,891500</option>
+          <option value="compact">-6,077710 -37,891500</option>
+          <option value="dms">6°04'39,8"S 37°53'29,4"O</option>
+          <option value="dms_label">Lat 6°04'39,8"S  Long 37°53'29,4"O</option>
+          <option value="gmd">6°04,663'S 37°53,490'O</option>
+        </select>
+      </label>
       <div class="listrow">
         <span class="ltext"><b>Precisão do GPS</b><i>Margem de erro (±m) na legenda</i></span>
         <input type="checkbox" id="cfg-acc" checked>
       </div>
+      <label class="listrow">
+        <span class="ltext"><b>Formato da data</b><i>Como a data/hora aparece na legenda</i></span>
+        <select id="cfg-datestyle" class="lsel">
+          <option value="curta">29/07/2026</option>
+          <option value="curta_hora" selected>29/07/2026, 14:35</option>
+          <option value="extensa">29 de julho de 2026</option>
+          <option value="extensa_hora">29 de julho de 2026 às 14:35</option>
+        </select>
+      </label>
     </div>
 
     <h2 class="sec">Descrição de serviços</h2>
@@ -656,6 +697,16 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <button class="btn small gold" id="svc-add" style="flex:0 0 auto">Adicionar</button>
       </div>
       <p class="hint">Serviços cadastrados aparecem para escolha rápida na câmera.</p>
+    </div>
+
+    <h2 class="sec">Contratos</h2>
+    <div class="card">
+      <div id="ctlist"></div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" style="flex:1">
+        <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
+      </div>
+      <p class="hint">Contratos cadastrados aparecem para escolha rápida na câmera.</p>
     </div>
 
     <h2 class="sec">Alerta</h2>
@@ -686,6 +737,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <img id="camlogo" alt="" style="display:none">
       <div id="liveplate"></div>
     </div>
+    <div id="camflashfx"></div>
     <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
     <button id="camflip" class="camstagebtn camstagebtn-right" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
@@ -693,7 +745,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <div class="cbside cbleft">
       <button class="cbtn cbtag cbmini" id="cam-ld">LD</button>
       <button class="cbtn cbtag cbmini" id="cam-le">LE</button>
-      <button class="cbtn cbtag cbmini" id="cam-svc">S</button>
+      <button class="cbtn cbtag cbmini" id="cam-svc">i</button>
     </div>
     <button id="shutter" aria-label="Tirar foto"></button>
     <div class="cbside cbright">
@@ -704,7 +756,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
   </div>
 </div>
 
-<!-- diálogo: seleção de serviço -->
+<!-- diálogo: serviço + contrato (botão "i") -->
 <dialog id="dlg-svc">
   <h2 class="sec" style="margin-top:0">Serviço</h2>
   <div class="svcgrid" id="svc-grid"></div>
@@ -712,7 +764,15 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <input type="text" id="svc-new2" placeholder="Adicionar novo serviço" style="flex:1">
     <button class="btn small gold" id="svc-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
-  <button class="btn ghost" id="svc-close" style="margin-top:12px">Fechar</button>
+
+  <h2 class="sec" style="margin-top:22px">Contrato</h2>
+  <div id="ctlist2"></div>
+  <div class="row" style="margin-top:12px">
+    <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" style="flex:1">
+    <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
+  </div>
+
+  <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
 </dialog>
 
 <!-- galeria de fotos registradas -->
@@ -793,7 +853,12 @@ const CFG = {
   get legpos(){ return localStorage.getItem('kc-legpos') || 'bl' },
   get legcolor(){ return localStorage.getItem('kc-legcolor') || '#ffffff' },
   get legop(){ return (+localStorage.getItem('kc-legop') || 100)/100 },
-  get legsz(){ return (+localStorage.getItem('kc-legsz') || 100)/100 }
+  get legsz(){ return (+localStorage.getItem('kc-legsz') || 100)/100 },
+  get coordstyle(){ return localStorage.getItem('kc-coordstyle') || 'decimal' },
+  get datestyle(){ return localStorage.getItem('kc-datestyle') || 'curta_hora' },
+  get legbold(){ return ls('legbold', false) },
+  get soundalert(){ return ls('soundalert', false) },
+  get format(){ return localStorage.getItem('kc-format') || '3:4' }
 };
 function ls(id, def){ const v = localStorage.getItem('kc-'+id); return v===null?def:v==='1' }
 
@@ -860,7 +925,47 @@ function findOae(br, uf, km){
 function fkm(km){ return km.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}) }
 function fc(v){ return v.toFixed(6).replace('.',',') }
 function now(){ const d=new Date(); return {
-  data:d.toLocaleDateString('pt-BR'), hora:d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) } }
+  data:d.toLocaleDateString('pt-BR'), hora:d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), d } }
+
+/* ---- estilos de coordenada ---- */
+function dmsParts(v, isLat){
+  const hemi = isLat ? (v>=0?'N':'S') : (v>=0?'L':'O');
+  const abs=Math.abs(v), deg=Math.floor(abs), minFloat=(abs-deg)*60, min=Math.floor(minFloat), sec=(minFloat-min)*60;
+  return {deg,min,sec,hemi};
+}
+function fmtDMS(v,isLat){
+  const {deg,min,sec,hemi}=dmsParts(v,isLat);
+  return `${deg}°${String(min).padStart(2,'0')}'${sec.toFixed(1).replace('.',',').padStart(4,'0')}"${hemi}`;
+}
+function fmtGMD(v,isLat){
+  const {deg,hemi}=dmsParts(v,isLat);
+  const minFloat=(Math.abs(v)-Math.floor(Math.abs(v)))*60;
+  return `${deg}°${minFloat.toFixed(3).replace('.',',')}'${hemi}`;
+}
+function formatCoord(lat, lon){
+  switch(CFG.coordstyle){
+    case 'decimal_label': return `Lat ${fc(lat)}  Long ${fc(lon)}`;
+    case 'compact': return `${fc(lat)} ${fc(lon)}`;
+    case 'dms': return `${fmtDMS(lat,true)} ${fmtDMS(lon,false)}`;
+    case 'dms_label': return `Lat ${fmtDMS(lat,true)}  Long ${fmtDMS(lon,false)}`;
+    case 'gmd': return `${fmtGMD(lat,true)} ${fmtGMD(lon,false)}`;
+    default: return `${fc(lat)}, ${fc(lon)}`;
+  }
+}
+
+/* ---- estilos de data ---- */
+const MESES_EXT=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function formatDateLine(d){
+  const curta=d.toLocaleDateString('pt-BR');
+  const hora=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const extensa=`${d.getDate()} de ${MESES_EXT[d.getMonth()]} de ${d.getFullYear()}`;
+  switch(CFG.datestyle){
+    case 'curta': return curta;
+    case 'extensa': return extensa;
+    case 'extensa_hora': return `${extensa} às ${hora}`;
+    default: return `${curta}, ${hora}`;
+  }
+}
 
 /* ================= navegação ================= */
 let settingsFromCam=false;
@@ -897,13 +1002,13 @@ function renderBases(){
   const sel=document.getElementById('k-base');
   sel.innerHTML='';
   if(!S.bases.length){
-    el.innerHTML='<p class="empty">Nenhuma rodovia instalada.<br>Importe o KMZ do SNV/DNIT ou um CSV com o eixo (KM · LAT · LONG).</p>';
+    el.innerHTML='<p class="empty">Nenhuma rodovia baixada.<br>Importe o KMZ do SNV/DNIT ou um CSV com o eixo (KM · LAT · LONG).</p>';
   } else {
     el.innerHTML=S.bases.map(b=>`
       <div class="base-item">
         <div>
-          <div class="bname">${b.br}<span style="color:var(--mut)">/</span>${b.uf}</div>
-          <div class="bmeta">km ${fkm(b.kmMin)} – ${fkm(b.kmMax)} · ${b.lat.length.toLocaleString('pt-BR')} vértices · ${b.fonte}</div>
+          <div class="bname">${b.br}/${b.uf}</div>
+          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}</div>
         </div>
         <button class="del" data-id="${b.id}">remover</button>
       </div>`).join('');
@@ -1067,7 +1172,7 @@ document.getElementById('dl-go').onclick=async()=>{
       const detail=(probe.diag.trail||[]).join(' · ');
       status.textContent='Falha na conexão com o DNIT: '+detail;
       toast('Não consegui falar com o servidor do DNIT. Veja o detalhe abaixo do botão e me manda um print.');
-      btn.disabled=false; btn.textContent='Buscar e instalar';
+      btn.disabled=false; btn.textContent='Baixar';
       return;
     }
     btn.textContent='Baixando…';
@@ -1088,7 +1193,7 @@ document.getElementById('dl-go').onclick=async()=>{
     status.textContent=DL_DEFAULT_HINT;
     toast('Falha ao baixar do DNIT: '+err.message+'. Alternativa: peça o KML pronto no programa SNV to KML e use "Importar arquivo".');
   }
-  btn.disabled=false; btn.textContent='Buscar e instalar';
+  btn.disabled=false; btn.textContent='Baixar';
 };
 
 /* ================= importação ================= */
@@ -1401,6 +1506,7 @@ function paintGps(){
   const dot=document.getElementById('gpsdot'), gl=document.getElementById('gpsline');
   const kb=document.getElementById('kmbig'), lav=document.getElementById('latval'), lov=document.getElementById('lonval');
   const gcRoad=document.getElementById('gc-road');
+  const herobr=document.getElementById('herobr');
   const signBr=document.getElementById('sign-br'), signKm=document.getElementById('sign-km');
   if(S.pos){
     dot.className='gpsdot '+(S.pos.acc<=10?'ok':(S.pos.acc<=25?'mid':''));
@@ -1411,11 +1517,13 @@ function paintGps(){
       kb.textContent=fkm(S.fix.km);
       kb.className='herokm'+(off?' errc':'');
       gcRoad.textContent=`${S.fix.br}/${S.fix.uf}`;
+      herobr.textContent=`${S.fix.br}/${S.fix.uf}`;
       signBr.textContent=S.fix.br;
       signKm.textContent=String(Math.floor(S.fix.km)).padStart(3,'0');
     } else {
       kb.textContent='—'; kb.className='herokm';
       gcRoad.textContent=S.bases.length?'Fora do eixo':'Nenhuma rodovia';
+      herobr.textContent='—';
       signBr.textContent='—'; signKm.textContent='—';
     }
   } else {
@@ -1427,11 +1535,12 @@ function paintGps(){
   lp.innerHTML=L.map((t,i)=>`<div class="${i===0?'l1':'l2'}"></div>`).join('');
   [...lp.children].forEach((el,i)=>el.textContent=L[i]);
   lp.classList.toggle('err', err);
+  lp.classList.toggle('bold', CFG.legbold);
 }
 /* monta as informações da legenda (fonte: GPS ao vivo) */
 function buildInfo(){
   const t=now();
-  const info={data:t.data, hora:t.hora, src:'gps'};
+  const info={data:t.data, hora:t.hora, dt:t.d, src:'gps'};
   if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc }
   if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist }
   return info;
@@ -1459,19 +1568,21 @@ function legendLines(info){
     L.push(l1);
   }
   const ct=getContract();
-  if(ct) L.push('Contrato '+ct);
-  let l2=getSvcSel();
-  if(!l2 && CFG.oae && info.km!=null){
+  let svc=getSvcSel();
+  if(!svc && CFG.oae && info.km!=null){
     const o=findOae(info.br,info.uf,info.km);
-    if(o && o.mode==='sobre') l2=o.o.nome;
+    if(o && o.mode==='sobre') svc=o.o.nome;
   }
-  if(l2) L.push(l2);
+  const l2parts=[];
+  if(ct) l2parts.push(ct);
+  if(svc) l2parts.push(svc);
+  if(l2parts.length) L.push(l2parts.join(' - '));
   if(info.lat!=null && CFG.coord){
-    let lc=`${info.lat.toFixed(6)},${info.lon.toFixed(6)}`;
+    let lc=formatCoord(info.lat, info.lon);
     if(CFG.acc && info.src==='gps' && info.acc!=null) lc+=` (±${Math.round(info.acc)}m)`;
     L.push(lc);
   }
-  L.push(info.data+', '+info.hora);
+  L.push(formatDateLine(info.dt||new Date()));
   return {L,err};
 }
 
@@ -1798,15 +1909,35 @@ async function openCam(){
 function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; document.querySelector('header.top').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
 document.getElementById('camback').onclick=closeCam;
 document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
+function playShutterSound(){
+  try{
+    const A=new (window.AudioContext||window.webkitAudioContext)();
+    const o=A.createOscillator(), g=A.createGain();
+    o.type='sine'; o.frequency.value=880;
+    g.gain.setValueAtTime(0.25, A.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, A.currentTime+0.15);
+    o.connect(g); g.connect(A.destination);
+    o.start(); o.stop(A.currentTime+0.15);
+  }catch(e){}
+}
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
+  const fx=document.getElementById('camflashfx');
+  fx.classList.remove('on'); void fx.offsetWidth; fx.classList.add('on');
+  const vw=video.videoWidth, vh=video.videoHeight;
+  const [rw,rh]=CFG.format.split(':').map(Number);
+  const targetRatio=rw/rh, srcRatio=vw/vh;
+  let sx=0, sy=0, sw=vw, sh=vh;
+  if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
+  else { sh=vw/targetRatio; sy=(vh-sh)/2 }
   const c=document.createElement('canvas');
-  c.width=video.videoWidth; c.height=video.videoHeight;
+  c.width=sw; c.height=sh;
   const ctx=c.getContext('2d');
-  ctx.drawImage(video,0,0);
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
   const info=buildInfo(); S.lastInfo=info;
   burnLegend(ctx,c.width,c.height,info,S.tilt);
   c.toBlob(b=>autoSave(b), 'image/jpeg', CFG.qual);
+  if(CFG.soundalert) playShutterSound();
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -1815,7 +1946,7 @@ function getSvcSel(){ return localStorage.getItem('kc-svcsel')||'' }
 function paintTags(){
   document.getElementById('cam-ld').classList.toggle('on', getSide()==='LD');
   document.getElementById('cam-le').classList.toggle('on', getSide()==='LE');
-  document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel());
+  document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel() || !!getContract());
 }
 document.getElementById('cam-ld').onclick=()=>{
   localStorage.setItem('kc-side', getSide()==='LD'?'':'LD'); paintTags(); paintGps();
@@ -1833,11 +1964,10 @@ function renderSvcGrid(){
   g.querySelectorAll('.svcchip').forEach(b=>b.onclick=()=>{
     const s=b.dataset.s;
     localStorage.setItem('kc-svcsel', s===sel?'':s);
-    document.getElementById('dlg-svc').close();
-    paintTags(); paintGps();
+    renderSvcGrid(); paintTags(); paintGps();
   });
 }
-document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); document.getElementById('dlg-svc').showModal() };
+document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); document.getElementById('dlg-svc').showModal() };
 document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
 document.getElementById('svc-add2').onclick=()=>{
   const inp=document.getElementById('svc-new2');
@@ -1846,7 +1976,49 @@ document.getElementById('svc-add2').onclick=()=>{
   const list=getServices();
   if(!list.includes(s)) list.push(s);
   localStorage.setItem('kc-services', JSON.stringify(list));
-  inp.value=''; renderSvcGrid(); renderServices();
+  localStorage.setItem('kc-svcsel', s);
+  inp.value=''; renderSvcGrid(); renderServices(); paintTags(); paintGps();
+};
+
+/* ---- contratos dentro do diálogo do botão "i" ---- */
+function renderContracts2(){
+  const list=getContracts(), act=getContract();
+  const el=document.getElementById('ctlist2');
+  if(!list.length){
+    el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
+  } else {
+    el.innerHTML=list.map(c=>`
+      <div class="ct-item ${c===act?'sel':''}" data-ct="${c.replace(/"/g,'&quot;')}">
+        <span class="dot"></span><span class="num">${c}</span>
+        <button class="del">remover</button>
+      </div>`).join('');
+    el.querySelectorAll('.ct-item').forEach(item=>{
+      item.onclick=e=>{
+        if(e.target.classList.contains('del')) return;
+        const c=item.dataset.ct;
+        localStorage.setItem('kc-contract', c===getContract()?'':c);
+        renderContracts2(); renderContracts(); paintTags(); paintGps();
+      };
+      item.querySelector('.del').onclick=()=>{
+        const c=item.dataset.ct;
+        if(!confirm('Remover o contrato '+c+'?')) return;
+        localStorage.setItem('kc-contracts', JSON.stringify(getContracts().filter(x=>x!==c)));
+        if(getContract()===c) localStorage.removeItem('kc-contract');
+        renderContracts2(); renderContracts(); paintTags(); paintGps();
+      };
+    });
+  }
+}
+document.getElementById('ct-add2').onclick=()=>{
+  const inp=document.getElementById('ct-new2');
+  const c=inp.value.trim();
+  if(!c){ toast('Digite o número do contrato.'); return }
+  const list=getContracts();
+  if(!list.includes(c)) list.push(c);
+  localStorage.setItem('kc-contracts', JSON.stringify(list));
+  localStorage.setItem('kc-contract', c);
+  inp.value='';
+  renderContracts2(); renderContracts(); paintTags(); paintGps();
 };
 
 /* ---- atalho de Configurações direto da câmera ---- */
@@ -1898,8 +2070,25 @@ function paintGalPhoto(){
   const p=galPhotos[galIdx];
   const img=document.getElementById('gal-img');
   img.src=URL.createObjectURL(p.blob);
-  const d=new Date(p.ts);
   document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galPhotos.length}  ·  ${p.name}`;
+}
+function slideGalPhoto(dir){
+  // dir<0: foto sai pela esquerda e a próxima entra pela direita (avançar)
+  // dir>0: foto sai pela direita e a anterior entra pela esquerda (voltar)
+  const img=document.getElementById('gal-img');
+  const outCls = dir<0 ? 'gal-out-l' : 'gal-out-r';
+  const inCls  = dir<0 ? 'gal-in-r'  : 'gal-in-l';
+  img.classList.add(outCls);
+  setTimeout(()=>{
+    const p=galPhotos[galIdx];
+    img.src=URL.createObjectURL(p.blob);
+    img.classList.remove(outCls);
+    img.classList.add('gal-noanim', inCls);
+    void img.offsetWidth;
+    img.classList.remove('gal-noanim');
+    requestAnimationFrame(()=>{ img.classList.remove(inCls) });
+    document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galPhotos.length}  ·  ${p.name}`;
+  }, 200);
 }
 document.getElementById('cam-gallery').onclick=openGallery;
 document.getElementById('gal-close').onclick=()=>document.getElementById('gallerywrap').classList.remove('on');
@@ -1910,8 +2099,8 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
   stage.addEventListener('touchend', e=>{
     const dx=e.changedTouches[0].clientX - sx;
     if(Math.abs(dx)<40 || !galPhotos.length) return;
-    if(dx<0 && galIdx<galPhotos.length-1){ galIdx++; paintGalPhoto() }      // esquerda: próxima (mais antiga)
-    else if(dx>0 && galIdx>0){ galIdx--; paintGalPhoto() }                   // direita: anterior (mais recente)
+    if(dx<0 && galIdx<galPhotos.length-1){ galIdx++; slideGalPhoto(-1) }      // esquerda: próxima (mais antiga)
+    else if(dx>0 && galIdx>0){ galIdx--; slideGalPhoto(1) }                   // direita: anterior (mais recente)
   }, {passive:true});
 })();
 
@@ -1930,7 +2119,7 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   ctx.textBaseline='alphabetic';
   ctx.globalAlpha=CFG.legop;
   ctx.fillStyle=CFG.legcolor;
-  ctx.font=`400 ${size}px Arial, Helvetica, sans-serif`;
+  ctx.font=`${CFG.legbold?700:400} ${size}px Arial, Helvetica, sans-serif`;
   const legRight = CFG.legpos==='br' || CFG.legpos==='tr';
   const legTop   = CFG.legpos==='tl' || CFG.legpos==='tr';
   ctx.textAlign = legRight ? 'right' : 'left';
@@ -1965,11 +2154,15 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   ctx.textAlign='left';
   ctx.restore();
 }
+function sanitizeFilename(s){
+  return s.replace(/⚠/g,'').replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
+}
 function autoSave(blob){
   const info=S.lastInfo||{}, t=new Date();
-  const kmTxt=(info.km!=null)?('km'+fkm(info.km).replace(',','+').replace(/\./g,'')):'semkm';
-  const br=info.br?info.br.replace('-',''):'FOTO';
-  const name=`${br}_${kmTxt}_${t.toISOString().slice(0,10)}_${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.jpg`;
+  const {L}=legendLines(info);
+  const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
+  const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
+  const name=`${base} ${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
   savePhotoToGallery(blob, name).catch(()=>{});   // galeria interna do app, sempre grava, mesmo com "envio automático" desligado
   const download=()=>{
@@ -2041,7 +2234,7 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 });
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
-for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],
+for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-soundalert',false],
                         ['cfg-estaca',false],['cfg-preview',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
@@ -2050,8 +2243,9 @@ for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],
 }
 
 /* listas suspensas */
-for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl-qual'],
-                             ['cfg-logopos','logopos',null],['cfg-legpos','legpos',null],['cfg-legcolor','legcolor',null]]){
+for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl-qual'],['cfg-format','format',null],
+                             ['cfg-logopos','logopos',null],['cfg-legpos','legpos',null],['cfg-legcolor','legcolor',null],
+                             ['cfg-legsz','legsz',null],['cfg-coordstyle','coordstyle',null],['cfg-datestyle','datestyle',null]]){
   const el=document.getElementById(id); if(!el) continue;
   const saved=localStorage.getItem('kc-'+key);
   if(saved!==null) el.value=saved;
@@ -2062,7 +2256,7 @@ for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl
 
 /* controles deslizantes (%) */
 for(const [id, key, lbl] of [['cfg-logoop','logoop','lbl-logoop'],['cfg-logosz','logosz','lbl-logosz'],
-                             ['cfg-legop','legop','lbl-legop'],['cfg-legsz','legsz','lbl-legsz']]){
+                             ['cfg-legop','legop','lbl-legop']]){
   const el=document.getElementById(id); if(!el) continue;
   const saved=localStorage.getItem('kc-'+key);
   if(saved!==null) el.value=saved;
