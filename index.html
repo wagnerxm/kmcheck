@@ -1868,6 +1868,10 @@ async function openCam(){
   // toque do usuário expira rápido, e se pedirmos depois de aguardar a câmera abrir, o pedido
   // falha em silêncio (sem erro, sem aviso — só não gira nada, foi exatamente o que aconteceu)
   enableTiltSensor();
+  // reforço: tenta travar a tela em retrato mesmo fora do app instalado (o manifest só trava
+  // sozinho quando aberto pelo ícone da Tela de Início; numa aba normal do navegador isso ajuda
+  // a evitar a página girar de verdade por conta própria e brigar com a rotação da legenda)
+  try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
