@@ -1834,12 +1834,18 @@ function onDeviceMotion(e){
   S.sensorTilt=tiltFromGravity(-g.x, -g.y, S.sensorTilt||0);
   refreshTilt();
 }
+let tiltGranted=false;   // lembra a autorização do sensor durante a sessão (iOS pede 1x)
 async function enableTiltSensor(){
   try{
-    if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+    // só pede a permissão do movimento se ainda não foi concedida nesta sessão — assim trocar
+    // de câmera ou reabrir não dispara o pedido de novo. O iOS já lembra entre sessões; isto
+    // evita qualquer re-pergunta redundante dentro da mesma sessão.
+    if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
       const res=await DeviceMotionEvent.requestPermission();
       if(res!=='granted') return;   // usuário negou: interface fica fixa, resto do app funciona normal
     }
+    tiltGranted=true;
+    window.removeEventListener('devicemotion', onDeviceMotion);   // evita listener duplicado
     window.addEventListener('devicemotion', onDeviceMotion);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
