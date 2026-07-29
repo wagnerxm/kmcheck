@@ -1791,21 +1791,43 @@ function applyTilt(newTilt){
   updateBarSide();
 }
 function updateBarSide(){
-  // a barra de comandos fica fisicamente fixa SEMPRE no lado direito, não importa pra qual
-  // lado o celular seja girado — só os ícones internos e a legenda acompanham a inclinação.
+  // O layout do app é mantido SEMPRE em retrato pela contra-rotação (applyScreenLock),
+  // então a barra de comandos nunca vira faixa lateral — os botões ficam fisicamente
+  // parados no mesmo lugar, não importa pra que lado o celular seja girado.
   const wrap=document.getElementById('camwrap'), bar=document.getElementById('cambar2');
   if(!wrap||!bar) return;
-  const wasLandscape=wrap.classList.contains('cam-landscape');
-  const isLandscape=(S.tilt===90||S.tilt===-90);
-  wrap.classList.toggle('cam-landscape', isLandscape);
-  bar.classList.toggle('bar-right', isLandscape);
-  bar.classList.remove('bar-left');
-  if(isLandscape!==wasLandscape){
-    // a barra virando faixa lateral muda o TAMANHO do palco (camstage) — a legenda/logo
-    // precisam ser recalculadas pro novo formato, senão ficam com a posição antiga (o bug real)
-    requestAnimationFrame(()=>layoutCamFrame(true));
-  }
+  wrap.classList.remove('cam-landscape');
+  bar.classList.remove('bar-left','bar-right');
 }
+/* ---------- trava de orientação por conta própria ----------
+   O iPhone IGNORA o "orientation":"portrait" do manifest (só o Android respeita), então a
+   página gira inteira e leva os botões junto. A solução que funciona nos dois: deixar a página
+   girar e CONTRA-GIRAR o app na mesma medida, trocando largura por altura. Visualmente o app
+   fica sempre em pé (botões parados), e só a legenda gira por cima, pelo sensor. */
+function screenAngle(){
+  if(window.screen && screen.orientation && typeof screen.orientation.angle==='number') return screen.orientation.angle;
+  if(typeof window.orientation==='number'){ const o=window.orientation; return o<0 ? 360+o : o }
+  return 0;
+}
+function applyScreenLock(){
+  const wrap=document.getElementById('camwrap');
+  if(!wrap || !wrap.classList.contains('on')) return;
+  const a=screenAngle();
+  const w=window.innerWidth, h=window.innerHeight;
+  if(a===90 || a===270){
+    // a tela girou: contra-gira o app e troca largura/altura pra ele ocupar a tela toda
+    wrap.style.width=h+'px'; wrap.style.height=w+'px';
+    wrap.style.top='50%'; wrap.style.left='50%'; wrap.style.right='auto'; wrap.style.bottom='auto';
+    wrap.style.transform='translate(-50%,-50%) rotate('+(-a)+'deg)';
+  } else {
+    // retrato normal: sem contra-rotação
+    wrap.style.width=''; wrap.style.height='';
+    wrap.style.top=''; wrap.style.left=''; wrap.style.right=''; wrap.style.bottom='';
+    wrap.style.transform= a===180 ? 'rotate(180deg)' : '';
+  }
+  requestAnimationFrame(()=>layoutCamFrame(true));
+}
+function onScreenRotate(){ applyScreenLock() }
 /* leitura do giroscópio/acelerômetro (deviceorientation) — funciona MESMO com a tela travada
    em retrato (o app nunca gira de verdade; só a legenda e os ícones de canto acompanham a
    inclinação física real do aparelho, detectada pelo sensor de movimento, não pela tela) */
@@ -1827,6 +1849,20 @@ async function enableTiltSensor(){
     }
     window.addEventListener('deviceorientation', onDeviceOrientation);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — legenda simplesmente não acompanha */ }
+}
+function enableScreenLock(){
+  window.addEventListener('orientationchange', onScreenRotate);
+  window.addEventListener('resize', onScreenRotate);
+  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', onScreenRotate);
+  applyScreenLock();
+}
+function disableScreenLock(){
+  window.removeEventListener('orientationchange', onScreenRotate);
+  window.removeEventListener('resize', onScreenRotate);
+  if(window.screen && screen.orientation) screen.orientation.removeEventListener('change', onScreenRotate);
+  const wrap=document.getElementById('camwrap');
+  if(wrap){ wrap.style.width=''; wrap.style.height=''; wrap.style.top=''; wrap.style.left='';
+            wrap.style.right=''; wrap.style.bottom=''; wrap.style.transform='' }
 }
 function disableTiltSensor(){
   window.removeEventListener('deviceorientation', onDeviceOrientation);
@@ -1883,10 +1919,10 @@ async function openCam(){
     video.srcObject=S.stream;
     camwrap.classList.add('on');
     camGeom=null;
+    enableScreenLock();
     initFlashSupport();
     video.addEventListener('loadedmetadata', ()=>layoutCamFrame(true));
     video.addEventListener('resize', ()=>layoutCamFrame());  // dispara quando o sensor gira, mesmo com tela travada
-    window.addEventListener('orientationchange', ()=>setTimeout(()=>layoutCamFrame(),300));
     layoutCamFrame(true);
   }catch(e){
     document.querySelector('nav').style.display='';
@@ -1894,7 +1930,7 @@ async function openCam(){
     toast('Câmera negada ou indisponível.');
   }
 }
-function closeCam(){ camwrap.classList.remove('on'); document.querySelector('nav').style.display=''; document.querySelector('header.top').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
+function closeCam(){ camwrap.classList.remove('on'); disableScreenLock(); document.querySelector('nav').style.display=''; document.querySelector('header.top').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
 document.getElementById('camback').onclick=closeCam;
 document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
 function playShutterSound(){
