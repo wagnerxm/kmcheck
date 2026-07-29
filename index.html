@@ -630,8 +630,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <select id="cfg-legsz" class="lsel">
           <option value="80">Pequena</option>
           <option value="100" selected>Média</option>
-          <option value="130">Grande</option>
-          <option value="160">Extra grande</option>
+          <option value="150">Grande</option>
+          <option value="200">Extra grande</option>
         </select>
       </label>
       <label class="listrow">
@@ -1845,26 +1845,38 @@ function applyScreenLock(){
   requestAnimationFrame(()=>layoutCamFrame(true));
 }
 function onScreenRotate(){ applyScreenLock(); refreshTilt() }
-/* leitura do giroscópio/acelerômetro (deviceorientation) — funciona MESMO com a tela travada
-   em retrato (o app nunca gira de verdade; só a legenda e os ícones de canto acompanham a
-   inclinação física real do aparelho, detectada pelo sensor de movimento, não pela tela) */
-function tiltFromOrientation(beta, gamma, current){
-  if(beta==null || gamma==null) return current;
-  if(Math.abs(beta)>165) return current;        // aparelho deitado/de cabeça p/ baixo: leitura ambígua, mantém o ângulo anterior
-  const inLandscape=(current===90||current===-90);
-  const th=inLandscape?35:45;                    // histerese: mais fácil manter o estado atual do que trocar
-  if(gamma>th) return -90;
-  if(gamma<-th) return 90;
-  return (Math.abs(beta)<135) ? 0 : 180;
+/* leitura do acelerômetro (devicemotion) — funciona MESMO com a tela travada em retrato
+   (o app nunca gira de verdade; só a imagem e a legenda acompanham a inclinação física
+   real do aparelho, detectada pelo sensor de movimento, não pela tela) */
+/* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
+   giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
+   (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
+   de volta pro estado vertical — exatamente o bug relatado ao fotografar o chão. A componente
+   da gravidade no PLANO da tela (x,y) não depende de pra onde a câmera está apontando (pitch),
+   só de como o aparelho está girado (retrato/paisagem/de cabeça p/ baixo), o que resolve isso. */
+function tiltFromGravity(ax, ay, current){
+  if(ax==null || ay==null) return current;
+  if(Math.hypot(ax,ay)<2.0) return current;   // câmera quase reto pro chão/céu: sem referência confiável, mantém o último ângulo
+  const angle=Math.atan2(ax,ay)*180/Math.PI;  // 0=retrato normal, 90/-90=deitado, ±180=de cabeça p/ baixo
+  const HYST=15;                              // graus extras de folga a favor do estado atual, pra não oscilar na fronteira
+  const dist=a=>Math.abs(((angle-a+540)%360)-180);
+  let best=0, bestD=Infinity;
+  for(const s of [0,90,-90,180]){ const d=dist(s)-(s===current?HYST:0); if(d<bestD){ best=s; bestD=d } }
+  return best;
 }
-function onDeviceOrientation(e){ S.sensorTilt=tiltFromOrientation(e.beta, e.gamma, S.sensorTilt||0); refreshTilt(); }
+function onDeviceMotion(e){
+  const g=e.accelerationIncludingGravity;
+  if(!g) return;
+  S.sensorTilt=tiltFromGravity(g.x, g.y, S.sensorTilt||0);
+  refreshTilt();
+}
 async function enableTiltSensor(){
   try{
-    if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
-      const res=await DeviceOrientationEvent.requestPermission();
+    if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+      const res=await DeviceMotionEvent.requestPermission();
       if(res!=='granted') return;   // usuário negou: legenda fica fixa, resto do app funciona normal
     }
-    window.addEventListener('deviceorientation', onDeviceOrientation);
+    window.addEventListener('devicemotion', onDeviceMotion);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — legenda simplesmente não acompanha */ }
 }
 function enableScreenLock(){
@@ -1882,7 +1894,7 @@ function disableScreenLock(){
             wrap.style.right=''; wrap.style.bottom=''; wrap.style.transform='' }
 }
 function disableTiltSensor(){
-  window.removeEventListener('deviceorientation', onDeviceOrientation);
+  window.removeEventListener('devicemotion', onDeviceMotion);
   S.tilt=0; S.sensorTilt=0;
   layoutCamFrame(true);
   const cb=document.getElementById('camback'), cf=document.getElementById('camflip');
