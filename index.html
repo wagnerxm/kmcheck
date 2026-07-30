@@ -1929,7 +1929,8 @@ function layoutOverlays(){
   rot.style.left=R.left+'px'; rot.style.top=R.top+'px'; rot.style.right='auto'; rot.style.bottom='auto';
   rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
   const rotated=Math.abs(S.tilt)===90;
-  video.style.transform = (S.facing==='user' && rotated) ? 'rotate(180deg)' : '';
+  const physLandscape=Math.abs(S.sensorTilt||0)===90;
+  rot.style.transform=(S.facing==='user' && physLandscape) ? 'rotate(180deg)' : '';
   const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
   const cf=document.getElementById('camframe');
   cf.style.width=boxW+'px'; cf.style.height=boxH+'px';
@@ -2081,7 +2082,8 @@ document.getElementById('shutter').onclick=()=>{
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
   else { sh=vw/targetRatio; sy=(vh-sh)/2 }
   let rot=-(S.tilt||0);
-  if(S.facing==='user' && Math.abs(S.tilt)===90) rot+=180;
+  const physLand=Math.abs(S.sensorTilt||0)===90;
+  if(S.facing==='user' && physLand) rot+=180;
   if(rot>180) rot-=360;
   const turned=Math.abs(rot)===90;
   const W=turned?sh:sw, H=turned?sw:sh;
