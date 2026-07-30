@@ -265,7 +265,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 [data-android] dialog::backdrop{backdrop-filter:none}
 [data-android] .toast{backdrop-filter:none;-webkit-backdrop-filter:none}
 [data-android] #camrot{transition:none}
-[data-android] #camframe{transition:transform .2s ease,width .2s ease,height .2s ease}
+[data-android] #camframe{transition:transform .15s ease,width .15s ease,height .15s ease}
+[data-android] .cbtn,[data-android] .topbtn{transition:none}
+[data-android] .card::before,[data-android] .gcard::after{display:none}
 /* #camframe (legenda/logo) é a CAMADA que gira junto com o aparelho — só a interface, não o
    vídeo. O JS troca largura<->altura e rotaciona por uiTilt, dentro da mesma área útil. */
 #camframe{position:absolute;left:50%;top:50%;pointer-events:none;overflow:visible;z-index:2;
@@ -1995,10 +1997,11 @@ async function openCam(){
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
   document.querySelector('main').style.display='none';
-  clearInterval(camTick); camTick=setInterval(()=>{ paintGps() }, 1000);
+  clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
   try{
     const resMap={max:{w:4096,h:2160}, '1080':{w:1920,h:1080}, '1440':{w:2560,h:1440}, '2160':{w:3840,h:2160}};
-    const R=resMap[CFG.res]||resMap.max;
+    const userRes=CFG.res;
+    const R=_isAndroid && userRes==='max' ? resMap['1080'] : (resMap[userRes]||resMap.max);
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false});
     video.srcObject=S.stream;
     // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
@@ -2262,7 +2265,7 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
     if(dt>0) vx=(touch.clientX-lastX)/dt;
     lastX=touch.clientX; lastT=now;
     // resistência elástica nas bordas (primeira/última foto)
-    if((galIdx===0 && dx>0)||(galIdx>=galPhotos.length-1 && dx<0)) dx*=0.3;
+    if((galIdx===0 && dx<0)||(galIdx>=galPhotos.length-1 && dx>0)) dx*=0.3;
     img.style.transform=`translateX(${dx}px)`;
   }, {passive:true});
 
@@ -2271,11 +2274,11 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
     dragging=false;
     const w=W(), threshold=w*0.2;
     const fast=Math.abs(vx)>0.4;
-    const goNext=(dx<-threshold || (dx<0 && fast)) && galIdx<galPhotos.length-1;
-    const goPrev=(dx>threshold || (dx>0 && fast)) && galIdx>0;
+    const goPrev=(dx<-threshold || (dx<0 && fast)) && galIdx>0;
+    const goNext=(dx>threshold || (dx>0 && fast)) && galIdx<galPhotos.length-1;
 
     if(goNext || goPrev){
-      const dir=goNext?-1:1;
+      const dir=goNext?1:-1;
       img.classList.add('gal-anim');
       img.style.transform=`translateX(${dir*w}px)`;
       img.addEventListener('transitionend', function h(){
@@ -2490,9 +2493,15 @@ function saveAndShare(blob){
   const file=new File([blob], name, {type:'image/jpeg'});
   savePhotoToGallery(blob, name).catch(()=>{});
   if(_isAndroid){
-    // Android: download direto para a galeria, sem abrir share sheet
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=name;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    return;
   } else if(navigator.canShare && navigator.canShare({files:[file]})){
     navigator.share({files:[file]}).catch(()=>{});
   } else {
