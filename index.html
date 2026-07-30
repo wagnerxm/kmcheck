@@ -289,10 +289,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
 #shutter::before{content:'';width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
-/* ---------- diálogo de serviço ---------- */
-.svcgrid{display:flex;flex-wrap:wrap;gap:8px;max-height:50vh;overflow:auto;padding:4px 2px}
-.svcchip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:9px 15px;font-size:13px;cursor:pointer;font-family:var(--sans)}
-.svcchip.on{background:var(--gold);color:#0d0f08;border-color:var(--gold);font-weight:700}
+/* ---------- diálogo de serviço/contrato: listas roláveis em ordem alfabética ---------- */
+.pk-list{max-height:32vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:0 12px}
+.pk-list .ct-item{padding:12px 0}
+.ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
+.ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
 #gallerywrap{position:fixed;inset:0;background:#000;z-index:51;display:none;flex-direction:column}
 #gallerywrap.on{display:flex}
@@ -348,6 +350,7 @@ dialog{background:
   backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
   color:var(--text);border-left:1px solid var(--glassborder);border-right:1px solid var(--glassborder);
   border-radius:22px;padding:20px;max-width:min(92vw,480px);width:100%;
+  max-height:92vh;overflow-y:auto;margin:auto;   /* centraliza na tela (o reset global zera o margin) */
   box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 20px 50px rgba(0,0,0,.5)}
 dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px)}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
@@ -730,9 +733,10 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
 <!-- câmera fullscreen -->
 <div id="camwrap">
-  <!-- barra superior fina: só o botão Voltar (canto superior esquerdo) -->
+  <!-- barra superior fina: Voltar + Trocar câmera, ambos no canto superior esquerdo -->
   <div id="camtopbar">
     <button id="camback" class="topbtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+    <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="camstage">
     <div id="camrot">
@@ -762,7 +766,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <button class="cbtn cbmini" id="cam-settings" aria-label="Configurações"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></button>
       <button class="cbtn cbmini" id="cam-flash" aria-label="Flash"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
       <button class="cbtn cbmini" id="cam-gallery" aria-label="Galeria"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 17 5-5 4.5 4.5L16 14l4 4"/></svg></button>
-      <button class="cbtn cbmini" id="camflip" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
     </div>
   </div>
 </div>
@@ -770,14 +773,14 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <!-- diálogo: serviço + contrato (botão "i") -->
 <dialog id="dlg-svc">
   <h2 class="sec" style="margin-top:0">Serviço</h2>
-  <div class="svcgrid" id="svc-grid"></div>
+  <div class="pk-list" id="svc-grid"></div>
   <div class="row" style="margin-top:12px">
     <input type="text" id="svc-new2" placeholder="Adicionar novo serviço" style="flex:1">
     <button class="btn small gold" id="svc-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
 
   <h2 class="sec" style="margin-top:22px">Contrato</h2>
-  <div id="ctlist2"></div>
+  <div class="pk-list" id="ctlist2"></div>
   <div class="row" style="margin-top:12px">
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
@@ -1788,9 +1791,8 @@ function applyTilt(newTilt){
   if(newTilt===S.tilt && camGeom) return;
   S.tilt=newTilt;
   layoutOverlays();
-  // botões (barra inferior + Voltar): posição fixa; só o glifo gira para ficar "em pé".
-  document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='rotate('+S.tilt+'deg)');
-  const cb=document.getElementById('camback'); if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
+  // botões (barra superior + inferior): posição fixa; só o glifo gira para ficar "em pé".
+  document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn').forEach(btn=>btn.style.transform='rotate('+S.tilt+'deg)');
 }
 /* uiTilt = orientação física do aparelho (sensor) descontada a rotação que o navegador já
    aplicou sozinho na página (screenTilt). No caso normal (app instalado, travado em retrato)
@@ -1869,8 +1871,7 @@ function disableScreenLock(){
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
   S.tilt=0; S.sensorTilt=0;
-  document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='');
-  const cb=document.getElementById('camback'); if(cb) cb.style.transform='';
+  document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn').forEach(btn=>btn.style.transform='');
 }
 
 let camGeom=null; // cache: {u,pad,W,H} — recalculado quando a área útil muda de forma ou inclinação
@@ -2079,13 +2080,31 @@ const SVC_PADRAO=['Roçada','Limpeza','Placa','Defensa','Pintura','Drenagem','Po
 function renderSvcGrid(){
   const g=document.getElementById('svc-grid');
   const custom=getServices();
-  const all=[...SVC_PADRAO, ...custom.filter(s=>!SVC_PADRAO.includes(s))];
+  // lista única, em ordem alfabética (rolável) — mesmo padrão da seleção de UF
+  const all=[...new Set([...SVC_PADRAO, ...custom])].sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
   const sel=getSvcSel();
-  g.innerHTML=all.map(s=>`<button class="svcchip ${s===sel?'on':''}" data-s="${s.replace(/"/g,'&quot;')}">${s}</button>`).join('');
-  g.querySelectorAll('.svcchip').forEach(b=>b.onclick=()=>{
-    const s=b.dataset.s;
-    localStorage.setItem('kc-svcsel', s===sel?'':s);
-    renderSvcGrid(); paintTags(); paintGps();
+  g.innerHTML=all.map(s=>{
+    const isCustom=!SVC_PADRAO.includes(s);
+    return `<div class="ct-item svc ${s===sel?'sel':''}" data-s="${s.replace(/"/g,'&quot;')}">
+      <span class="dot"></span><span class="num">${s}</span>
+      ${isCustom?'<button class="del">remover</button>':''}
+    </div>`;
+  }).join('');
+  g.querySelectorAll('.ct-item').forEach(item=>{
+    item.onclick=e=>{
+      if(e.target.classList.contains('del')) return;
+      const s=item.dataset.s;
+      localStorage.setItem('kc-svcsel', s===getSvcSel()?'':s);
+      renderSvcGrid(); paintTags(); paintGps();
+    };
+    const del=item.querySelector('.del');
+    if(del) del.onclick=()=>{
+      const s=item.dataset.s;
+      if(!confirm('Remover o serviço '+s+'?')) return;
+      localStorage.setItem('kc-services', JSON.stringify(getServices().filter(x=>x!==s)));
+      if(getSvcSel()===s) localStorage.removeItem('kc-svcsel');
+      renderSvcGrid(); renderServices(); paintTags(); paintGps();
+    };
   });
 }
 document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); document.getElementById('dlg-svc').showModal() };
@@ -2103,7 +2122,7 @@ document.getElementById('svc-add2').onclick=()=>{
 
 /* ---- contratos dentro do diálogo do botão "i" ---- */
 function renderContracts2(){
-  const list=getContracts(), act=getContract();
+  const list=getContracts().slice().sort((a,b)=>a.localeCompare(b,'pt',{numeric:true,sensitivity:'base'})), act=getContract();
   const el=document.getElementById('ctlist2');
   if(!list.length){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
