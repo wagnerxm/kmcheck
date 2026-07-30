@@ -2034,21 +2034,29 @@ document.getElementById('shutter').onclick=()=>{
   // a piscada da tela + o som de obturador cobrem a sensação de disparo no iPhone.
   if(navigator.vibrate) try{ navigator.vibrate([40,25,40]) }catch(e){}
   if(CFG.soundalert) playShutterSound();
-  // A foto sai EXATAMENTE como a prévia que você vê (WYSIWYG): não giramos a imagem por conta
-  // própria (era o que deixava a foto de cabeça para baixo). Só recortamos o formato escolhido.
+  // 1) recorta o formato escolhido do quadro do sensor
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
   const targetRatio=rw/rh, srcRatio=vw/vh;
   let sx=0, sy=0, sw=vw, sh=vh;
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
   else { sh=vw/targetRatio; sy=(vh-sh)/2 }
+  const mid=document.createElement('canvas');
+  mid.width=sw; mid.height=sh;
+  mid.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  // 2) GIRA os pixels para a cena ficar SEMPRE EM PÉ no arquivo salvo (desfaz a inclinação do
+  // aparelho no momento do disparo). Assim, na galeria, a foto tirada deitada aparece em pé —
+  // exatamente como a câmera nativa. A legenda já validada rotacionava por S.tilt para casar
+  // com a cena deitada; girando a imagem por -S.tilt, cena E legenda ficam em pé juntas.
+  const rot=-(S.tilt||0), turned=Math.abs(rot)===90;
+  const W=turned?sh:sw, H=turned?sw:sh;
   const c=document.createElement('canvas');
-  c.width=sw; c.height=sh;
+  c.width=W; c.height=H;
   const ctx=c.getContext('2d');
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  ctx.translate(W/2,H/2); ctx.rotate(rot*Math.PI/180); ctx.drawImage(mid,-sw/2,-sh/2); ctx.setTransform(1,0,0,1,0,0);
   const info=buildInfo(); S.lastInfo=info;
-  // legenda acompanha a inclinação da imagem (mesma geometria da prévia ao vivo)
-  burnLegend(ctx,sw,sh,info,S.tilt||0);
+  // 3) imagem já está em pé -> legenda queimada na horizontal (canto padrão do formato)
+  burnLegend(ctx,W,H,info,0);
   // geração SÍNCRONA (toDataURL) para o menu de salvar nativo abrir ainda dentro do toque
   saveAndShare(dataURLToBlob(c.toDataURL('image/jpeg', CFG.qual)));
 };
