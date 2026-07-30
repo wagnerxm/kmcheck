@@ -227,39 +227,41 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #scr-cam{position:relative}
 #camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
 #camwrap.on{display:flex}
+/* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
+   mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
+#camtopbar{flex:0 0 auto;display:flex;align-items:center;box-sizing:content-box;
+  height:52px;padding:env(safe-area-inset-top) 6px 0;background:rgba(0,0,0,.92);z-index:7}
+.topbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;color:#fff;cursor:pointer;transition:transform .3s ease}
+.topbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+/* seletor de PROPORÇÃO (1:1 / 4:3 / 16:9), logo acima da barra inferior — igual ao iPhone.
+   O formato ativo fica destacado; tocar recorta a área útil da câmera na hora. */
+#camratio{flex:0 0 auto;display:flex;justify-content:center;align-items:center;gap:8px;
+  padding:9px 0 5px;background:rgba(16,16,16,.86)}
+.ratiobtn{background:transparent;border:none;color:rgba(255,255,255,.55);font-family:var(--sans);
+  font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:5px 13px;border-radius:999px;cursor:pointer;transition:.15s}
+.ratiobtn.on{color:#0d0f08;background:var(--gold)}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
 #camflashfx.on{animation:camflash .18s ease-out}
 @keyframes camflash{0%{opacity:0}18%{opacity:1}40%{opacity:1}100%{opacity:0}}
-/* A prévia (#camvideo) preenche o palco e NUNCA gira — como nas câmeras nativas do iPhone/
-   Android: a imagem fica estável e apenas a INTERFACE (legenda, logo, botões) acompanha a
-   orientação física do aparelho. #camrot é só o contêiner fixo do vídeo. */
-#camrot{position:absolute;inset:0;overflow:hidden;background:#000}
+/* A prévia (#camvideo) NUNCA gira. #camrot é a ÁREA ÚTIL da câmera: o JS posiciona/dimensiona
+   ele conforme o formato escolhido (1:1, 4:3, 16:9), centralizado no palco; o resto do palco
+   fica preto (letterbox), igual ao iPhone. O vídeo preenche essa área com object-fit:cover. */
+#camrot{position:absolute;overflow:hidden;background:#000;
+  transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease}
 #camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
-/* #camframe (legenda/logo) e #camtoprot (botões de topo) são CAMADAS que giram junto com o
-   aparelho — só a interface, não o vídeo. O JS troca largura<->altura e rotaciona por uiTilt,
-   então o "canto superior esquerdo" da camada é sempre o topo-esquerdo para o usuário, em
-   qualquer orientação. A transição suave deixa o giro imperceptível, sem travar. */
+/* #camframe (legenda/logo) é a CAMADA que gira junto com o aparelho — só a interface, não o
+   vídeo. O JS troca largura<->altura e rotaciona por uiTilt, dentro da mesma área útil. */
 #camframe{position:absolute;left:50%;top:50%;pointer-events:none;overflow:visible;z-index:2;
   transition:transform .3s ease,width .3s ease,height .3s ease}
-#camtoprot{position:absolute;left:50%;top:50%;pointer-events:none;z-index:6;
-  transition:transform .3s ease,width .3s ease,height .3s ease}
-#camtoprot .camstagebtn{pointer-events:auto}
 #camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
 #liveplate.bold .l1,#liveplate.bold .l2{font-weight:700}
 #liveplate.err .l1{color:#ff9d8a}
-.camstagebtn{position:absolute;top:calc(14px + env(safe-area-inset-top));
-  background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.78);
-  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
-  border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:50%;width:42px;height:42px;
-  display:flex;align-items:center;justify-content:center;cursor:pointer}
-.camstagebtn-left{left:14px}
-.camstagebtn-right{right:14px}
-.camstagebtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 /* ---------- barra inferior: Dark Glass Premium, fora da área da foto ---------- */
 #cambar2{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
   gap:6px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));
@@ -533,9 +535,9 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M6 3v14a1 1 0 0 0 1 1h14"/><path d="M18 21V7a1 1 0 0 0-1-1H3"/></svg></span>
         <span class="ltext"><b>Formato</b><i>Proporção da foto capturada</i></span>
         <select id="cfg-format" class="lsel">
-          <option value="3:4" selected>3:4</option>
           <option value="1:1">1:1</option>
-          <option value="16:9">16:9</option>
+          <option value="3:4" selected>4:3</option>
+          <option value="9:16">16:9</option>
         </select>
       </label>
     </div>
@@ -728,6 +730,10 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
 <!-- câmera fullscreen -->
 <div id="camwrap">
+  <!-- barra superior fina: só o botão Voltar (canto superior esquerdo) -->
+  <div id="camtopbar">
+    <button id="camback" class="topbtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+  </div>
   <div id="camstage">
     <div id="camrot">
       <video id="camvideo" autoplay playsinline muted></video>
@@ -737,13 +743,13 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <img id="camlogo" alt="" style="display:none">
       <div id="liveplate"></div>
     </div>
-    <!-- camada dos botões de topo: gira e reposiciona (Voltar sempre no topo-esquerdo,
-         Trocar câmera sempre no topo-direito, do ponto de vista do usuário) -->
-    <div id="camtoprot">
-      <button id="camback" class="camstagebtn camstagebtn-left" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
-      <button id="camflip" class="camstagebtn camstagebtn-right" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
-    </div>
     <div id="camflashfx"></div>
+  </div>
+  <!-- seletor de proporção da foto (recorta a área útil na hora) -->
+  <div id="camratio">
+    <button class="ratiobtn" data-fmt="1:1">1:1</button>
+    <button class="ratiobtn" data-fmt="3:4">4:3</button>
+    <button class="ratiobtn" data-fmt="9:16">16:9</button>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -756,6 +762,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <button class="cbtn cbmini" id="cam-settings" aria-label="Configurações"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></button>
       <button class="cbtn cbmini" id="cam-flash" aria-label="Flash"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
       <button class="cbtn cbmini" id="cam-gallery" aria-label="Galeria"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 17 5-5 4.5 4.5L16 14l4 4"/></svg></button>
+      <button class="cbtn cbmini" id="camflip" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
     </div>
   </div>
 </div>
@@ -1774,15 +1781,16 @@ document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-
 
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
-/* O VÍDEO nunca gira — fica estável preenchendo o palco (como câmera nativa). Só a INTERFACE
-   (camadas #camframe e #camtoprot + os glifos da barra) gira por 'uiTilt', acompanhando a
+/* O VÍDEO nunca gira — fica estável na área útil (como câmera nativa). Só a INTERFACE
+   (camada #camframe da legenda + os glifos dos botões) gira por 'uiTilt', acompanhando a
    orientação física do aparelho. S.tilt guarda esse ângulo (0, 90 ou -90). */
 function applyTilt(newTilt){
   if(newTilt===S.tilt && camGeom) return;
   S.tilt=newTilt;
   layoutOverlays();
-  // barra inferior: posição fixa; só o glifo de cada botão gira para ficar "em pé".
+  // botões (barra inferior + Voltar): posição fixa; só o glifo gira para ficar "em pé".
   document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='rotate('+S.tilt+'deg)');
+  const cb=document.getElementById('camback'); if(cb) cb.style.transform='rotate('+S.tilt+'deg)';
 }
 /* uiTilt = orientação física do aparelho (sensor) descontada a rotação que o navegador já
    aplicou sozinho na página (screenTilt). No caso normal (app instalado, travado em retrato)
@@ -1862,23 +1870,34 @@ function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
   S.tilt=0; S.sensorTilt=0;
   document.querySelectorAll('#cambar2 .cbtn').forEach(btn=>btn.style.transform='');
+  const cb=document.getElementById('camback'); if(cb) cb.style.transform='';
 }
 
-let camGeom=null; // cache: {u,pad,W,H} — recalculado quando o palco muda de forma ou de inclinação
-/* Posiciona e gira as CAMADAS de interface (#camframe = legenda/logo, #camtoprot = botões de
-   topo). O vídeo por baixo fica parado. Quando a inclinação é de 90°, a camada recebe o formato
-   TROCADO (largura<->altura) e é girada, caindo exatamente sobre o palco — assim o "topo" da
-   camada é sempre o topo para o usuário, e Voltar/Trocar reposicionam nos cantos corretos. */
+let camGeom=null; // cache: {u,pad,W,H} — recalculado quando a área útil muda de forma ou inclinação
+/* Retângulo da ÁREA ÚTIL da câmera conforme o formato escolhido (1:1, 4:3=3:4, 16:9=9:16),
+   centralizado no palco (o resto fica preto). ar = largura/altura da FOTO (retrato: <1). */
+function usefulRect(){
+  const cw=camstage.clientWidth, ch=camstage.clientHeight;
+  const [rw,rh]=(CFG.format||'3:4').split(':').map(Number);
+  const ar=rw/rh;
+  let w=cw, h=cw/ar;
+  if(h>ch){ h=ch; w=ch*ar; }
+  return {w, h, left:(cw-w)/2, top:(ch-h)/2};
+}
+/* Posiciona o vídeo na área útil e a camada da legenda (#camframe) por cima dela. O vídeo fica
+   parado; só a legenda gira por uiTilt (trocando largura<->altura em 90°, caindo dentro da área). */
 function layoutOverlays(){
   const cw=camstage.clientWidth, ch=camstage.clientHeight;
   if(!cw||!ch) return;
+  const R=usefulRect();
+  const rot=document.getElementById('camrot');
+  rot.style.left=R.left+'px'; rot.style.top=R.top+'px'; rot.style.right='auto'; rot.style.bottom='auto';
+  rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
   const rotated=Math.abs(S.tilt)===90;
-  const boxW=rotated?ch:cw, boxH=rotated?cw:ch;
-  const tf='translate(-50%,-50%) rotate('+S.tilt+'deg)';
-  for(const id of ['camframe','camtoprot']){
-    const el=document.getElementById(id); if(!el) continue;
-    el.style.width=boxW+'px'; el.style.height=boxH+'px'; el.style.transform=tf;
-  }
+  const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
+  const cf=document.getElementById('camframe');
+  cf.style.width=boxW+'px'; cf.style.height=boxH+'px';
+  cf.style.transform='translate(-50%,-50%) rotate('+S.tilt+'deg)';
   const u=Math.max(boxW,boxH)/1000;
   camGeom={u, pad:20*u, W:boxW, H:boxH};
   layoutCamLogo();
@@ -1924,6 +1943,22 @@ function refreshLive(){
   layoutOverlays();
   paintGps();
 }
+/* ---- seletor de proporção (1:1 / 4:3 / 16:9): fonte única = kc-format ----
+   Migra o valor antigo '16:9' (paisagem) para '9:16' (retrato) para casar com o novo seletor. */
+if(localStorage.getItem('kc-format')==='16:9') localStorage.setItem('kc-format','9:16');
+function paintRatioSel(){
+  const f=CFG.format;
+  document.querySelectorAll('#camratio .ratiobtn').forEach(b=>b.classList.toggle('on', b.dataset.fmt===f));
+}
+function setFormat(fmt){
+  localStorage.setItem('kc-format', fmt);
+  paintRatioSel();
+  const sel=document.getElementById('cfg-format');
+  if(sel && sel.value!==fmt){ sel.value=fmt; const t=document.getElementById('lbl-format'); if(t && sel.selectedIndex>=0) t.textContent=sel.options[sel.selectedIndex].textContent; }
+  refreshLive();   // recorta a área útil na hora; a legenda e a foto seguem o mesmo formato
+}
+document.querySelectorAll('#camratio .ratiobtn').forEach(b=>b.onclick=()=>setFormat(b.dataset.fmt));
+paintRatioSel();
 let camTick=null;
 async function openCam(){
   // pede a permissão do giroscópio ANTES de qualquer "await" — no iPhone, a autorização de
@@ -1947,6 +1982,7 @@ async function openCam(){
     video.style.transform = '';
     camwrap.classList.add('on');
     camGeom=null;
+    paintRatioSel();
     enableScreenLock();
     initFlashSupport();
     // recalcula assim que o vídeo souber suas dimensões (e a cada giro físico do sensor)
@@ -2338,7 +2374,8 @@ for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl
   if(saved!==null) el.value=saved;
   const paintLbl=()=>{ if(lbl){ const t=document.getElementById(lbl); if(t) t.textContent=el.options[el.selectedIndex].textContent } };
   paintLbl();
-  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.value); paintLbl(); paintGps(); refreshLive() };
+  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.value); paintLbl(); paintGps(); refreshLive();
+    if(key==='format') paintRatioSel(); };
 }
 
 /* controles deslizantes (%) */
