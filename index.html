@@ -252,11 +252,25 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
    fica preto (letterbox), igual ao iPhone. O vídeo preenche essa área com object-fit:cover. */
 #camrot{position:absolute;overflow:hidden;background:#000;
   transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease}
-#camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;will-change:transform}
+/* Android: remove backdrop-filter em todas as camadas — GPU fraca trava com blur */
+[data-android] #cambar2{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(16,16,16,.96)}
+[data-android] #camtopbar{backdrop-filter:none;-webkit-backdrop-filter:none}
+[data-android] #gal-close{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(16,16,16,.92)}
+[data-android] header.top{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--glassbg2)}
+[data-android] nav{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(24,26,28,.92)}
+[data-android] nav button.camnav{backdrop-filter:none;-webkit-backdrop-filter:none}
+[data-android] .card,[data-android] .gcard{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--glassbg)}
+[data-android] dialog{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--glassbg)}
+[data-android] dialog::backdrop{backdrop-filter:none}
+[data-android] .toast{backdrop-filter:none;-webkit-backdrop-filter:none}
+[data-android] #camrot{transition:none}
+[data-android] #camframe{transition:transform .2s ease,width .2s ease,height .2s ease}
 /* #camframe (legenda/logo) é a CAMADA que gira junto com o aparelho — só a interface, não o
    vídeo. O JS troca largura<->altura e rotaciona por uiTilt, dentro da mesma área útil. */
 #camframe{position:absolute;left:50%;top:50%;pointer-events:none;overflow:visible;z-index:2;
-  transition:transform .3s ease,width .3s ease,height .3s ease}
+  transition:transform .3s ease,width .3s ease,height .3s ease;will-change:transform}
+.cbtn,.topbtn{will-change:transform}
 #camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #liveplate{position:absolute;pointer-events:none}
 #liveplate .l1,#liveplate .l2{font-family:var(--legend);font-weight:400;color:#fff;text-shadow:0 0 5px rgba(0,0,0,.55);white-space:pre}
@@ -1545,16 +1559,21 @@ function paintGps(){
   } else {
     gl.textContent='buscando satélites…';
   }
-  // placa da câmera
+  // placa da câmera — atualiza texto sem recriar o DOM (evita reflow/flicker no Android)
   const {L,err}=legendLines(buildInfo());
   const lp=document.getElementById('liveplate');
-  lp.innerHTML=L.map((t,i)=>`<div class="${i===0?'l1':'l2'}"></div>`).join('');
-  [...lp.children].forEach((el,i)=>el.textContent=L[i]);
+  const kids=[...lp.children];
+  if(kids.length!==L.length){
+    lp.innerHTML=L.map((t,i)=>`<div class="${i===0?'l1':'l2'}"></div>`).join('');
+    [...lp.children].forEach((el,i)=>el.textContent=L[i]);
+    styleLivePlate();
+  } else {
+    let changed=false;
+    kids.forEach((el,i)=>{ if(el.textContent!==L[i]){ el.textContent=L[i]; changed=true } });
+    if(changed) styleLivePlate();
+  }
   lp.classList.toggle('err', err);
   lp.classList.toggle('bold', CFG.legbold);
-  // as linhas acabaram de ser recriadas — sem reaplicar os estilos aqui elas voltariam
-  // ao tamanho/cor padrão do CSS (era por isso que a legenda "sumia" da prévia)
-  styleLivePlate();
 }
 /* monta as informações da legenda (fonte: GPS ao vivo) */
 function buildInfo(){
@@ -1834,12 +1853,20 @@ function tiltFromGravity(ax, ay, current){
   for(const s of [0,90,-90]){ const d=dist(s)-(s===current?HYST:0); if(d<bestD){ best=s; bestD=d } }
   return best;
 }
+const _isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const _isAndroid=/Android/i.test(navigator.userAgent);
+let _motionTS=0;
 function onDeviceMotion(e){
+  const now=performance.now();
+  if(now-_motionTS<64) return;   // ~15 Hz throttle — 60 Hz é desperdício e trava Android
+  _motionTS=now;
   const g=e.accelerationIncludingGravity;
   if(!g) return;
   // Safari (iOS) reporta accelerationIncludingGravity com o sinal invertido em relação à
   // especificação (bug antigo e conhecido do WebKit) — sem negar aqui, retrato lia como paisagem.
-  S.sensorTilt=tiltFromGravity(-g.x, -g.y, S.sensorTilt||0);
+  // Android segue a especificação e NÃO deve ser negado.
+  const gx=_isIOS?-g.x:g.x, gy=_isIOS?-g.y:g.y;
+  S.sensorTilt=tiltFromGravity(gx, gy, S.sensorTilt||0);
   refreshTilt();
 }
 let tiltGranted=false;   // lembra a autorização do sensor durante a sessão (iOS pede 1x)
@@ -1966,10 +1993,8 @@ async function openCam(){
   // toque do usuário expira rápido, e se pedirmos depois de aguardar a câmera abrir, o pedido
   // falha em silêncio (sem erro, sem aviso — só não gira nada, foi exatamente o que aconteceu)
   enableTiltSensor();
-  // reforço: tenta travar a tela em retrato mesmo fora do app instalado (o manifest só trava
-  // sozinho quando aberto pelo ícone da Tela de Início; numa aba normal do navegador isso ajuda
-  // a evitar a página girar de verdade por conta própria e brigar com a rotação da legenda)
-  try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
+  // reforço: tenta travar a tela em retrato (fire-and-forget — não bloqueia a abertura da câmera)
+  try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
@@ -1979,14 +2004,16 @@ async function openCam(){
     const R=resMap[CFG.res]||resMap.max;
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false});
     video.srcObject=S.stream;
-    // frontal e traseira exibidas fiéis, sem rotação (a prévia fica estável e igual à foto).
+    // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
+    try{ await video.play() }catch(e){}
     video.style.transform = '';
     camwrap.classList.add('on');
     camGeom=null;
     paintRatioSel();
     enableScreenLock();
     initFlashSupport();
-    // recalcula assim que o vídeo souber suas dimensões (e a cada giro físico do sensor)
+    video.removeEventListener('loadedmetadata', layoutOverlays);
+    video.removeEventListener('resize', layoutOverlays);
     video.addEventListener('loadedmetadata', layoutOverlays);
     video.addEventListener('resize', layoutOverlays);
     layoutOverlays();
@@ -2576,6 +2603,7 @@ if(svcAdd) svcAdd.onclick=()=>{
 
 /* ================= boot ================= */
 (async function(){
+  if(/Android/i.test(navigator.userAgent)) document.documentElement.setAttribute('data-android','');
   try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
   renderBases();
   renderContracts();
