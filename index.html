@@ -238,9 +238,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* seletor de PROPORÇÃO (1:1 / 4:3 / 16:9), logo acima da barra inferior — igual ao iPhone.
    O formato ativo fica destacado; tocar recorta a área útil da câmera na hora. */
 #camratio{flex:0 0 auto;display:flex;justify-content:center;align-items:center;gap:8px;
-  padding:9px 0 5px;background:rgba(16,16,16,.86)}
+  padding:9px 0 5px;background:rgba(16,16,16,.86);position:relative;z-index:3}
 .ratiobtn{background:transparent;border:none;color:rgba(255,255,255,.55);font-family:var(--sans);
-  font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:5px 13px;border-radius:999px;cursor:pointer;transition:.15s}
+  font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:7px 16px;border-radius:999px;cursor:pointer;
+  transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.ratiobtn:active{transform:scale(.92)}
 .ratiobtn.on{color:#0d0f08;background:var(--gold)}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
@@ -1530,12 +1532,16 @@ function startGps(){
     paintGps();
   }, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
 }
+let _gpsEls=null;
+function _getGpsEls(){
+  if(!_gpsEls) _gpsEls={dot:document.getElementById('gpsdot'),gl:document.getElementById('gpsline'),
+    kb:document.getElementById('kmbig'),lav:document.getElementById('latval'),lov:document.getElementById('lonval'),
+    gcRoad:document.getElementById('gc-road'),herobr:document.getElementById('herobr'),
+    signBr:document.getElementById('sign-br'),signKm:document.getElementById('sign-km')};
+  return _gpsEls;
+}
 function paintGps(){
-  const dot=document.getElementById('gpsdot'), gl=document.getElementById('gpsline');
-  const kb=document.getElementById('kmbig'), lav=document.getElementById('latval'), lov=document.getElementById('lonval');
-  const gcRoad=document.getElementById('gc-road');
-  const herobr=document.getElementById('herobr');
-  const signBr=document.getElementById('sign-br'), signKm=document.getElementById('sign-km');
+  const {dot,gl,kb,lav,lov,gcRoad,herobr,signBr,signKm}=_getGpsEls();
   if(S.pos){
     dot.className='gpsdot '+(S.pos.acc<=10?'ok':(S.pos.acc<=25?'mid':''));
     gl.textContent=`GPS ±${Math.round(S.pos.acc)} m`;
@@ -1804,12 +1810,14 @@ const camwrap=document.getElementById('camwrap'), video=document.getElementById(
 /* O VÍDEO nunca gira — fica estável na área útil (como câmera nativa). Só a INTERFACE
    (camada #camframe da legenda + os glifos dos botões) gira por 'uiTilt', acompanhando a
    orientação física do aparelho. S.tilt guarda esse ângulo (0, 90 ou -90). */
+let _tiltBtns=null;
 function applyTilt(newTilt){
   if(newTilt===S.tilt && camGeom) return;
   S.tilt=newTilt;
   layoutOverlays();
-  // botões (barra superior + inferior): posição fixa; só o glifo gira para ficar "em pé".
-  document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn').forEach(btn=>btn.style.transform='rotate('+S.tilt+'deg)');
+  if(!_tiltBtns) _tiltBtns=document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn');
+  const r='rotate('+S.tilt+'deg)';
+  for(let i=0;i<_tiltBtns.length;i++) _tiltBtns[i].style.transform=r;
 }
 /* uiTilt = orientação física do aparelho (sensor) descontada a rotação que o navegador já
    aplicou sozinho na página (screenTilt). No caso normal (app instalado, travado em retrato)
@@ -1832,7 +1840,8 @@ function refreshTilt(){
   if(Math.abs(t)===180) t=0;   // nunca vira a interface de cabeça para baixo
   applyTilt(t);
 }
-function onScreenRotate(){ layoutOverlays(); refreshTilt() }
+let _rotDebounce=0;
+function onScreenRotate(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ layoutOverlays(); refreshTilt() }) }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
@@ -1956,12 +1965,14 @@ function styleLivePlate(){
   lp.style.textAlign = right ? 'right' : 'left';
   lp.style.opacity = CFG.legop;
   const isErr = lp.classList.contains('err');
-  lp.querySelectorAll('.l1,.l2').forEach(el=>{
+  const bold=CFG.legbold?700:400, clr=CFG.legcolor;
+  for(let i=0;i<lp.children.length;i++){
+    const el=lp.children[i];
     el.style.fontSize=size+'px';
     el.style.lineHeight=lh+'px';
-    el.style.fontWeight=CFG.legbold?700:400;
-    el.style.color = (isErr && el.classList.contains('l1')) ? '#ff9d8a' : CFG.legcolor;
-  });
+    el.style.fontWeight=bold;
+    el.style.color = (isErr && i===0) ? '#ff9d8a' : clr;
+  }
 }
 /* qualquer ajuste nas configurações reflete na hora na visualização ao vivo */
 function refreshLive(){
@@ -2062,26 +2073,24 @@ document.getElementById('shutter').onclick=()=>{
   // a piscada da tela + o som de obturador cobrem a sensação de disparo no iPhone.
   if(navigator.vibrate) try{ navigator.vibrate([40,25,40]) }catch(e){}
   if(CFG.soundalert) playShutterSound();
-  // 1) recorta o formato escolhido do quadro do sensor
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
   const targetRatio=rw/rh, srcRatio=vw/vh;
   let sx=0, sy=0, sw=vw, sh=vh;
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
   else { sh=vw/targetRatio; sy=(vh-sh)/2 }
-  const mid=document.createElement('canvas');
-  mid.width=sw; mid.height=sh;
-  mid.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-  // 2) GIRA os pixels para a cena ficar SEMPRE EM PÉ no arquivo salvo (desfaz a inclinação do
-  // aparelho no momento do disparo). Assim, na galeria, a foto tirada deitada aparece em pé —
-  // exatamente como a câmera nativa. A legenda já validada rotacionava por S.tilt para casar
-  // com a cena deitada; girando a imagem por -S.tilt, cena E legenda ficam em pé juntas.
   const rot=-(S.tilt||0), turned=Math.abs(rot)===90;
   const W=turned?sh:sw, H=turned?sw:sh;
   const c=document.createElement('canvas');
   c.width=W; c.height=H;
   const ctx=c.getContext('2d');
-  ctx.translate(W/2,H/2); ctx.rotate(rot*Math.PI/180); ctx.drawImage(mid,-sw/2,-sh/2); ctx.setTransform(1,0,0,1,0,0);
+  if(rot===0){
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+  } else {
+    ctx.translate(W/2,H/2); ctx.rotate(rot*Math.PI/180);
+    ctx.drawImage(video, sx, sy, sw, sh, -sw/2, -sh/2, sw, sh);
+    ctx.setTransform(1,0,0,1,0,0);
+  }
   const info=buildInfo(); S.lastInfo=info;
   // 3) imagem já está em pé -> legenda queimada na horizontal (canto padrão do formato)
   burnLegend(ctx,W,H,info,0);
@@ -2493,14 +2502,6 @@ function saveAndShare(blob){
   const file=new File([blob], name, {type:'image/jpeg'});
   savePhotoToGallery(blob, name).catch(()=>{});
   if(_isAndroid){
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=name;
-    a.style.display='none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url), 5000);
     return;
   } else if(navigator.canShare && navigator.canShare({files:[file]})){
     navigator.share({files:[file]}).catch(()=>{});
