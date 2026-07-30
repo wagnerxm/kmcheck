@@ -229,7 +229,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camwrap.on{display:flex}
 /* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
    mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
-#camtopbar{flex:0 0 auto;display:flex;align-items:center;box-sizing:content-box;
+#camtopbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;box-sizing:content-box;
   height:52px;padding:env(safe-area-inset-top) 6px 0;background:rgba(0,0,0,.92);z-index:7}
 .topbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:none;color:#fff;cursor:pointer;transition:transform .3s ease}
@@ -290,7 +290,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #shutter::before{content:'';width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
 /* ---------- diálogo de serviço/contrato: listas roláveis em ordem alfabética ---------- */
-.pk-list{max-height:32vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+.pk-list{max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
   border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:0 12px}
 .pk-list .ct-item{padding:12px 0}
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
@@ -2077,19 +2077,19 @@ document.getElementById('cam-le').onclick=()=>{
   localStorage.setItem('kc-side', getSide()==='LE'?'':'LE'); paintTags(); paintGps();
 };
 const SVC_PADRAO=['Roçada','Limpeza','Placa','Defensa','Pintura','Drenagem','Ponte','Marco quilométrico','Outros'];
+/* padrões que o usuário escolheu remover (podem ser apagados como qualquer outro) */
+function getRemovedDefaults(){ try{ return JSON.parse(localStorage.getItem('kc-svc-removed')||'[]') }catch(e){ return [] } }
+function setRemovedDefaults(a){ localStorage.setItem('kc-svc-removed', JSON.stringify(a)); }
 function renderSvcGrid(){
   const g=document.getElementById('svc-grid');
-  const custom=getServices();
-  // lista única, em ordem alfabética (rolável) — mesmo padrão da seleção de UF
-  const all=[...new Set([...SVC_PADRAO, ...custom])].sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
+  const custom=getServices(), removed=getRemovedDefaults();
+  // lista única, em ordem alfabética (rolável) — padrões apagados ficam de fora
+  const all=[...new Set([...SVC_PADRAO.filter(s=>!removed.includes(s)), ...custom])].sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
   const sel=getSvcSel();
-  g.innerHTML=all.map(s=>{
-    const isCustom=!SVC_PADRAO.includes(s);
-    return `<div class="ct-item svc ${s===sel?'sel':''}" data-s="${s.replace(/"/g,'&quot;')}">
+  g.innerHTML=all.map(s=>`<div class="ct-item svc ${s===sel?'sel':''}" data-s="${s.replace(/"/g,'&quot;')}">
       <span class="dot"></span><span class="num">${s}</span>
-      ${isCustom?'<button class="del">remover</button>':''}
-    </div>`;
-  }).join('');
+      <button class="del">remover</button>
+    </div>`).join('');
   g.querySelectorAll('.ct-item').forEach(item=>{
     item.onclick=e=>{
       if(e.target.classList.contains('del')) return;
@@ -2097,10 +2097,10 @@ function renderSvcGrid(){
       localStorage.setItem('kc-svcsel', s===getSvcSel()?'':s);
       renderSvcGrid(); paintTags(); paintGps();
     };
-    const del=item.querySelector('.del');
-    if(del) del.onclick=()=>{
+    item.querySelector('.del').onclick=()=>{
       const s=item.dataset.s;
       if(!confirm('Remover o serviço '+s+'?')) return;
+      if(SVC_PADRAO.includes(s)){ const r=getRemovedDefaults(); if(!r.includes(s)) r.push(s); setRemovedDefaults(r); }
       localStorage.setItem('kc-services', JSON.stringify(getServices().filter(x=>x!==s)));
       if(getSvcSel()===s) localStorage.removeItem('kc-svcsel');
       renderSvcGrid(); renderServices(); paintTags(); paintGps();
@@ -2113,9 +2113,8 @@ document.getElementById('svc-add2').onclick=()=>{
   const inp=document.getElementById('svc-new2');
   const s=inp.value.trim();
   if(!s){ toast('Digite o nome do serviço.'); return }
-  const list=getServices();
-  if(!list.includes(s)) list.push(s);
-  localStorage.setItem('kc-services', JSON.stringify(list));
+  if(SVC_PADRAO.includes(s)){ setRemovedDefaults(getRemovedDefaults().filter(x=>x!==s)); }  // padrão volta a aparecer
+  else { const list=getServices(); if(!list.includes(s)) list.push(s); localStorage.setItem('kc-services', JSON.stringify(list)); }
   localStorage.setItem('kc-svcsel', s);
   inp.value=''; renderSvcGrid(); renderServices(); paintTags(); paintGps();
 };
