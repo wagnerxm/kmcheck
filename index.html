@@ -233,7 +233,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
 #camflashfx.on{animation:camflash .18s ease-out}
 @keyframes camflash{0%{opacity:0}18%{opacity:1}40%{opacity:1}100%{opacity:0}}
-#save-preview{display:block;width:100%;max-height:58vh;object-fit:contain;border-radius:12px;margin-bottom:14px;background:#000}
 /* A prévia (#camvideo) preenche o palco e NUNCA gira — como nas câmeras nativas do iPhone/
    Android: a imagem fica estável e apenas a INTERFACE (legenda, logo, botões) acompanha a
    orientação física do aparelho. #camrot é só o contêiner fixo do vídeo. */
@@ -544,11 +543,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
     <h2 class="sec">Comportamento após o disparo</h2>
     <div class="card listcard">
       <div class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
-        <span class="ltext"><b>Pré-visualização</b><i>Exibir prévia da foto antes de confirmar</i></span>
-        <input type="checkbox" id="cfg-preview">
-      </div>
-      <div class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span>
         <span class="ltext"><b>Aceitação automática</b><i>Aceitar foto automaticamente após o disparo</i></span>
         <input type="checkbox" id="cfg-autoaccept" checked>
@@ -794,15 +788,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
   <div id="gal-caption"></div>
 </div>
 
-<!-- diálogo pós-captura: pré-visualização (se ativada) + salvar no álbum do celular -->
-<dialog id="dlg-save">
-  <img id="save-preview" alt="Pré-visualização da foto" style="display:none">
-  <h2 class="sec" id="save-title" style="margin-top:0">Deseja salvar a imagem?</h2>
-  <div class="row" style="gap:10px;margin-top:4px">
-    <button class="btn ghost" id="save-no" style="flex:1">NÃO</button>
-    <button class="btn gold" id="save-yes" style="flex:1">SIM</button>
-  </div>
-</dialog>
 
 <!-- diálogo de importação KMZ: escolher BRs -->
 <dialog id="dlg-kmz">
@@ -2028,7 +2013,8 @@ document.getElementById('shutter').onclick=()=>{
   const info=buildInfo(); S.lastInfo=info;
   // legenda acompanha a inclinação da imagem (mesma geometria da prévia ao vivo)
   burnLegend(ctx,sw,sh,info,S.tilt||0);
-  c.toBlob(b=>postCapture(b), 'image/jpeg', CFG.qual);
+  // geração SÍNCRONA (toDataURL) para o menu de salvar nativo abrir ainda dentro do toque
+  saveAndShare(dataURLToBlob(c.toDataURL('image/jpeg', CFG.qual)));
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -2255,26 +2241,18 @@ function burnLegend(ctx,W,H,info,tiltDeg){
 function sanitizeFilename(s){
   return s.replace(/⚠/g,'').replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
 }
-/* grava a imagem direto na galeria NATIVA do celular. iOS/Android não deixam um app web gravar
-   sozinho no álbum (trava de segurança do sistema): o caminho que funciona é o menu de
-   compartilhar nativo — no iPhone aparece "Salvar Imagem", que grava no álbum de Fotos em 1
-   toque; no Android o menu também oferece salvar/galeria. Sem o menu, cai para download. */
-function shareToGallery(file, blob){
-  const download=()=>{
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
-  };
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({files:[file]}).then(()=>toast('Imagem enviada para o álbum'))
-      .catch(()=>{ /* usuário cancelou ou falhou o share — tenta baixar */ download(); });
-    toast('Toque em "Salvar Imagem" para guardar no álbum');
-  } else {
-    download();
-    toast('Imagem salva');
-  }
+function dataURLToBlob(u){
+  const c=u.indexOf(','); const bin=atob(u.slice(c+1));
+  const n=bin.length, arr=new Uint8Array(n);
+  for(let i=0;i<n;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr], {type:'image/jpeg'});
 }
-let pendingSave=null;   // {file, blob} aguardando decisão no diálogo
-function postCapture(blob){
+/* Sai direto para o menu de salvar NATIVO do celular, SEM diálogo próprio e sem avisos: no
+   iPhone aparece "Salvar Imagem" (grava no álbum de Fotos); no Android o menu oferece salvar/
+   compartilhar. Precisa ser chamado DENTRO do toque do obturador (por isso a foto é gerada de
+   forma síncrona, com toDataURL) — senão o iOS bloqueia o menu por falta de gesto do usuário.
+   Sem suporte a compartilhar arquivo (desktop/alguns navegadores), cai para download. */
+function saveAndShare(blob){
   const info=S.lastInfo||{}, t=new Date();
   const {L}=legendLines(info);
   const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
@@ -2282,25 +2260,13 @@ function postCapture(blob){
   const name=`${base} ${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
   savePhotoToGallery(blob, name).catch(()=>{});   // backup sempre na galeria interna do app
-  pendingSave={file, blob};
-  const dlg=document.getElementById('dlg-save');
-  const img=document.getElementById('save-preview');
-  // se a pré-visualização estiver ligada nas Configurações, mostra a foto no diálogo
-  if(img.src){ URL.revokeObjectURL(img.src); img.removeAttribute('src'); }
-  if(CFG.preview){ img.src=URL.createObjectURL(blob); img.style.display='block'; }
-  else { img.style.display='none'; }
-  dlg.showModal();
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    navigator.share({files:[file]}).catch(()=>{});   // usuário pode cancelar; sem aviso na tela
+  } else {
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  }
 }
-document.getElementById('save-yes').onclick=()=>{
-  document.getElementById('dlg-save').close();
-  if(pendingSave) shareToGallery(pendingSave.file, pendingSave.blob);
-  pendingSave=null;
-};
-document.getElementById('save-no').onclick=()=>{
-  document.getElementById('dlg-save').close();
-  toast('Guardada só na galeria do app');
-  pendingSave=null;
-};
 
 /* ================= consulta ================= */
 const qc=document.getElementById('q-coords');
@@ -2356,7 +2322,7 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-soundalert',false],
-                        ['cfg-estaca',false],['cfg-preview',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
+                        ['cfg-estaca',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
