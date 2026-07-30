@@ -1510,7 +1510,7 @@ function importCsv(text, fname){
 function startGps(){
   if(S.watchId!=null || !navigator.geolocation) return;
   S.watchId=navigator.geolocation.watchPosition(p=>{
-    S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy, t:Date.now()};
+    S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy, alt:p.coords.altitude, t:Date.now()};
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
     paintGps();
   }, err=>{
@@ -2059,7 +2059,10 @@ document.getElementById('shutter').onclick=()=>{
   // 3) imagem já está em pé -> legenda queimada na horizontal (canto padrão do formato)
   burnLegend(ctx,W,H,info,0);
   // geração SÍNCRONA (toDataURL) para o menu de salvar nativo abrir ainda dentro do toque
-  saveAndShare(dataURLToBlob(c.toDataURL('image/jpeg', CFG.qual)));
+  let bytes=dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual));
+  try{ bytes=insertExif(bytes, buildExifApp1(buildCaptureMeta(info))); }
+  catch(e){ /* se o EXIF falhar, salva a foto mesmo assim (sem metadados) */ }
+  saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -2303,11 +2306,124 @@ function burnLegend(ctx,W,H,info,tiltDeg){
 function sanitizeFilename(s){
   return s.replace(/⚠/g,'').replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
 }
-function dataURLToBlob(u){
-  const c=u.indexOf(','); const bin=atob(u.slice(c+1));
+function dataURLToBytes(u){
+  const bin=atob(u.slice(u.indexOf(',')+1));
   const n=bin.length, arr=new Uint8Array(n);
   for(let i=0;i<n;i++) arr[i]=bin.charCodeAt(i);
-  return new Blob([arr], {type:'image/jpeg'});
+  return arr;
+}
+/* ================= EXIF =================
+   O canvas (toDataURL/toBlob) gera um JPEG SEM metadados. Aqui montamos um segmento EXIF (APP1)
+   com GPS (lat/lon/altitude/precisão), data/hora e descrição, e injetamos logo após o SOI do
+   JPEG — assim a foto salva carrega os dados corretamente, sem depender de biblioteca externa. */
+function exifDateStr(d){ const z=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+':'+z(d.getMonth()+1)+':'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds()); }
+function toAscii(s){ return (s||'').normalize('NFKD').replace(/[^\x20-\x7E]/g,'').replace(/\s+/g,' ').trim(); }
+function buildExifApp1(m){
+  const LE=true;
+  const enc=s=>new TextEncoder().encode(s+'\0');
+  const rat=arr=>{ const b=new Uint8Array(8*arr.length), d=new DataView(b.buffer);
+    arr.forEach((r,i)=>{ d.setUint32(i*8,r[0],LE); d.setUint32(i*8+4,r[1],LE); }); return b; };
+  const s1=v=>{ const b=new Uint8Array(2); new DataView(b.buffer).setUint16(0,v,LE); return b; };
+  const l1=v=>{ const b=new Uint8Array(4); new DataView(b.buffer).setUint32(0,v,LE); return b; };
+  const E=(tag,type,count,bytes)=>({tag,type,count,bytes});
+  const ascii=(tag,s)=>{ const b=enc(s); return E(tag,2,b.length,b); };
+  const shortE=(tag,v)=>E(tag,3,1,s1(v));
+  const longE=(tag,v)=>E(tag,4,1,l1(v));
+  const ratE=(tag,arr)=>E(tag,5,arr.length,rat(arr));
+  const dt=m.dt||new Date(), dtStr=exifDateStr(dt);
+  const hasGps=m.lat!=null&&m.lon!=null&&isFinite(m.lat)&&isFinite(m.lon);
+
+  const ifd0=[];
+  if(m.desc) ifd0.push(ascii(0x010E,m.desc));   // ImageDescription
+  ifd0.push(ascii(0x010F,'KM Check'));           // Make
+  ifd0.push(ascii(0x0110,'PWA'));                // Model
+  ifd0.push(shortE(0x0112,1));                   // Orientation = normal (pixels já em pé)
+  ifd0.push(ascii(0x0131,'KM Check'));           // Software
+  ifd0.push(ascii(0x0132,dtStr));                // DateTime
+  const exifPtr=longE(0x8769,0); ifd0.push(exifPtr);
+  let gpsPtr=null;
+  if(hasGps){ gpsPtr=longE(0x8825,0); ifd0.push(gpsPtr); }
+
+  const exif=[];
+  exif.push(E(0x9000,7,4,new Uint8Array([0x30,0x32,0x33,0x30]))); // ExifVersion "0230"
+  exif.push(ascii(0x9003,dtStr));   // DateTimeOriginal
+  exif.push(ascii(0x9004,dtStr));   // DateTimeDigitized
+  exif.push(shortE(0xA001,1));      // ColorSpace = sRGB
+
+  let gps=null;
+  if(hasGps){
+    const dms=v=>{ v=Math.abs(v); const d=Math.floor(v), mf=(v-d)*60, mm=Math.floor(mf), ss=(mf-mm)*60; return [[d,1],[mm,1],[Math.round(ss*10000),10000]]; };
+    gps=[];
+    gps.push(E(0x0000,1,4,new Uint8Array([2,3,0,0]))); // GPSVersionID
+    gps.push(ascii(0x0001,m.lat>=0?'N':'S'));
+    gps.push(ratE(0x0002,dms(m.lat)));
+    gps.push(ascii(0x0003,m.lon>=0?'E':'W'));
+    gps.push(ratE(0x0004,dms(m.lon)));
+    if(m.alt!=null&&isFinite(m.alt)){
+      gps.push(E(0x0005,1,1,new Uint8Array([m.alt<0?1:0])));   // GPSAltitudeRef
+      gps.push(ratE(0x0006,[[Math.round(Math.abs(m.alt)*100),100]]));
+    }
+    gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
+    gps.push(ascii(0x001D,dt.getUTCFullYear()+':'+String(dt.getUTCMonth()+1).padStart(2,'0')+':'+String(dt.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
+    if(m.acc!=null&&isFinite(m.acc)) gps.push(ratE(0x001F,[[Math.round(m.acc*100),100]])); // GPSHPositioningError
+    gps.sort((a,b)=>a.tag-b.tag);
+  }
+  ifd0.sort((a,b)=>a.tag-b.tag);
+  exif.sort((a,b)=>a.tag-b.tag);
+
+  const ifdLen=n=>2+n*12+4;
+  const ifd0Len=ifdLen(ifd0.length), exifLen=ifdLen(exif.length), gpsLen=gps?ifdLen(gps.length):0;
+  const exifOffset=8+ifd0Len, gpsOffset=exifOffset+exifLen, dataBase=gpsOffset+gpsLen;
+  new DataView(exifPtr.bytes.buffer).setUint32(0,exifOffset,LE);
+  if(gpsPtr) new DataView(gpsPtr.bytes.buffer).setUint32(0,gpsOffset,LE);
+
+  const dataPool=[]; let dataLen=0;
+  const pushData=bytes=>{ const off=dataBase+dataLen; dataPool.push(bytes); dataLen+=bytes.length;
+    if(dataLen%2){ dataPool.push(new Uint8Array([0])); dataLen++; } return off; };
+  function writeIFD(entries){
+    const buf=new Uint8Array(ifdLen(entries.length)), dv=new DataView(buf.buffer);
+    dv.setUint16(0,entries.length,LE); let p=2;
+    for(const e of entries){
+      dv.setUint16(p,e.tag,LE); dv.setUint16(p+2,e.type,LE); dv.setUint32(p+4,e.count,LE);
+      if(e.bytes.length<=4){ for(let i=0;i<e.bytes.length;i++) buf[p+8+i]=e.bytes[i]; }
+      else dv.setUint32(p+8,pushData(e.bytes),LE);
+      p+=12;
+    }
+    dv.setUint32(p,0,LE); return buf;
+  }
+  const ifd0buf=writeIFD(ifd0), exifbuf=writeIFD(exif), gpsbuf=gps?writeIFD(gps):new Uint8Array(0);
+
+  const tiffLen=8+ifd0Len+exifLen+gpsLen+dataLen;
+  const tiff=new Uint8Array(tiffLen), tv=new DataView(tiff.buffer);
+  tiff[0]=0x49; tiff[1]=0x49; tv.setUint16(2,42,LE); tv.setUint32(4,8,LE);
+  tiff.set(ifd0buf,8); tiff.set(exifbuf,exifOffset); if(gps) tiff.set(gpsbuf,gpsOffset);
+  let dp=dataBase; for(const b of dataPool){ tiff.set(b,dp); dp+=b.length; }
+
+  const app1Len=2+6+tiffLen;                      // campo length + "Exif\0\0" + TIFF
+  const app1=new Uint8Array(2+app1Len), av=new DataView(app1.buffer);
+  av.setUint16(0,0xFFE1,false);                    // marcador APP1 (big-endian)
+  av.setUint16(2,app1Len,false);                   // tamanho (big-endian)
+  app1.set([0x45,0x78,0x69,0x66,0x00,0x00],4);     // "Exif\0\0"
+  app1.set(tiff,10);
+  return app1;
+}
+function insertExif(jpeg, app1){
+  if(!(jpeg[0]===0xFF&&jpeg[1]===0xD8)) return jpeg;   // não é JPEG: não mexe
+  const out=new Uint8Array(jpeg.length+app1.length);
+  out.set(jpeg.subarray(0,2),0);                        // SOI
+  out.set(app1,2);                                       // EXIF logo após o SOI
+  out.set(jpeg.subarray(2),2+app1.length);
+  return out;
+}
+function buildCaptureMeta(info){
+  const dt=new Date();
+  const lat=S.pos&&isFinite(S.pos.lat)?S.pos.lat:(info&&info.lat!=null?info.lat:null);
+  const lon=S.pos&&isFinite(S.pos.lon)?S.pos.lon:(info&&info.lon!=null?info.lon:null);
+  const alt=S.pos&&S.pos.alt!=null&&isFinite(S.pos.alt)?S.pos.alt:null;
+  const acc=S.pos&&isFinite(S.pos.acc)?S.pos.acc:(info&&info.acc!=null?info.acc:null);
+  let desc=''; try{ const {L}=legendLines(info||{}); desc=toAscii((L||[]).join(' | ')); }catch(e){}
+  return {dt, lat, lon, alt, acc, desc};
 }
 /* Sai direto para o menu de salvar NATIVO do celular, SEM diálogo próprio e sem avisos: no
    iPhone aparece "Salvar Imagem" (grava no álbum de Fotos); no Android o menu oferece salvar/
