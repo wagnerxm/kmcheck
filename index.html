@@ -1903,6 +1903,13 @@ function disableScreenLock(){
   window.removeEventListener('resize', onScreenRotate);
   if(window.screen && screen.orientation) screen.orientation.removeEventListener('change', onScreenRotate);
 }
+function forcePortrait(){
+  const a=screenAngle();
+  const h=document.documentElement;
+  if(a===0||a===180){ h.style.transform=''; h.style.width=''; h.style.height=''; h.style.position=''; h.style.top=''; h.style.left=''; h.style.overflow=''; return; }
+  if(a===90){ h.style.cssText+='position:fixed;width:100vh;height:100vw;transform:rotate(-90deg);transform-origin:left top;top:100%;left:0;overflow:hidden;'; }
+  else if(a===270){ h.style.cssText+='position:fixed;width:100vh;height:100vw;transform:rotate(90deg);transform-origin:right top;top:0;left:0;overflow:hidden;'; }
+}
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
   S.tilt=0; S.sensorTilt=0;
@@ -2694,6 +2701,9 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+  window.addEventListener('orientationchange', function(){ requestAnimationFrame(forcePortrait) });
+  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', function(){ requestAnimationFrame(forcePortrait) });
+  forcePortrait();
 })();
 </script>
 </body>
