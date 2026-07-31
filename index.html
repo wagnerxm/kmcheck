@@ -2716,9 +2716,19 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
-  function _applyPortrait(){ forcePortrait(); layoutOverlays && layoutOverlays() }
-  window.addEventListener('orientationchange', function(){ setTimeout(_applyPortrait, 120) });
-  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', function(){ setTimeout(_applyPortrait, 120) });
+  var _fpTimer=0;
+  function _onOrientSwitch(){
+    var a=screenAngle(), h=document.documentElement;
+    if(a!==0 && a!==180){ h.style.opacity='0' }
+    forcePortrait();
+    clearTimeout(_fpTimer);
+    _fpTimer=setTimeout(function(){
+      forcePortrait();
+      h.style.opacity='1';
+    }, 180);
+  }
+  window.addEventListener('orientationchange', _onOrientSwitch);
+  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _onOrientSwitch);
   window.addEventListener('resize', function(){ requestAnimationFrame(forcePortrait) });
   forcePortrait();
 })();
