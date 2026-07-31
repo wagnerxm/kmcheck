@@ -21,6 +21,7 @@
   var c=light?'#f1f2f3':'#0a0c0e';
   d.style.backgroundColor=c;
   document.getElementById('meta-theme').content=c;
+  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}) }catch(e){}
 })();
 </script>
 <style>
