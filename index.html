@@ -68,14 +68,21 @@
 :root[data-theme="light"] nav button.camnav{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 :root[data-theme="light"] #search-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;transition:background .2s,color .2s;position:relative}
-:root[data-theme="light"] body{background:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
+html{height:100%;background:var(--bg);overflow:hidden}
+:root[data-theme="light"]{background:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
+body{height:100%;background:transparent;color:var(--text);font-family:var(--sans);overscroll-behavior:none;
+  position:relative;overflow:hidden;-webkit-text-size-adjust:100%}
 body::before{content:'';position:fixed;inset:-15%;z-index:-1;pointer-events:none;
-  background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%);
-  transition:opacity .2s}
-#app{display:flex;flex-direction:column;height:100dvh}
+  background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%)}
+/* boot: tela invisível até o JS aplicar o tema — elimina flash branco/escuro */
+body.booting{opacity:0}
+body.booted{opacity:1;transition:opacity .15s ease-out}
+#app{display:flex;flex-direction:column;height:100dvh;height:-webkit-fill-available}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+/* transições suaves entre telas */
+.screen{display:none;animation:scrIn .18s ease-out}
+.screen.on{display:block}
+@keyframes scrIn{from{opacity:0}to{opacity:1}}
 /* ---------- cabeçalho ---------- */
 header.top{padding:calc(14px + env(safe-area-inset-top)) 20px 12px;display:flex;align-items:center;gap:12px;
   background:linear-gradient(135deg, rgba(255,255,255,.1) 0%, rgba(255,255,255,.02) 60%), var(--glassbg2);
@@ -84,7 +91,7 @@ header.top{padding:calc(14px + env(safe-area-inset-top)) 20px 12px;display:flex;
 header.top img{height:30px;display:block;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5))}
 header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.24em;text-transform:uppercase}
 #header-back{display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--gold);
-  font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0}
+  font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0;animation:scrIn .15s ease-out}
 #header-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 #search-toggle{margin-left:10px;width:38px;height:38px;border-radius:50%;
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.85);
@@ -226,8 +233,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
-#camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
-#camwrap.on{display:flex}
+#camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;flex-direction:column;
+  height:100%;height:100dvh;height:-webkit-fill-available}
+#camwrap.on{display:flex;animation:camIn .2s ease-out}
+@keyframes camIn{from{opacity:0}to{opacity:1}}
+@keyframes camOut{from{opacity:1}to{opacity:0}}
 /* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
    mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
 #camtopbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;box-sizing:content-box;
@@ -314,8 +324,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
-#gallerywrap{position:fixed;inset:0;background:#000;z-index:51;display:none;flex-direction:column}
-#gallerywrap.on{display:flex}
+#gallerywrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:51;display:none;flex-direction:column;
+  height:100%;height:100dvh;height:-webkit-fill-available}
+#gallerywrap.on{display:flex;animation:camIn .2s ease-out}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
   color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -364,9 +375,12 @@ dialog{background:
   backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
   color:var(--text);border-left:1px solid var(--glassborder);border-right:1px solid var(--glassborder);
   border-radius:22px;padding:20px;max-width:min(92vw,480px);width:100%;
-  max-height:92vh;overflow-y:auto;margin:auto;   /* centraliza na tela (o reset global zera o margin) */
-  box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 20px 50px rgba(0,0,0,.5)}
-dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px)}
+  max-height:92vh;overflow-y:auto;margin:auto;
+  box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 20px 50px rgba(0,0,0,.5);
+  animation:dlgIn .2s ease-out}
+@keyframes dlgIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:bdIn .2s ease-out}
+@keyframes bdIn{from{opacity:0}to{opacity:1}}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
@@ -374,10 +388,21 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .toast.on{opacity:1}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body>
+<body class="booting">
+<script>
+(function(){
+  var s=localStorage.getItem('kc-theme');
+  if(s!=='dark') document.documentElement.setAttribute('data-theme','light');
+  if(/Android/i.test(navigator.userAgent)) document.documentElement.setAttribute('data-android','');
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    document.body.classList.remove('booting');
+    document.body.classList.add('booted');
+  })});
+})();
+</script>
 <div id="app">
 <header class="top">
   <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
@@ -999,17 +1024,21 @@ function formatDateLine(d){
 let settingsFromCam=false;
 function goToScreen(id){
   document.querySelectorAll('nav button[data-scr]').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.screen').forEach(x=>{x.classList.remove('on');x.style.animation='none'});
   const navBtn=document.querySelector(`nav button[data-scr="${id}"]`);
   if(navBtn) navBtn.classList.add('on');
-  document.getElementById(id).classList.add('on');
-  // o botão "Registrar evidência" só faz sentido na tela inicial
-  document.querySelector('nav').style.display = (id==='scr-cam') ? '' : 'none';
-  // padrão iOS: botão "< Voltar" no lugar da logo sempre que sair da tela inicial
+  const scr=document.getElementById(id);
+  void scr.offsetWidth;
+  scr.style.animation='';
+  scr.classList.add('on');
+  const navEl=document.querySelector('nav');
+  navEl.style.display = (id==='scr-cam') ? '' : 'none';
   const isHome = id==='scr-cam';
   document.getElementById('header-back').style.display = isHome ? 'none' : 'flex';
   document.getElementById('logo-home').style.display = isHome ? '' : 'none';
-  settingsFromCam=false;   // qualquer navegação "normal" limpa a marca de "veio da câmera"
+  settingsFromCam=false;
+  const m=document.querySelector('main');
+  if(m) m.scrollTop=0;
 }
 document.querySelectorAll('nav button[data-scr]').forEach(b=>b.onclick=()=>goToScreen(b.dataset.scr));
 document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>goToScreen(b.dataset.goto));
@@ -1990,16 +2019,34 @@ async function openCam(){
     video.removeEventListener('resize', layoutOverlays);
     video.addEventListener('loadedmetadata', layoutOverlays);
     video.addEventListener('resize', layoutOverlays);
-    layoutOverlays();
+    requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
     toast('Câmera negada ou indisponível.');
   }
 }
-function closeCam(){ camwrap.classList.remove('on'); disableScreenLock(); document.querySelector('nav').style.display=''; document.querySelector('header.top').style.display=''; document.querySelector('main').style.display=''; clearInterval(camTick); camTick=null; disableTiltSensor(); if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null} }
+function closeCam(instant){
+  if(!instant){
+    camwrap.style.animation='camOut .15s ease-in forwards';
+    camwrap.addEventListener('animationend',function(){
+      camwrap.classList.remove('on');
+      camwrap.style.animation='';
+    },{once:true});
+  } else {
+    camwrap.classList.remove('on');
+    camwrap.style.animation='';
+  }
+  disableScreenLock();
+  document.querySelector('nav').style.display='';
+  document.querySelector('header.top').style.display='';
+  document.querySelector('main').style.display='';
+  clearInterval(camTick); camTick=null;
+  disableTiltSensor();
+  if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
+}
 document.getElementById('camback').onclick=closeCam;
-document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(); openCam() };
+document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(true); openCam() };
 /* som clássico de obturador: dois "clicks" mecânicos curtos (ruído filtrado com envelope bem
    rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular. */
 function playShutterSound(){
@@ -2601,13 +2648,10 @@ if(svcAdd) svcAdd.onclick=()=>{
   inp.value=''; renderServices();
 };
 
-/* ================= tema claro/escuro (claro é o padrão) ================= */
+/* ================= tema claro/escuro (widget — a detecção já rodou no <head>) ================= */
 (function(){
-  const saved=localStorage.getItem('kc-theme');
-  const light = saved!=='dark';   // padrão: claro
-  if(light) document.documentElement.setAttribute('data-theme','light');
   const sw=document.getElementById('cfg-lighttheme');
-  sw.checked=light;
+  sw.checked = document.documentElement.getAttribute('data-theme')==='light';
   sw.onchange=()=>{
     if(sw.checked){ document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('kc-theme','light') }
     else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('kc-theme','dark') }
@@ -2616,7 +2660,6 @@ if(svcAdd) svcAdd.onclick=()=>{
 
 /* ================= boot ================= */
 (async function(){
-  if(/Android/i.test(navigator.userAgent)) document.documentElement.setAttribute('data-android','');
   try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
   renderBases();
   renderContracts();
