@@ -1843,7 +1843,7 @@ function refreshTilt(){
   applyTilt(t);
 }
 let _rotDebounce=0;
-function onScreenRotate(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ layoutOverlays(); refreshTilt() }) }
+function onScreenRotate(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ forcePortrait(); layoutOverlays(); refreshTilt() }) }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
@@ -1908,10 +1908,22 @@ var _forcePortraitActive=false;
 function forcePortrait(){
   const a=screenAngle();
   const h=document.documentElement;
-  if(a===0||a===180){ h.style.transform=''; h.style.width=''; h.style.height=''; h.style.position=''; h.style.top=''; h.style.left=''; h.style.overflow=''; _forcePortraitActive=false; return; }
+  if(a===0||a===180){
+    h.style.transform=''; h.style.width=''; h.style.height='';
+    h.style.position=''; h.style.top=''; h.style.left='';
+    h.style.overflow=''; h.style.transformOrigin='';
+    _forcePortraitActive=false; return;
+  }
   _forcePortraitActive=true;
-  if(a===90){ h.style.cssText+='position:fixed;width:100vh;height:100vw;transform:rotate(-90deg);transform-origin:left top;top:100%;left:0;overflow:hidden;'; }
-  else if(a===270){ h.style.cssText+='position:fixed;width:100vh;height:100vw;transform:rotate(90deg);transform-origin:right top;top:0;left:0;overflow:hidden;'; }
+  h.style.position='fixed'; h.style.overflow='hidden';
+  h.style.width='100vh'; h.style.height='100vw';
+  if(a===90){
+    h.style.transform='rotate(-90deg)'; h.style.transformOrigin='left top';
+    h.style.top='100%'; h.style.left='0';
+  } else if(a===270){
+    h.style.transform='rotate(90deg)'; h.style.transformOrigin='right top';
+    h.style.top='0'; h.style.left='0';
+  }
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
@@ -2704,8 +2716,10 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
-  window.addEventListener('orientationchange', function(){ requestAnimationFrame(forcePortrait) });
-  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', function(){ requestAnimationFrame(forcePortrait) });
+  function _applyPortrait(){ forcePortrait(); layoutOverlays && layoutOverlays() }
+  window.addEventListener('orientationchange', function(){ setTimeout(_applyPortrait, 120) });
+  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', function(){ setTimeout(_applyPortrait, 120) });
+  window.addEventListener('resize', function(){ requestAnimationFrame(forcePortrait) });
   forcePortrait();
 })();
 </script>
