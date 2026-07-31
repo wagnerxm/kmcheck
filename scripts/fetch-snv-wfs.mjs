@@ -1,146 +1,197 @@
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data', 'rodovias');
-const WFS = 'https://geoservicos.inde.gov.br/geoserver/DNIT/wfs';
-const PAGE = 1000;
+const TMP = join(__dirname, '..', '.tmp-snv');
+const SHARE_TOKEN = 'oTpPRmYs5AAdiNr';
+const WEBDAV = 'https://servicos.dnit.gov.br/dnitcloud/public.php/webdav';
+const SHP_FOLDER = 'SNV Bases Geométricas (2013-Atual) (SHP)';
+const AUTH = 'Basic ' + Buffer.from(SHARE_TOKEN + ':').toString('base64');
+const D2R = Math.PI / 180;
 
-async function fetchRetry(url, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const r = await fetch(url, { signal: AbortSignal.timeout(60000) });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r;
-    } catch (e) {
-      if (i === retries - 1) throw e;
-      console.log(`    retry ${i + 1}/${retries}...`);
-      await new Promise(ok => setTimeout(ok, 2000 * (i + 1)));
-    }
-  }
-}
-
-async function findSnvLayer() {
-  const r = await fetchRetry(`${WFS}?service=WFS&request=GetCapabilities`);
+async function listShpFiles() {
+  const url = `${WEBDAV}/${encodeURIComponent(SHP_FOLDER)}/`;
+  const r = await fetch(url, { method: 'PROPFIND', headers: { 'Authorization': AUTH, 'Depth': '1' } });
+  if (!r.ok) throw new Error('PROPFIND failed: HTTP ' + r.status);
   const xml = await r.text();
-  const m = [...xml.matchAll(/<Name>(DNIT:snv_\w+)<\/Name>/g)];
-  if (!m.length) throw new Error('SNV layer not found');
-  return m.map(x => x[1]).sort().pop();
+  return [...xml.matchAll(/<d:href>([^<]+)<\/d:href>/g)]
+    .map(m => decodeURIComponent(m[1].split('/').pop()))
+    .filter(f => /^\d{6}\w+\.zip$/i.test(f))
+    .sort();
 }
 
-async function listAllRoads(layer) {
-  const url = `${WFS}?service=WFS&request=GetFeature&typeName=${layer}` +
-    `&outputFormat=application/json&propertyName=vl_br,sg_uf,vl_km_inic,vl_km_fina` +
-    `&maxFeatures=50000`;
-  const r = await fetchRetry(url);
-  const data = await r.json();
-  const map = new Map();
-  for (const f of data.features) {
-    const { vl_br, sg_uf, vl_km_inic, vl_km_fina } = f.properties;
-    if (!vl_br || !sg_uf) continue;
-    const key = `${vl_br}-${sg_uf}`;
-    const cur = map.get(key);
-    if (!cur) {
-      map.set(key, { br: vl_br, uf: sg_uf, kmin: vl_km_inic, kmax: vl_km_fina, segs: 1 });
-    } else {
-      cur.kmin = Math.min(cur.kmin, vl_km_inic);
-      cur.kmax = Math.max(cur.kmax, vl_km_fina);
-      cur.segs++;
+async function downloadZip(filename, dest) {
+  const url = `${WEBDAV}/${encodeURIComponent(SHP_FOLDER)}/${encodeURIComponent(filename)}`;
+  console.log(`Downloading ${filename} (~68 MB)...`);
+  const r = await fetch(url, { headers: { 'Authorization': AUTH } });
+  if (!r.ok) throw new Error('Download failed: HTTP ' + r.status);
+  const buf = Buffer.from(await r.arrayBuffer());
+  writeFileSync(dest, buf);
+  console.log(`Downloaded ${(buf.length / 1024 / 1024).toFixed(1)} MB`);
+}
+
+function readDbf(buf) {
+  const v = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const numRecs = v.getUint32(4, true);
+  const headerLen = v.getUint16(8, true);
+  const recLen = v.getUint16(10, true);
+  const fields = [];
+  for (let off = 32; off < headerLen - 1; off += 32) {
+    const name = String.fromCharCode(...buf.slice(off, off + 11)).replace(/\0/g, '').trim().toLowerCase();
+    const type = String.fromCharCode(buf[off + 11]);
+    const len = buf[off + 16];
+    const dec = buf[off + 17];
+    fields.push({ name, type, len, dec });
+  }
+  const recs = [];
+  for (let i = 0; i < numRecs; i++) {
+    const roff = headerLen + i * recLen + 1;
+    const rec = {};
+    let foff = 0;
+    for (const f of fields) {
+      const raw = buf.slice(roff + foff, roff + foff + f.len).toString('utf8').trim();
+      if (f.type === 'N' || f.type === 'F') rec[f.name] = raw === '' ? null : parseFloat(raw);
+      else rec[f.name] = raw;
+      foff += f.len;
     }
+    recs.push(rec);
   }
-  return [...map.values()].sort((a, b) => a.br.localeCompare(b.br) || a.uf.localeCompare(b.uf));
+  return recs;
 }
 
-async function fetchRoad(layer, br, uf) {
-  const fields = 'vl_br,sg_uf,vl_km_inic,vl_km_fina,vl_extensa,sg_tipo_tr,the_geom';
-  const cql = encodeURIComponent(`vl_br='${br}' AND sg_uf='${uf}' AND sg_tipo_tr='B'`);
-  let all = [], start = 0;
-  while (true) {
-    const url = `${WFS}?service=WFS&request=GetFeature&typeName=${layer}` +
-      `&outputFormat=application/json&propertyName=${fields}` +
-      `&CQL_FILTER=${cql}&maxFeatures=${PAGE}&startIndex=${start}`;
-    const r = await fetchRetry(url);
-    const data = await r.json();
-    if (!data.features || !data.features.length) break;
-    all = all.concat(data.features);
-    if (data.features.length < PAGE) break;
-    start += PAGE;
+function readShp(buf) {
+  const v = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const feats = [];
+  let off = 100;
+  while (off < buf.length) {
+    const contentLen = v.getInt32(off + 4, false);
+    const recStart = off + 8;
+    const type = v.getInt32(recStart, true);
+    if (type === 3 || type === 5) {
+      const numParts = v.getInt32(recStart + 36, true);
+      const numPoints = v.getInt32(recStart + 40, true);
+      const ptsOff = recStart + 44 + numParts * 4;
+      const points = [];
+      for (let i = 0; i < numPoints; i++) {
+        points.push([
+          Math.round(v.getFloat64(ptsOff + i * 16, true) * 1e7) / 1e7,
+          Math.round(v.getFloat64(ptsOff + i * 16 + 8, true) * 1e7) / 1e7
+        ]);
+      }
+      feats.push(points);
+    } else {
+      feats.push(null);
+    }
+    off = recStart + contentLen * 2;
   }
-  return all;
+  return feats;
 }
 
-function extractCoords(geom) {
-  if (!geom) return [];
-  const round = v => Math.round(v * 1e7) / 1e7;
-  if (geom.type === 'MultiLineString') {
-    return geom.coordinates.flat().map(c => [round(c[0]), round(c[1])]);
-  }
-  if (geom.type === 'LineString') {
-    return geom.coordinates.map(c => [round(c[0]), round(c[1])]);
-  }
-  return [];
-}
-
-function processRoad(features, br, uf, snv) {
-  const segs = features
-    .map(f => ({
-      ki: f.properties.vl_km_inic,
-      kf: f.properties.vl_km_fina,
-      c: extractCoords(f.geometry)
-    }))
-    .filter(s => s.c.length > 0)
-    .sort((a, b) => a.ki - b.ki);
-  const km = segs.length ? Math.round(segs[segs.length - 1].kf * 10) / 10 : 0;
-  return { br, uf, snv, updated: new Date().toISOString().slice(0, 10), km, segments: segs };
+function buildRoadJson(segs, br, uf, snv) {
+  segs.sort((a, b) => a.ki - b.ki);
+  const segments = segs.map(s => {
+    const cc = s.pts;
+    let total = 0;
+    const cum = [0];
+    for (let i = 1; i < cc.length; i++) {
+      const cos = Math.cos((cc[i - 1][1] + cc[i][1]) / 2 * D2R);
+      const dx = (cc[i][0] - cc[i - 1][0]) * cos, dy = cc[i][1] - cc[i - 1][1];
+      total += Math.sqrt(dx * dx + dy * dy);
+      cum.push(total);
+    }
+    return { ki: s.ki, kf: s.kf, c: cc };
+  });
+  const km = segments.length ? Math.round(segments[segments.length - 1].kf * 10) / 10 : 0;
+  return { br, uf, snv, updated: new Date().toISOString().slice(0, 10), km, segments };
 }
 
 async function main() {
   mkdirSync(DATA_DIR, { recursive: true });
+  mkdirSync(TMP, { recursive: true });
 
-  console.log('Buscando layer SNV mais recente...');
-  const layer = await findSnvLayer();
-  const snv = layer.split('snv_')[1];
-  console.log(`Layer: ${layer}`);
+  console.log('Listing DNIT Cloud SHP folder...');
+  const files = await listShpFiles();
+  const latest = files[files.length - 1];
+  const snv = latest.replace('.zip', '').toLowerCase();
+  console.log(`Latest version: ${snv} (${files.length} versions available)`);
 
-  console.log('Listando rodovias...');
-  const roads = await listAllRoads(layer);
-  console.log(`${roads.length} combinacoes BR/UF encontradas`);
+  const indexPath = join(DATA_DIR, 'index.json');
+  if (existsSync(indexPath)) {
+    const cur = JSON.parse(readFileSync(indexPath, 'utf8'));
+    if (cur.snv === snv) {
+      console.log('Already up to date. Skipping.');
+      rmSync(TMP, { recursive: true, force: true });
+      return;
+    }
+    console.log(`Updating from ${cur.snv} to ${snv}`);
+  }
+
+  const zipPath = join(TMP, latest);
+  await downloadZip(latest, zipPath);
+
+  console.log('Extracting...');
+  execSync(`unzip -o "${zipPath}" -d "${TMP}"`, { stdio: 'pipe' });
+
+  const { readdirSync } = await import('node:fs');
+  const extracted = readdirSync(TMP);
+  const shpFile = extracted.find(f => f.toLowerCase().endsWith('.shp'));
+  const dbfFile = extracted.find(f => f.toLowerCase().endsWith('.dbf'));
+  if (!shpFile || !dbfFile) throw new Error('SHP or DBF not found in ZIP');
+
+  console.log('Parsing DBF...');
+  const recs = readDbf(readFileSync(join(TMP, dbfFile)));
+  console.log(`${recs.length} records`);
+
+  console.log('Parsing SHP...');
+  const geoms = readShp(readFileSync(join(TMP, shpFile)));
+  console.log(`${geoms.length} geometries`);
+
+  const roadMap = {};
+  let skipped = 0;
+  for (let i = 0; i < recs.length; i++) {
+    const r = recs[i];
+    if (r.sg_tipo_tr !== 'B') { skipped++; continue; }
+    const ki = r.vl_km_inic, kf = r.vl_km_fina;
+    if (ki == null || kf == null) continue;
+    const pts = geoms[i];
+    if (!pts || pts.length < 2) continue;
+    const br = String(r.vl_br).padStart(3, '0');
+    const uf = r.sg_uf;
+    const key = `${br}-${uf}`;
+    (roadMap[key] = roadMap[key] || []).push({ ki, kf, pts });
+  }
+  console.log(`${Object.keys(roadMap).length} roads (skipped ${skipped} non-B segments)`);
 
   const args = process.argv.slice(2);
+  const keys = Object.keys(roadMap).sort();
   const targets = args.length
-    ? roads.filter(r => args.some(a => {
-        const [b, u] = a.toUpperCase().split('/');
-        return r.br === b && (!u || r.uf === u);
-      }))
-    : roads;
-
-  console.log(`Processando ${targets.length} rodovia(s)...\n`);
+    ? keys.filter(k => args.some(a => { const [b, u] = a.toUpperCase().split('/'); return k.startsWith(b) && (!u || k.endsWith(u)); }))
+    : keys;
 
   const index = { snv, updated: new Date().toISOString().slice(0, 10), roads: [] };
 
   for (let i = 0; i < targets.length; i++) {
-    const { br, uf } = targets[i];
-    const label = `BR-${br}/${uf}`;
-    process.stdout.write(`[${i + 1}/${targets.length}] ${label}...`);
-
-    try {
-      const feats = await fetchRoad(layer, br, uf);
-      const data = processRoad(feats, br, uf, snv);
-      const file = `BR-${br}-${uf}.json`;
-      writeFileSync(join(DATA_DIR, file), JSON.stringify(data));
-      const sizeKB = Math.round(JSON.stringify(data).length / 1024);
-      console.log(` ${feats.length} segs, ${data.km} km, ${sizeKB} KB`);
-      index.roads.push({ br, uf, km: data.km, segs: data.segments.length, file });
-    } catch (e) {
-      console.log(` ERRO: ${e.message}`);
+    const key = targets[i];
+    const [br, uf] = key.split('-');
+    const segs = roadMap[key];
+    const data = buildRoadJson(segs, br, uf, snv);
+    const file = `BR-${br}-${uf}.json`;
+    writeFileSync(join(DATA_DIR, file), JSON.stringify(data));
+    const sizeKB = Math.round(JSON.stringify(data).length / 1024);
+    if ((i + 1) % 50 === 0 || i === targets.length - 1) {
+      console.log(`[${i + 1}/${targets.length}] BR-${br}/${uf} ${data.km} km ${sizeKB} KB`);
     }
-
-    if (i < targets.length - 1) await new Promise(ok => setTimeout(ok, 300));
+    index.roads.push({ br, uf, km: data.km, segs: data.segments.length, file });
   }
 
   writeFileSync(join(DATA_DIR, 'index.json'), JSON.stringify(index, null, 2));
-  console.log(`\nIndex salvo com ${index.roads.length} rodovias`);
+  console.log(`\nIndex saved with ${index.roads.length} roads (SNV ${snv})`);
+
+  rmSync(TMP, { recursive: true, force: true });
+  console.log('Temp files cleaned up.');
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

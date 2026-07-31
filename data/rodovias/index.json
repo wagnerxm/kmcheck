@@ -1,7 +1,266 @@
 {
-  "snv": "202507a",
+  "snv": "202607a",
   "updated": "2026-07-31",
   "roads": [
+    {
+      "br": "010",
+      "uf": "DF",
+      "km": 45,
+      "segs": 10,
+      "file": "BR-010-DF.json"
+    },
+    {
+      "br": "010",
+      "uf": "GO",
+      "km": 305.7,
+      "segs": 13,
+      "file": "BR-010-GO.json"
+    },
+    {
+      "br": "010",
+      "uf": "MA",
+      "km": 378.6,
+      "segs": 12,
+      "file": "BR-010-MA.json"
+    },
+    {
+      "br": "010",
+      "uf": "PA",
+      "km": 455.8,
+      "segs": 25,
+      "file": "BR-010-PA.json"
+    },
+    {
+      "br": "010",
+      "uf": "TO",
+      "km": 854.4,
+      "segs": 41,
+      "file": "BR-010-TO.json"
+    },
+    {
+      "br": "020",
+      "uf": "BA",
+      "km": 784.1,
+      "segs": 18,
+      "file": "BR-020-BA.json"
+    },
+    {
+      "br": "020",
+      "uf": "CE",
+      "km": 418.6,
+      "segs": 15,
+      "file": "BR-020-CE.json"
+    },
+    {
+      "br": "020",
+      "uf": "DF",
+      "km": 58.9,
+      "segs": 14,
+      "file": "BR-020-DF.json"
+    },
+    {
+      "br": "020",
+      "uf": "GO",
+      "km": 254.1,
+      "segs": 11,
+      "file": "BR-020-GO.json"
+    },
+    {
+      "br": "020",
+      "uf": "PI",
+      "km": 415.1,
+      "segs": 15,
+      "file": "BR-020-PI.json"
+    },
+    {
+      "br": "030",
+      "uf": "BA",
+      "km": 919.4,
+      "segs": 43,
+      "file": "BR-030-BA.json"
+    },
+    {
+      "br": "030",
+      "uf": "DF",
+      "km": 58.9,
+      "segs": 14,
+      "file": "BR-030-DF.json"
+    },
+    {
+      "br": "030",
+      "uf": "GO",
+      "km": 245.8,
+      "segs": 13,
+      "file": "BR-030-GO.json"
+    },
+    {
+      "br": "040",
+      "uf": "DF",
+      "km": 8.4,
+      "segs": 5,
+      "file": "BR-040-DF.json"
+    },
+    {
+      "br": "040",
+      "uf": "GO",
+      "km": 157.3,
+      "segs": 3,
+      "file": "BR-040-GO.json"
+    },
+    {
+      "br": "040",
+      "uf": "MG",
+      "km": 831.2,
+      "segs": 45,
+      "file": "BR-040-MG.json"
+    },
+    {
+      "br": "040",
+      "uf": "RJ",
+      "km": 142.6,
+      "segs": 23,
+      "file": "BR-040-RJ.json"
+    },
+    {
+      "br": "050",
+      "uf": "DF",
+      "km": 8.4,
+      "segs": 5,
+      "file": "BR-050-DF.json"
+    },
+    {
+      "br": "050",
+      "uf": "GO",
+      "km": 314.2,
+      "segs": 15,
+      "file": "BR-050-GO.json"
+    },
+    {
+      "br": "050",
+      "uf": "MG",
+      "km": 206.8,
+      "segs": 12,
+      "file": "BR-050-MG.json"
+    },
+    {
+      "br": "050",
+      "uf": "SP",
+      "km": 495,
+      "segs": 49,
+      "file": "BR-050-SP.json"
+    },
+    {
+      "br": "060",
+      "uf": "DF",
+      "km": 31.6,
+      "segs": 7,
+      "file": "BR-060-DF.json"
+    },
+    {
+      "br": "060",
+      "uf": "GO",
+      "km": 652.9,
+      "segs": 37,
+      "file": "BR-060-GO.json"
+    },
+    {
+      "br": "060",
+      "uf": "MS",
+      "km": 682.9,
+      "segs": 42,
+      "file": "BR-060-MS.json"
+    },
+    {
+      "br": "070",
+      "uf": "DF",
+      "km": 20.6,
+      "segs": 4,
+      "file": "BR-070-DF.json"
+    },
+    {
+      "br": "070",
+      "uf": "GO",
+      "km": 484.2,
+      "segs": 27,
+      "file": "BR-070-GO.json"
+    },
+    {
+      "br": "070",
+      "uf": "MT",
+      "km": 825.1,
+      "segs": 44,
+      "file": "BR-070-MT.json"
+    },
+    {
+      "br": "080",
+      "uf": "DF",
+      "km": 39.5,
+      "segs": 10,
+      "file": "BR-080-DF.json"
+    },
+    {
+      "br": "080",
+      "uf": "GO",
+      "km": 431.8,
+      "segs": 19,
+      "file": "BR-080-GO.json"
+    },
+    {
+      "br": "080",
+      "uf": "MT",
+      "km": 201,
+      "segs": 2,
+      "file": "BR-080-MT.json"
+    },
+    {
+      "br": "101",
+      "uf": "AL",
+      "km": 250.1,
+      "segs": 29,
+      "file": "BR-101-AL.json"
+    },
+    {
+      "br": "101",
+      "uf": "BA",
+      "km": 956.1,
+      "segs": 62,
+      "file": "BR-101-BA.json"
+    },
+    {
+      "br": "101",
+      "uf": "ES",
+      "km": 450,
+      "segs": 39,
+      "file": "BR-101-ES.json"
+    },
+    {
+      "br": "101",
+      "uf": "PB",
+      "km": 127.7,
+      "segs": 13,
+      "file": "BR-101-PB.json"
+    },
+    {
+      "br": "101",
+      "uf": "PE",
+      "km": 214.5,
+      "segs": 26,
+      "file": "BR-101-PE.json"
+    },
+    {
+      "br": "101",
+      "uf": "PR",
+      "km": 155,
+      "segs": 4,
+      "file": "BR-101-PR.json"
+    },
+    {
+      "br": "101",
+      "uf": "RJ",
+      "km": 599,
+      "segs": 53,
+      "file": "BR-101-RJ.json"
+    },
     {
       "br": "101",
       "uf": "RN",
@@ -10,11 +269,88 @@
       "file": "BR-101-RN.json"
     },
     {
+      "br": "101",
+      "uf": "RS",
+      "km": 410.1,
+      "segs": 27,
+      "file": "BR-101-RS.json"
+    },
+    {
+      "br": "101",
+      "uf": "SC",
+      "km": 462.2,
+      "segs": 49,
+      "file": "BR-101-SC.json"
+    },
+    {
+      "br": "101",
+      "uf": "SE",
+      "km": 206.7,
+      "segs": 35,
+      "file": "BR-101-SE.json"
+    },
+    {
+      "br": "101",
+      "uf": "SP",
+      "km": 569.6,
+      "segs": 29,
+      "file": "BR-101-SP.json"
+    },
+    {
+      "br": "104",
+      "uf": "AL",
+      "km": 109.4,
+      "segs": 14,
+      "file": "BR-104-AL.json"
+    },
+    {
+      "br": "104",
+      "uf": "PB",
+      "km": 199.5,
+      "segs": 20,
+      "file": "BR-104-PB.json"
+    },
+    {
+      "br": "104",
+      "uf": "PE",
+      "km": 146.2,
+      "segs": 15,
+      "file": "BR-104-PE.json"
+    },
+    {
       "br": "104",
       "uf": "RN",
-      "km": 207.1,
-      "segs": 19,
+      "km": 215.8,
+      "segs": 20,
       "file": "BR-104-RN.json"
+    },
+    {
+      "br": "110",
+      "uf": "AL",
+      "km": 16.1,
+      "segs": 3,
+      "file": "BR-110-AL.json"
+    },
+    {
+      "br": "110",
+      "uf": "BA",
+      "km": 404.6,
+      "segs": 27,
+      "file": "BR-110-BA.json"
+    },
+    {
+      "br": "110",
+      "uf": "PB",
+      "km": 193.8,
+      "segs": 21,
+      "file": "BR-110-PB.json"
+    },
+    {
+      "br": "110",
+      "uf": "PE",
+      "km": 266.1,
+      "segs": 13,
+      "file": "BR-110-PE.json"
     },
     {
       "br": "110",
@@ -24,6 +360,461 @@
       "file": "BR-110-RN.json"
     },
     {
+      "br": "116",
+      "uf": "BA",
+      "km": 945.3,
+      "segs": 53,
+      "file": "BR-116-BA.json"
+    },
+    {
+      "br": "116",
+      "uf": "CE",
+      "km": 548.2,
+      "segs": 42,
+      "file": "BR-116-CE.json"
+    },
+    {
+      "br": "116",
+      "uf": "MG",
+      "km": 816.6,
+      "segs": 42,
+      "file": "BR-116-MG.json"
+    },
+    {
+      "br": "116",
+      "uf": "PB",
+      "km": 13.4,
+      "segs": 2,
+      "file": "BR-116-PB.json"
+    },
+    {
+      "br": "116",
+      "uf": "PE",
+      "km": 91.5,
+      "segs": 5,
+      "file": "BR-116-PE.json"
+    },
+    {
+      "br": "116",
+      "uf": "PR",
+      "km": 214.9,
+      "segs": 15,
+      "file": "BR-116-PR.json"
+    },
+    {
+      "br": "116",
+      "uf": "RJ",
+      "km": 339.6,
+      "segs": 44,
+      "file": "BR-116-RJ.json"
+    },
+    {
+      "br": "116",
+      "uf": "RS",
+      "km": 660.3,
+      "segs": 43,
+      "file": "BR-116-RS.json"
+    },
+    {
+      "br": "116",
+      "uf": "SC",
+      "km": 310.5,
+      "segs": 17,
+      "file": "BR-116-SC.json"
+    },
+    {
+      "br": "116",
+      "uf": "SP",
+      "km": 562.1,
+      "segs": 40,
+      "file": "BR-116-SP.json"
+    },
+    {
+      "br": "120",
+      "uf": "MG",
+      "km": 813.8,
+      "segs": 44,
+      "file": "BR-120-MG.json"
+    },
+    {
+      "br": "120",
+      "uf": "RJ",
+      "km": 180.1,
+      "segs": 10,
+      "file": "BR-120-RJ.json"
+    },
+    {
+      "br": "122",
+      "uf": "BA",
+      "km": 878.7,
+      "segs": 40,
+      "file": "BR-122-BA.json"
+    },
+    {
+      "br": "122",
+      "uf": "CE",
+      "km": 448.4,
+      "segs": 29,
+      "file": "BR-122-CE.json"
+    },
+    {
+      "br": "122",
+      "uf": "MG",
+      "km": 279.6,
+      "segs": 9,
+      "file": "BR-122-MG.json"
+    },
+    {
+      "br": "122",
+      "uf": "PE",
+      "km": 310.9,
+      "segs": 12,
+      "file": "BR-122-PE.json"
+    },
+    {
+      "br": "135",
+      "uf": "BA",
+      "km": 479.7,
+      "segs": 25,
+      "file": "BR-135-BA.json"
+    },
+    {
+      "br": "135",
+      "uf": "MA",
+      "km": 603.9,
+      "segs": 39,
+      "file": "BR-135-MA.json"
+    },
+    {
+      "br": "135",
+      "uf": "MG",
+      "km": 783.3,
+      "segs": 30,
+      "file": "BR-135-MG.json"
+    },
+    {
+      "br": "135",
+      "uf": "PI",
+      "km": 648.2,
+      "segs": 30,
+      "file": "BR-135-PI.json"
+    },
+    {
+      "br": "146",
+      "uf": "MG",
+      "km": 597.4,
+      "segs": 36,
+      "file": "BR-146-MG.json"
+    },
+    {
+      "br": "146",
+      "uf": "SP",
+      "km": 61.2,
+      "segs": 4,
+      "file": "BR-146-SP.json"
+    },
+    {
+      "br": "153",
+      "uf": "GO",
+      "km": 703.6,
+      "segs": 47,
+      "file": "BR-153-GO.json"
+    },
+    {
+      "br": "153",
+      "uf": "MG",
+      "km": 246.7,
+      "segs": 10,
+      "file": "BR-153-MG.json"
+    },
+    {
+      "br": "153",
+      "uf": "PA",
+      "km": 152.1,
+      "segs": 5,
+      "file": "BR-153-PA.json"
+    },
+    {
+      "br": "153",
+      "uf": "PR",
+      "km": 523.8,
+      "segs": 43,
+      "file": "BR-153-PR.json"
+    },
+    {
+      "br": "153",
+      "uf": "RS",
+      "km": 694,
+      "segs": 36,
+      "file": "BR-153-RS.json"
+    },
+    {
+      "br": "153",
+      "uf": "SC",
+      "km": 120,
+      "segs": 10,
+      "file": "BR-153-SC.json"
+    },
+    {
+      "br": "153",
+      "uf": "SP",
+      "km": 347.3,
+      "segs": 29,
+      "file": "BR-153-SP.json"
+    },
+    {
+      "br": "153",
+      "uf": "TO",
+      "km": 801.9,
+      "segs": 51,
+      "file": "BR-153-TO.json"
+    },
+    {
+      "br": "154",
+      "uf": "GO",
+      "km": 41,
+      "segs": 6,
+      "file": "BR-154-GO.json"
+    },
+    {
+      "br": "154",
+      "uf": "MG",
+      "km": 207.3,
+      "segs": 14,
+      "file": "BR-154-MG.json"
+    },
+    {
+      "br": "154",
+      "uf": "SP",
+      "km": 270.3,
+      "segs": 11,
+      "file": "BR-154-SP.json"
+    },
+    {
+      "br": "155",
+      "uf": "PA",
+      "km": 344.4,
+      "segs": 5,
+      "file": "BR-155-PA.json"
+    },
+    {
+      "br": "156",
+      "uf": "AP",
+      "km": 802.4,
+      "segs": 26,
+      "file": "BR-156-AP.json"
+    },
+    {
+      "br": "156",
+      "uf": "PA",
+      "km": 300,
+      "segs": 1,
+      "file": "BR-156-PA.json"
+    },
+    {
+      "br": "158",
+      "uf": "GO",
+      "km": 445.6,
+      "segs": 22,
+      "file": "BR-158-GO.json"
+    },
+    {
+      "br": "158",
+      "uf": "MS",
+      "km": 359,
+      "segs": 25,
+      "file": "BR-158-MS.json"
+    },
+    {
+      "br": "158",
+      "uf": "MT",
+      "km": 802.2,
+      "segs": 34,
+      "file": "BR-158-MT.json"
+    },
+    {
+      "br": "158",
+      "uf": "PA",
+      "km": 889.6,
+      "segs": 16,
+      "file": "BR-158-PA.json"
+    },
+    {
+      "br": "158",
+      "uf": "PR",
+      "km": 561.6,
+      "segs": 32,
+      "file": "BR-158-PR.json"
+    },
+    {
+      "br": "158",
+      "uf": "RS",
+      "km": 570.1,
+      "segs": 34,
+      "file": "BR-158-RS.json"
+    },
+    {
+      "br": "158",
+      "uf": "SC",
+      "km": 152.6,
+      "segs": 15,
+      "file": "BR-158-SC.json"
+    },
+    {
+      "br": "158",
+      "uf": "SP",
+      "km": 179.6,
+      "segs": 13,
+      "file": "BR-158-SP.json"
+    },
+    {
+      "br": "163",
+      "uf": "MS",
+      "km": 845.9,
+      "segs": 52,
+      "file": "BR-163-MS.json"
+    },
+    {
+      "br": "163",
+      "uf": "MT",
+      "km": 1121.7,
+      "segs": 72,
+      "file": "BR-163-MT.json"
+    },
+    {
+      "br": "163",
+      "uf": "PA",
+      "km": 2000,
+      "segs": 54,
+      "file": "BR-163-PA.json"
+    },
+    {
+      "br": "163",
+      "uf": "PR",
+      "km": 354.2,
+      "segs": 34,
+      "file": "BR-163-PR.json"
+    },
+    {
+      "br": "163",
+      "uf": "RS",
+      "km": 26,
+      "segs": 4,
+      "file": "BR-163-RS.json"
+    },
+    {
+      "br": "163",
+      "uf": "SC",
+      "km": 122.9,
+      "segs": 11,
+      "file": "BR-163-SC.json"
+    },
+    {
+      "br": "174",
+      "uf": "AM",
+      "km": 1140.2,
+      "segs": 55,
+      "file": "BR-174-AM.json"
+    },
+    {
+      "br": "174",
+      "uf": "MT",
+      "km": 1233.8,
+      "segs": 35,
+      "file": "BR-174-MT.json"
+    },
+    {
+      "br": "174",
+      "uf": "RO",
+      "km": 78.9,
+      "segs": 5,
+      "file": "BR-174-RO.json"
+    },
+    {
+      "br": "174",
+      "uf": "RR",
+      "km": 714.8,
+      "segs": 77,
+      "file": "BR-174-RR.json"
+    },
+    {
+      "br": "210",
+      "uf": "AM",
+      "km": 878.8,
+      "segs": 12,
+      "file": "BR-210-AM.json"
+    },
+    {
+      "br": "210",
+      "uf": "AP",
+      "km": 471.2,
+      "segs": 11,
+      "file": "BR-210-AP.json"
+    },
+    {
+      "br": "210",
+      "uf": "PA",
+      "km": 589.6,
+      "segs": 10,
+      "file": "BR-210-PA.json"
+    },
+    {
+      "br": "210",
+      "uf": "RR",
+      "km": 528.2,
+      "segs": 31,
+      "file": "BR-210-RR.json"
+    },
+    {
+      "br": "222",
+      "uf": "CE",
+      "km": 347.3,
+      "segs": 23,
+      "file": "BR-222-CE.json"
+    },
+    {
+      "br": "222",
+      "uf": "MA",
+      "km": 739.2,
+      "segs": 33,
+      "file": "BR-222-MA.json"
+    },
+    {
+      "br": "222",
+      "uf": "PA",
+      "km": 510.7,
+      "segs": 12,
+      "file": "BR-222-PA.json"
+    },
+    {
+      "br": "222",
+      "uf": "PI",
+      "km": 219.9,
+      "segs": 11,
+      "file": "BR-222-PI.json"
+    },
+    {
+      "br": "226",
+      "uf": "CE",
+      "km": 393.4,
+      "segs": 20,
+      "file": "BR-226-CE.json"
+    },
+    {
+      "br": "226",
+      "uf": "MA",
+      "km": 599,
+      "segs": 16,
+      "file": "BR-226-MA.json"
+    },
+    {
+      "br": "226",
+      "uf": "PI",
+      "km": 278.4,
+      "segs": 15,
+      "file": "BR-226-PI.json"
+    },
+    {
       "br": "226",
       "uf": "RN",
       "km": 421.1,
@@ -31,11 +822,886 @@
       "file": "BR-226-RN.json"
     },
     {
+      "br": "226",
+      "uf": "TO",
+      "km": 71.3,
+      "segs": 4,
+      "file": "BR-226-TO.json"
+    },
+    {
+      "br": "230",
+      "uf": "AM",
+      "km": 1518.4,
+      "segs": 74,
+      "file": "BR-230-AM.json"
+    },
+    {
+      "br": "230",
+      "uf": "CE",
+      "km": 242.6,
+      "segs": 13,
+      "file": "BR-230-CE.json"
+    },
+    {
+      "br": "230",
+      "uf": "MA",
+      "km": 669.8,
+      "segs": 20,
+      "file": "BR-230-MA.json"
+    },
+    {
+      "br": "230",
+      "uf": "PA",
+      "km": 1584.9,
+      "segs": 46,
+      "file": "BR-230-PA.json"
+    },
+    {
+      "br": "230",
+      "uf": "PB",
+      "km": 517.1,
+      "segs": 56,
+      "file": "BR-230-PB.json"
+    },
+    {
+      "br": "230",
+      "uf": "PI",
+      "km": 310.5,
+      "segs": 21,
+      "file": "BR-230-PI.json"
+    },
+    {
+      "br": "230",
+      "uf": "TO",
+      "km": 146.4,
+      "segs": 11,
+      "file": "BR-230-TO.json"
+    },
+    {
+      "br": "232",
+      "uf": "PE",
+      "km": 558.7,
+      "segs": 39,
+      "file": "BR-232-PE.json"
+    },
+    {
+      "br": "235",
+      "uf": "BA",
+      "km": 673.7,
+      "segs": 22,
+      "file": "BR-235-BA.json"
+    },
+    {
+      "br": "235",
+      "uf": "MA",
+      "km": 110.5,
+      "segs": 2,
+      "file": "BR-235-MA.json"
+    },
+    {
+      "br": "235",
+      "uf": "PA",
+      "km": 601.9,
+      "segs": 11,
+      "file": "BR-235-PA.json"
+    },
+    {
+      "br": "235",
+      "uf": "PE",
+      "km": 28.1,
+      "segs": 5,
+      "file": "BR-235-PE.json"
+    },
+    {
+      "br": "235",
+      "uf": "PI",
+      "km": 440.4,
+      "segs": 12,
+      "file": "BR-235-PI.json"
+    },
+    {
+      "br": "235",
+      "uf": "SE",
+      "km": 114.4,
+      "segs": 12,
+      "file": "BR-235-SE.json"
+    },
+    {
+      "br": "235",
+      "uf": "TO",
+      "km": 337,
+      "segs": 16,
+      "file": "BR-235-TO.json"
+    },
+    {
+      "br": "242",
+      "uf": "BA",
+      "km": 981.4,
+      "segs": 43,
+      "file": "BR-242-BA.json"
+    },
+    {
+      "br": "242",
+      "uf": "MT",
+      "km": 836.2,
+      "segs": 25,
+      "file": "BR-242-MT.json"
+    },
+    {
+      "br": "242",
+      "uf": "TO",
+      "km": 580.7,
+      "segs": 31,
+      "file": "BR-242-TO.json"
+    },
+    {
+      "br": "251",
+      "uf": "BA",
+      "km": 250.6,
+      "segs": 12,
+      "file": "BR-251-BA.json"
+    },
+    {
+      "br": "251",
+      "uf": "DF",
+      "km": 155.6,
+      "segs": 30,
+      "file": "BR-251-DF.json"
+    },
+    {
+      "br": "251",
+      "uf": "GO",
+      "km": 463.2,
+      "segs": 31,
+      "file": "BR-251-GO.json"
+    },
+    {
+      "br": "251",
+      "uf": "MG",
+      "km": 970.1,
+      "segs": 28,
+      "file": "BR-251-MG.json"
+    },
+    {
+      "br": "251",
+      "uf": "MT",
+      "km": 647.5,
+      "segs": 20,
+      "file": "BR-251-MT.json"
+    },
+    {
+      "br": "259",
+      "uf": "ES",
+      "km": 106.3,
+      "segs": 8,
+      "file": "BR-259-ES.json"
+    },
+    {
+      "br": "259",
+      "uf": "MG",
+      "km": 590.4,
+      "segs": 24,
+      "file": "BR-259-MG.json"
+    },
+    {
+      "br": "262",
+      "uf": "ES",
+      "km": 196.5,
+      "segs": 19,
+      "file": "BR-262-ES.json"
+    },
+    {
+      "br": "262",
+      "uf": "MG",
+      "km": 996.2,
+      "segs": 66,
+      "file": "BR-262-MG.json"
+    },
+    {
+      "br": "262",
+      "uf": "MS",
+      "km": 781.6,
+      "segs": 42,
+      "file": "BR-262-MS.json"
+    },
+    {
+      "br": "262",
+      "uf": "SP",
+      "km": 322.1,
+      "segs": 16,
+      "file": "BR-262-SP.json"
+    },
+    {
+      "br": "265",
+      "uf": "MG",
+      "km": 659.1,
+      "segs": 42,
+      "file": "BR-265-MG.json"
+    },
+    {
+      "br": "265",
+      "uf": "SP",
+      "km": 259.2,
+      "segs": 15,
+      "file": "BR-265-SP.json"
+    },
+    {
+      "br": "267",
+      "uf": "MG",
+      "km": 538.9,
+      "segs": 35,
+      "file": "BR-267-MG.json"
+    },
+    {
+      "br": "267",
+      "uf": "MS",
+      "km": 691,
+      "segs": 32,
+      "file": "BR-267-MS.json"
+    },
+    {
+      "br": "267",
+      "uf": "SP",
+      "km": 705.6,
+      "segs": 30,
+      "file": "BR-267-SP.json"
+    },
+    {
+      "br": "272",
+      "uf": "PR",
+      "km": 570,
+      "segs": 40,
+      "file": "BR-272-PR.json"
+    },
+    {
+      "br": "272",
+      "uf": "SP",
+      "km": 350.2,
+      "segs": 20,
+      "file": "BR-272-SP.json"
+    },
+    {
+      "br": "277",
+      "uf": "PR",
+      "km": 734.4,
+      "segs": 63,
+      "file": "BR-277-PR.json"
+    },
+    {
+      "br": "280",
+      "uf": "PR",
+      "km": 326.1,
+      "segs": 16,
+      "file": "BR-280-PR.json"
+    },
+    {
+      "br": "280",
+      "uf": "SC",
+      "km": 310,
+      "segs": 26,
+      "file": "BR-280-SC.json"
+    },
+    {
+      "br": "282",
+      "uf": "SC",
+      "km": 681.4,
+      "segs": 44,
+      "file": "BR-282-SC.json"
+    },
+    {
+      "br": "283",
+      "uf": "SC",
+      "km": 344,
+      "segs": 26,
+      "file": "BR-283-SC.json"
+    },
+    {
+      "br": "285",
+      "uf": "RS",
+      "km": 674.5,
+      "segs": 39,
+      "file": "BR-285-RS.json"
+    },
+    {
+      "br": "285",
+      "uf": "SC",
+      "km": 55.6,
+      "segs": 6,
+      "file": "BR-285-SC.json"
+    },
+    {
+      "br": "287",
+      "uf": "RS",
+      "km": 534.6,
+      "segs": 37,
+      "file": "BR-287-RS.json"
+    },
+    {
+      "br": "290",
+      "uf": "RS",
+      "km": 726,
+      "segs": 38,
+      "file": "BR-290-RS.json"
+    },
+    {
+      "br": "293",
+      "uf": "RS",
+      "km": 532.7,
+      "segs": 22,
+      "file": "BR-293-RS.json"
+    },
+    {
+      "br": "304",
+      "uf": "CE",
+      "km": 100.8,
+      "segs": 9,
+      "file": "BR-304-CE.json"
+    },
+    {
       "br": "304",
       "uf": "RN",
       "km": 317.4,
       "segs": 33,
       "file": "BR-304-RN.json"
+    },
+    {
+      "br": "307",
+      "uf": "AC",
+      "km": 209.2,
+      "segs": 12,
+      "file": "BR-307-AC.json"
+    },
+    {
+      "br": "307",
+      "uf": "AM",
+      "km": 1540.5,
+      "segs": 41,
+      "file": "BR-307-AM.json"
+    },
+    {
+      "br": "308",
+      "uf": "MA",
+      "km": 313.6,
+      "segs": 13,
+      "file": "BR-308-MA.json"
+    },
+    {
+      "br": "308",
+      "uf": "PA",
+      "km": 321.2,
+      "segs": 26,
+      "file": "BR-308-PA.json"
+    },
+    {
+      "br": "316",
+      "uf": "AL",
+      "km": 294.1,
+      "segs": 25,
+      "file": "BR-316-AL.json"
+    },
+    {
+      "br": "316",
+      "uf": "MA",
+      "km": 621,
+      "segs": 27,
+      "file": "BR-316-MA.json"
+    },
+    {
+      "br": "316",
+      "uf": "PA",
+      "km": 272.3,
+      "segs": 23,
+      "file": "BR-316-PA.json"
+    },
+    {
+      "br": "316",
+      "uf": "PE",
+      "km": 437.1,
+      "segs": 19,
+      "file": "BR-316-PE.json"
+    },
+    {
+      "br": "316",
+      "uf": "PI",
+      "km": 417.8,
+      "segs": 25,
+      "file": "BR-316-PI.json"
+    },
+    {
+      "br": "317",
+      "uf": "AC",
+      "km": 408.9,
+      "segs": 14,
+      "file": "BR-317-AC.json"
+    },
+    {
+      "br": "317",
+      "uf": "AM",
+      "km": 526,
+      "segs": 15,
+      "file": "BR-317-AM.json"
+    },
+    {
+      "br": "319",
+      "uf": "AM",
+      "km": 741,
+      "segs": 35,
+      "file": "BR-319-AM.json"
+    },
+    {
+      "br": "319",
+      "uf": "RO",
+      "km": 144.9,
+      "segs": 17,
+      "file": "BR-319-RO.json"
+    },
+    {
+      "br": "324",
+      "uf": "BA",
+      "km": 629.3,
+      "segs": 38,
+      "file": "BR-324-BA.json"
+    },
+    {
+      "br": "324",
+      "uf": "MA",
+      "km": 107,
+      "segs": 2,
+      "file": "BR-324-MA.json"
+    },
+    {
+      "br": "324",
+      "uf": "PI",
+      "km": 533.5,
+      "segs": 20,
+      "file": "BR-324-PI.json"
+    },
+    {
+      "br": "330",
+      "uf": "BA",
+      "km": 893.2,
+      "segs": 29,
+      "file": "BR-330-BA.json"
+    },
+    {
+      "br": "330",
+      "uf": "MA",
+      "km": 143.6,
+      "segs": 5,
+      "file": "BR-330-MA.json"
+    },
+    {
+      "br": "330",
+      "uf": "PI",
+      "km": 443.3,
+      "segs": 9,
+      "file": "BR-330-PI.json"
+    },
+    {
+      "br": "342",
+      "uf": "BA",
+      "km": 61.2,
+      "segs": 2,
+      "file": "BR-342-BA.json"
+    },
+    {
+      "br": "342",
+      "uf": "ES",
+      "km": 233.3,
+      "segs": 12,
+      "file": "BR-342-ES.json"
+    },
+    {
+      "br": "342",
+      "uf": "MG",
+      "km": 665.9,
+      "segs": 22,
+      "file": "BR-342-MG.json"
+    },
+    {
+      "br": "343",
+      "uf": "PI",
+      "km": 737.9,
+      "segs": 56,
+      "file": "BR-343-PI.json"
+    },
+    {
+      "br": "349",
+      "uf": "AL",
+      "km": 136.2,
+      "segs": 11,
+      "file": "BR-349-AL.json"
+    },
+    {
+      "br": "349",
+      "uf": "BA",
+      "km": 1131.6,
+      "segs": 57,
+      "file": "BR-349-BA.json"
+    },
+    {
+      "br": "349",
+      "uf": "GO",
+      "km": 22.8,
+      "segs": 1,
+      "file": "BR-349-GO.json"
+    },
+    {
+      "br": "349",
+      "uf": "SE",
+      "km": 221,
+      "segs": 35,
+      "file": "BR-349-SE.json"
+    },
+    {
+      "br": "352",
+      "uf": "GO",
+      "km": 315.2,
+      "segs": 21,
+      "file": "BR-352-GO.json"
+    },
+    {
+      "br": "352",
+      "uf": "MG",
+      "km": 481.7,
+      "segs": 26,
+      "file": "BR-352-MG.json"
+    },
+    {
+      "br": "354",
+      "uf": "GO",
+      "km": 62,
+      "segs": 1,
+      "file": "BR-354-GO.json"
+    },
+    {
+      "br": "354",
+      "uf": "MG",
+      "km": 776,
+      "segs": 39,
+      "file": "BR-354-MG.json"
+    },
+    {
+      "br": "354",
+      "uf": "RJ",
+      "km": 26.1,
+      "segs": 1,
+      "file": "BR-354-RJ.json"
+    },
+    {
+      "br": "356",
+      "uf": "MG",
+      "km": 289.3,
+      "segs": 17,
+      "file": "BR-356-MG.json"
+    },
+    {
+      "br": "356",
+      "uf": "RJ",
+      "km": 187.7,
+      "segs": 17,
+      "file": "BR-356-RJ.json"
+    },
+    {
+      "br": "359",
+      "uf": "GO",
+      "km": 112.8,
+      "segs": 2,
+      "file": "BR-359-GO.json"
+    },
+    {
+      "br": "359",
+      "uf": "MS",
+      "km": 542.8,
+      "segs": 17,
+      "file": "BR-359-MS.json"
+    },
+    {
+      "br": "361",
+      "uf": "PB",
+      "km": 194.3,
+      "segs": 16,
+      "file": "BR-361-PB.json"
+    },
+    {
+      "br": "361",
+      "uf": "PE",
+      "km": 67,
+      "segs": 4,
+      "file": "BR-361-PE.json"
+    },
+    {
+      "br": "363",
+      "uf": "PE",
+      "km": 13.6,
+      "segs": 2,
+      "file": "BR-363-PE.json"
+    },
+    {
+      "br": "364",
+      "uf": "AC",
+      "km": 887.6,
+      "segs": 33,
+      "file": "BR-364-AC.json"
+    },
+    {
+      "br": "364",
+      "uf": "GO",
+      "km": 387.5,
+      "segs": 20,
+      "file": "BR-364-GO.json"
+    },
+    {
+      "br": "364",
+      "uf": "MG",
+      "km": 286.3,
+      "segs": 17,
+      "file": "BR-364-MG.json"
+    },
+    {
+      "br": "364",
+      "uf": "MT",
+      "km": 1353.2,
+      "segs": 75,
+      "file": "BR-364-MT.json"
+    },
+    {
+      "br": "364",
+      "uf": "RO",
+      "km": 1091.5,
+      "segs": 58,
+      "file": "BR-364-RO.json"
+    },
+    {
+      "br": "364",
+      "uf": "SP",
+      "km": 316,
+      "segs": 22,
+      "file": "BR-364-SP.json"
+    },
+    {
+      "br": "365",
+      "uf": "MG",
+      "km": 868.2,
+      "segs": 38,
+      "file": "BR-365-MG.json"
+    },
+    {
+      "br": "367",
+      "uf": "BA",
+      "km": 164,
+      "segs": 6,
+      "file": "BR-367-BA.json"
+    },
+    {
+      "br": "367",
+      "uf": "MG",
+      "km": 648,
+      "segs": 24,
+      "file": "BR-367-MG.json"
+    },
+    {
+      "br": "369",
+      "uf": "MG",
+      "km": 283.5,
+      "segs": 10,
+      "file": "BR-369-MG.json"
+    },
+    {
+      "br": "369",
+      "uf": "PR",
+      "km": 509.9,
+      "segs": 57,
+      "file": "BR-369-PR.json"
+    },
+    {
+      "br": "369",
+      "uf": "SP",
+      "km": 430.7,
+      "segs": 23,
+      "file": "BR-369-SP.json"
+    },
+    {
+      "br": "373",
+      "uf": "PR",
+      "km": 620,
+      "segs": 29,
+      "file": "BR-373-PR.json"
+    },
+    {
+      "br": "373",
+      "uf": "SP",
+      "km": 344.1,
+      "segs": 22,
+      "file": "BR-373-SP.json"
+    },
+    {
+      "br": "374",
+      "uf": "SP",
+      "km": 600.1,
+      "segs": 29,
+      "file": "BR-374-SP.json"
+    },
+    {
+      "br": "376",
+      "uf": "MS",
+      "km": 235,
+      "segs": 17,
+      "file": "BR-376-MS.json"
+    },
+    {
+      "br": "376",
+      "uf": "PR",
+      "km": 669,
+      "segs": 63,
+      "file": "BR-376-PR.json"
+    },
+    {
+      "br": "376",
+      "uf": "SC",
+      "km": 6.2,
+      "segs": 1,
+      "file": "BR-376-SC.json"
+    },
+    {
+      "br": "377",
+      "uf": "RS",
+      "km": 530,
+      "segs": 19,
+      "file": "BR-377-RS.json"
+    },
+    {
+      "br": "381",
+      "uf": "ES",
+      "km": 150.8,
+      "segs": 8,
+      "file": "BR-381-ES.json"
+    },
+    {
+      "br": "381",
+      "uf": "MG",
+      "km": 940.2,
+      "segs": 59,
+      "file": "BR-381-MG.json"
+    },
+    {
+      "br": "381",
+      "uf": "SP",
+      "km": 95,
+      "segs": 7,
+      "file": "BR-381-SP.json"
+    },
+    {
+      "br": "383",
+      "uf": "MG",
+      "km": 407.1,
+      "segs": 27,
+      "file": "BR-383-MG.json"
+    },
+    {
+      "br": "383",
+      "uf": "SP",
+      "km": 174.9,
+      "segs": 11,
+      "file": "BR-383-SP.json"
+    },
+    {
+      "br": "386",
+      "uf": "RS",
+      "km": 455,
+      "segs": 33,
+      "file": "BR-386-RS.json"
+    },
+    {
+      "br": "386",
+      "uf": "SC",
+      "km": 76.1,
+      "segs": 4,
+      "file": "BR-386-SC.json"
+    },
+    {
+      "br": "392",
+      "uf": "RS",
+      "km": 668.8,
+      "segs": 27,
+      "file": "BR-392-RS.json"
+    },
+    {
+      "br": "393",
+      "uf": "ES",
+      "km": 82.4,
+      "segs": 11,
+      "file": "BR-393-ES.json"
+    },
+    {
+      "br": "393",
+      "uf": "MG",
+      "km": 48,
+      "segs": 3,
+      "file": "BR-393-MG.json"
+    },
+    {
+      "br": "393",
+      "uf": "RJ",
+      "km": 298.2,
+      "segs": 27,
+      "file": "BR-393-RJ.json"
+    },
+    {
+      "br": "401",
+      "uf": "RR",
+      "km": 200,
+      "segs": 16,
+      "file": "BR-401-RR.json"
+    },
+    {
+      "br": "402",
+      "uf": "CE",
+      "km": 302.7,
+      "segs": 17,
+      "file": "BR-402-CE.json"
+    },
+    {
+      "br": "402",
+      "uf": "MA",
+      "km": 302.2,
+      "segs": 17,
+      "file": "BR-402-MA.json"
+    },
+    {
+      "br": "402",
+      "uf": "PI",
+      "km": 99.6,
+      "segs": 5,
+      "file": "BR-402-PI.json"
+    },
+    {
+      "br": "403",
+      "uf": "CE",
+      "km": 328.3,
+      "segs": 20,
+      "file": "BR-403-CE.json"
+    },
+    {
+      "br": "404",
+      "uf": "CE",
+      "km": 426.7,
+      "segs": 13,
+      "file": "BR-404-CE.json"
+    },
+    {
+      "br": "404",
+      "uf": "PI",
+      "km": 83.7,
+      "segs": 6,
+      "file": "BR-404-PI.json"
+    },
+    {
+      "br": "405",
+      "uf": "PB",
+      "km": 52,
+      "segs": 3,
+      "file": "BR-405-PB.json"
     },
     {
       "br": "405",
@@ -47,9 +1713,835 @@
     {
       "br": "406",
       "uf": "RN",
-      "km": 176.4,
-      "segs": 18,
+      "km": 176.3,
+      "segs": 17,
       "file": "BR-406-RN.json"
+    },
+    {
+      "br": "407",
+      "uf": "BA",
+      "km": 786.1,
+      "segs": 40,
+      "file": "BR-407-BA.json"
+    },
+    {
+      "br": "407",
+      "uf": "PE",
+      "km": 130.1,
+      "segs": 7,
+      "file": "BR-407-PE.json"
+    },
+    {
+      "br": "407",
+      "uf": "PI",
+      "km": 625.3,
+      "segs": 28,
+      "file": "BR-407-PI.json"
+    },
+    {
+      "br": "408",
+      "uf": "PB",
+      "km": 75.7,
+      "segs": 8,
+      "file": "BR-408-PB.json"
+    },
+    {
+      "br": "408",
+      "uf": "PE",
+      "km": 97.8,
+      "segs": 11,
+      "file": "BR-408-PE.json"
+    },
+    {
+      "br": "409",
+      "uf": "AC",
+      "km": 152,
+      "segs": 3,
+      "file": "BR-409-AC.json"
+    },
+    {
+      "br": "410",
+      "uf": "BA",
+      "km": 35.8,
+      "segs": 2,
+      "file": "BR-410-BA.json"
+    },
+    {
+      "br": "411",
+      "uf": "AM",
+      "km": 85,
+      "segs": 1,
+      "file": "BR-411-AM.json"
+    },
+    {
+      "br": "412",
+      "uf": "PB",
+      "km": 145.7,
+      "segs": 7,
+      "file": "BR-412-PB.json"
+    },
+    {
+      "br": "413",
+      "uf": "AM",
+      "km": 40,
+      "segs": 1,
+      "file": "BR-413-AM.json"
+    },
+    {
+      "br": "414",
+      "uf": "GO",
+      "km": 439.6,
+      "segs": 18,
+      "file": "BR-414-GO.json"
+    },
+    {
+      "br": "415",
+      "uf": "BA",
+      "km": 215.1,
+      "segs": 17,
+      "file": "BR-415-BA.json"
+    },
+    {
+      "br": "416",
+      "uf": "AL",
+      "km": 49.4,
+      "segs": 5,
+      "file": "BR-416-AL.json"
+    },
+    {
+      "br": "417",
+      "uf": "PA",
+      "km": 235,
+      "segs": 5,
+      "file": "BR-417-PA.json"
+    },
+    {
+      "br": "418",
+      "uf": "BA",
+      "km": 123.9,
+      "segs": 8,
+      "file": "BR-418-BA.json"
+    },
+    {
+      "br": "418",
+      "uf": "MG",
+      "km": 178.7,
+      "segs": 7,
+      "file": "BR-418-MG.json"
+    },
+    {
+      "br": "419",
+      "uf": "MS",
+      "km": 386.6,
+      "segs": 17,
+      "file": "BR-419-MS.json"
+    },
+    {
+      "br": "420",
+      "uf": "BA",
+      "km": 356.1,
+      "segs": 34,
+      "file": "BR-420-BA.json"
+    },
+    {
+      "br": "421",
+      "uf": "RO",
+      "km": 296.1,
+      "segs": 15,
+      "file": "BR-421-RO.json"
+    },
+    {
+      "br": "422",
+      "uf": "PA",
+      "km": 329.8,
+      "segs": 7,
+      "file": "BR-422-PA.json"
+    },
+    {
+      "br": "423",
+      "uf": "AL",
+      "km": 105.6,
+      "segs": 6,
+      "file": "BR-423-AL.json"
+    },
+    {
+      "br": "423",
+      "uf": "BA",
+      "km": 254.4,
+      "segs": 7,
+      "file": "BR-423-BA.json"
+    },
+    {
+      "br": "423",
+      "uf": "PE",
+      "km": 195.7,
+      "segs": 11,
+      "file": "BR-423-PE.json"
+    },
+    {
+      "br": "424",
+      "uf": "AL",
+      "km": 120.7,
+      "segs": 16,
+      "file": "BR-424-AL.json"
+    },
+    {
+      "br": "424",
+      "uf": "PE",
+      "km": 141.4,
+      "segs": 9,
+      "file": "BR-424-PE.json"
+    },
+    {
+      "br": "425",
+      "uf": "RO",
+      "km": 129.8,
+      "segs": 9,
+      "file": "BR-425-RO.json"
+    },
+    {
+      "br": "426",
+      "uf": "PB",
+      "km": 156.6,
+      "segs": 9,
+      "file": "BR-426-PB.json"
+    },
+    {
+      "br": "426",
+      "uf": "PE",
+      "km": 41.1,
+      "segs": 2,
+      "file": "BR-426-PE.json"
+    },
+    {
+      "br": "427",
+      "uf": "PB",
+      "km": 37.9,
+      "segs": 3,
+      "file": "BR-427-PB.json"
+    },
+    {
+      "br": "427",
+      "uf": "RN",
+      "km": 164.7,
+      "segs": 16,
+      "file": "BR-427-RN.json"
+    },
+    {
+      "br": "428",
+      "uf": "PE",
+      "km": 197,
+      "segs": 6,
+      "file": "BR-428-PE.json"
+    },
+    {
+      "br": "429",
+      "uf": "RO",
+      "km": 339.1,
+      "segs": 12,
+      "file": "BR-429-RO.json"
+    },
+    {
+      "br": "430",
+      "uf": "BA",
+      "km": 425.9,
+      "segs": 15,
+      "file": "BR-430-BA.json"
+    },
+    {
+      "br": "431",
+      "uf": "RR",
+      "km": 125,
+      "segs": 2,
+      "file": "BR-431-RR.json"
+    },
+    {
+      "br": "432",
+      "uf": "RR",
+      "km": 212.4,
+      "segs": 13,
+      "file": "BR-432-RR.json"
+    },
+    {
+      "br": "433",
+      "uf": "RR",
+      "km": 178.8,
+      "segs": 7,
+      "file": "BR-433-RR.json"
+    },
+    {
+      "br": "434",
+      "uf": "CE",
+      "km": 38,
+      "segs": 1,
+      "file": "BR-434-CE.json"
+    },
+    {
+      "br": "434",
+      "uf": "PB",
+      "km": 34.4,
+      "segs": 4,
+      "file": "BR-434-PB.json"
+    },
+    {
+      "br": "435",
+      "uf": "RO",
+      "km": 160.9,
+      "segs": 7,
+      "file": "BR-435-RO.json"
+    },
+    {
+      "br": "436",
+      "uf": "MS",
+      "km": 18.1,
+      "segs": 2,
+      "file": "BR-436-MS.json"
+    },
+    {
+      "br": "437",
+      "uf": "CE",
+      "km": 48.5,
+      "segs": 1,
+      "file": "BR-437-CE.json"
+    },
+    {
+      "br": "437",
+      "uf": "RN",
+      "km": 32,
+      "segs": 1,
+      "file": "BR-437-RN.json"
+    },
+    {
+      "br": "438",
+      "uf": "RS",
+      "km": 36,
+      "segs": 1,
+      "file": "BR-438-RS.json"
+    },
+    {
+      "br": "438",
+      "uf": "SC",
+      "km": 161,
+      "segs": 3,
+      "file": "BR-438-SC.json"
+    },
+    {
+      "br": "439",
+      "uf": "BA",
+      "km": 20,
+      "segs": 2,
+      "file": "BR-439-BA.json"
+    },
+    {
+      "br": "439",
+      "uf": "ES",
+      "km": 42.2,
+      "segs": 3,
+      "file": "BR-439-ES.json"
+    },
+    {
+      "br": "439",
+      "uf": "MG",
+      "km": 16,
+      "segs": 1,
+      "file": "BR-439-MG.json"
+    },
+    {
+      "br": "440",
+      "uf": "MG",
+      "km": 9,
+      "segs": 4,
+      "file": "BR-440-MG.json"
+    },
+    {
+      "br": "441",
+      "uf": "PA",
+      "km": 100,
+      "segs": 1,
+      "file": "BR-441-PA.json"
+    },
+    {
+      "br": "441",
+      "uf": "TO",
+      "km": 200,
+      "segs": 1,
+      "file": "BR-441-TO.json"
+    },
+    {
+      "br": "447",
+      "uf": "ES",
+      "km": 16.3,
+      "segs": 6,
+      "file": "BR-447-ES.json"
+    },
+    {
+      "br": "448",
+      "uf": "RS",
+      "km": 22.3,
+      "segs": 4,
+      "file": "BR-448-RS.json"
+    },
+    {
+      "br": "450",
+      "uf": "DF",
+      "km": 36.7,
+      "segs": 13,
+      "file": "BR-450-DF.json"
+    },
+    {
+      "br": "451",
+      "uf": "MG",
+      "km": 434.4,
+      "segs": 14,
+      "file": "BR-451-MG.json"
+    },
+    {
+      "br": "452",
+      "uf": "GO",
+      "km": 203.5,
+      "segs": 13,
+      "file": "BR-452-GO.json"
+    },
+    {
+      "br": "452",
+      "uf": "MG",
+      "km": 307.9,
+      "segs": 13,
+      "file": "BR-452-MG.json"
+    },
+    {
+      "br": "453",
+      "uf": "RS",
+      "km": 309.3,
+      "segs": 25,
+      "file": "BR-453-RS.json"
+    },
+    {
+      "br": "454",
+      "uf": "MS",
+      "km": 70.3,
+      "segs": 2,
+      "file": "BR-454-MS.json"
+    },
+    {
+      "br": "455",
+      "uf": "MG",
+      "km": 166,
+      "segs": 9,
+      "file": "BR-455-MG.json"
+    },
+    {
+      "br": "456",
+      "uf": "SP",
+      "km": 218.2,
+      "segs": 9,
+      "file": "BR-456-SP.json"
+    },
+    {
+      "br": "457",
+      "uf": "GO",
+      "km": 184.5,
+      "segs": 9,
+      "file": "BR-457-GO.json"
+    },
+    {
+      "br": "458",
+      "uf": "MG",
+      "km": 151.2,
+      "segs": 6,
+      "file": "BR-458-MG.json"
+    },
+    {
+      "br": "459",
+      "uf": "MG",
+      "km": 207.8,
+      "segs": 4,
+      "file": "BR-459-MG.json"
+    },
+    {
+      "br": "459",
+      "uf": "RJ",
+      "km": 68.5,
+      "segs": 3,
+      "file": "BR-459-RJ.json"
+    },
+    {
+      "br": "459",
+      "uf": "SP",
+      "km": 116.4,
+      "segs": 6,
+      "file": "BR-459-SP.json"
+    },
+    {
+      "br": "460",
+      "uf": "MG",
+      "km": 79.3,
+      "segs": 4,
+      "file": "BR-460-MG.json"
+    },
+    {
+      "br": "461",
+      "uf": "MG",
+      "km": 108.3,
+      "segs": 6,
+      "file": "BR-461-MG.json"
+    },
+    {
+      "br": "462",
+      "uf": "MG",
+      "km": 97,
+      "segs": 5,
+      "file": "BR-462-MG.json"
+    },
+    {
+      "br": "463",
+      "uf": "MS",
+      "km": 112.5,
+      "segs": 8,
+      "file": "BR-463-MS.json"
+    },
+    {
+      "br": "464",
+      "uf": "MG",
+      "km": 490.4,
+      "segs": 16,
+      "file": "BR-464-MG.json"
+    },
+    {
+      "br": "465",
+      "uf": "RJ",
+      "km": 32.1,
+      "segs": 7,
+      "file": "BR-465-RJ.json"
+    },
+    {
+      "br": "466",
+      "uf": "PR",
+      "km": 436.4,
+      "segs": 29,
+      "file": "BR-466-PR.json"
+    },
+    {
+      "br": "467",
+      "uf": "PR",
+      "km": 117.3,
+      "segs": 10,
+      "file": "BR-467-PR.json"
+    },
+    {
+      "br": "468",
+      "uf": "RS",
+      "km": 142.2,
+      "segs": 9,
+      "file": "BR-468-RS.json"
+    },
+    {
+      "br": "469",
+      "uf": "PR",
+      "km": 30.6,
+      "segs": 4,
+      "file": "BR-469-PR.json"
+    },
+    {
+      "br": "470",
+      "uf": "RS",
+      "km": 364.7,
+      "segs": 42,
+      "file": "BR-470-RS.json"
+    },
+    {
+      "br": "470",
+      "uf": "SC",
+      "km": 356.6,
+      "segs": 24,
+      "file": "BR-470-SC.json"
+    },
+    {
+      "br": "471",
+      "uf": "RS",
+      "km": 679.9,
+      "segs": 24,
+      "file": "BR-471-RS.json"
+    },
+    {
+      "br": "472",
+      "uf": "RS",
+      "km": 656.6,
+      "segs": 30,
+      "file": "BR-472-RS.json"
+    },
+    {
+      "br": "473",
+      "uf": "RS",
+      "km": 391,
+      "segs": 17,
+      "file": "BR-473-RS.json"
+    },
+    {
+      "br": "474",
+      "uf": "MG",
+      "km": 160.5,
+      "segs": 12,
+      "file": "BR-474-MG.json"
+    },
+    {
+      "br": "475",
+      "uf": "SC",
+      "km": 198.8,
+      "segs": 11,
+      "file": "BR-475-SC.json"
+    },
+    {
+      "br": "476",
+      "uf": "PR",
+      "km": 366,
+      "segs": 31,
+      "file": "BR-476-PR.json"
+    },
+    {
+      "br": "476",
+      "uf": "SP",
+      "km": 33.8,
+      "segs": 1,
+      "file": "BR-476-SP.json"
+    },
+    {
+      "br": "477",
+      "uf": "SC",
+      "km": 210,
+      "segs": 15,
+      "file": "BR-477-SC.json"
+    },
+    {
+      "br": "478",
+      "uf": "SP",
+      "km": 333,
+      "segs": 20,
+      "file": "BR-478-SP.json"
+    },
+    {
+      "br": "479",
+      "uf": "DF",
+      "km": 53.1,
+      "segs": 16,
+      "file": "BR-479-DF.json"
+    },
+    {
+      "br": "479",
+      "uf": "GO",
+      "km": 65.8,
+      "segs": 2,
+      "file": "BR-479-GO.json"
+    },
+    {
+      "br": "479",
+      "uf": "MG",
+      "km": 350.9,
+      "segs": 9,
+      "file": "BR-479-MG.json"
+    },
+    {
+      "br": "480",
+      "uf": "PR",
+      "km": 21.5,
+      "segs": 3,
+      "file": "BR-480-PR.json"
+    },
+    {
+      "br": "480",
+      "uf": "RS",
+      "km": 76.2,
+      "segs": 10,
+      "file": "BR-480-RS.json"
+    },
+    {
+      "br": "480",
+      "uf": "SC",
+      "km": 161.1,
+      "segs": 13,
+      "file": "BR-480-SC.json"
+    },
+    {
+      "br": "481",
+      "uf": "RS",
+      "km": 169.3,
+      "segs": 10,
+      "file": "BR-481-RS.json"
+    },
+    {
+      "br": "482",
+      "uf": "ES",
+      "km": 136,
+      "segs": 15,
+      "file": "BR-482-ES.json"
+    },
+    {
+      "br": "482",
+      "uf": "MG",
+      "km": 280.3,
+      "segs": 13,
+      "file": "BR-482-MG.json"
+    },
+    {
+      "br": "483",
+      "uf": "GO",
+      "km": 285.2,
+      "segs": 17,
+      "file": "BR-483-GO.json"
+    },
+    {
+      "br": "483",
+      "uf": "MS",
+      "km": 49.7,
+      "segs": 2,
+      "file": "BR-483-MS.json"
+    },
+    {
+      "br": "484",
+      "uf": "ES",
+      "km": 302.5,
+      "segs": 20,
+      "file": "BR-484-ES.json"
+    },
+    {
+      "br": "484",
+      "uf": "RJ",
+      "km": 36.8,
+      "segs": 3,
+      "file": "BR-484-RJ.json"
+    },
+    {
+      "br": "485",
+      "uf": "MG",
+      "km": 9.2,
+      "segs": 1,
+      "file": "BR-485-MG.json"
+    },
+    {
+      "br": "485",
+      "uf": "RJ",
+      "km": 37.9,
+      "segs": 5,
+      "file": "BR-485-RJ.json"
+    },
+    {
+      "br": "486",
+      "uf": "SC",
+      "km": 167.1,
+      "segs": 12,
+      "file": "BR-486-SC.json"
+    },
+    {
+      "br": "487",
+      "uf": "MS",
+      "km": 47.5,
+      "segs": 3,
+      "file": "BR-487-MS.json"
+    },
+    {
+      "br": "487",
+      "uf": "PR",
+      "km": 531,
+      "segs": 40,
+      "file": "BR-487-PR.json"
+    },
+    {
+      "br": "488",
+      "uf": "SP",
+      "km": 6,
+      "segs": 6,
+      "file": "BR-488-SP.json"
+    },
+    {
+      "br": "489",
+      "uf": "BA",
+      "km": 51.5,
+      "segs": 1,
+      "file": "BR-489-BA.json"
+    },
+    {
+      "br": "490",
+      "uf": "GO",
+      "km": 175.5,
+      "segs": 16,
+      "file": "BR-490-GO.json"
+    },
+    {
+      "br": "491",
+      "uf": "MG",
+      "km": 255.2,
+      "segs": 15,
+      "file": "BR-491-MG.json"
+    },
+    {
+      "br": "492",
+      "uf": "RJ",
+      "km": 390.4,
+      "segs": 35,
+      "file": "BR-492-RJ.json"
+    },
+    {
+      "br": "493",
+      "uf": "RJ",
+      "km": 123.7,
+      "segs": 13,
+      "file": "BR-493-RJ.json"
+    },
+    {
+      "br": "494",
+      "uf": "MG",
+      "km": 389.5,
+      "segs": 17,
+      "file": "BR-494-MG.json"
+    },
+    {
+      "br": "494",
+      "uf": "RJ",
+      "km": 136.6,
+      "segs": 12,
+      "file": "BR-494-RJ.json"
+    },
+    {
+      "br": "495",
+      "uf": "RJ",
+      "km": 34.5,
+      "segs": 4,
+      "file": "BR-495-RJ.json"
+    },
+    {
+      "br": "496",
+      "uf": "MG",
+      "km": 135.8,
+      "segs": 3,
+      "file": "BR-496-MG.json"
+    },
+    {
+      "br": "497",
+      "uf": "MG",
+      "km": 340.5,
+      "segs": 14,
+      "file": "BR-497-MG.json"
+    },
+    {
+      "br": "497",
+      "uf": "MS",
+      "km": 20,
+      "segs": 2,
+      "file": "BR-497-MS.json"
+    },
+    {
+      "br": "498",
+      "uf": "BA",
+      "km": 14.2,
+      "segs": 1,
+      "file": "BR-498-BA.json"
+    },
+    {
+      "br": "499",
+      "uf": "MG",
+      "km": 18.3,
+      "segs": 2,
+      "file": "BR-499-MG.json"
     }
   ]
 }
