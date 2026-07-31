@@ -159,6 +159,7 @@ h2.sec::after{content:none}
 .heroroad{font-size:26px;font-weight:400;letter-spacing:.01em;line-height:1.1;color:#b7d92d}
 .herokm{font-family:var(--mono);font-size:40px;font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.08;margin-top:6px}
 .herounit{font-size:13px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.heroestaca{font-family:var(--mono);font-size:17px;font-weight:700;color:#6fbf4a;letter-spacing:.02em;margin-top:5px}
 .herodiv{height:1px;background:var(--line);margin:16px 4px;position:relative;z-index:1}
 .herostatusrow{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--gold);position:relative;z-index:1}
 .herogpsline{font-size:12px;color:var(--mut);margin-top:6px;font-family:var(--mono);position:relative;z-index:1}
@@ -469,6 +470,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
         <div class="heroroad" id="herobr">—</div>
         <div class="herokm" id="kmbig">—</div>
         <div class="herounit">KM</div>
+        <div class="heroestaca" id="heroestaca"></div>
       </div>
     </div>
     <div class="herodiv"></div>
@@ -1536,11 +1538,12 @@ function _getGpsEls(){
   if(!_gpsEls) _gpsEls={dot:document.getElementById('gpsdot'),gl:document.getElementById('gpsline'),
     kb:document.getElementById('kmbig'),lav:document.getElementById('latval'),lov:document.getElementById('lonval'),
     gcRoad:document.getElementById('gc-road'),herobr:document.getElementById('herobr'),
-    signBr:document.getElementById('sign-br'),signKm:document.getElementById('sign-km')};
+    signBr:document.getElementById('sign-br'),signKm:document.getElementById('sign-km'),
+    hest:document.getElementById('heroestaca')};
   return _gpsEls;
 }
 function paintGps(){
-  const {dot,gl,kb,lav,lov,gcRoad,herobr,signBr,signKm}=_getGpsEls();
+  const {dot,gl,kb,lav,lov,gcRoad,herobr,signBr,signKm,hest}=_getGpsEls();
   if(S.pos){
     dot.className='gpsdot '+(S.pos.acc<=10?'ok':(S.pos.acc<=25?'mid':''));
     gl.textContent=`GPS ±${Math.round(S.pos.acc)} m`;
@@ -1553,11 +1556,13 @@ function paintGps(){
       herobr.textContent=`${S.fix.br}/${S.fix.uf}`;
       signBr.textContent=S.fix.br;
       signKm.textContent=String(Math.floor(S.fix.km)).padStart(3,'0');
+      hest.textContent=estacaDe(S.fix.km);
     } else {
       kb.textContent='—'; kb.className='herokm';
       gcRoad.textContent=S.bases.length?'Fora do eixo':'Nenhuma rodovia';
       herobr.textContent='—';
       signBr.textContent='—'; signKm.textContent='—';
+      hest.textContent='';
     }
   } else {
     gl.textContent='buscando satélites…';
