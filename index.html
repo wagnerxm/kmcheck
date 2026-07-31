@@ -1036,7 +1036,7 @@ function renderBases(){
       <div class="base-item">
         <div>
           <div class="bname">${b.br}/${b.uf}</div>
-          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}</div>
+          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+b.fonte:''}</div>
         </div>
         <button class="del" data-id="${b.id}">remover</button>
       </div>`).join('');
