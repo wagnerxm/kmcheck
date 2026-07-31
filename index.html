@@ -311,20 +311,20 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .cbside.cbright{justify-content:flex-end}
 /* a barra e os botões ficam SEMPRE no mesmo lugar (posição funcional preservada); só o glifo
    interno de cada botão gira, pelo acelerômetro, para continuar "em pé" para o usuário. */
-.cbtn{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+.cbtn{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-family:var(--sans);
-  font-size:13px;font-weight:700;transition:background .15s,transform .3s ease}
-.cbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  font-size:14px;font-weight:700;transition:background .15s,transform .3s ease}
+.cbtn svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .cbtn.on{background:var(--gold);color:#0d0f08;border-color:var(--gold)}
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
-.cbmini{width:34px;height:34px;font-size:10px}
-.cbmini svg{width:15px;height:15px}
-#shutter{width:76px;height:76px;flex:0 0 76px;border-radius:50%;
+.cbmini{width:40px;height:40px;font-size:11px}
+.cbmini svg{width:17px;height:17px}
+#shutter{width:84px;height:84px;flex:0 0 84px;border-radius:50%;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 35%), rgba(20,20,20,.92);
   border:1px solid rgba(255,255,255,.22);cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 22px rgba(0,0,0,.4);
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
-#shutter::before{content:'';width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
+#shutter::before{content:'';width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
 /* ---------- diálogo de serviço/contrato: listas roláveis em ordem alfabética ---------- */
 .pk-list{max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
