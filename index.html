@@ -68,14 +68,13 @@
 :root[data-theme="light"] nav button.camnav{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 :root[data-theme="light"] #search-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-html{background:var(--bg)}
-:root[data-theme="light"]{background:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
-body{background:inherit;color:var(--text);font-family:var(--sans);overscroll-behavior:none;
-  position:relative;-webkit-text-size-adjust:100%}
+html{height:100%;background-color:var(--bg);overscroll-behavior:none}
+:root[data-theme="light"]{background-color:#f1f2f3;background-image:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
+body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--text);font-family:var(--sans);
+  -webkit-text-size-adjust:100%}
 body::before{content:'';position:fixed;inset:-15%;z-index:-1;pointer-events:none;
   background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%)}
-#app{display:flex;flex-direction:column;position:fixed;inset:0;z-index:0}
+#app{display:flex;flex-direction:column;height:100%}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 /* transições suaves entre telas */
 .screen{display:none;animation:scrIn .18s ease-out}
@@ -231,7 +230,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
-#camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
+#camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;flex-direction:column;
+  bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
 #camwrap.on{display:flex;animation:camIn .2s ease-out}
 @keyframes camIn{from{opacity:0}to{opacity:1}}
 @keyframes camOut{from{opacity:1}to{opacity:0}}
@@ -321,7 +321,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
-#gallerywrap{position:fixed;inset:0;background:#000;z-index:51;display:none;flex-direction:column}
+#gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:51;display:none;flex-direction:column;
+  bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
 #gallerywrap.on{display:flex;animation:camIn .2s ease-out}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
@@ -390,9 +391,15 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 <body style="opacity:0">
 <script>
 (function(){
-  var s=localStorage.getItem('kc-theme');
-  if(s!=='dark') document.documentElement.setAttribute('data-theme','light');
-  if(/Android/i.test(navigator.userAgent)) document.documentElement.setAttribute('data-android','');
+  var d=document.documentElement, s=localStorage.getItem('kc-theme');
+  var light=s!=='dark';
+  if(light){
+    d.setAttribute('data-theme','light');
+    d.style.backgroundColor='#f1f2f3';
+  } else {
+    d.style.backgroundColor='#0a0c0e';
+  }
+  if(/Android/i.test(navigator.userAgent)) d.setAttribute('data-android','');
   document.body.style.opacity='1';
   document.body.style.transition='opacity .12s ease-out';
 })();
@@ -2004,6 +2011,7 @@ async function openCam(){
     // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
     try{ await video.play() }catch(e){}
     video.style.transform = '';
+    document.documentElement.style.backgroundColor='#000';
     camwrap.classList.add('on');
     camGeom=null;
     paintRatioSel();
@@ -2031,6 +2039,7 @@ function closeCam(instant){
     camwrap.classList.remove('on');
     camwrap.style.animation='';
   }
+  document.documentElement.style.backgroundColor='';
   disableScreenLock();
   document.querySelector('nav').style.display='';
   document.querySelector('header.top').style.display='';
