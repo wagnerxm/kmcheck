@@ -253,6 +253,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
    ele conforme o formato escolhido (1:1, 4:3, 16:9), centralizado no palco; o resto do palco
    fica preto (letterbox), igual ao iPhone. O vídeo preenche essa área com object-fit:cover. */
 #camrot{position:absolute;overflow:hidden;background:#000}
+#camrot.mirror{transform:scaleX(-1)}
 #camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;will-change:transform}
 /* Android: remove backdrop-filter em todas as camadas — GPU fraca trava com blur */
 [data-android] #cambar2{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(16,16,16,.96)}
@@ -1927,7 +1928,7 @@ function layoutOverlays(){
   rot.style.left=R.left+'px'; rot.style.top=R.top+'px'; rot.style.right='auto'; rot.style.bottom='auto';
   rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
   const rotated=Math.abs(S.tilt)===90;
-  rot.style.transform=S.facing==='user' ? 'scaleX(-1)' : '';
+  rot.classList.toggle('mirror', S.facing==='user');
   const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
   const cf=document.getElementById('camframe');
   cf.style.width=boxW+'px'; cf.style.height=boxH+'px';
@@ -2087,10 +2088,13 @@ document.getElementById('shutter').onclick=()=>{
   const c=document.createElement('canvas');
   c.width=W; c.height=H;
   const ctx=c.getContext('2d');
-  if(rot===0){
+  const isFront=S.facing==='user';
+  if(rot===0 && !isFront){
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
   } else {
-    ctx.translate(W/2,H/2); ctx.rotate(rot*Math.PI/180);
+    ctx.translate(W/2,H/2);
+    if(isFront) ctx.scale(-1,1);
+    if(rot!==0) ctx.rotate(rot*Math.PI/180);
     ctx.drawImage(video, sx, sy, sw, sh, -sw/2, -sh/2, sw, sh);
     ctx.setTransform(1,0,0,1,0,0);
   }
