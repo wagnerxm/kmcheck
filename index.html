@@ -21,7 +21,6 @@
   var c=light?'#f1f2f3':'#0a0c0e';
   d.style.backgroundColor=c;
   document.getElementById('meta-theme').content=c;
-  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}) }catch(e){}
 })();
 </script>
 <style>
@@ -1816,6 +1815,9 @@ function applyTilt(newTilt){
   if(newTilt===S.tilt && camGeom) return;
   S.tilt=newTilt;
   layoutOverlays();
+  if(!_tiltBtns) _tiltBtns=document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn');
+  const r='rotate('+S.tilt+'deg)';
+  for(let i=0;i<_tiltBtns.length;i++) _tiltBtns[i].style.transform=r;
 }
 /* uiTilt = orientação física do aparelho (sensor) descontada a rotação que o navegador já
    aplicou sozinho na página (screenTilt). No caso normal (app instalado, travado em retrato)
@@ -1839,7 +1841,7 @@ function refreshTilt(){
   applyTilt(t);
 }
 let _rotDebounce=0;
-function onScreenRotate(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ forcePortrait(); layoutOverlays(); refreshTilt() }) }
+function onScreenRotate(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ layoutOverlays(); refreshTilt() }) }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
@@ -1889,28 +1891,21 @@ async function enableTiltSensor(){
     window.addEventListener('devicemotion', onDeviceMotion);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
-function forcePortrait(){
-  const a=screenAngle();
-  const h=document.documentElement;
-  if(a===0||a===180){ h.style.transform=''; h.style.width=''; h.style.height=''; h.style.position=''; h.style.top=''; h.style.left=''; h.style.overflow=''; return; }
-  if(a===90){ h.style.cssText='position:fixed;width:100vh;height:100vw;transform:rotate(-90deg);transform-origin:left top;top:100%;left:0;overflow:hidden;'; }
-  else if(a===270){ h.style.cssText='position:fixed;width:100vh;height:100vw;transform:rotate(90deg);transform-origin:right top;top:0;left:0;overflow:hidden;'; }
-}
 function enableScreenLock(){
   window.addEventListener('orientationchange', onScreenRotate);
   window.addEventListener('resize', onScreenRotate);
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', onScreenRotate);
-  forcePortrait(); layoutOverlays(); refreshTilt();
+  layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('orientationchange', onScreenRotate);
   window.removeEventListener('resize', onScreenRotate);
   if(window.screen && screen.orientation) screen.orientation.removeEventListener('change', onScreenRotate);
-  const h=document.documentElement; h.style.transform=''; h.style.width=''; h.style.height=''; h.style.position=''; h.style.top=''; h.style.left=''; h.style.overflow='';
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
   S.tilt=0; S.sensorTilt=0;
+  document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn').forEach(btn=>btn.style.transform='');
 }
 
 let camGeom=null; // cache: {u,pad,W,H} — recalculado quando a área útil muda de forma ou inclinação
@@ -1933,11 +1928,12 @@ function layoutOverlays(){
   const rot=document.getElementById('camrot');
   rot.style.left=R.left+'px'; rot.style.top=R.top+'px'; rot.style.right='auto'; rot.style.bottom='auto';
   rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
+  const rotated=Math.abs(S.tilt)===90;
   rot.classList.toggle('mirror', S.facing==='user');
-  const boxW=R.w, boxH=R.h;
+  const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
   const cf=document.getElementById('camframe');
   cf.style.width=boxW+'px'; cf.style.height=boxH+'px';
-  cf.style.transform='translate(-50%,-50%)';
+  cf.style.transform='translate(-50%,-50%) rotate('+S.tilt+'deg)';
   const u=Math.max(boxW,boxH)/1000;
   camGeom={u, pad:20*u, W:boxW, H:boxH};
   layoutCamLogo();
@@ -2697,9 +2693,6 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
-  window.addEventListener('orientationchange', function(){ requestAnimationFrame(forcePortrait) });
-  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', function(){ requestAnimationFrame(forcePortrait) });
-  forcePortrait();
 })();
 </script>
 </body>
