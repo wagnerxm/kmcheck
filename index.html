@@ -1927,9 +1927,7 @@ function layoutOverlays(){
   rot.style.left=R.left+'px'; rot.style.top=R.top+'px'; rot.style.right='auto'; rot.style.bottom='auto';
   rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
   const rotated=Math.abs(S.tilt)===90;
-  const physLandscape=Math.abs(S.sensorTilt||0)===90;
-  const front=S.facing==='user';
-  rot.style.transform=front ? (physLandscape ? 'scaleX(-1) rotate(180deg)' : 'scaleX(-1)') : '';
+  rot.style.transform=S.facing==='user' ? 'scaleX(-1)' : '';
   const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
   const cf=document.getElementById('camframe');
   cf.style.width=boxW+'px'; cf.style.height=boxH+'px';
