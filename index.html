@@ -402,8 +402,12 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
       <select id="dl-br" style="flex:1"></select>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
+    <div class="row" style="margin-top:10px">
+      <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
+      <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
+    </div>
     <button class="btn gold" id="dl-go" style="margin-top:12px">Baixar</button>
-    <p class="hint" id="dl-status">Geometria completa do SNV. Requer internet só neste momento — depois funciona offline.</p>
+    <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.</p>
   </div>
   <div class="card">
     <label class="f" style="margin-top:0">Ou importe um arquivo</label>
@@ -1116,7 +1120,16 @@ function wfsToBase(features, br, uf, snvLabel){
   return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvLabel}`,
     kmMin:km.length?km[0]:0, kmMax:km.length?km[km.length-1]:0, lat, lon, km};
 }
-async function downloadRoadWfs(br, uf, onStatus){
+async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
+  function filterFeats(feats){
+    if(kmi==null&&kmf==null) return feats;
+    return feats.filter(f=>{
+      const fi=f.properties.vl_km_inic, ff=f.properties.vl_km_fina;
+      if(kmi!=null && ff<kmi) return false;
+      if(kmf!=null && fi>kmf) return false;
+      return true;
+    });
+  }
   const file=`BR-${br}-${uf}.json`;
   try{
     if(onStatus) onStatus('Buscando dados pré-processados…');
@@ -1124,11 +1137,11 @@ async function downloadRoadWfs(br, uf, onStatus){
     if(r.ok){
       const data=await r.json();
       if(data.segments&&data.segments.length){
-        const feats=data.segments.map(s=>({
+        const feats=filterFeats(data.segments.map(s=>({
           properties:{vl_km_inic:s.ki, vl_km_fina:s.kf},
           geometry:{type:'LineString', coordinates:s.c}
-        }));
-        return wfsToBase(feats, br, uf, data.snv||'');
+        })));
+        if(feats.length) return wfsToBase(feats, br, uf, data.snv||'');
       }
     }
   }catch(e){}
@@ -1151,9 +1164,10 @@ async function downloadRoadWfs(br, uf, onStatus){
     start+=1000;
   }
   if(!all.length) throw new Error('Nenhum trecho encontrado para BR-'+br+'/'+uf);
-  return wfsToBase(all, br, uf, snv);
+  return wfsToBase(filterFeats(all), br, uf, snv);
 }
-const DL_DEFAULT_HINT='Geometria completa do SNV. Requer internet só neste momento — depois funciona offline.';
+const DL_DEFAULT_HINT='Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.';
+function parseNum(v){ const n=parseFloat(v.replace(',','.')); return isNaN(n)?null:n }
 document.getElementById('dl-go').onclick=async()=>{
   const btn=document.getElementById('dl-go'), status=document.getElementById('dl-status');
   const uf=document.getElementById('dl-uf').value;
@@ -1161,9 +1175,11 @@ document.getElementById('dl-go').onclick=async()=>{
   const br=(brSel==='__outra'?document.getElementById('dl-br-custom').value.trim():brSel);
   if(!br){ toast('Selecione ou digite uma BR.'); return }
   const brPad=br.replace(/\D/g,'').padStart(3,'0');
+  const kmi=parseNum(document.getElementById('dl-kmi').value);
+  const kmf=parseNum(document.getElementById('dl-kmf').value);
   btn.disabled=true; btn.textContent='Baixando…';
   try{
-    const b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg });
+    const b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
     await dbPut(b);
     S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
     renderBases();
