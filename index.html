@@ -252,8 +252,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* A prévia (#camvideo) NUNCA gira. #camrot é a ÁREA ÚTIL da câmera: o JS posiciona/dimensiona
    ele conforme o formato escolhido (1:1, 4:3, 16:9), centralizado no palco; o resto do palco
    fica preto (letterbox), igual ao iPhone. O vídeo preenche essa área com object-fit:cover. */
-#camrot{position:absolute;overflow:hidden;background:#000;
-  transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease}
+#camrot{position:absolute;overflow:hidden;background:#000}
 #camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;will-change:transform}
 /* Android: remove backdrop-filter em todas as camadas — GPU fraca trava com blur */
 [data-android] #cambar2{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(16,16,16,.96)}
@@ -266,7 +265,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 [data-android] dialog{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--glassbg)}
 [data-android] dialog::backdrop{backdrop-filter:none}
 [data-android] .toast{backdrop-filter:none;-webkit-backdrop-filter:none}
-[data-android] #camrot{transition:none}
 [data-android] #camframe{transition:transform .15s ease,width .15s ease,height .15s ease}
 [data-android] .cbtn,[data-android] .topbtn{transition:none}
 [data-android] .card::before,[data-android] .gcard::after{display:none}
@@ -1930,7 +1928,8 @@ function layoutOverlays(){
   rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
   const rotated=Math.abs(S.tilt)===90;
   const physLandscape=Math.abs(S.sensorTilt||0)===90;
-  rot.style.transform=(S.facing==='user' && physLandscape) ? 'rotate(180deg)' : '';
+  const front=S.facing==='user';
+  rot.style.transform=front ? (physLandscape ? 'scaleX(-1) rotate(180deg)' : 'scaleX(-1)') : '';
   const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
   const cf=document.getElementById('camframe');
   cf.style.width=boxW+'px'; cf.style.height=boxH+'px';
@@ -2508,6 +2507,11 @@ function saveAndShare(blob){
   const file=new File([blob], name, {type:'image/jpeg'});
   savePhotoToGallery(blob, name).catch(()=>{});
   if(_isAndroid){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=name; a.style.display='none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
     return;
   } else if(navigator.canShare && navigator.canShare({files:[file]})){
     navigator.share({files:[file]}).catch(()=>{});
