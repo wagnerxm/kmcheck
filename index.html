@@ -1603,9 +1603,9 @@ function legendLines(info){
   const L=[]; let err=false;
   if(info.km!=null){
     let l1=`${info.br}/${info.uf} - KM ${fkm(info.km)}`;
-    if(CFG.estaca) l1+=' · '+estacaDe(info.km);
     const side=getSide();
     if(side) l1+='  '+side;
+    if(CFG.estaca) l1+=' · '+estacaDe(info.km);
     if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
     L.push(l1);
   }
