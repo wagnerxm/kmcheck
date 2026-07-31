@@ -1592,7 +1592,7 @@ function estacaDe(km){
   const m = km*1000;
   const est = Math.floor(m/20);
   const resto = m - est*20;
-  return `Est. ${est}+${resto.toFixed(2).replace('.',',')}`;
+  return `Est. ${est}+${Math.round(resto)}`;
 }
 function legendLines(info){
   const L=[]; let err=false;
