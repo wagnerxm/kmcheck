@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>KM Check</title>
-<meta name="theme-color" id="meta-theme" content="#0a0c0e">
+<meta name="theme-color" id="meta-theme" content="#f1f2f3">
 <meta name="color-scheme" content="dark light">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -81,7 +81,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{height:100%;background-color:var(--bg);overscroll-behavior:none}
 :root[data-theme="light"]{background-color:#f1f2f3;background-image:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
-body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(--text);font-family:var(--sans);
+body{margin:0;height:100%;overflow:hidden;background-color:var(--bg);color:var(--text);font-family:var(--sans);
   -webkit-text-size-adjust:100%}
 body::before{content:'';position:fixed;inset:-15%;z-index:-1;pointer-events:none;
   background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%)}
@@ -400,8 +400,12 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body style="opacity:0;background-color:inherit">
-<script>document.body.style.opacity='1';document.body.style.transition='opacity .12s ease-out';</script>
+<body style="opacity:0">
+<script>
+var _lt=document.documentElement.getAttribute('data-theme')==='light';
+document.body.style.backgroundColor=_lt?'#f1f2f3':'#0a0c0e';
+document.body.style.opacity='1';document.body.style.transition='opacity .12s ease-out';
+</script>
 <div id="app">
 <header class="top">
   <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
@@ -2016,6 +2020,7 @@ async function openCam(){
     try{ await video.play() }catch(e){}
     video.style.transform = '';
     document.documentElement.style.backgroundColor='#141414';
+    document.body.style.backgroundColor='#141414';
     document.getElementById('meta-theme').content='#141414';
     camwrap.classList.add('on');
     camGeom=null;
@@ -2047,6 +2052,7 @@ function closeCam(instant){
   var _light=document.documentElement.getAttribute('data-theme')==='light';
   var _c=_light?'#f1f2f3':'#0a0c0e';
   document.documentElement.style.backgroundColor=_c;
+  document.body.style.backgroundColor=_c;
   document.getElementById('meta-theme').content=_c;
   disableScreenLock();
   document.querySelector('nav').style.display='';
@@ -2667,10 +2673,10 @@ if(svcAdd) svcAdd.onclick=()=>{
     var mt=document.getElementById('meta-theme');
     if(sw.checked){
       document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('kc-theme','light');
-      document.documentElement.style.backgroundColor='#f1f2f3'; mt.content='#f1f2f3';
+      document.documentElement.style.backgroundColor='#f1f2f3'; document.body.style.backgroundColor='#f1f2f3'; mt.content='#f1f2f3';
     } else {
       document.documentElement.removeAttribute('data-theme'); localStorage.setItem('kc-theme','dark');
-      document.documentElement.style.backgroundColor='#0a0c0e'; mt.content='#0a0c0e';
+      document.documentElement.style.backgroundColor='#0a0c0e'; document.body.style.backgroundColor='#0a0c0e'; mt.content='#0a0c0e';
     }
   };
 })();
