@@ -1593,7 +1593,7 @@ function legendLines(info){
   const L=[]; let err=false;
   if(info.km!=null){
     let l1=`${info.br}/${info.uf} - KM ${fkm(info.km)}`;
-    if(CFG.estaca) l1+='  ·  '+estacaDe(info.km);
+    if(CFG.estaca) l1+=' · '+estacaDe(info.km);
     const side=getSide();
     if(side) l1+='  '+side;
     if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
@@ -1947,7 +1947,7 @@ function styleLivePlate(){
   const lp=document.getElementById('liveplate');
   if(!lp||!camGeom) return;
   const {u,pad}=camGeom;
-  const size=17*u*CFG.legsz, lh=size*1.38;
+  const size=17*u*CFG.legsz, lh=size*1.22;
   const right = (CFG.legpos==='br'||CFG.legpos==='tr');
   const top   = (CFG.legpos==='tl'||CFG.legpos==='tr');
   lp.style.left=pad+'px'; lp.style.right=pad+'px';
@@ -2345,7 +2345,7 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   const u=Math.max(BW,BH)/1000;
   const pad=20*u;
   const size=17*u*CFG.legsz;
-  const lh=size*1.38;
+  const lh=size*1.22;
   ctx.save();
   ctx.translate(W/2,H/2);
   if(tiltDeg) ctx.rotate(tiltDeg*Math.PI/180);
