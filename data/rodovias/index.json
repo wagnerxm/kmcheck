@@ -1,0 +1,55 @@
+{
+  "snv": "202507a",
+  "updated": "2026-07-31",
+  "roads": [
+    {
+      "br": "101",
+      "uf": "RN",
+      "km": 176.5,
+      "segs": 33,
+      "file": "BR-101-RN.json"
+    },
+    {
+      "br": "104",
+      "uf": "RN",
+      "km": 207.1,
+      "segs": 19,
+      "file": "BR-104-RN.json"
+    },
+    {
+      "br": "110",
+      "uf": "RN",
+      "km": 187.9,
+      "segs": 19,
+      "file": "BR-110-RN.json"
+    },
+    {
+      "br": "226",
+      "uf": "RN",
+      "km": 421.1,
+      "segs": 43,
+      "file": "BR-226-RN.json"
+    },
+    {
+      "br": "304",
+      "uf": "RN",
+      "km": 317.4,
+      "segs": 33,
+      "file": "BR-304-RN.json"
+    },
+    {
+      "br": "405",
+      "uf": "RN",
+      "km": 195.4,
+      "segs": 19,
+      "file": "BR-405-RN.json"
+    },
+    {
+      "br": "406",
+      "uf": "RN",
+      "km": 176.4,
+      "segs": 18,
+      "file": "BR-406-RN.json"
+    }
+  ]
+}
