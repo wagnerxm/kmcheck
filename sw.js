@@ -1,4 +1,4 @@
-const CACHE = 'kmcheck-v116';
+const CACHE = 'kmcheck-v117';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -12,11 +12,13 @@ self.addEventListener('activate', e => {
 // (fontes, ícones, fflate) continuam cache-first, que é rápido e raramente muda.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
   const isDoc = e.request.mode === 'navigate' ||
                 (e.request.destination === 'document') ||
-                new URL(e.request.url).pathname.replace(/\/$/, '/').endsWith('index.html') ||
-                new URL(e.request.url).pathname.endsWith('/');
-  if (isDoc) {
+                url.pathname.replace(/\/$/, '/').endsWith('index.html') ||
+                url.pathname.endsWith('/');
+  const isData = url.pathname.includes('/data/rodovias/');
+  if (isDoc || isData) {
     e.respondWith(
       fetch(e.request).then(resp => {
         const copy = resp.clone();
