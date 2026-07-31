@@ -913,6 +913,11 @@ const CFG = {
   get format(){ return localStorage.getItem('kc-format') || '3:4' }
 };
 function ls(id, def){ const v = localStorage.getItem('kc-'+id); return v===null?def:v==='1' }
+if(!localStorage.getItem('kc-defaults-v1')){
+  const _d={res:'1080',qual:'0.95',soundalert:'1',legsz:'150',legbold:'1',estaca:'1',acc:'0',theme:'light'};
+  for(const k in _d) if(localStorage.getItem('kc-'+k)===null) localStorage.setItem('kc-'+k,_d[k]);
+  localStorage.setItem('kc-defaults-v1','1');
+}
 
 /* ================= IndexedDB ================= */
 function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',2);
