@@ -396,19 +396,14 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 
   <h2 class="sec">Adicionar rodovia</h2>
   <div class="card">
-    <label class="f" style="margin-top:0">Baixar direto do DNIT (SGPLAN)</label>
+    <label class="f" style="margin-top:0">Baixar do SNV (DNIT)</label>
     <div class="row">
       <select id="dl-uf" style="flex:0 0 92px"></select>
       <select id="dl-br" style="flex:1"></select>
-      <select id="dl-tipo" style="flex:0 0 66px"><option value="B">B</option><option value="C">C</option></select>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
-    <div class="row" style="margin-top:10px">
-      <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
-      <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
-    </div>
     <button class="btn gold" id="dl-go" style="margin-top:12px">Baixar</button>
-    <p class="hint" id="dl-status">Deixe "Km final" em branco para o app detectar sozinho o fim da rodovia. Requer internet só neste momento — depois de instalada, funciona offline.</p>
+    <p class="hint" id="dl-status">Geometria completa do SNV. Requer internet só neste momento — depois funciona offline.</p>
   </div>
   <div class="card">
     <label class="f" style="margin-top:0">Ou importe um arquivo</label>
@@ -1089,138 +1084,94 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
   s.onchange=()=>{ localStorage.setItem('kc-dluf', s.value); renderBrOptions() };
   renderBrOptions();
 })();
-function pointUrl(br, uf, km, dataStr, tipo){
-  return `http://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarponto?br=${br}&tipo=${tipo}&uf=${uf}&cd_tipo=null&data=${dataStr}&km=${km.toFixed(2)}`;
+const WFS_URL='https://geoservicos.inde.gov.br/geoserver/DNIT/wfs';
+async function findWfsLayer(){
+  const r=await fetch(WFS_URL+'?service=WFS&request=GetCapabilities');
+  const xml=await r.text();
+  const m=[...xml.matchAll(/<Name>(DNIT:snv_\w+)<\/Name>/g)];
+  if(!m.length) throw new Error('Layer SNV não encontrada');
+  return m.map(x=>x[1]).sort().pop();
 }
-/* extrai {lat,lon} de qualquer formato de resposta plausível (schema da API não documentado) */
-function extractLatLon(body){
-  const tryNums=(a,b)=>{
-    if(typeof a!=='number'||typeof b!=='number') return null;
-    if(a>=-35&&a<=6&&b>=-75&&b<=-32) return {lat:a, lon:b};
-    if(b>=-35&&b<=6&&a>=-75&&a<=-32) return {lat:b, lon:a};
-    return null;
-  };
-  try{
-    const j=JSON.parse(body);
-    const flat=(o,out)=>{ if(o&&typeof o==='object'){ for(const k in o){ const v=o[k];
-      if(typeof v==='number') out.push([k.toLowerCase(),v]); else if(v&&typeof v==='object') flat(v,out); } } return out };
-    const nums=flat(j,[]);
-    const byKey=re=>{ const f=nums.find(([k])=>re.test(k)); return f?f[1]:null };
-    let lat=byKey(/^(lat|latitude|y)$/), lon=byKey(/^(lon|lng|longitude|x)$/);
-    if(lat!=null&&lon!=null){ const r=tryNums(lat,lon); if(r) return r }
-    if(Array.isArray(j)&&j.length>=2){ const r=tryNums(j[0],j[1]); if(r) return r }
-    if(j.coordinates&&j.coordinates.length>=2){ const r=tryNums(j.coordinates[1],j.coordinates[0]); if(r) return r }
-    for(let i=0;i<nums.length-1;i++){ const r=tryNums(nums[i][1], nums[i+1][1]); if(r) return r }
-  }catch(e){}
-  const m=body.match(/(-?\d{1,3}[.,]\d+)/g);
-  if(m&&m.length>=2){
-    const a=parseFloat(m[0].replace(',','.')), b=parseFloat(m[1].replace(',','.'));
-    return tryNums(a,b);
-  }
-  return null;
-}
-async function fetchPoint(url, ms, diag){
-  const httpsUrl=url.replace(/^http:/, 'https:');
-  const attempts=[
-    ['direto https', httpsUrl],
-    ['direto http', url],
-    ['ponte 1', 'https://api.allorigins.win/raw?url='+encodeURIComponent(url)],
-    ['ponte 2', 'https://corsproxy.io/?url='+encodeURIComponent(url)],
-    ['ponte 3', 'https://thingproxy.freeboard.io/fetch/'+url],
-  ];
-  const trail=[];
-  for(const [label, target] of attempts){
-    try{
-      const r=await fetchTimeout(target, ms);
-      const body=await r.text();
-      trail.push(`${label}: HTTP ${r.status}`);
-      if(r.ok){
-        const p=extractLatLon(body);
-        if(p) return p;
-        trail.push(`${label}: resposta não reconhecida — "${body.slice(0,140)}"`);
-      }
-    }catch(e){ trail.push(`${label}: ${e.message}`) }
-  }
-  if(diag) diag.trail=trail;
-  return null;
-}
-/* testa 1 ponto conhecido antes de varrer milhares — evita "tentar tudo e falhar tudo" sem explicação */
-async function probeDnit(br, uf, tipo, dataStr, kmi){
-  const diag={};
-  const p=await fetchPoint(pointUrl(br,uf,kmi,dataStr,tipo), 15000, diag);
-  return {ok:!!p, diag};
-}
-async function fetchTimeout(url, ms){
-  const ctl=new AbortController();
-  const t=setTimeout(()=>ctl.abort(), ms);
-  try{ return await fetch(url, {signal:ctl.signal, mode:'cors'}) } finally{ clearTimeout(t) }
-}
-/* baixa uma BR inteira chamando a API ponto a ponto, com concorrência limitada;
-   se km final não for informado, para sozinho após várias falhas seguidas */
-async function downloadRoute(br, uf, tipo, kmi, kmf, stepM, onProgress){
-  const dataStr=new Date().toISOString().slice(0,10);
-  const step=stepM/1000;
-  const autoEnd = kmf==null;
-  const maxKm = kmf!=null ? kmf : kmi + 2000;   // teto de segurança se "auto"
-  const pts=[]; let km=kmi, consecFail=0, tried=0;
-  const CONC=10;
-  while(km<=maxKm+1e-9){
-    const batch=[];
-    for(let i=0;i<CONC && km<=maxKm+1e-9; i++, km+=step) batch.push(km);
-    const results=await Promise.all(batch.map(k=>fetchPoint(pointUrl(br,uf,k,dataStr,tipo), 15000).then(r=>({k,r}))));
-    tried+=batch.length;
-    let batchOk=0;
-    for(const {k,r} of results){
-      if(r){ pts.push({km:k, lat:r.lat, lon:r.lon}); batchOk++; consecFail=0 }
-      else consecFail++;
+function wfsToBase(features, br, uf, snvLabel){
+  const segs=features.map(f=>{
+    const g=f.geometry; let c=[];
+    if(g&&g.type==='MultiLineString') c=g.coordinates.flat();
+    else if(g&&g.type==='LineString') c=g.coordinates;
+    return {ki:f.properties.vl_km_inic, kf:f.properties.vl_km_fina, c};
+  }).filter(s=>s.c.length>=2).sort((a,b)=>a.ki-b.ki);
+  const lat=[],lon=[],km=[];
+  for(const seg of segs){
+    const cc=seg.c; let total=0; const cum=[0];
+    for(let i=1;i<cc.length;i++){
+      const cos=Math.cos((cc[i-1][1]+cc[i][1])/2*D2R);
+      const dx=(cc[i][0]-cc[i-1][0])*cos, dy=cc[i][1]-cc[i-1][1];
+      total+=Math.sqrt(dx*dx+dy*dy); cum.push(total);
     }
-    if(onProgress) onProgress(pts.length, tried);
-    if(autoEnd && batchOk===0 && consecFail>=CONC*3) break;  // três lotes seguidos sem nenhum ponto = fim da rodovia
+    const range=seg.kf-seg.ki;
+    for(let i=0;i<cc.length;i++){
+      const frac=total>0?cum[i]/total:0;
+      km.push(seg.ki+frac*range); lon.push(cc[i][0]); lat.push(cc[i][1]);
+    }
   }
-  pts.sort((a,b)=>a.km-b.km);
-  return pts;
+  return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvLabel}`,
+    kmMin:km.length?km[0]:0, kmMax:km.length?km[km.length-1]:0, lat, lon, km};
 }
-const DL_DEFAULT_HINT='Deixe "Km final" em branco para o app detectar sozinho o fim da rodovia. Requer internet só neste momento — depois de instalada, funciona offline.';
+async function downloadRoadWfs(br, uf, onStatus){
+  const file=`BR-${br}-${uf}.json`;
+  try{
+    if(onStatus) onStatus('Buscando dados pré-processados…');
+    const r=await fetch('./data/rodovias/'+file);
+    if(r.ok){
+      const data=await r.json();
+      if(data.segments&&data.segments.length){
+        const feats=data.segments.map(s=>({
+          properties:{vl_km_inic:s.ki, vl_km_fina:s.kf},
+          geometry:{type:'LineString', coordinates:s.c}
+        }));
+        return wfsToBase(feats, br, uf, data.snv||'');
+      }
+    }
+  }catch(e){}
+  if(onStatus) onStatus('Conectando ao GeoServer do DNIT…');
+  const layer=await findWfsLayer();
+  const snv=layer.split('snv_')[1]||'';
+  if(onStatus) onStatus('Baixando geometria…');
+  const fields='vl_br,sg_uf,vl_km_inic,vl_km_fina,the_geom';
+  const cql=encodeURIComponent(`vl_br='${br}' AND sg_uf='${uf}' AND sg_tipo_tr='B'`);
+  let all=[],start=0;
+  while(true){
+    const url=`${WFS_URL}?service=WFS&request=GetFeature&typeName=${layer}&outputFormat=application/json&propertyName=${fields}&CQL_FILTER=${cql}&maxFeatures=1000&startIndex=${start}`;
+    const r=await fetch(url);
+    if(!r.ok) throw new Error('Erro HTTP '+r.status);
+    const data=await r.json();
+    if(!data.features||!data.features.length) break;
+    all=all.concat(data.features);
+    if(onStatus) onStatus(`Baixando… ${all.length} trechos`);
+    if(data.features.length<1000) break;
+    start+=1000;
+  }
+  if(!all.length) throw new Error('Nenhum trecho encontrado para BR-'+br+'/'+uf);
+  return wfsToBase(all, br, uf, snv);
+}
+const DL_DEFAULT_HINT='Geometria completa do SNV. Requer internet só neste momento — depois funciona offline.';
 document.getElementById('dl-go').onclick=async()=>{
   const btn=document.getElementById('dl-go'), status=document.getElementById('dl-status');
   const uf=document.getElementById('dl-uf').value;
-  const tipo=document.getElementById('dl-tipo').value;
   const brSel=document.getElementById('dl-br').value;
-  const br=(brSel==='__outra' ? document.getElementById('dl-br-custom').value : brSel).match(/\d{1,3}/)?.[0];
-  if(!br){ toast('Digite o número da BR (ex.: 226).'); return }
-  const kmi=num(document.getElementById('dl-kmi').value) ?? 0;
-  const kmfRaw=document.getElementById('dl-kmf').value.trim();
-  const kmf=kmfRaw?num(kmfRaw):null;
-  const step=10;  // menor intervalo (10 m) — máxima precisão do traçado
-  const brPad=br.padStart(3,'0');
-  const dataStr=new Date().toISOString().slice(0,10);
-  btn.disabled=true; btn.textContent='Testando conexão…';
+  const br=(brSel==='__outra'?document.getElementById('dl-br-custom').value.trim():brSel);
+  if(!br){ toast('Selecione ou digite uma BR.'); return }
+  const brPad=br.replace(/\D/g,'').padStart(3,'0');
+  btn.disabled=true; btn.textContent='Baixando…';
   try{
-    const probe=await probeDnit(brPad, uf, tipo, dataStr, kmi);
-    if(!probe.ok){
-      const detail=(probe.diag.trail||[]).join(' · ');
-      status.textContent='Falha na conexão com o DNIT: '+detail;
-      toast('Não consegui falar com o servidor do DNIT. Veja o detalhe abaixo do botão e me manda um print.');
-      btn.disabled=false; btn.textContent='Baixar';
-      return;
-    }
-    btn.textContent='Baixando…';
-    const pts=await downloadRoute(brPad, uf, tipo, kmi, kmf, step, (ok,tried)=>{
-      status.textContent=`Baixando… ${ok} pontos obtidos (${tried} consultados)`;
-    });
-    if(pts.length<2) throw new Error('nenhum ponto retornado — confira BR, UF e o km inicial');
-    const key='BR-'+brPad+'/'+uf;
-    const b={id:key, br:'BR-'+brPad, uf, fonte:'DNIT SGPLAN · '+dataStr,
-      kmMin:pts[0].km, kmMax:pts[pts.length-1].km,
-      lat:pts.map(p=>p.lat), lon:pts.map(p=>p.lon), km:pts.map(p=>p.km)};
+    const b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg });
     await dbPut(b);
-    S.bases=S.bases.filter(x=>x.id!==key); S.bases.push(b);
+    S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
     renderBases();
     status.textContent=DL_DEFAULT_HINT;
-    toast(`${key} instalada — ${pts.length} pontos (km ${fkm(b.kmMin)} a ${fkm(b.kmMax)}).`);
+    toast(`${b.id} instalada — ${b.lat.length} pontos (km ${fkm(b.kmMin)} a ${fkm(b.kmMax)}).`);
   }catch(err){
     status.textContent=DL_DEFAULT_HINT;
-    toast('Falha ao baixar do DNIT: '+err.message+'. Alternativa: peça o KML pronto no programa SNV to KML e use "Importar arquivo".');
+    toast('Falha: '+err.message+'. Alternativa: importe o shapefile do DNIT Cloud.');
   }
   btn.disabled=false; btn.textContent='Baixar';
 };
