@@ -68,16 +68,14 @@
 :root[data-theme="light"] nav button.camnav{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 :root[data-theme="light"] #search-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{height:100%;background:var(--bg);overflow:hidden}
+html,body{height:100%;overflow:hidden}
+html{background:var(--bg)}
 :root[data-theme="light"]{background:linear-gradient(180deg,#f7f7f5 0%,#f1f2f3 100%)}
-body{height:100%;background:transparent;color:var(--text);font-family:var(--sans);overscroll-behavior:none;
-  position:relative;overflow:hidden;-webkit-text-size-adjust:100%}
+body{background:inherit;color:var(--text);font-family:var(--sans);overscroll-behavior:none;
+  position:relative;-webkit-text-size-adjust:100%}
 body::before{content:'';position:fixed;inset:-15%;z-index:-1;pointer-events:none;
   background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%)}
-/* boot: tela invisível até o JS aplicar o tema — elimina flash branco/escuro */
-body.booting{opacity:0}
-body.booted{opacity:1;transition:opacity .15s ease-out}
-#app{display:flex;flex-direction:column;height:100dvh;height:-webkit-fill-available}
+#app{display:flex;flex-direction:column;position:fixed;inset:0;z-index:0}
 main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 /* transições suaves entre telas */
 .screen{display:none;animation:scrIn .18s ease-out}
@@ -233,8 +231,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
-#camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;flex-direction:column;
-  height:100%;height:100dvh;height:-webkit-fill-available}
+#camwrap{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
 #camwrap.on{display:flex;animation:camIn .2s ease-out}
 @keyframes camIn{from{opacity:0}to{opacity:1}}
 @keyframes camOut{from{opacity:1}to{opacity:0}}
@@ -324,8 +321,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
-#gallerywrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:51;display:none;flex-direction:column;
-  height:100%;height:100dvh;height:-webkit-fill-available}
+#gallerywrap{position:fixed;inset:0;background:#000;z-index:51;display:none;flex-direction:column}
 #gallerywrap.on{display:flex;animation:camIn .2s ease-out}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
@@ -391,16 +387,14 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body class="booting">
+<body style="opacity:0">
 <script>
 (function(){
   var s=localStorage.getItem('kc-theme');
   if(s!=='dark') document.documentElement.setAttribute('data-theme','light');
   if(/Android/i.test(navigator.userAgent)) document.documentElement.setAttribute('data-android','');
-  requestAnimationFrame(function(){requestAnimationFrame(function(){
-    document.body.classList.remove('booting');
-    document.body.classList.add('booted');
-  })});
+  document.body.style.opacity='1';
+  document.body.style.transition='opacity .12s ease-out';
 })();
 </script>
 <div id="app">
