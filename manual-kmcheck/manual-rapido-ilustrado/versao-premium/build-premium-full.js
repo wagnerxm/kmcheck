@@ -51,7 +51,7 @@ function defs(id) {
       <feGaussianBlur in="SourceAlpha" stdDeviation="10"/><feOffset dy="6"/>
       <feComponentTransfer><feFuncA type="linear" slope="0.10"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <clipPath id="sc${id}"><rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" rx="4"/></clipPath>
+    <clipPath id="sc${id}"><rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" rx="${MR-BP}"/></clipPath>
   </defs>`;
 }
 
@@ -85,14 +85,16 @@ function arrow(bx, by, bw, bh, ex, ey, side, accent, id) {
 }
 
 function phoneFrame(id) {
+  const SR = MR - BP;
   return `<g filter="url(#ms${id})">
     <rect x="${MX}" y="${MY}" width="${MW}" height="${MH}" rx="${MR}" fill="${C.graphite}"/>
-    <rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" rx="4" fill="#0e0e0e"/>
+    <rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" rx="${SR}" fill="#0e0e0e"/>
     <path d="M${MX+(MW-NOTCH_W)/2},${MY} h${NOTCH_W} v${NOTCH_H-10} q0,10 -10,10 h-${NOTCH_W-20} q-10,0 -10,-10 Z" fill="#000"/>
   </g>`;
 }
 
 function phoneWithImage(id, imgSrc) {
+  const SR = MR - BP;
   return `<g filter="url(#ms${id})">
     <rect x="${MX}" y="${MY}" width="${MW}" height="${MH}" rx="${MR}" fill="${C.graphite}"/>
     <g clip-path="url(#sc${id})">
