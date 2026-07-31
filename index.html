@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>KM Check</title>
-<meta name="theme-color" content="#0a0c0e">
+<meta name="theme-color" id="meta-theme" content="#0a0c0e">
 <meta name="color-scheme" content="dark light">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -12,6 +12,17 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Check">
+<script>
+(function(){
+  var light=localStorage.getItem('kc-theme')!=='dark';
+  var d=document.documentElement;
+  if(light) d.setAttribute('data-theme','light');
+  if(/Android/i.test(navigator.userAgent)) d.setAttribute('data-android','');
+  var c=light?'#f1f2f3':'#0a0c0e';
+  d.style.backgroundColor=c;
+  document.getElementById('meta-theme').content=c;
+})();
+</script>
 <style>
 :root{
   color-scheme: dark;
@@ -388,22 +399,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body style="opacity:0">
-<script>
-(function(){
-  var d=document.documentElement, s=localStorage.getItem('kc-theme');
-  var light=s!=='dark';
-  if(light){
-    d.setAttribute('data-theme','light');
-    d.style.backgroundColor='#f1f2f3';
-  } else {
-    d.style.backgroundColor='#0a0c0e';
-  }
-  if(/Android/i.test(navigator.userAgent)) d.setAttribute('data-android','');
-  document.body.style.opacity='1';
-  document.body.style.transition='opacity .12s ease-out';
-})();
-</script>
+<body style="opacity:0;background-color:inherit">
+<script>document.body.style.opacity='1';document.body.style.transition='opacity .12s ease-out';</script>
 <div id="app">
 <header class="top">
   <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
@@ -2012,6 +2009,7 @@ async function openCam(){
     try{ await video.play() }catch(e){}
     video.style.transform = '';
     document.documentElement.style.backgroundColor='#000';
+    document.getElementById('meta-theme').content='#000000';
     camwrap.classList.add('on');
     camGeom=null;
     paintRatioSel();
@@ -2039,7 +2037,10 @@ function closeCam(instant){
     camwrap.classList.remove('on');
     camwrap.style.animation='';
   }
-  document.documentElement.style.backgroundColor='';
+  var _light=document.documentElement.getAttribute('data-theme')==='light';
+  var _c=_light?'#f1f2f3':'#0a0c0e';
+  document.documentElement.style.backgroundColor=_c;
+  document.getElementById('meta-theme').content=_c;
   disableScreenLock();
   document.querySelector('nav').style.display='';
   document.querySelector('header.top').style.display='';
@@ -2656,8 +2657,14 @@ if(svcAdd) svcAdd.onclick=()=>{
   const sw=document.getElementById('cfg-lighttheme');
   sw.checked = document.documentElement.getAttribute('data-theme')==='light';
   sw.onchange=()=>{
-    if(sw.checked){ document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('kc-theme','light') }
-    else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('kc-theme','dark') }
+    var mt=document.getElementById('meta-theme');
+    if(sw.checked){
+      document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('kc-theme','light');
+      document.documentElement.style.backgroundColor='#f1f2f3'; mt.content='#f1f2f3';
+    } else {
+      document.documentElement.removeAttribute('data-theme'); localStorage.setItem('kc-theme','dark');
+      document.documentElement.style.backgroundColor='#0a0c0e'; mt.content='#0a0c0e';
+    }
   };
 })();
 
