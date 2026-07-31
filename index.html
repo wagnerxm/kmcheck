@@ -2008,8 +2008,8 @@ async function openCam(){
     // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
     try{ await video.play() }catch(e){}
     video.style.transform = '';
-    document.documentElement.style.backgroundColor='#000';
-    document.getElementById('meta-theme').content='#000000';
+    document.documentElement.style.backgroundColor='#101010';
+    document.getElementById('meta-theme').content='#101010';
     camwrap.classList.add('on');
     camGeom=null;
     paintRatioSel();
