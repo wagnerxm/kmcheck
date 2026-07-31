@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KM Check — Camera e Captura (Piloto v2)</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f0f0;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 24px; padding: 24px 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .pg { background: white; box-shadow: 0 2px 16px rgba(0,0,0,0.08); page-break-after: always; }
+  .pg:last-child { page-break-after: avoid; }
+  .pg svg { display: block; width: 210mm; height: 297mm; }
+  @media print { body { background: white; padding: 0; gap: 0; } .pg { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="pg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 990" width="700" height="990">
+    
+    <defs>
+      <marker id="ah" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#1B4F8A" opacity="0.72"/>
+      </marker>
+      <marker id="ahG" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#C8D830" opacity="0.85"/>
+      </marker>
+      <filter id="bs" x="-4%" y="-8%" width="108%" height="120%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+        <feOffset dy="1.5"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="ms" x="-6%" y="-3%" width="112%" height="110%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+        <feOffset dy="6"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.10"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <clipPath id="screenClip">
+        <rect x="219" y="114" width="262" height="577" rx="4"/>
+      </clipPath>
+    </defs>
+    <defs>
+      <radialGradient id="shutterGrad" cx="35%" cy="30%">
+        <stop offset="0%" stop-color="#fff"/>
+        <stop offset="60%" stop-color="#ddd"/>
+        <stop offset="100%" stop-color="#bbb"/>
+      </radialGradient>
+    </defs>
+    <rect width="700" height="990" fill="#FFFFFF"/>
+
+    
+    <text x="58" y="66" font-size="22" font-weight="700" fill="#0B1D3A" font-family="'Segoe UI',system-ui,sans-serif">Camera e Captura</text>
+    <text x="58" y="84" font-size="11.5" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Enquadramento e controles de captura</text>
+    <text x="642" y="66" font-size="9" fill="#6B7385" text-anchor="end" font-family="'Segoe UI',system-ui,sans-serif" opacity="0.5">pagina 1 de 2</text>
+    
+  <g filter="url(#ms)">
+    <!-- Phone body -->
+    <rect x="215" y="110" width="270" height="585" rx="34" fill="#2A3040"/>
+    <!-- Screen -->
+    <rect x="219" y="114" width="262" height="577" rx="4" fill="#0e0e0e"/>
+    <!-- Notch -->
+    <path d="M308,110 h84 v10 q0,10 -10,10 h-64 q-10,0 -10,-10 Z" fill="#000"/>
+  </g>
+    
+  <g clip-path="url(#screenClip)">
+    <!-- Full dark background -->
+    <rect x="219" y="114" width="262" height="577" fill="#0e0e0e"/>
+
+    <!-- ── TOP BAR ── -->
+    <rect x="219" y="114" width="262" height="44" fill="rgba(0,0,0,0.85)"/>
+
+    <!-- Back button -->
+    <circle cx="243" cy="136" r="18" fill="rgba(255,255,255,0.06)"/>
+    <polyline points="247,129 240,136 247,143"
+              stroke="rgba(255,255,255,0.75)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Flip camera -->
+    <circle cx="457" cy="136" r="18" fill="rgba(255,255,255,0.06)"/>
+    <path d="M451,134 a8,8 0 0,1 12,0" stroke="rgba(255,255,255,0.65)" stroke-width="1.5" fill="none"/>
+    <path d="M463,138 a8,8 0 0,1 -12,0" stroke="rgba(255,255,255,0.65)" stroke-width="1.5" fill="none"/>
+    <polygon points="464,131 461,135 467,135" fill="rgba(255,255,255,0.55)"/>
+
+    <!-- ── VIEWFINDER ── -->
+    <rect x="223" y="160" width="254" height="423"
+          fill="#111" rx="2"/>
+    <!-- subtle crosshair -->
+    <g opacity="0.08">
+      <line x1="332" y1="371.5" x2="368" y2="371.5" stroke="white" stroke-width="0.6"/>
+      <line x1="350" y1="353.5" x2="350" y2="389.5" stroke="white" stroke-width="0.6"/>
+    </g>
+
+    <!-- ── LEGEND OVERLAY ── (lower-left of viewfinder) -->
+    <rect x="233" y="530" width="115" height="44" rx="5" fill="rgba(0,0,0,0.55)"/>
+    <text font-size="7.5" fill="rgba(255,255,255,0.8)" font-family="Arial,sans-serif" font-weight="700">
+      <tspan x="240" y="543">BR-101/RN  KM 87,400</tspan>
+      <tspan x="240" y="554">LD · EST 4.370</tspan>
+      <tspan x="240" y="565">-6.077710  -37.891500</tspan>
+    </text>
+
+    <!-- ── RATIO BAR ── -->
+    <rect x="219" y="585" width="262" height="30" fill="rgba(14,14,14,0.9)"/>
+    <!-- 1:1 -->
+    <text x="308" y="604" text-anchor="middle" font-size="10" font-weight="700"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif" letter-spacing="0.5">1:1</text>
+    <!-- 4:3 active -->
+    <rect x="332" y="589" width="36" height="22" rx="11" fill="rgba(200,216,48,0.18)"/>
+    <text x="350" y="604" text-anchor="middle" font-size="10" font-weight="700"
+          fill="#C8D830" font-family="sans-serif" letter-spacing="0.5">4:3</text>
+    <!-- 16:9 -->
+    <text x="392" y="604" text-anchor="middle" font-size="10" font-weight="700"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif" letter-spacing="0.5">16:9</text>
+
+    <!-- ── BOTTOM BAR ── -->
+    <rect x="219" y="615" width="262" height="76" fill="#141414"/>
+    <line x1="219" y1="615" x2="481" y2="615" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+    <!-- LD button (active) -->
+    <circle cx="251" cy="649" r="16" fill="rgba(200,216,48,0.12)" stroke="#C8D830" stroke-width="1.2"/>
+    <text x="251" y="653" text-anchor="middle" font-size="10" font-weight="800"
+          fill="#C8D830" font-family="sans-serif">LD</text>
+
+    <!-- LE button -->
+    <circle cx="291" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <text x="291" y="653" text-anchor="middle" font-size="10" font-weight="700"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif">LE</text>
+
+    <!-- Service button (i) -->
+    <circle cx="331" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <text x="331" y="654" text-anchor="middle" font-size="13" font-style="italic"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif">i</text>
+
+    <!-- SHUTTER -->
+    <circle cx="350" cy="651" r="32" fill="rgba(20,20,20,0.9)"
+            stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    <circle cx="350" cy="651" r="24"
+            fill="radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)"/>
+    <!-- shutter inner white disc -->
+    <circle cx="350" cy="651" r="24" fill="#e8e8e8"/>
+    <circle cx="350" cy="651" r="24" fill="url(#shutterGrad)"/>
+
+    <!-- Settings -->
+    <circle cx="381" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <circle cx="381" cy="649" r="5" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"/>
+    <circle cx="381" cy="649" r="9" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" stroke-dasharray="2 3.5"/>
+
+    <!-- Flash -->
+    <circle cx="421" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <path d="M421,642 l-3,7 h5 l-3,7" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Gallery -->
+    <circle cx="457" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <rect x="450" y="643" width="14" height="11" rx="2" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+    <circle cx="454" cy="647" r="2" fill="rgba(255,255,255,0.3)"/>
+  </g>
+
+    <!-- ═══ ARROWS + BOXES ═══ -->
+
+    <!-- Voltar → back btn -->
+    <g filter="url(#bs)">
+    <rect x="53" y="114" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="64" y="131" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Voltar</text>
+    <text x="64" y="146" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Retorna a tela anterior.</text>
+  </g>
+    <path d="M201,136 L225,136" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Alternar camera → flip btn -->
+    <g filter="url(#bs)">
+    <rect x="499" y="114" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="510" y="131" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Alternar camera</text>
+    <text x="510" y="146" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Troca traseira e frontal.</text>
+  </g>
+    <path d="M499,136 L475,136" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Formato → ratio bar -->
+    <g filter="url(#bs)">
+    <rect x="499" y="578" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="510" y="595" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Formato</text>
+    <text x="510" y="610" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Proporcao da foto capturada.</text>
+  </g>
+    <path d="M499,600 L414,600" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Flash → flash btn -->
+    <g filter="url(#bs)">
+    <rect x="499" y="627" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="510" y="644" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Flash</text>
+    <text x="510" y="659" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Ativa ou desativa o flash.</text>
+  </g>
+    <path d="M499,649 L437,649" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Capturar (ACCENT) → shutter -->
+    <g filter="url(#bs)">
+    <rect x="499" y="681" width="148" height="44" rx="8" fill="#FAFBF2" stroke="#C8D830" stroke-width="1.4"/>
+    <text x="510" y="698" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Capturar</text>
+    <text x="510" y="713" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Registra a foto com legenda.</text>
+  </g>
+    <path d="M499,703 L490,703 L490,651 L382,651" fill="none" stroke="#C8D830" stroke-width="1.6" opacity="0.8" marker-end="url(#ahG)" stroke-linejoin="round"/>
+
+    
+    <line x1="58" y1="948" x2="642" y2="948" stroke="#DDE1E8" stroke-width="0.6"/>
+    <text x="58" y="962" font-size="8" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif" opacity="0.7">KM Check · Guia Visual do Usuario</text>
+    <text x="642" y="962" font-size="8.5" fill="#6B7385" text-anchor="end" font-family="'Segoe UI',system-ui,sans-serif" font-weight="600">3</text>
+  </svg></div>
+<div class="pg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 990" width="700" height="990">
+    
+    <defs>
+      <marker id="ah" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#1B4F8A" opacity="0.72"/>
+      </marker>
+      <marker id="ahG" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#C8D830" opacity="0.85"/>
+      </marker>
+      <filter id="bs" x="-4%" y="-8%" width="108%" height="120%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+        <feOffset dy="1.5"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="ms" x="-6%" y="-3%" width="112%" height="110%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+        <feOffset dy="6"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.10"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <clipPath id="screenClip">
+        <rect x="219" y="114" width="262" height="577" rx="4"/>
+      </clipPath>
+    </defs>
+    <defs>
+      <radialGradient id="shutterGrad" cx="35%" cy="30%">
+        <stop offset="0%" stop-color="#fff"/>
+        <stop offset="60%" stop-color="#ddd"/>
+        <stop offset="100%" stop-color="#bbb"/>
+      </radialGradient>
+    </defs>
+    <rect width="700" height="990" fill="#FFFFFF"/>
+
+    
+    <text x="58" y="66" font-size="22" font-weight="700" fill="#0B1D3A" font-family="'Segoe UI',system-ui,sans-serif">Camera e Captura</text>
+    <text x="58" y="84" font-size="11.5" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Legenda, lado da via e servico</text>
+    <text x="642" y="66" font-size="9" fill="#6B7385" text-anchor="end" font-family="'Segoe UI',system-ui,sans-serif" opacity="0.5">pagina 2 de 2</text>
+    
+  <g filter="url(#ms)">
+    <!-- Phone body -->
+    <rect x="215" y="110" width="270" height="585" rx="34" fill="#2A3040"/>
+    <!-- Screen -->
+    <rect x="219" y="114" width="262" height="577" rx="4" fill="#0e0e0e"/>
+    <!-- Notch -->
+    <path d="M308,110 h84 v10 q0,10 -10,10 h-64 q-10,0 -10,-10 Z" fill="#000"/>
+  </g>
+    
+  <g clip-path="url(#screenClip)">
+    <!-- Full dark background -->
+    <rect x="219" y="114" width="262" height="577" fill="#0e0e0e"/>
+
+    <!-- ── TOP BAR ── -->
+    <rect x="219" y="114" width="262" height="44" fill="rgba(0,0,0,0.85)"/>
+
+    <!-- Back button -->
+    <circle cx="243" cy="136" r="18" fill="rgba(255,255,255,0.06)"/>
+    <polyline points="247,129 240,136 247,143"
+              stroke="rgba(255,255,255,0.75)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Flip camera -->
+    <circle cx="457" cy="136" r="18" fill="rgba(255,255,255,0.06)"/>
+    <path d="M451,134 a8,8 0 0,1 12,0" stroke="rgba(255,255,255,0.65)" stroke-width="1.5" fill="none"/>
+    <path d="M463,138 a8,8 0 0,1 -12,0" stroke="rgba(255,255,255,0.65)" stroke-width="1.5" fill="none"/>
+    <polygon points="464,131 461,135 467,135" fill="rgba(255,255,255,0.55)"/>
+
+    <!-- ── VIEWFINDER ── -->
+    <rect x="223" y="160" width="254" height="423"
+          fill="#111" rx="2"/>
+    <!-- subtle crosshair -->
+    <g opacity="0.08">
+      <line x1="332" y1="371.5" x2="368" y2="371.5" stroke="white" stroke-width="0.6"/>
+      <line x1="350" y1="353.5" x2="350" y2="389.5" stroke="white" stroke-width="0.6"/>
+    </g>
+
+    <!-- ── LEGEND OVERLAY ── (lower-left of viewfinder) -->
+    <rect x="233" y="530" width="115" height="44" rx="5" fill="rgba(0,0,0,0.55)"/>
+    <text font-size="7.5" fill="rgba(255,255,255,0.8)" font-family="Arial,sans-serif" font-weight="700">
+      <tspan x="240" y="543">BR-101/RN  KM 87,400</tspan>
+      <tspan x="240" y="554">LD · EST 4.370</tspan>
+      <tspan x="240" y="565">-6.077710  -37.891500</tspan>
+    </text>
+
+    <!-- ── RATIO BAR ── -->
+    <rect x="219" y="585" width="262" height="30" fill="rgba(14,14,14,0.9)"/>
+    <!-- 1:1 -->
+    <text x="308" y="604" text-anchor="middle" font-size="10" font-weight="700"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif" letter-spacing="0.5">1:1</text>
+    <!-- 4:3 active -->
+    <rect x="332" y="589" width="36" height="22" rx="11" fill="rgba(200,216,48,0.18)"/>
+    <text x="350" y="604" text-anchor="middle" font-size="10" font-weight="700"
+          fill="#C8D830" font-family="sans-serif" letter-spacing="0.5">4:3</text>
+    <!-- 16:9 -->
+    <text x="392" y="604" text-anchor="middle" font-size="10" font-weight="700"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif" letter-spacing="0.5">16:9</text>
+
+    <!-- ── BOTTOM BAR ── -->
+    <rect x="219" y="615" width="262" height="76" fill="#141414"/>
+    <line x1="219" y1="615" x2="481" y2="615" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+    <!-- LD button (active) -->
+    <circle cx="251" cy="649" r="16" fill="rgba(200,216,48,0.12)" stroke="#C8D830" stroke-width="1.2"/>
+    <text x="251" y="653" text-anchor="middle" font-size="10" font-weight="800"
+          fill="#C8D830" font-family="sans-serif">LD</text>
+
+    <!-- LE button -->
+    <circle cx="291" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <text x="291" y="653" text-anchor="middle" font-size="10" font-weight="700"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif">LE</text>
+
+    <!-- Service button (i) -->
+    <circle cx="331" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <text x="331" y="654" text-anchor="middle" font-size="13" font-style="italic"
+          fill="rgba(255,255,255,0.4)" font-family="sans-serif">i</text>
+
+    <!-- SHUTTER -->
+    <circle cx="350" cy="651" r="32" fill="rgba(20,20,20,0.9)"
+            stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    <circle cx="350" cy="651" r="24"
+            fill="radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)"/>
+    <!-- shutter inner white disc -->
+    <circle cx="350" cy="651" r="24" fill="#e8e8e8"/>
+    <circle cx="350" cy="651" r="24" fill="url(#shutterGrad)"/>
+
+    <!-- Settings -->
+    <circle cx="381" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <circle cx="381" cy="649" r="5" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"/>
+    <circle cx="381" cy="649" r="9" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" stroke-dasharray="2 3.5"/>
+
+    <!-- Flash -->
+    <circle cx="421" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <path d="M421,642 l-3,7 h5 l-3,7" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Gallery -->
+    <circle cx="457" cy="649" r="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.14)" stroke-width="0.8"/>
+    <rect x="450" y="643" width="14" height="11" rx="2" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+    <circle cx="454" cy="647" r="2" fill="rgba(255,255,255,0.3)"/>
+  </g>
+
+    <!-- ═══ ARROWS + BOXES ═══ -->
+
+    <!-- Lado da Via → LD/LE buttons -->
+    <g filter="url(#bs)">
+    <rect x="53" y="597" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="64" y="614" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Lado da Via</text>
+    <text x="64" y="629" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">LD (direito) ou LE (esquerdo).</text>
+  </g>
+    <path d="M201,619 L210,619 L210,649 L235,649" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Servico → i button -->
+    <g filter="url(#bs)">
+    <rect x="53" y="657" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="64" y="674" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Servico</text>
+    <text x="64" y="689" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Seleciona servico e contrato.</text>
+  </g>
+    <path d="M201,679 L210,679 L210,649 L315,649" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Legenda → legend overlay -->
+    <g filter="url(#bs)">
+    <rect x="53" y="488" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="64" y="505" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Legenda</text>
+    <text x="64" y="520" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Dados do registro sobre a foto.</text>
+  </g>
+    <path d="M201,510 L210,510 L210,552 L233,552" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Galeria → gallery btn -->
+    <g filter="url(#bs)">
+    <rect x="499" y="627" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="510" y="644" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Galeria</text>
+    <text x="510" y="659" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Abre as imagens capturadas.</text>
+  </g>
+    <path d="M499,649 L473,649" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    <!-- Configuracoes → settings btn -->
+    <g filter="url(#bs)">
+    <rect x="499" y="627" width="148" height="44" rx="8" fill="#F5F6F8" stroke="#DDE1E8" stroke-width="0.8"/>
+    <text x="510" y="644" font-size="11.5" font-weight="700" fill="#2A3040" font-family="'Segoe UI',system-ui,sans-serif">Configuracoes</text>
+    <text x="510" y="659" font-size="10" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif">Ajustes sem sair da camera.</text>
+  </g>
+    <path d="M499,649 L397,649" fill="none" stroke="#1B4F8A" stroke-width="1.3" opacity="0.65" marker-end="url(#ah)" stroke-linejoin="round"/>
+
+    
+    <line x1="58" y1="948" x2="642" y2="948" stroke="#DDE1E8" stroke-width="0.6"/>
+    <text x="58" y="962" font-size="8" fill="#6B7385" font-family="'Segoe UI',system-ui,sans-serif" opacity="0.7">KM Check · Guia Visual do Usuario</text>
+    <text x="642" y="962" font-size="8.5" fill="#6B7385" text-anchor="end" font-family="'Segoe UI',system-ui,sans-serif" font-weight="600">4</text>
+  </svg></div>
+</body>
+</html>
