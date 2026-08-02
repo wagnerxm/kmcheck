@@ -1842,7 +1842,20 @@ function refreshTilt(){
   applyTilt(t);
 }
 let _rotDebounce=0;
-function onCamResize(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(function(){ layoutOverlays(); refreshTilt() }) }
+let _lastLand=null, _rsTimer=0;
+function onCamResize(){
+  cancelAnimationFrame(_rotDebounce);
+  _rotDebounce=requestAnimationFrame(function(){
+    layoutOverlays(); refreshTilt();
+    const land=window.innerWidth>window.innerHeight;
+    if(_lastLand!==null && land!==_lastLand){
+      // orientação virou com a câmera aberta: espera assentar e reabre o stream (bug WebKit)
+      clearTimeout(_rsTimer);
+      _rsTimer=setTimeout(_restartStream, 350);
+    }
+    _lastLand=land;
+  });
+}
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
@@ -1893,11 +1906,13 @@ async function enableTiltSensor(){
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
 function enableScreenLock(){
+  _lastLand=window.innerWidth>window.innerHeight;
   window.addEventListener('resize', onCamResize);
   layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
+  clearTimeout(_rsTimer); _lastLand=null;
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
@@ -1995,6 +2010,29 @@ function setFormat(fmt){
 document.querySelectorAll('#camratio .ratiobtn').forEach(b=>b.onclick=()=>setFormat(b.dataset.fmt));
 paintRatioSel();
 let camTick=null;
+function camConstraints(){
+  const resMap={max:{w:4096,h:2160}, '1080':{w:1920,h:1080}, '1440':{w:2560,h:1440}, '2160':{w:3840,h:2160}};
+  const userRes=CFG.res;
+  const R=_isAndroid && userRes==='max' ? resMap['1080'] : (resMap[userRes]||resMap.max);
+  return {video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false};
+}
+/* Bug do WebKit em PWA standalone: girando o aparelho com a câmera aberta, o stream continua
+   entregando frames na orientação ANTIGA — o preview aparece deitado/invertido. A correção
+   é reabrir o stream depois que a orientação assenta: o novo stream já vem na orientação certa. */
+let _rsBusy=false;
+async function _restartStream(){
+  if(_rsBusy || !S.stream || !camwrap.classList.contains('on')) return;
+  _rsBusy=true;
+  try{
+    S.stream.getTracks().forEach(t=>t.stop());
+    S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
+    video.srcObject=S.stream;
+    try{ await video.play() }catch(e){}
+    camGeom=null;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ layoutOverlays(); refreshTilt() }));
+  }catch(e){ /* stream não voltou: mantém o que tinha, próximo giro tenta de novo */ }
+  _rsBusy=false;
+}
 async function openCam(){
   // pede a permissão do giroscópio ANTES de qualquer "await" — no iPhone, a autorização de
   // toque do usuário expira rápido, e se pedirmos depois de aguardar a câmera abrir, o pedido
@@ -2008,10 +2046,7 @@ async function openCam(){
   document.querySelector('main').style.display='none';
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
   try{
-    const resMap={max:{w:4096,h:2160}, '1080':{w:1920,h:1080}, '1440':{w:2560,h:1440}, '2160':{w:3840,h:2160}};
-    const userRes=CFG.res;
-    const R=_isAndroid && userRes==='max' ? resMap['1080'] : (resMap[userRes]||resMap.max);
-    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false});
+    S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
     video.srcObject=S.stream;
     // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
     try{ await video.play() }catch(e){}
