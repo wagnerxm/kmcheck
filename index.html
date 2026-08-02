@@ -1843,7 +1843,7 @@ function refreshTilt(){
   applyTilt(t);
 }
 let _rotDebounce=0;
-function onScreenRotate(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ forcePortrait(); layoutOverlays(); refreshTilt() }) }
+function onCamResize(){ if(_fpBusy) return; cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(()=>{ forcePortrait(); layoutOverlays(); refreshTilt() }) }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
@@ -1894,17 +1894,13 @@ async function enableTiltSensor(){
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
 function enableScreenLock(){
-  window.addEventListener('orientationchange', onScreenRotate);
-  window.addEventListener('resize', onScreenRotate);
-  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', onScreenRotate);
-  layoutOverlays(); refreshTilt();
+  window.addEventListener('resize', onCamResize);
+  forcePortrait(); layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
-  window.removeEventListener('orientationchange', onScreenRotate);
-  window.removeEventListener('resize', onScreenRotate);
-  if(window.screen && screen.orientation) screen.orientation.removeEventListener('change', onScreenRotate);
+  window.removeEventListener('resize', onCamResize);
 }
-var _forcePortraitActive=false;
+var _forcePortraitActive=false, _fpBusy=false, _fpTimer=0;
 function forcePortrait(){
   const a=screenAngle();
   const h=document.documentElement;
@@ -1924,6 +1920,18 @@ function forcePortrait(){
     h.style.transform='rotate(90deg)'; h.style.transformOrigin='right top';
     h.style.top='0'; h.style.left='0';
   }
+}
+function _handleOrientation(){
+  var a=screenAngle(), h=document.documentElement;
+  if(a!==0 && a!==180){ h.style.opacity='0'; _fpBusy=true; }
+  forcePortrait();
+  clearTimeout(_fpTimer);
+  _fpTimer=setTimeout(function(){
+    forcePortrait();
+    _fpBusy=false;
+    if(camwrap.classList.contains('on')){ layoutOverlays(); refreshTilt(); }
+    h.style.opacity='1';
+  }, 200);
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
@@ -2716,19 +2724,8 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
-  var _fpTimer=0;
-  function _onOrientSwitch(){
-    var a=screenAngle(), h=document.documentElement;
-    if(a!==0 && a!==180){ h.style.opacity='0' }
-    forcePortrait();
-    clearTimeout(_fpTimer);
-    _fpTimer=setTimeout(function(){
-      forcePortrait();
-      h.style.opacity='1';
-    }, 180);
-  }
-  window.addEventListener('orientationchange', _onOrientSwitch);
-  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _onOrientSwitch);
+  window.addEventListener('orientationchange', _handleOrientation);
+  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _handleOrientation);
   window.addEventListener('resize', function(){ requestAnimationFrame(forcePortrait) });
   forcePortrait();
 })();
