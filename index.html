@@ -1941,7 +1941,10 @@ let camGeom=null; // cache: {u,pad,W,H} — recalculado quando a área útil mud
    centralizado no palco (o resto fica preto). ar = largura/altura da FOTO (retrato: <1). */
 function usefulRect(){
   const cw=camstage.clientWidth, ch=camstage.clientHeight;
-  const [rw,rh]=(CFG.format||'3:4').split(':').map(Number);
+  let [rw,rh]=(CFG.format||'3:4').split(':').map(Number);
+  // palco DEITADO (celular na horizontal, bloqueio desligado): o recorte acompanha o aparelho —
+  // a largura vira o lado maior. Em retrato mantém o formato em pé, como sempre.
+  if(cw>ch){ const t=rw; rw=rh; rh=t; }
   const ar=rw/rh;
   let w=cw, h=cw/ar;
   if(h>ch){ h=ch; w=ch*ar; }
@@ -2173,8 +2176,10 @@ document.getElementById('shutter').onclick=()=>{
      já vêm "em pé" em relação ao mundo, então nada de girar no canvas; e o recorte vira
      paisagem pra foto final sair idêntica à do modo com bloqueio ativado. */
   const compensated=(vw>vh)!==(camstage.clientWidth>camstage.clientHeight) && vw>vh;
+  const stageLand=camstage.clientWidth>camstage.clientHeight;
   let targetRatio=rw/rh;
-  if(compensated && Math.abs(S.tilt)===90) targetRatio=rh/rw;
+  // palco deitado -> foto deitada (mesma inversão da prévia); mantém o caso "compensado" antigo
+  if(stageLand || (compensated && Math.abs(S.tilt)===90)) targetRatio=rh/rw;
   const srcRatio=vw/vh;
   let sx=0, sy=0, sw=vw, sh=vh;
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
