@@ -1892,14 +1892,6 @@ async function enableTiltSensor(){
     window.addEventListener('devicemotion', onDeviceMotion);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
-var _pwaHintDone=false;
-function _pwaHint(){
-  if(_pwaHintDone) return;
-  var standalone=window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
-  if(standalone) return;
-  _pwaHintDone=true;
-  if(_isIOS) toast('Para travar orientação, instale o app: Compartilhar → Tela de Início',5000);
-}
 function enableScreenLock(){
   window.addEventListener('resize', onCamResize);
   layoutOverlays(); refreshTilt();
@@ -2031,7 +2023,6 @@ async function openCam(){
     camGeom=null;
     paintRatioSel();
     enableScreenLock();
-    _pwaHint();
     initFlashSupport();
     video.removeEventListener('loadedmetadata', layoutOverlays);
     video.removeEventListener('resize', layoutOverlays);
@@ -2699,6 +2690,7 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
 })();
 </script>
 </body>
