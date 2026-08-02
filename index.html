@@ -249,6 +249,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camwrap.on{display:flex;animation:camIn .2s ease-out}
 @keyframes camIn{from{opacity:0}to{opacity:1}}
 @keyframes camOut{from{opacity:1}to{opacity:0}}
+@media screen and (orientation:landscape){#camwrap.on:not(.fp-done){opacity:0!important}}
 /* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
    mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
 #camtopbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;box-sizing:content-box;
@@ -399,7 +400,6 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
-@media screen and (orientation:landscape){html:not(.fp-ready) body{opacity:0!important}}
 </style>
 </head>
 <body style="opacity:0">
@@ -1897,45 +1897,53 @@ async function enableTiltSensor(){
 function enableScreenLock(){
   window.addEventListener('resize', onCamResize);
   forcePortrait(); layoutOverlays(); refreshTilt();
+  camwrap.classList.add('fp-done');
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
+  camwrap.classList.remove('fp-done');
+  camwrap.style.width=''; camwrap.style.height='';
+  camwrap.style.transform=''; camwrap.style.transformOrigin='';
+  camwrap.style.top=''; camwrap.style.left='';
+  camwrap.style.right=''; camwrap.style.bottom='';
+  _forcePortraitActive=false;
 }
 var _forcePortraitActive=false, _fpBusy=false, _fpTimer=0;
 function forcePortrait(){
+  if(!camwrap.classList.contains('on')){ _forcePortraitActive=false; return; }
   const a=screenAngle();
-  const b=document.body;
-  if(a===0||a===180){
-    b.style.transform=''; b.style.width=''; b.style.height='';
-    b.style.position=''; b.style.top=''; b.style.left='';
-    b.style.overflow=''; b.style.transformOrigin='';
+  if(a===0||a===180||a!==90&&a!==270){
+    camwrap.style.width=''; camwrap.style.height='';
+    camwrap.style.transform=''; camwrap.style.transformOrigin='';
+    camwrap.style.top=''; camwrap.style.left='';
+    camwrap.style.right=''; camwrap.style.bottom='';
     _forcePortraitActive=false; return;
   }
   _forcePortraitActive=true;
   var iw=window.innerWidth||0, ih=window.innerHeight||0;
-  b.style.position='fixed'; b.style.overflow='hidden';
-  b.style.width=ih+'px'; b.style.height=iw+'px';
+  var pw=Math.min(iw,ih), ph=Math.max(iw,ih);
+  camwrap.style.width=pw+'px'; camwrap.style.height=ph+'px';
+  camwrap.style.right='auto'; camwrap.style.bottom='auto';
+  camwrap.style.transformOrigin='top left';
   if(a===90){
-    b.style.transform='rotate(-90deg)'; b.style.transformOrigin='left top';
-    b.style.top=ih+'px'; b.style.left='0';
-  } else if(a===270){
-    b.style.transform='rotate(90deg)'; b.style.transformOrigin='right top';
-    b.style.top='0'; b.style.left='0';
+    camwrap.style.transform='rotate(-90deg)';
+    camwrap.style.top=ih+'px'; camwrap.style.left='0';
+  } else {
+    camwrap.style.transform='rotate(90deg)';
+    camwrap.style.top='0'; camwrap.style.left=iw+'px';
   }
 }
 function _handleOrientation(){
-  var h=document.documentElement;
-  h.classList.remove('fp-ready');
-  document.body.style.opacity='0';
+  if(!camwrap.classList.contains('on')){ _forcePortraitActive=false; return; }
+  camwrap.classList.remove('fp-done');
   _fpBusy=true;
   forcePortrait();
   clearTimeout(_fpTimer);
   _fpTimer=setTimeout(function(){
     forcePortrait();
     _fpBusy=false;
-    h.classList.add('fp-ready');
-    if(camwrap.classList.contains('on')){ layoutOverlays(); refreshTilt(); }
-    document.body.style.opacity='1';
+    layoutOverlays(); refreshTilt();
+    camwrap.classList.add('fp-done');
   }, 300);
 }
 function disableTiltSensor(){
@@ -2731,9 +2739,6 @@ if(svcAdd) svcAdd.onclick=()=>{
   }
   window.addEventListener('orientationchange', _handleOrientation);
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _handleOrientation);
-  window.addEventListener('resize', function(){ requestAnimationFrame(forcePortrait) });
-  forcePortrait();
-  document.documentElement.classList.add('fp-ready');
 })();
 </script>
 </body>
