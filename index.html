@@ -399,7 +399,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
-@media screen and (orientation:landscape){html:not(.fp-ready){opacity:0!important}}
+@media screen and (orientation:landscape){html:not(.fp-ready) body{opacity:0!important}}
 </style>
 </head>
 <body style="opacity:0">
@@ -1904,29 +1904,29 @@ function disableScreenLock(){
 var _forcePortraitActive=false, _fpBusy=false, _fpTimer=0;
 function forcePortrait(){
   const a=screenAngle();
-  const h=document.documentElement;
+  const b=document.body;
   if(a===0||a===180){
-    h.style.transform=''; h.style.width=''; h.style.height='';
-    h.style.position=''; h.style.top=''; h.style.left='';
-    h.style.overflow=''; h.style.transformOrigin='';
+    b.style.transform=''; b.style.width=''; b.style.height='';
+    b.style.position=''; b.style.top=''; b.style.left='';
+    b.style.overflow=''; b.style.transformOrigin='';
     _forcePortraitActive=false; return;
   }
   _forcePortraitActive=true;
   var iw=window.innerWidth||0, ih=window.innerHeight||0;
-  h.style.position='fixed'; h.style.overflow='hidden';
-  h.style.width=ih+'px'; h.style.height=iw+'px';
+  b.style.position='fixed'; b.style.overflow='hidden';
+  b.style.width=ih+'px'; b.style.height=iw+'px';
   if(a===90){
-    h.style.transform='rotate(-90deg)'; h.style.transformOrigin='left top';
-    h.style.top=ih+'px'; h.style.left='0';
+    b.style.transform='rotate(-90deg)'; b.style.transformOrigin='left top';
+    b.style.top=ih+'px'; b.style.left='0';
   } else if(a===270){
-    h.style.transform='rotate(90deg)'; h.style.transformOrigin='right top';
-    h.style.top='0'; h.style.left='0';
+    b.style.transform='rotate(90deg)'; b.style.transformOrigin='right top';
+    b.style.top='0'; b.style.left='0';
   }
 }
 function _handleOrientation(){
   var h=document.documentElement;
   h.classList.remove('fp-ready');
-  h.style.opacity='0';
+  document.body.style.opacity='0';
   _fpBusy=true;
   forcePortrait();
   clearTimeout(_fpTimer);
@@ -1935,7 +1935,7 @@ function _handleOrientation(){
     _fpBusy=false;
     h.classList.add('fp-ready');
     if(camwrap.classList.contains('on')){ layoutOverlays(); refreshTilt(); }
-    h.style.opacity='1';
+    document.body.style.opacity='1';
   }, 300);
 }
 function disableTiltSensor(){
