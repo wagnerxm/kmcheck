@@ -1940,6 +1940,25 @@ function layoutOverlays(){
   const rot=document.getElementById('camrot');
   rot.style.left=R.left+'px'; rot.style.top=R.top+'px'; rot.style.right='auto'; rot.style.bottom='auto';
   rot.style.width=R.w+'px'; rot.style.height=R.h+'px';
+  /* iOS em PWA standalone com layout travado em retrato: ao deitar o aparelho (bloqueio de
+     orientação desativado), o WebKit passa a entregar os frames da câmera COMPENSADOS pra
+     paisagem enquanto a página continua retrato — só a imagem aparece deitada. Quando a
+     orientação dos frames discorda da orientação da página, contra-rotaciona SÓ o <video>
+     (pelo mesmo ângulo da legenda, S.tilt) pra realinhar a prévia com o mundo real. */
+  let vidRot=0;
+  if(video.videoWidth){
+    const frameLand=video.videoWidth>video.videoHeight, pageLand=cw>ch;
+    if(frameLand!==pageLand) vidRot=frameLand ? (S.tilt||0) : screenTilt();
+  }
+  if(vidRot){
+    video.style.left='50%'; video.style.top='50%'; video.style.right='auto'; video.style.bottom='auto';
+    video.style.width=R.h+'px'; video.style.height=R.w+'px';
+    video.style.transform='translate(-50%,-50%) rotate('+vidRot+'deg)';
+  } else {
+    video.style.left=''; video.style.top=''; video.style.right=''; video.style.bottom='';
+    video.style.width=''; video.style.height='';
+    video.style.transform='';
+  }
   const rotated=Math.abs(S.tilt)===90;
   rot.classList.toggle('mirror', S.facing==='user');
   const boxW=rotated?R.h:R.w, boxH=rotated?R.w:R.h;
@@ -2134,13 +2153,19 @@ document.getElementById('shutter').onclick=()=>{
   if(CFG.soundalert) playShutterSound();
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
-  const targetRatio=rw/rh, srcRatio=vw/vh;
+  /* frames COMPENSADOS (paisagem com página retrato — iOS standalone, bloqueio desativado):
+     já vêm "em pé" em relação ao mundo, então nada de girar no canvas; e o recorte vira
+     paisagem pra foto final sair idêntica à do modo com bloqueio ativado. */
+  const compensated=(vw>vh)!==(camstage.clientWidth>camstage.clientHeight) && vw>vh;
+  let targetRatio=rw/rh;
+  if(compensated && Math.abs(S.tilt)===90) targetRatio=rh/rw;
+  const srcRatio=vw/vh;
   let sx=0, sy=0, sw=vw, sh=vh;
   if(srcRatio>targetRatio){ sw=vh*targetRatio; sx=(vw-sw)/2 }
   else { sh=vw/targetRatio; sy=(vh-sh)/2 }
-  let rot=-(S.tilt||0);
+  let rot=compensated?0:-(S.tilt||0);
   const physLand=Math.abs(S.sensorTilt||0)===90;
-  if(S.facing==='user' && physLand) rot+=180;
+  if(!compensated && S.facing==='user' && physLand) rot+=180;
   if(rot>180) rot-=360;
   const turned=Math.abs(rot)===90;
   const W=turned?sh:sw, H=turned?sw:sh;
