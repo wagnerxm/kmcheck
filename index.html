@@ -244,13 +244,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
-#camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;overflow:hidden;
+#camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;flex-direction:column;
   bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
-#camwrap.on{display:block;animation:camIn .2s ease-out}
-#caminner{display:flex;flex-direction:column;width:100%;height:100%;position:relative}
+#camwrap.on{display:flex;animation:camIn .2s ease-out}
 @keyframes camIn{from{opacity:0}to{opacity:1}}
 @keyframes camOut{from{opacity:1}to{opacity:0}}
-@media screen and (orientation:landscape){#camwrap.on:not(.fp-done){opacity:0!important}}
 /* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
    mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
 #camtopbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;box-sizing:content-box;
@@ -776,7 +774,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
 <!-- câmera fullscreen -->
 <div id="camwrap">
-<div id="caminner">
   <!-- barra superior fina: Voltar + Trocar câmera, ambos no canto superior esquerdo -->
   <div id="camtopbar">
     <button id="camback" class="topbtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
@@ -812,7 +809,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="cbtn cbmini" id="cam-gallery" aria-label="Galeria"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 17 5-5 4.5 4.5L16 14l4 4"/></svg></button>
     </div>
   </div>
-</div>
 </div>
 
 <!-- diálogo: serviço + contrato (botão "i") -->
@@ -1065,7 +1061,7 @@ document.getElementById('header-back').onclick=()=>{
 };
 document.getElementById('search-toggle').onclick=()=>goToScreen('scr-query');
 document.getElementById('nav-cam').onclick=openCam;
-function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2600) }
+function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),ms||2600) }
 
 /* ================= lista de bases ================= */
 function renderBases(){
@@ -1811,7 +1807,7 @@ document.getElementById('logo-orig').onclick=()=>{
 document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-logo').close();
 
 /* ================= câmera ================= */
-const camwrap=document.getElementById('camwrap'), caminner=document.getElementById('caminner'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
+const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
 /* O VÍDEO nunca gira — fica estável na área útil (como câmera nativa). Só a INTERFACE
    (camada #camframe da legenda + os glifos dos botões) gira por 'uiTilt', acompanhando a
    orientação física do aparelho. S.tilt guarda esse ângulo (0, 90 ou -90). */
@@ -1834,7 +1830,6 @@ function screenAngle(){
   return 0;
 }
 function screenTilt(){
-  if(_forcePortraitActive) return 0;
   const a=screenAngle();
   if(a===90) return 90;
   if(a===270) return -90;
@@ -1847,15 +1842,7 @@ function refreshTilt(){
   applyTilt(t);
 }
 let _rotDebounce=0;
-function onCamResize(){
-  if(_fpBusy) return;
-  cancelAnimationFrame(_rotDebounce);
-  _rotDebounce=requestAnimationFrame(function(){
-    var landscape=window.innerWidth>window.innerHeight;
-    if(landscape!==_forcePortraitActive){ _handleOrientation(); return; }
-    layoutOverlays(); refreshTilt();
-  });
-}
+function onCamResize(){ cancelAnimationFrame(_rotDebounce); _rotDebounce=requestAnimationFrame(function(){ layoutOverlays(); refreshTilt() }) }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
    (mudando o pitch), o cálculo de rolagem baseado em gamma fica instável e a leitura escorrega
@@ -1888,10 +1875,6 @@ function onDeviceMotion(e){
   // Android segue a especificação e NÃO deve ser negado.
   const gx=_isIOS?-g.x:g.x, gy=_isIOS?-g.y:g.y;
   S.sensorTilt=tiltFromGravity(gx, gy, S.sensorTilt||0);
-  if(camwrap.classList.contains('on')&&!_fpBusy){
-    var landscape=window.innerWidth>window.innerHeight;
-    if(landscape!==_forcePortraitActive) _handleOrientation();
-  }
   refreshTilt();
 }
 let tiltGranted=false;   // lembra a autorização do sensor durante a sessão (iOS pede 1x)
@@ -1909,58 +1892,20 @@ async function enableTiltSensor(){
     window.addEventListener('devicemotion', onDeviceMotion);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
+var _pwaHintDone=false;
+function _pwaHint(){
+  if(_pwaHintDone) return;
+  var standalone=window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
+  if(standalone) return;
+  _pwaHintDone=true;
+  if(_isIOS) toast('Para travar orientação, instale o app: Compartilhar → Tela de Início',5000);
+}
 function enableScreenLock(){
   window.addEventListener('resize', onCamResize);
-  forcePortrait(); layoutOverlays(); refreshTilt();
-  camwrap.classList.add('fp-done');
+  layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
-  camwrap.classList.remove('fp-done');
-  caminner.style.width=''; caminner.style.height='';
-  caminner.style.transform=''; caminner.style.transformOrigin='';
-  caminner.style.position=''; caminner.style.left=''; caminner.style.top='';
-  _forcePortraitActive=false;
-}
-var _forcePortraitActive=false, _fpBusy=false, _fpTimer=0;
-function _clearFP(){
-  caminner.style.width=''; caminner.style.height='';
-  caminner.style.transform=''; caminner.style.transformOrigin='';
-  caminner.style.position=''; caminner.style.left=''; caminner.style.top='';
-  _forcePortraitActive=false;
-}
-function forcePortrait(){
-  if(!camwrap.classList.contains('on')){ _forcePortraitActive=false; return; }
-  var iw=window.innerWidth, ih=window.innerHeight;
-  if(iw<=ih){ _clearFP(); return; }
-  _forcePortraitActive=true;
-  caminner.style.position='absolute';
-  caminner.style.width=ih+'px'; caminner.style.height=iw+'px';
-  caminner.style.transformOrigin='top left';
-  var a=screenAngle();
-  if(a===270){
-    caminner.style.transform='rotate(90deg)';
-    caminner.style.left=iw+'px'; caminner.style.top='0';
-  } else {
-    caminner.style.transform='rotate(-90deg)';
-    caminner.style.left='0'; caminner.style.top=ih+'px';
-  }
-}
-function _handleOrientation(){
-  if(!camwrap.classList.contains('on')){ _forcePortraitActive=false; return; }
-  if(_fpBusy) return;
-  camwrap.classList.remove('fp-done');
-  camwrap.style.opacity='0';
-  _fpBusy=true;
-  forcePortrait();
-  clearTimeout(_fpTimer);
-  _fpTimer=setTimeout(function(){
-    forcePortrait();
-    _fpBusy=false;
-    layoutOverlays(); refreshTilt();
-    camwrap.classList.add('fp-done');
-    camwrap.style.opacity='';
-  }, 400);
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
@@ -2086,6 +2031,7 @@ async function openCam(){
     camGeom=null;
     paintRatioSel();
     enableScreenLock();
+    _pwaHint();
     initFlashSupport();
     video.removeEventListener('loadedmetadata', layoutOverlays);
     video.removeEventListener('resize', layoutOverlays);
@@ -2753,8 +2699,6 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
-  window.addEventListener('orientationchange', _handleOrientation);
-  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _handleOrientation);
 })();
 </script>
 </body>
