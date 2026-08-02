@@ -269,9 +269,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
-/* letreiro de DIAGNÓSTICO (temporário): mostra o que o iOS reporta pra depurar a orientação */
-#camdbg{position:absolute;left:6px;top:6px;z-index:9;font:10px/1.5 monospace;color:#0f0;
-  background:rgba(0,0,0,.55);padding:3px 6px;border-radius:4px;pointer-events:none;white-space:pre}
 #camflashfx.on{animation:camflash .18s ease-out}
 @keyframes camflash{0%{opacity:0}18%{opacity:1}40%{opacity:1}100%{opacity:0}}
 /* A prévia (#camvideo) NUNCA gira. #camrot é a ÁREA ÚTIL da câmera: o JS posiciona/dimensiona
@@ -330,6 +327,22 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
 #shutter::before{content:'';width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
+/* ===== PAISAGEM (bloqueio de orientação do iPhone DESLIGADO): quando a página gira para
+   paisagem, os controles vão para a LATERAL DIREITA como na câmera nativa do iPhone — barra
+   vertical à direita, Voltar/Trocar em coluna estreita à esquerda. O palco e o vídeo seguem a
+   mesma lógica de sempre; só o POSICIONAMENTO das barras muda. ===== */
+@media screen and (orientation:landscape){
+  #camwrap.on{flex-direction:row}
+  #camwrap.on #camstage{min-width:0}
+  #camwrap.on #camtopbar{flex-direction:column;height:auto;width:56px;justify-content:flex-start;
+    gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 0 8px 0}
+  #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
+  #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:1fr auto 1fr;
+    width:auto;height:100%;padding:14px calc(14px + env(safe-area-inset-right)) 14px 14px;
+    border-top:none;border-left:1px solid rgba(255,255,255,.10);
+    box-shadow:-8px 0 24px rgba(0,0,0,.3)}
+  #camwrap.on #cambar2 .cbside{flex-direction:column}
+}
 /* ---------- diálogo de serviço/contrato: listas roláveis em ordem alfabética ---------- */
 .pk-list{max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
   border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:0 12px}
@@ -792,7 +805,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <div id="liveplate"></div>
     </div>
     <div id="camflashfx"></div>
-    <div id="camdbg"></div>
   </div>
   <!-- seletor de proporção da foto (recorta a área útil na hora) -->
   <div id="camratio">
@@ -1909,34 +1921,14 @@ async function enableTiltSensor(){
     window.addEventListener('devicemotion', onDeviceMotion);
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
-let _dbgTick=null;
-function _paintDbg(){
-  const el=document.getElementById('camdbg'); if(!el) return;
-  let trk='?';
-  try{
-    const t=S.stream&&S.stream.getVideoTracks()[0];
-    const s=t&&t.getSettings?t.getSettings():null;
-    if(s) trk=(s.width||0)+'x'+(s.height||0);
-  }catch(e){}
-  el.textContent='v144'
-    +'\nvideo '+video.videoWidth+'x'+video.videoHeight
-    +'\ntrack '+trk
-    +'\njanela '+window.innerWidth+'x'+window.innerHeight
-    +'\nscreen '+screen.width+'x'+screen.height
-    +'\nori '+(typeof window.orientation==='number'?window.orientation:'-')
-    +' ang '+(window.screen&&screen.orientation?screen.orientation.angle:'-')
-    +'\ntilt '+S.tilt+' sens '+S.sensorTilt;
-}
 function enableScreenLock(){
   _lastLand=window.innerWidth>window.innerHeight;
   window.addEventListener('resize', onCamResize);
   layoutOverlays(); refreshTilt();
-  clearInterval(_dbgTick); _dbgTick=setInterval(_paintDbg, 500); _paintDbg();
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
   clearTimeout(_rsTimer); _lastLand=null;
-  clearInterval(_dbgTick); _dbgTick=null;
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
