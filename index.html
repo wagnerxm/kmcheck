@@ -331,22 +331,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
 #shutter::before{content:'';width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
-/* ===== PAISAGEM (bloqueio de orientação do iPhone DESLIGADO): quando a página gira para
-   paisagem, os controles vão para a LATERAL DIREITA como na câmera nativa do iPhone — barra
-   vertical à direita, Voltar/Trocar em coluna estreita à esquerda. O palco e o vídeo seguem a
-   mesma lógica de sempre; só o POSICIONAMENTO das barras muda. ===== */
-@media screen and (orientation:landscape){
-  #camwrap.on{flex-direction:row}
-  #camwrap.on #camstage{min-width:0}
-  #camwrap.on #camtopbar{flex-direction:column;height:auto;width:56px;justify-content:flex-start;
-    gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 0 8px 0}
-  #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
-  #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:1fr auto 1fr;
-    width:auto;height:100%;padding:14px calc(14px + env(safe-area-inset-right)) 14px 14px;
-    border-top:none;border-left:1px solid rgba(255,255,255,.10);
-    box-shadow:-8px 0 24px rgba(0,0,0,.3)}
-  #camwrap.on #cambar2 .cbside{flex-direction:column}
-}
 /* ---------- diálogo de serviço/contrato: listas roláveis em ordem alfabética ---------- */
 .pk-list{max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
   border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:0 12px}
@@ -1852,10 +1836,34 @@ function screenAngle(){
   return 0;
 }
 function screenTilt(){
+  // com a contra-rotação ativa (forcePortrait), o app já está "desgirado" de volta ao retrato,
+  // então para a interface a página é retrato -> screenTilt=0 e uiTilt = sensor (igual ao modo
+  // com bloqueio de orientação LIGADO). Sem contra-rotação, desconta o giro real da página.
+  if(_fp) return 0;
   const a=screenAngle();
   if(a===90) return 90;
   if(a===270) return -90;
   return 0;
+}
+/* CONTRA-ROTAÇÃO (forcePortrait): no iPhone com bloqueio de orientação DESLIGADO o iOS gira a
+   página para paisagem sozinho. Aqui giramos o #camwrap de volta para RETRATO (do tamanho da
+   página em pé) e o encaixamos na viewport deitada, para o app ficar EXATAMENTE como no modo
+   travado: barra fixa embaixo, só a legenda/logo girando. O instante do giro fica escondido pela
+   máscara preta (_maskRotation). Em Android/telas que respeitam o retrato, nada disto dispara. */
+let _fp=false;
+function forcePortrait(){
+  const iw=window.innerWidth, ih=window.innerHeight;
+  const need = camwrap.classList.contains('on') && iw>ih;
+  if(!need){
+    if(_fp){ camwrap.style.transform=''; camwrap.style.width=''; camwrap.style.height='';
+      camwrap.style.left=''; camwrap.style.top=''; camwrap.style.transformOrigin=''; }
+    _fp=false; return;
+  }
+  _fp=true;
+  camwrap.style.width=ih+'px'; camwrap.style.height=iw+'px';
+  camwrap.style.left='0'; camwrap.style.top='0'; camwrap.style.transformOrigin='0 0';
+  if(screenAngle()===90) camwrap.style.transform='translateX('+iw+'px) rotate(90deg)';
+  else                   camwrap.style.transform='translateY('+ih+'px) rotate(-90deg)';
 }
 function refreshTilt(){
   let t=(S.sensorTilt||0) - screenTilt();
@@ -1874,7 +1882,7 @@ function onCamResize(){
     const land=window.innerWidth>window.innerHeight;
     if(_wasLand!==null && land!==_wasLand) _maskRotation();  // página virou -> mascara o rearranjo
     _wasLand=land;
-    layoutOverlays(); refreshTilt();
+    forcePortrait(); layoutOverlays(); refreshTilt();
   });
 }
 /* Giro da PÁGINA (iPhone com bloqueio desligado): o iOS gira a tela e o layout precisa refluir.
@@ -1890,10 +1898,11 @@ function _maskRotation(){
   m.style.opacity='1';        // preto instantâneo
   clearTimeout(_maskTimer);
   _maskTimer=setTimeout(function(){
-    // assenta o layout de forma INSTANTÂNEA (sem transição) ainda escondido, depois revela
+    // assenta TUDO de forma INSTANTÂNEA (sem transição) ainda escondido, depois revela:
+    // contra-rotação para retrato + layout + inclinação da legenda
     const cf=document.getElementById('camframe');
     if(cf) cf.style.transition='none';
-    layoutOverlays(); refreshTilt();
+    forcePortrait(); layoutOverlays(); refreshTilt();
     if(cf){ void cf.offsetWidth; cf.style.transition=''; }
     m.style.transition='opacity .16s ease';
     m.style.opacity='0';
@@ -1951,12 +1960,15 @@ async function enableTiltSensor(){
 function enableScreenLock(){
   _wasLand=window.innerWidth>window.innerHeight;
   window.addEventListener('resize', onCamResize);
-  layoutOverlays(); refreshTilt();
+  forcePortrait(); layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
   clearTimeout(_maskTimer);
   const m=document.getElementById('cammask'); if(m){ m.style.transition='none'; m.style.opacity='0'; }
+  // desfaz a contra-rotação ao fechar a câmera
+  camwrap.style.transform=''; camwrap.style.width=''; camwrap.style.height='';
+  camwrap.style.left=''; camwrap.style.top=''; camwrap.style.transformOrigin=''; _fp=false;
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
