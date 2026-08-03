@@ -411,6 +411,18 @@ dialog{background:
 @keyframes dlgIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
 dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:bdIn .2s ease-out}
 @keyframes bdIn{from{opacity:0}to{opacity:1}}
+/* dica de bloqueio de orientação: estilo compacto de ALERTA do iOS (centralizado, curto) */
+#dlg-rotlock{max-width:min(82vw,290px);padding:0;overflow:hidden;text-align:center}
+#dlg-rotlock .rl-body{padding:22px 20px 18px}
+#dlg-rotlock .rl-icon{width:46px;height:46px;display:block;margin:0 auto 12px}
+#dlg-rotlock h3{margin:0 0 6px;font-size:17px;font-weight:700;font-family:var(--sans);color:var(--text)}
+#dlg-rotlock p{margin:0;font-size:13px;line-height:1.45;color:var(--mut)}
+#dlg-rotlock .rl-actions{display:flex;border-top:1px solid var(--glassborder)}
+#dlg-rotlock .rl-actions button{flex:1;background:none;border:none;padding:13px 8px;font-size:15px;
+  font-family:var(--sans);color:var(--gold);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#dlg-rotlock .rl-actions button:active{background:rgba(255,255,255,.06)}
+#dlg-rotlock .rl-actions button:first-child{border-right:1px solid var(--glassborder);color:var(--mut);font-weight:400}
+#dlg-rotlock .rl-actions button:last-child{font-weight:700}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
@@ -855,28 +867,19 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <!-- dica: aparece só quando detectamos que a página GIROU (prova de que o bloqueio de orientação
      do iPhone está DESLIGADO). Ensina a ativar o bloqueio para a câmera ficar sempre em pé. -->
 <dialog id="dlg-rotlock">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-    <svg viewBox="0 0 24 24" style="width:26px;height:26px;stroke:var(--gold);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto">
-      <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-    <h2 class="sec" style="margin:0">Deixe a tela sempre em pé</h2>
+  <div class="rl-body">
+    <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 22a14 14 0 0 1 23-10.4"/><path d="M31 6.5v5.5h-5.5"/>
+      <path d="M36 22a14 14 0 0 1-23 10.4"/><path d="M13 37.5v-5.5h5.5"/>
+      <rect x="16.5" y="21" width="11" height="8.6" rx="1.7"/>
+      <path d="M18.7 21v-2a3.3 3.3 0 0 1 6.6 0v2"/>
+    </svg>
+    <h3>Bloqueio de Orientação</h3>
+    <p>Toque no 🔒 da Central de Controle para a tela ficar sempre em pé.</p>
   </div>
-  <p style="color:var(--mut);font-size:14px;line-height:1.55;margin:6px 0 14px">
-    Seu celular está com o giro de tela ligado. Para a câmera ficar fixa em retrato (mais estável
-    para fotografar), ative o <b style="color:var(--text)">Bloqueio de Orientação Vertical</b>:
-  </p>
-  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:12px">
-      <span style="flex:0 0 26px;height:26px;border-radius:50%;background:var(--gold);color:#0d0f08;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">1</span>
-      <span style="font-size:14px;line-height:1.4">Deslize de <b>cima para baixo</b> a partir do <b>canto superior direito</b> (Central de Controle).</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <span style="flex:0 0 26px;height:26px;border-radius:50%;background:var(--gold);color:#0d0f08;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">2</span>
-      <span style="font-size:14px;line-height:1.4">Toque no ícone do <b>cadeado</b> 🔒 (Bloqueio de Orientação). Ele fica destacado quando ativo.</span>
-    </div>
-  </div>
-  <div class="row" style="gap:10px">
-    <button class="btn ghost" id="rotlock-never" style="flex:1">Não mostrar de novo</button>
-    <button class="btn gold" id="rotlock-ok" style="flex:1">Entendi</button>
+  <div class="rl-actions">
+    <button id="rotlock-never">Não mostrar</button>
+    <button id="rotlock-ok">Entendi</button>
   </div>
 </dialog>
 
