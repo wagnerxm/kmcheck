@@ -1857,19 +1857,21 @@ function refreshTilt(){
   if(Math.abs(t)===180) t=0;   // nunca vira a interface de cabeça para baixo
   applyTilt(t);
 }
-let _rotDebounce=0;
-let _lastLand=null, _rsTimer=0;
+let _rotDebounce=0, _wasLand=null;
+/* Ao girar o aparelho, o stream continua RODANDO (não reabrimos a câmera — reabrir dava um flash
+   preto visível). Só reposicionamos o vídeo/legenda na nova orientação: fica contínuo e limpo.
+   Quando a página VIRA (retrato<->paisagem), a legenda reflui INSTANTÂNEA (transição desligada só
+   nesse quadro), pra não aparecer o "ajeitando" por cima da animação de giro do próprio iOS. */
 function onCamResize(){
   cancelAnimationFrame(_rotDebounce);
   _rotDebounce=requestAnimationFrame(function(){
-    layoutOverlays(); refreshTilt();
     const land=window.innerWidth>window.innerHeight;
-    if(_lastLand!==null && land!==_lastLand){
-      // orientação virou com a câmera aberta: espera assentar e reabre o stream (bug WebKit)
-      clearTimeout(_rsTimer);
-      _rsTimer=setTimeout(_restartStream, 350);
-    }
-    _lastLand=land;
+    const flipped=(_wasLand!==null && land!==_wasLand);
+    _wasLand=land;
+    const cf=document.getElementById('camframe');
+    if(flipped && cf) cf.style.transition='none';
+    layoutOverlays(); refreshTilt();
+    if(flipped && cf){ void cf.offsetWidth; cf.style.transition=''; }
   });
 }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
@@ -1922,13 +1924,12 @@ async function enableTiltSensor(){
   }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
 }
 function enableScreenLock(){
-  _lastLand=window.innerWidth>window.innerHeight;
+  _wasLand=window.innerWidth>window.innerHeight;
   window.addEventListener('resize', onCamResize);
   layoutOverlays(); refreshTilt();
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
-  clearTimeout(_rsTimer); _lastLand=null;
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
@@ -2053,23 +2054,6 @@ function camConstraints(){
   const userRes=CFG.res;
   const R=_isAndroid && userRes==='max' ? resMap['1080'] : (resMap[userRes]||resMap.max);
   return {video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false};
-}
-/* Bug do WebKit em PWA standalone: girando o aparelho com a câmera aberta, o stream continua
-   entregando frames na orientação ANTIGA — o preview aparece deitado/invertido. A correção
-   é reabrir o stream depois que a orientação assenta: o novo stream já vem na orientação certa. */
-let _rsBusy=false;
-async function _restartStream(){
-  if(_rsBusy || !S.stream || !camwrap.classList.contains('on')) return;
-  _rsBusy=true;
-  try{
-    S.stream.getTracks().forEach(t=>t.stop());
-    S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
-    video.srcObject=S.stream;
-    try{ await video.play() }catch(e){}
-    camGeom=null;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ layoutOverlays(); refreshTilt() }));
-  }catch(e){ /* stream não voltou: mantém o que tinha, próximo giro tenta de novo */ }
-  _rsBusy=false;
 }
 async function openCam(){
   // pede a permissão do giroscópio ANTES de qualquer "await" — no iPhone, a autorização de
