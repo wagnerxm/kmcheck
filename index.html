@@ -2838,19 +2838,24 @@ if(svcAdd) svcAdd.onclick=()=>{
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _maskRotation);
   // mantém a TELA ACESA enquanto o app está aberto/visível (acompanhar o KM andando no carro sem
   // o celular apagar). iOS 16.4+ e Android suportam. O bloqueio é liberado quando o app sai de
-  // foco; reativamos ao voltar e a cada toque, caso o sistema o tenha soltado.
-  let _wakeLock=null;
+  // foco; reativamos ao voltar, a cada toque e por uma rede de segurança periódica.
+  let _wakeLock=null, _wakeToldOk=false;
   async function acquireWake(){
+    if(_wakeLock) return;
     try{
-      if('wakeLock' in navigator && document.visibilityState==='visible' && !_wakeLock){
+      if('wakeLock' in navigator && document.visibilityState==='visible'){
         _wakeLock=await navigator.wakeLock.request('screen');
         _wakeLock.addEventListener('release', function(){ _wakeLock=null; });
+        if(!_wakeToldOk){ _wakeToldOk=true; toast('🔆 Tela mantida acesa'); }
       }
     }catch(e){ /* não suportado ou negado — o app segue funcionando */ }
   }
   document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') acquireWake(); });
   document.addEventListener('pointerdown', acquireWake, {passive:true});
+  // o iOS às vezes ignora o 1º pedido logo na abertura — tenta de novo e mantém uma rede de segurança
   acquireWake();
+  setTimeout(acquireWake, 800); setTimeout(acquireWake, 2500);
+  setInterval(function(){ if(document.visibilityState==='visible') acquireWake(); }, 15000);
 })();
 </script>
 </body>
