@@ -852,6 +852,34 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
 </dialog>
 
+<!-- dica: aparece só quando detectamos que a página GIROU (prova de que o bloqueio de orientação
+     do iPhone está DESLIGADO). Ensina a ativar o bloqueio para a câmera ficar sempre em pé. -->
+<dialog id="dlg-rotlock">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <svg viewBox="0 0 24 24" style="width:26px;height:26px;stroke:var(--gold);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto">
+      <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    <h2 class="sec" style="margin:0">Deixe a tela sempre em pé</h2>
+  </div>
+  <p style="color:var(--mut);font-size:14px;line-height:1.55;margin:6px 0 14px">
+    Seu celular está com o giro de tela ligado. Para a câmera ficar fixa em retrato (mais estável
+    para fotografar), ative o <b style="color:var(--text)">Bloqueio de Orientação Vertical</b>:
+  </p>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="flex:0 0 26px;height:26px;border-radius:50%;background:var(--gold);color:#0d0f08;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">1</span>
+      <span style="font-size:14px;line-height:1.4">Deslize de <b>cima para baixo</b> a partir do <b>canto superior direito</b> (Central de Controle).</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="flex:0 0 26px;height:26px;border-radius:50%;background:var(--gold);color:#0d0f08;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">2</span>
+      <span style="font-size:14px;line-height:1.4">Toque no ícone do <b>cadeado</b> 🔒 (Bloqueio de Orientação). Ele fica destacado quando ativo.</span>
+    </div>
+  </div>
+  <div class="row" style="gap:10px">
+    <button class="btn ghost" id="rotlock-never" style="flex:1">Não mostrar de novo</button>
+    <button class="btn gold" id="rotlock-ok" style="flex:1">Entendi</button>
+  </div>
+</dialog>
+
 <!-- galeria de fotos registradas -->
 <div id="gallerywrap">
   <button id="gal-close" aria-label="Fechar galeria"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
@@ -1872,10 +1900,27 @@ function onCamResize(){
   cancelAnimationFrame(_rotDebounce);
   _rotDebounce=requestAnimationFrame(function(){
     const land=window.innerWidth>window.innerHeight;
-    if(_wasLand!==null && land!==_wasLand) _maskRotation();  // página virou -> mascara o rearranjo
+    if(_wasLand!==null && land!==_wasLand){
+      _maskRotation();                       // página virou -> mascara o rearranjo
+      if(land) maybeRotLockHint();           // virou para PAISAGEM = bloqueio está DESLIGADO -> dica
+    }
     _wasLand=land;
     layoutOverlays(); refreshTilt();
   });
+}
+/* A página só gira para paisagem quando o Bloqueio de Orientação do iPhone está DESLIGADO. Então
+   ESSE é o momento certo pra sugerir ativá-lo. Mostra uma vez por sessão (a menos que o usuário
+   tenha marcado "não mostrar de novo"). Se o bloqueio estiver ligado, a página nunca gira e a dica
+   nunca aparece. Não dá pra ATIVAR o bloqueio via web (é config do sistema iOS) — só orientar. */
+let _rotLockShown=false;
+function maybeRotLockHint(){
+  if(_rotLockShown) return;
+  if(localStorage.getItem('kc-rotlock-never')==='1') return;
+  const dlg=document.getElementById('dlg-rotlock');
+  if(!dlg || dlg.open) return;
+  _rotLockShown=true;
+  // espera a máscara do giro assentar pra não competir com o preto
+  setTimeout(function(){ try{ dlg.showModal() }catch(e){} }, 260);
 }
 /* Giro da PÁGINA (iPhone com bloqueio desligado): o iOS gira a tela e o layout precisa refluir.
    Para o usuário não ver esse rearranjo, cobrimos TUDO de preto INSTANTÂNEO assim que a rotação
@@ -2271,6 +2316,8 @@ function renderSvcGrid(){
 }
 document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); document.getElementById('dlg-svc').showModal() };
 document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
+document.getElementById('rotlock-ok').onclick=()=>document.getElementById('dlg-rotlock').close();
+document.getElementById('rotlock-never').onclick=()=>{ localStorage.setItem('kc-rotlock-never','1'); document.getElementById('dlg-rotlock').close(); };
 document.getElementById('svc-add2').onclick=()=>{
   const inp=document.getElementById('svc-new2');
   const s=inp.value.trim();
