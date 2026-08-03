@@ -270,6 +270,10 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
 #camflashfx.on{animation:camflash .18s ease-out}
+/* máscara de giro: cobre TODA a câmera (inclusive as barras) com preto durante a rotação da
+   página, para o rearranjo do layout acontecer por baixo, invisível. Aparece instantânea e some
+   com um fade curto quando já assentou. */
+#cammask{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:70}
 @keyframes camflash{0%{opacity:0}18%{opacity:1}40%{opacity:1}100%{opacity:0}}
 /* A prévia (#camvideo) NUNCA gira. #camrot é a ÁREA ÚTIL da câmera: o JS posiciona/dimensiona
    ele conforme o formato escolhido (1:1, 4:3, 16:9), centralizado no palco; o resto do palco
@@ -825,6 +829,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="cbtn cbmini" id="cam-gallery" aria-label="Galeria"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m4 17 5-5 4.5 4.5L16 14l4 4"/></svg></button>
     </div>
   </div>
+  <!-- máscara preta que cobre o rearranjo durante o giro da tela (fica invisível o "ajeitando") -->
+  <div id="cammask"></div>
 </div>
 
 <!-- diálogo: serviço + contrato (botão "i") -->
@@ -1866,13 +1872,32 @@ function onCamResize(){
   cancelAnimationFrame(_rotDebounce);
   _rotDebounce=requestAnimationFrame(function(){
     const land=window.innerWidth>window.innerHeight;
-    const flipped=(_wasLand!==null && land!==_wasLand);
+    if(_wasLand!==null && land!==_wasLand) _maskRotation();  // página virou -> mascara o rearranjo
     _wasLand=land;
-    const cf=document.getElementById('camframe');
-    if(flipped && cf) cf.style.transition='none';
     layoutOverlays(); refreshTilt();
-    if(flipped && cf){ void cf.offsetWidth; cf.style.transition=''; }
   });
+}
+/* Giro da PÁGINA (iPhone com bloqueio desligado): o iOS gira a tela e o layout precisa refluir.
+   Para o usuário não ver esse rearranjo, cobrimos TUDO de preto INSTANTÂNEO assim que a rotação
+   é detectada (orientationchange, ou a virada de dimensões no onCamResize) e revelamos com um fade
+   curto só quando o layout já assentou. Todo o reflow acontece por baixo do preto, invisível. */
+let _maskTimer=0;
+function _maskRotation(){
+  if(!camwrap.classList.contains('on')) return;
+  const m=document.getElementById('cammask');
+  if(!m) return;
+  m.style.transition='none';
+  m.style.opacity='1';        // preto instantâneo
+  clearTimeout(_maskTimer);
+  _maskTimer=setTimeout(function(){
+    // assenta o layout de forma INSTANTÂNEA (sem transição) ainda escondido, depois revela
+    const cf=document.getElementById('camframe');
+    if(cf) cf.style.transition='none';
+    layoutOverlays(); refreshTilt();
+    if(cf){ void cf.offsetWidth; cf.style.transition=''; }
+    m.style.transition='opacity .16s ease';
+    m.style.opacity='0';
+  }, 380);
 }
 /* Detecta retrato/paisagem pelo VETOR DE GRAVIDADE (acelerômetro), em vez de beta/gamma do
    giroscópio. beta/gamma sofrem de "gimbal lock": ao mirar a câmera pra baixo/pra cima
@@ -1930,6 +1955,8 @@ function enableScreenLock(){
 }
 function disableScreenLock(){
   window.removeEventListener('resize', onCamResize);
+  clearTimeout(_maskTimer);
+  const m=document.getElementById('cammask'); if(m){ m.style.transition='none'; m.style.opacity='0'; }
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
@@ -2756,6 +2783,9 @@ if(svcAdd) svcAdd.onclick=()=>{
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
   try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
+  // cobre o rearranjo do giro com preto (só age com a câmera aberta) — ver _maskRotation
+  window.addEventListener('orientationchange', _maskRotation);
+  if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _maskRotation);
 })();
 </script>
 </body>
