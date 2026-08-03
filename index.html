@@ -2836,6 +2836,21 @@ if(svcAdd) svcAdd.onclick=()=>{
   // cobre o rearranjo do giro com preto (só age com a câmera aberta) — ver _maskRotation
   window.addEventListener('orientationchange', _maskRotation);
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _maskRotation);
+  // mantém a TELA ACESA enquanto o app está aberto/visível (acompanhar o KM andando no carro sem
+  // o celular apagar). iOS 16.4+ e Android suportam. O bloqueio é liberado quando o app sai de
+  // foco; reativamos ao voltar e a cada toque, caso o sistema o tenha soltado.
+  let _wakeLock=null;
+  async function acquireWake(){
+    try{
+      if('wakeLock' in navigator && document.visibilityState==='visible' && !_wakeLock){
+        _wakeLock=await navigator.wakeLock.request('screen');
+        _wakeLock.addEventListener('release', function(){ _wakeLock=null; });
+      }
+    }catch(e){ /* não suportado ou negado — o app segue funcionando */ }
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') acquireWake(); });
+  document.addEventListener('pointerdown', acquireWake, {passive:true});
+  acquireWake();
 })();
 </script>
 </body>
