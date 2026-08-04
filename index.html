@@ -238,9 +238,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item:last-child{border-bottom:none}
 .ct-item .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--mut);flex:0 0 auto;transition:all .15s}
 .ct-item.sel .dot{border-color:var(--gold);background:var(--gold);box-shadow:0 0 10px rgba(183,217,45,.5), inset 0 0 0 3px #141719}
-.ct-item .num{font-family:var(--mono);font-size:15px;flex:1}
+.ct-item .num{font-family:var(--mono);font-size:15px;flex:1;color:var(--text)}
 .ct-item.sel .num{color:var(--gold2);font-weight:700}
 .ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer}
+/* listas de serviços/contratos: a partir de ~3 itens, rola DENTRO do cartão (igual ao cartão "i"
+   da câmera). O input "Adicionar" e a dica continuam fixos abaixo, fora da rolagem. */
+#svclist,#ctlist{max-height:168px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
