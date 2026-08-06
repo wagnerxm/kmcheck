@@ -1272,9 +1272,9 @@ document.getElementById('dl-go').onclick=async()=>{
   const brPad=br.replace(/\D/g,'').padStart(3,'0');
   let kmi=parseNum(document.getElementById('dl-kmi').value);
   let kmf=parseNum(document.getElementById('dl-kmf').value);
-  /* BR-110/RN: só até KM 128,60 — a partir daí é coincidente com a BR-226/RN e ter os dois
-     eixos sobrepostos confunde o findKm em campo */
-  if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.6;
+  /* BR-110/RN: só até KM 128,50 — a partir daí é coincidente com a BR-226/RN e ter os dois
+     eixos sobrepostos confunde o findKm em campo (128,50 puxa o último trecho até ~128,60) */
+  if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.5;
   btn.disabled=true; btn.textContent='Baixando…';
   try{
     const b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
