@@ -1270,8 +1270,11 @@ document.getElementById('dl-go').onclick=async()=>{
   const br=(brSel==='__outra'?document.getElementById('dl-br-custom').value.trim():brSel);
   if(!br){ toast('Selecione ou digite uma BR.'); return }
   const brPad=br.replace(/\D/g,'').padStart(3,'0');
-  const kmi=parseNum(document.getElementById('dl-kmi').value);
-  const kmf=parseNum(document.getElementById('dl-kmf').value);
+  let kmi=parseNum(document.getElementById('dl-kmi').value);
+  let kmf=parseNum(document.getElementById('dl-kmf').value);
+  /* BR-110/RN: só até KM 128,60 — a partir daí é coincidente com a BR-226/RN e ter os dois
+     eixos sobrepostos confunde o findKm em campo */
+  if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.6;
   btn.disabled=true; btn.textContent='Baixando…';
   try{
     const b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
