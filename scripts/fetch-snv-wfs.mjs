@@ -2,6 +2,15 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync, rmSync } from 'node
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { fetch, Agent, setGlobalDispatcher } from 'undici';
+
+// Timeouts generosos: o servidor do DNIT (gov) costuma ser lento pra conectar/responder. O
+// padrão do undici é só 10s pra conectar, o que derrubava a tarefa numa lentidão passageira.
+setGlobalDispatcher(new Agent({
+  connect: { timeout: 45000 },   // 45s pra estabelecer a conexão (era 10s)
+  headersTimeout: 120000,        // 2 min esperando a resposta começar
+  bodyTimeout: 600000,           // 10 min pra baixar o corpo (ZIP de ~68 MB)
+}));
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data', 'rodovias');
@@ -12,25 +21,58 @@ const SHP_FOLDER = 'SNV Bases Geométricas (2013-Atual) (SHP)';
 const AUTH = 'Basic ' + Buffer.from(SHARE_TOKEN + ':').toString('base64');
 const D2R = Math.PI / 180;
 
+// Repete a operação (conectar/baixar) várias vezes com espera crescente entre as tentativas.
+// Assim uma queda momentânea do DNIT não faz a tarefa inteira falhar. Erros de HTTP "definitivos"
+// (401/403/404) não são repetidos — só falhas de rede e erros de servidor (5xx/429).
+async function withRetry(fn, label, attempts = 6) {
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (e && e.noRetry) throw e;
+      lastErr = e;
+      const cause = (e && (e.cause && e.cause.code || e.code)) || (e && e.message) || e;
+      if (i < attempts) {
+        const waitMs = Math.min(60000, 5000 * 2 ** (i - 1)) + Math.floor(Math.random() * 2000);
+        console.log(`${label}: tentativa ${i}/${attempts} falhou (${cause}). Aguardando ${Math.round(waitMs / 1000)}s e tentando de novo...`);
+        await new Promise(res => setTimeout(res, waitMs));
+      }
+    }
+  }
+  throw new Error(`${label} falhou após ${attempts} tentativas: ${(lastErr && lastErr.message) || lastErr}`);
+}
+
+// Lança um erro que NÃO deve ser repetido (ex.: 404) — o retry desiste na hora.
+function httpError(status, what) {
+  const e = new Error(`${what}: HTTP ${status}`);
+  if (status < 500 && status !== 429) e.noRetry = true;   // 4xx (menos 429) = definitivo
+  return e;
+}
+
 async function listShpFiles() {
-  const url = `${WEBDAV}/${encodeURIComponent(SHP_FOLDER)}/`;
-  const r = await fetch(url, { method: 'PROPFIND', headers: { 'Authorization': AUTH, 'Depth': '1' } });
-  if (!r.ok) throw new Error('PROPFIND failed: HTTP ' + r.status);
-  const xml = await r.text();
-  return [...xml.matchAll(/<d:href>([^<]+)<\/d:href>/g)]
-    .map(m => decodeURIComponent(m[1].split('/').pop()))
-    .filter(f => /^\d{6}\w+\.zip$/i.test(f))
-    .sort();
+  return withRetry(async () => {
+    const url = `${WEBDAV}/${encodeURIComponent(SHP_FOLDER)}/`;
+    const r = await fetch(url, { method: 'PROPFIND', headers: { 'Authorization': AUTH, 'Depth': '1' }, signal: AbortSignal.timeout(120000) });
+    if (!r.ok) throw httpError(r.status, 'PROPFIND');
+    const xml = await r.text();
+    return [...xml.matchAll(/<d:href>([^<]+)<\/d:href>/g)]
+      .map(m => decodeURIComponent(m[1].split('/').pop()))
+      .filter(f => /^\d{6}\w+\.zip$/i.test(f))
+      .sort();
+  }, 'Listar pasta SHP');
 }
 
 async function downloadZip(filename, dest) {
-  const url = `${WEBDAV}/${encodeURIComponent(SHP_FOLDER)}/${encodeURIComponent(filename)}`;
-  console.log(`Downloading ${filename} (~68 MB)...`);
-  const r = await fetch(url, { headers: { 'Authorization': AUTH } });
-  if (!r.ok) throw new Error('Download failed: HTTP ' + r.status);
-  const buf = Buffer.from(await r.arrayBuffer());
-  writeFileSync(dest, buf);
-  console.log(`Downloaded ${(buf.length / 1024 / 1024).toFixed(1)} MB`);
+  await withRetry(async () => {
+    const url = `${WEBDAV}/${encodeURIComponent(SHP_FOLDER)}/${encodeURIComponent(filename)}`;
+    console.log(`Downloading ${filename} (~68 MB)...`);
+    const r = await fetch(url, { headers: { 'Authorization': AUTH }, signal: AbortSignal.timeout(600000) });
+    if (!r.ok) throw httpError(r.status, 'Download');
+    const buf = Buffer.from(await r.arrayBuffer());
+    writeFileSync(dest, buf);
+    console.log(`Downloaded ${(buf.length / 1024 / 1024).toFixed(1)} MB`);
+  }, 'Baixar ZIP');
 }
 
 function readDbf(buf) {

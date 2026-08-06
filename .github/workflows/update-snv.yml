@@ -18,6 +18,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install deps (undici)
+        run: npm install
+        working-directory: scripts
+
       - name: Fetch SNV shapefile from DNIT Cloud
         run: node scripts/fetch-snv-wfs.mjs
         timeout-minutes: 45

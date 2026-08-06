@@ -1,5 +1,8 @@
 {
   "name": "kmcheck-snv-sync",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "undici": "^6"
+  }
 }
