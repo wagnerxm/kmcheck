@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ControlMed</title>
+  <script>
+    // GitHub Pages SPA redirect
+    var base = '/kmcheck/controlmed';
+    var seg = window.location.pathname.replace(base, '').split('/').filter(Boolean);
+    var q = seg.length ? '?/' + seg.join('/') : '';
+    window.location.replace(base + '/' + q + window.location.hash);
+  </script>
+</head>
+<body></body>
+</html>
