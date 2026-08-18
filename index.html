@@ -2116,27 +2116,30 @@ function styleLivePlate(){
   const size=17*u*CFG.legsz, lh=size*1.22;
   const right = (CFG.legpos==='br'||CFG.legpos==='tr');
   const top   = (CFG.legpos==='tl'||CFG.legpos==='tr');
-  lp.style.left=pad+'px'; lp.style.right=pad+'px';
-  lp.style.top    = top ? pad+'px' : 'auto';
-  lp.style.bottom = top ? 'auto'   : pad+'px';
   lp.style.textAlign = right ? 'right' : 'left';
   lp.style.opacity = CFG.legop;
-  /* fundo semi-transparente na prévia ao vivo */
+  /* fundo semi-transparente — envolve só o texto, não a faixa toda */
   if(CFG.legbg){
     const bgAlpha = CFG.legbgop;
     const bgBase = CFG.legbgtone==='light' ? '255,255,255' : '0,0,0';
     lp.style.background = `rgba(${bgBase},${bgAlpha})`;
     lp.style.borderRadius = (size*0.35)+'px';
     lp.style.padding = (size*0.4)+'px';
-    /* posição precisa compensar o padding pra não deslocar */
+    lp.style.width = 'fit-content';
     const padComp = size*0.4;
-    lp.style.left=(pad-padComp)+'px'; lp.style.right=(pad-padComp)+'px';
+    /* posiciona do lado correto (esquerda ou direita) */
+    if(right){ lp.style.right=(pad-padComp)+'px'; lp.style.left='auto'; }
+    else     { lp.style.left=(pad-padComp)+'px';  lp.style.right='auto'; }
     if(top){ lp.style.top=(pad-padComp+size*0.18)+'px'; lp.style.bottom='auto'; }
-    else { lp.style.bottom=(pad-padComp)+'px'; lp.style.top='auto'; }
+    else   { lp.style.bottom=(pad-padComp)+'px';        lp.style.top='auto'; }
   } else {
     lp.style.background='none';
     lp.style.borderRadius='0';
     lp.style.padding='0';
+    lp.style.width = 'auto';
+    lp.style.left=pad+'px'; lp.style.right=pad+'px';
+    if(top){ lp.style.top=pad+'px'; lp.style.bottom='auto'; }
+    else   { lp.style.bottom=pad+'px'; lp.style.top='auto'; }
   }
   const isErr = lp.classList.contains('err');
   const bold=CFG.legbold?700:400, clr=CFG.legcolor;
