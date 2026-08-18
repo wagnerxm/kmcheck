@@ -2125,6 +2125,8 @@ function styleLivePlate(){
     lp.style.background = `rgba(${bgBase},${bgAlpha})`;
     lp.style.borderRadius = (size*0.35)+'px';
     lp.style.padding = (size*0.4)+'px';
+    /* -webkit- necessário para Safari/iOS ≤16 */
+    lp.style.width = '-webkit-fit-content';
     lp.style.width = 'fit-content';
     const padComp = size*0.4;
     /* posiciona do lado correto (esquerda ou direita) */
