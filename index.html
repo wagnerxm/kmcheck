@@ -727,6 +727,27 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </div>
     </div>
 
+    <h2 class="sec">Fundo da legenda</h2>
+    <div class="card listcard">
+      <div class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="18" height="8" rx="2" fill="currentColor" stroke="none" opacity=".35"/><path d="M5 17h10M5 14.5h14" stroke-width="1.6"/></svg></span>
+        <span class="ltext"><b>Fundo da legenda</b><i>Tarja atrás do texto</i></span>
+        <input type="checkbox" id="cfg-legbg">
+      </div>
+      <label class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" stroke="none"/></svg></span>
+        <span class="ltext"><b>Tom do fundo</b><i>Claro ou escuro</i></span>
+        <select id="cfg-legbgtone" class="lsel">
+          <option value="dark" selected>Escuro</option>
+          <option value="light">Claro</option>
+        </select>
+      </label>
+      <div class="listrow rangerow">
+        <span class="ltext"><b>Transparência</b><i><span id="lbl-legbgop">50</span>%</i></span>
+        <input type="range" id="cfg-legbgop" min="10" max="90" value="50">
+      </div>
+    </div>
+
     <h2 class="sec">Conteúdo</h2>
     <div class="card listcard">
       <div class="listrow">
@@ -970,6 +991,9 @@ const CFG = {
   get coordstyle(){ return localStorage.getItem('kc-coordstyle') || 'decimal' },
   get datestyle(){ return localStorage.getItem('kc-datestyle') || 'curta_hora' },
   get legbold(){ return ls('legbold', false) },
+  get legbg(){ return ls('legbg', false) },
+  get legbgtone(){ return localStorage.getItem('kc-legbgtone') || 'dark' },
+  get legbgop(){ return (+localStorage.getItem('kc-legbgop') || 50)/100 },
   get soundalert(){ return ls('soundalert', false) },
   get format(){ return localStorage.getItem('kc-format') || '3:4' }
 };
@@ -2097,6 +2121,23 @@ function styleLivePlate(){
   lp.style.bottom = top ? 'auto'   : pad+'px';
   lp.style.textAlign = right ? 'right' : 'left';
   lp.style.opacity = CFG.legop;
+  /* fundo semi-transparente na prévia ao vivo */
+  if(CFG.legbg){
+    const bgAlpha = CFG.legbgop;
+    const bgBase = CFG.legbgtone==='light' ? '255,255,255' : '0,0,0';
+    lp.style.background = `rgba(${bgBase},${bgAlpha})`;
+    lp.style.borderRadius = (size*0.35)+'px';
+    lp.style.padding = (size*0.4)+'px';
+    /* posição precisa compensar o padding pra não deslocar */
+    const padComp = size*0.4;
+    lp.style.left=(pad-padComp)+'px'; lp.style.right=(pad-padComp)+'px';
+    if(top){ lp.style.top=(pad-padComp+size*0.18)+'px'; lp.style.bottom='auto'; }
+    else { lp.style.bottom=(pad-padComp)+'px'; lp.style.top='auto'; }
+  } else {
+    lp.style.background='none';
+    lp.style.borderRadius='0';
+    lp.style.padding='0';
+  }
   const isErr = lp.classList.contains('err');
   const bold=CFG.legbold?700:400, clr=CFG.legcolor;
   for(let i=0;i<lp.children.length;i++){
@@ -2508,13 +2549,40 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   if(tiltDeg) ctx.rotate(tiltDeg*Math.PI/180);
   ctx.translate(-BW/2,-BH/2);   // a partir daqui o sistema é a caixa "em pé" BW×BH
   ctx.textBaseline='alphabetic';
-  ctx.globalAlpha=CFG.legop;
-  ctx.fillStyle=CFG.legcolor;
   ctx.font=`${CFG.legbold?700:400} ${size}px Arial, Helvetica, sans-serif`;
   const legRight = CFG.legpos==='br' || CFG.legpos==='tr';
   const legTop   = CFG.legpos==='tl' || CFG.legpos==='tr';
   ctx.textAlign = legRight ? 'right' : 'left';
   const lx = legRight ? BW-pad : pad;
+  /* fundo semi-transparente atrás do texto (claro ou escuro) */
+  if(CFG.legbg && L.length){
+    const bgPad=size*0.4;                        // folga em torno do texto
+    const blockH=lh*L.length+bgPad*2-lh+size;    // altura total do bloco
+    let maxTw=0;
+    for(let i=0;i<L.length;i++){ const tw=ctx.measureText(L[i]).width; if(tw>maxTw) maxTw=tw; }
+    const blockW=maxTw+bgPad*2;
+    const bx = legRight ? BW-pad-maxTw-bgPad : pad-bgPad;
+    const by = legTop ? pad-bgPad+size*0.18 : BH-pad-blockH+bgPad+lh-size;
+    ctx.save();
+    ctx.globalAlpha=CFG.legbgop;
+    ctx.fillStyle = CFG.legbgtone==='light' ? '#ffffff' : '#000000';
+    ctx.beginPath();
+    /* cantos arredondados */
+    const r=size*0.35;
+    ctx.moveTo(bx+r,by); ctx.lineTo(bx+blockW-r,by);
+    ctx.quadraticCurveTo(bx+blockW,by,bx+blockW,by+r);
+    ctx.lineTo(bx+blockW,by+blockH-r);
+    ctx.quadraticCurveTo(bx+blockW,by+blockH,bx+blockW-r,by+blockH);
+    ctx.lineTo(bx+r,by+blockH);
+    ctx.quadraticCurveTo(bx,by+blockH,bx,by+blockH-r);
+    ctx.lineTo(bx,by+r);
+    ctx.quadraticCurveTo(bx,by,bx+r,by);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha=CFG.legop;
+  ctx.fillStyle=CFG.legcolor;
   if(legTop){
     let y=pad+size;
     for(let i=0;i<L.length;i++){ ctx.fillText(L[i], lx, y); y+=lh }
@@ -2748,7 +2816,7 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 });
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
-for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-soundalert',false],
+for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-legbg',false],['cfg-soundalert',false],
                         ['cfg-estaca',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
@@ -2759,7 +2827,7 @@ for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['c
 /* listas suspensas */
 for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl-qual'],['cfg-format','format',null],
                              ['cfg-logopos','logopos',null],['cfg-legpos','legpos',null],['cfg-legcolor','legcolor',null],
-                             ['cfg-legsz','legsz',null],['cfg-coordstyle','coordstyle',null],['cfg-datestyle','datestyle',null]]){
+                             ['cfg-legsz','legsz',null],['cfg-legbgtone','legbgtone',null],['cfg-coordstyle','coordstyle',null],['cfg-datestyle','datestyle',null]]){
   const el=document.getElementById(id); if(!el) continue;
   const saved=localStorage.getItem('kc-'+key);
   if(saved!==null) el.value=saved;
@@ -2771,7 +2839,7 @@ for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl
 
 /* controles deslizantes (%) */
 for(const [id, key, lbl] of [['cfg-logoop','logoop','lbl-logoop'],['cfg-logosz','logosz','lbl-logosz'],
-                             ['cfg-legop','legop','lbl-legop']]){
+                             ['cfg-legop','legop','lbl-legop'],['cfg-legbgop','legbgop','lbl-legbgop']]){
   const el=document.getElementById(id); if(!el) continue;
   const saved=localStorage.getItem('kc-'+key);
   if(saved!==null) el.value=saved;
