@@ -1230,7 +1230,9 @@ const SNV_API='https://controlcheck.duckdns.org/api';
       if(v.status!=='concluido') continue;
       const o=document.createElement('option');
       o.value=v.id;
-      o.textContent=`${v.label} — ${v.total_rodovias} rodovias`;
+      /* Exibe só Mês/Ano a partir do id (ex: 202501a → Jan/2025) */
+      const _m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const mi=parseInt(v.id.slice(4,6),10); o.textContent=_m[mi-1]+'/'+v.id.slice(0,4);
       sel.appendChild(o);
     }
     /* Restaurar última seleção */
