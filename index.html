@@ -462,15 +462,21 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="card">
     <label class="f" style="margin-top:0">Baixar do SNV (DNIT)</label>
     <div class="row" style="align-items:flex-end">
-      <select id="dl-uf" style="flex:0 0 72px"></select>
-      <select id="dl-br" style="flex:1"></select>
+      <div style="flex:0 0 72px;display:flex;flex-direction:column">
+        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">UF</span>
+        <select id="dl-uf" style="width:100%"></select>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column">
+        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">Rodovia</span>
+        <select id="dl-br" style="width:100%"></select>
+      </div>
       <div style="flex:0 0 auto;display:flex;flex-direction:column">
         <span style="font-size:11px;color:var(--mut);margin-bottom:2px">SNV</span>
         <select id="dl-snv"><option value="">—</option></select>
       </div>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
-    <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px">Escolha a versão do SNV</p>
+    <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px;display:none"></p>
     <div class="row" style="margin-top:10px">
       <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
       <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
@@ -1227,7 +1233,7 @@ const SNV_API='https://controlcheck.duckdns.org/api';
     if(!r.ok) throw new Error('HTTP '+r.status);
     const vers=await r.json();
     const ok=vers.filter(v=>v.status==='concluido');
-    if(!ok.length){ hint.textContent='Nenhuma versão no servidor.'; return }
+    if(!ok.length){ hint.textContent='Nenhuma versão no servidor.'; hint.style.display=''; return }
     /* Substitui placeholder por versões reais (mais recente primeiro) */
     sel.innerHTML='';
     for(const v of ok){
@@ -1240,9 +1246,8 @@ const SNV_API='https://controlcheck.duckdns.org/api';
     const saved=localStorage.getItem('kc-dlsnv');
     if(saved && [...sel.options].some(o=>o.value===saved)) sel.value=saved;
     sel.onchange=()=>localStorage.setItem('kc-dlsnv', sel.value);
-    hint.textContent='Escolha a versão do SNV';
   }catch(e){
-    hint.textContent='Servidor indisponível — usando dados locais.';
+    hint.textContent='Servidor indisponível — usando dados locais.'; hint.style.display='';
   }
 })();
 
