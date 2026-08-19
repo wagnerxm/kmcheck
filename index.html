@@ -466,6 +466,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <select id="dl-br" style="flex:1"></select>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
+    <label class="f" style="margin-top:10px">Versão SNV</label>
+    <select id="dl-snv" style="width:100%">
+      <option value="">Mais recente (padrão)</option>
+    </select>
+    <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px"></p>
     <div class="row" style="margin-top:10px">
       <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
       <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
@@ -1207,6 +1212,37 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
   s.onchange=()=>{ localStorage.setItem('kc-dluf', s.value); renderBrOptions() };
   renderBrOptions();
 })();
+
+/* ================= seletor de versão SNV =================
+   Busca as versões disponíveis no servidor (API ControlCheck).
+   Se o servidor não responder, o seletor fica só com "Mais recente". */
+const SNV_API='https://controlcheck.duckdns.org/api';
+(async function loadSnvVersions(){
+  const sel=document.getElementById('dl-snv');
+  const hint=document.getElementById('dl-snv-hint');
+  try{
+    const r=await fetch(SNV_API+'/rodovias/versoes',{signal:AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const vers=await r.json();
+    if(!vers.length){ hint.textContent='Nenhuma versão processada no servidor ainda.'; return }
+    /* Monta opções: mais recente primeiro (já vem ordenado DESC do backend) */
+    for(const v of vers){
+      if(v.status!=='concluido') continue;
+      const o=document.createElement('option');
+      o.value=v.id;
+      o.textContent=`${v.label} — ${v.total_rodovias} rodovias`;
+      sel.appendChild(o);
+    }
+    /* Restaurar última seleção */
+    const saved=localStorage.getItem('kc-dlsnv');
+    if(saved && [...sel.options].some(o=>o.value===saved)) sel.value=saved;
+    sel.onchange=()=>localStorage.setItem('kc-dlsnv', sel.value);
+    hint.textContent=vers.filter(v=>v.status==='concluido').length+' versões disponíveis no servidor.';
+  }catch(e){
+    hint.textContent='Versões do servidor indisponíveis — usando dados locais.';
+  }
+})();
+
 const WFS_URL='https://geoservicos.inde.gov.br/geoserver/DNIT/wfs';
 async function findWfsLayer(){
   const r=await fetch(WFS_URL+'?service=WFS&request=GetCapabilities');
@@ -1239,6 +1275,33 @@ function wfsToBase(features, br, uf, snvLabel){
   return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvLabel}`,
     kmMin:km.length?km[0]:0, kmMax:km.length?km[km.length-1]:0, lat, lon, km};
 }
+/* ---- Baixar do servidor (API ControlCheck) — versão específica do SNV ---- */
+async function downloadRoadFromApi(br, uf, snvVer, onStatus, kmi, kmf){
+  if(onStatus) onStatus(`Baixando BR-${br}/${uf} (SNV ${snvVer}) do servidor…`);
+  const url=`${SNV_API}/rodovias/${br}/${uf}?snv=${encodeURIComponent(snvVer)}`;
+  const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
+  if(!r.ok){
+    if(r.status===404) throw new Error(`BR-${br}/${uf} não encontrada no SNV ${snvVer}`);
+    throw new Error('Servidor: HTTP '+r.status);
+  }
+  const d=await r.json();
+  /* O servidor retorna arrays planos de lat[], lon[], km[] — montar o objeto base */
+  let lat=d.lat||[], lon=d.lon||[], km=d.km||[];
+  /* Aplicar filtro de km se pedido */
+  if((kmi!=null||kmf!=null) && lat.length){
+    const fLat=[],fLon=[],fKm=[];
+    for(let i=0;i<km.length;i++){
+      if(kmi!=null && km[i]<kmi) continue;
+      if(kmf!=null && km[i]>kmf) continue;
+      fLat.push(lat[i]); fLon.push(lon[i]); fKm.push(km[i]);
+    }
+    lat=fLat; lon=fLon; km=fKm;
+  }
+  if(!lat.length) throw new Error(`Nenhum ponto na faixa de KM informada (SNV ${snvVer})`);
+  return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvVer}`,
+    kmMin:km[0], kmMax:km[km.length-1], lat, lon, km};
+}
+
 async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
   function filterFeats(feats){
     if(kmi==null&&kmf==null) return feats;
@@ -1299,17 +1362,26 @@ document.getElementById('dl-go').onclick=async()=>{
   /* BR-110/RN: só até KM 128,50 — a partir daí é coincidente com a BR-226/RN e ter os dois
      eixos sobrepostos confunde o findKm em campo (128,50 puxa o último trecho até ~128,60) */
   if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.5;
+  const snvVer=document.getElementById('dl-snv').value;
   btn.disabled=true; btn.textContent='Baixando…';
   try{
-    const b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
+    let b;
+    if(snvVer){
+      /* Versão específica selecionada → buscar do servidor (API) */
+      b=await downloadRoadFromApi(brPad, uf, snvVer, msg=>{ status.textContent=msg }, kmi, kmf);
+    } else {
+      /* "Mais recente" → fluxo padrão (JSON local → WFS GeoServer) */
+      b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
+    }
     await dbPut(b);
     S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
     renderBases();
     status.textContent=DL_DEFAULT_HINT;
+    toast(`✅ BR-${brPad}/${uf} baixada${snvVer?' (SNV '+snvVer+')':''}`);
 
   }catch(err){
     status.textContent=DL_DEFAULT_HINT;
-    toast('Falha: '+err.message+'. Alternativa: importe o shapefile do DNIT Cloud.');
+    toast('Falha: '+err.message+(snvVer?'':'. Alternativa: importe o shapefile do DNIT Cloud.'));
   }
   btn.disabled=false; btn.textContent='Baixar';
 };
