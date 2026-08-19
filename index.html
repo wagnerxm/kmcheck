@@ -445,7 +445,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <div id="app">
 <header class="top">
   <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
-  <img id="logo-home" src="logo-header.png" alt="KM Check" style="cursor:pointer"><span class="sub">VERS</span>
+  <img id="logo-home" src="logo-header.png" alt="KM Check" style="cursor:pointer"><span class="sub" id="app-ver">VERSÃO …</span>
   <button id="search-toggle" aria-label="Consulta">
     <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
   </button>
@@ -2991,6 +2991,10 @@ if(svcAdd) svcAdd.onclick=()=>{
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+  /* Exibe versão do cache no header (lê do sw.js) */
+  fetch('sw.js').then(r=>r.text()).then(t=>{
+    const m=t.match(/kmcheck-v(\d+)/); if(m) document.getElementById('app-ver').textContent='VERSÃO '+m[1];
+  }).catch(()=>{});
   try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   // cobre o rearranjo do giro com preto (só age com a câmera aberta) — ver _maskRotation
   window.addEventListener('orientationchange', _maskRotation);
