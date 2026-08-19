@@ -461,16 +461,16 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <h2 class="sec">Adicionar rodovia</h2>
   <div class="card">
     <label class="f" style="margin-top:0">Baixar do SNV (DNIT)</label>
-    <div class="row">
-      <select id="dl-uf" style="flex:0 0 92px"></select>
+    <div class="row" style="align-items:flex-end">
+      <select id="dl-uf" style="flex:0 0 72px"></select>
       <select id="dl-br" style="flex:1"></select>
+      <div style="flex:0 0 auto;display:flex;flex-direction:column">
+        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">SNV</span>
+        <select id="dl-snv"><option value="">—</option></select>
+      </div>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
-    <label class="f" style="margin-top:10px">Versão SNV</label>
-    <select id="dl-snv" style="width:100%">
-      <option value="">Mais recente (padrão)</option>
-    </select>
-    <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px"></p>
+    <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px">Escolha a versão do SNV</p>
     <div class="row" style="margin-top:10px">
       <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
       <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
@@ -1220,28 +1220,29 @@ const SNV_API='https://controlcheck.duckdns.org/api';
 (async function loadSnvVersions(){
   const sel=document.getElementById('dl-snv');
   const hint=document.getElementById('dl-snv-hint');
+  const _m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const fmtId=id=>{ const mi=parseInt(id.slice(4,6),10); return _m[mi-1]+'/'+id.slice(0,4); };
   try{
     const r=await fetch(SNV_API+'/rodovias/versoes',{signal:AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const vers=await r.json();
-    if(!vers.length){ hint.textContent='Nenhuma versão processada no servidor ainda.'; return }
-    /* Monta opções: mais recente primeiro (já vem ordenado DESC do backend) */
-    for(const v of vers){
-      if(v.status!=='concluido') continue;
+    const ok=vers.filter(v=>v.status==='concluido');
+    if(!ok.length){ hint.textContent='Nenhuma versão no servidor.'; return }
+    /* Substitui placeholder por versões reais (mais recente primeiro) */
+    sel.innerHTML='';
+    for(const v of ok){
       const o=document.createElement('option');
       o.value=v.id;
-      /* Exibe só Mês/Ano a partir do id (ex: 202501a → Jan/2025) */
-      const _m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-      const mi=parseInt(v.id.slice(4,6),10); o.textContent=_m[mi-1]+'/'+v.id.slice(0,4);
+      o.textContent=fmtId(v.id);
       sel.appendChild(o);
     }
     /* Restaurar última seleção */
     const saved=localStorage.getItem('kc-dlsnv');
     if(saved && [...sel.options].some(o=>o.value===saved)) sel.value=saved;
     sel.onchange=()=>localStorage.setItem('kc-dlsnv', sel.value);
-    hint.textContent=vers.filter(v=>v.status==='concluido').length+' versões disponíveis no servidor.';
+    hint.textContent='Escolha a versão do SNV';
   }catch(e){
-    hint.textContent='Versões do servidor indisponíveis — usando dados locais.';
+    hint.textContent='Servidor indisponível — usando dados locais.';
   }
 })();
 
