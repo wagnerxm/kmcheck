@@ -1688,7 +1688,7 @@ function startGps(){
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
     paintGps();
   }, err=>{
-    document.getElementById('gpsline').textContent='GPS indisponível: '+err.message;
+    const gl=document.getElementById('gpsline'); if(gl) gl.textContent='GPS indisponível: '+err.message;
     paintGps();
   }, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
 }
