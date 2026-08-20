@@ -474,6 +474,17 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span style="font-size:11px;color:var(--mut);margin-bottom:2px">SNV</span>
         <select id="dl-snv"><option value="">—</option></select>
       </div>
+      <div style="flex:0 0 50px;display:flex;flex-direction:column">
+        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">Cód.</span>
+        <select id="dl-tipo">
+          <option value="B">B</option>
+          <option value="A">A</option>
+          <option value="N">N</option>
+          <option value="C">C</option>
+          <option value="U">U</option>
+          <option value="V">V</option>
+        </select>
+      </div>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
     <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px;display:none"></p>
@@ -1284,9 +1295,10 @@ function wfsToBase(features, br, uf, snvLabel){
     kmMin:km.length?km[0]:0, kmMax:km.length?km[km.length-1]:0, lat, lon, km};
 }
 /* ---- Baixar do servidor (API ControlCheck) — versão específica do SNV ---- */
-async function downloadRoadFromApi(br, uf, snvVer, onStatus, kmi, kmf){
-  if(onStatus) onStatus(`Baixando BR-${br}/${uf} (SNV ${snvVer}) do servidor…`);
-  const url=`${SNV_API}/rodovias/${br}/${uf}?snv=${encodeURIComponent(snvVer)}`;
+async function downloadRoadFromApi(br, uf, snvVer, onStatus, kmi, kmf, tipoTr){
+  const t=tipoTr||'B';
+  if(onStatus) onStatus(`Baixando BR-${br}/${uf} (${t}) SNV ${snvVer}…`);
+  const url=`${SNV_API}/rodovias/${br}/${uf}?snv=${encodeURIComponent(snvVer)}&tipo=${t}`;
   const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
   if(!r.ok){
     if(r.status===404) throw new Error(`BR-${br}/${uf} não encontrada no SNV ${snvVer}`);
@@ -1306,7 +1318,8 @@ async function downloadRoadFromApi(br, uf, snvVer, onStatus, kmi, kmf){
     lat=fLat; lon=fLon; km=fKm;
   }
   if(!lat.length) throw new Error(`Nenhum ponto na faixa de KM informada (SNV ${snvVer})`);
-  return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvVer}`,
+  const suffix=t!=='B'?`(${t})`:'';
+  return {id:`BR-${br}/${uf}${suffix}`, br:`BR-${br}`, uf, fonte:`SNV ${snvVer} ${t}`.trim(),
     kmMin:km[0], kmMax:km[km.length-1], lat, lon, km};
 }
 
@@ -1371,12 +1384,13 @@ document.getElementById('dl-go').onclick=async()=>{
      eixos sobrepostos confunde o findKm em campo (128,50 puxa o último trecho até ~128,60) */
   if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.5;
   const snvVer=document.getElementById('dl-snv').value;
+  const tipoTr=document.getElementById('dl-tipo').value;
   btn.disabled=true; btn.textContent='Baixando…';
   try{
     let b;
     if(snvVer){
       /* Versão específica selecionada → buscar do servidor (API) */
-      b=await downloadRoadFromApi(brPad, uf, snvVer, msg=>{ status.textContent=msg }, kmi, kmf);
+      b=await downloadRoadFromApi(brPad, uf, snvVer, msg=>{ status.textContent=msg }, kmi, kmf, tipoTr);
     } else {
       /* "Mais recente" → fluxo padrão (JSON local → WFS GeoServer) */
       b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
@@ -1385,7 +1399,8 @@ document.getElementById('dl-go').onclick=async()=>{
     S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
     renderBases();
     status.textContent=DL_DEFAULT_HINT;
-    toast(`✅ BR-${brPad}/${uf} baixada${snvVer?' (SNV '+snvVer+')':''}`);
+    const tipoLabel=tipoTr!=='B'?' tipo '+tipoTr:'';
+    toast(`✅ BR-${brPad}/${uf}${tipoLabel} baixada${snvVer?' (SNV '+snvVer+')':''}`);
 
   }catch(err){
     status.textContent=DL_DEFAULT_HINT;
