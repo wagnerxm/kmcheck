@@ -1,4 +1,4 @@
-const CACHE = 'kmcheck-v170';
+const CACHE = 'kmcheck-v171';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -18,7 +18,8 @@ self.addEventListener('fetch', e => {
                 url.pathname.replace(/\/$/, '/').endsWith('index.html') ||
                 url.pathname.endsWith('/');
   const isData = url.pathname.includes('/data/rodovias/');
-  if (isDoc || isData) {
+  const isApi = url.hostname !== self.location.hostname; // APIs externas (controlcheck, etc.)
+  if (isDoc || isData || isApi) {
     e.respondWith(
       fetch(e.request).then(resp => {
         const copy = resp.clone();
