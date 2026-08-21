@@ -461,38 +461,35 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <h2 class="sec">Adicionar rodovia</h2>
   <div class="card">
     <label class="f" style="margin-top:0">Baixar do SNV (DNIT)</label>
-    <div class="row" style="align-items:flex-end">
-      <div style="flex:0 0 72px;display:flex;flex-direction:column">
-        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">UF</span>
-        <select id="dl-uf" style="width:100%"></select>
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column">
-        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">Rodovia</span>
-        <select id="dl-br" style="width:100%"></select>
-      </div>
-      <div style="flex:0 0 auto;display:flex;flex-direction:column">
-        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">SNV</span>
-        <select id="dl-snv"><option value="">—</option></select>
-      </div>
-      <div style="flex:0 0 50px;display:flex;flex-direction:column">
-        <span style="font-size:11px;color:var(--mut);margin-bottom:2px">Cód.</span>
-        <select id="dl-tipo">
+    <!-- Linha 1: UF + Rodovia -->
+    <div style="display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:end">
+      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">UF</span>
+        <select id="dl-uf" style="width:100%"></select></div>
+      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Rodovia</span>
+        <select id="dl-br" style="width:100%"></select></div>
+    </div>
+    <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
+    <!-- Linha 2: SNV + Código -->
+    <div style="display:grid;grid-template-columns:1fr 60px;gap:10px;align-items:end;margin-top:10px">
+      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Versão SNV</span>
+        <select id="dl-snv" style="width:100%"><option value="">—</option></select></div>
+      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Código</span>
+        <select id="dl-tipo" style="width:100%">
           <option value="B">B</option>
           <option value="A">A</option>
           <option value="N">N</option>
           <option value="C">C</option>
           <option value="U">U</option>
           <option value="V">V</option>
-        </select>
-      </div>
+        </select></div>
     </div>
-    <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
     <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px;display:none"></p>
-    <div class="row" style="margin-top:10px">
+    <!-- Linha 3: Km inicial + Km final -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
       <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
       <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
     </div>
-    <button class="btn gold" id="dl-go" style="margin-top:12px">Baixar</button>
+    <button class="btn gold" id="dl-go" style="margin-top:14px">Baixar rodovia</button>
     <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.</p>
   </div>
   <h2 class="sec">Importe um arquivo</h2>
