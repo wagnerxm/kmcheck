@@ -1,0 +1,10 @@
+# Banco de dados local (criado automaticamente)
+admin.db
+admin.db-wal
+admin.db-shm
+
+# Configuração com credenciais
+.env
+
+# Dependências
+node_modules/

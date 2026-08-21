@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KM Check — Admin</title>
+<style>
+/* ── Reset & Tokens ── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --surface3:#30363d;
+  --border:#30363d; --border2:#484f58;
+  --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --blue:#58a6ff; --blue2:#1f6feb; --green:#3fb950; --green2:#238636;
+  --yellow:#d29922; --red:#f85149; --purple:#bc8cff;
+  --radius:8px; --radius-sm:6px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,sans-serif;
+  font-size:14px; color:var(--text); background:var(--bg);
+}
+body{min-height:100vh;background:var(--bg)}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+button{cursor:pointer;font:inherit;border:none;border-radius:var(--radius-sm);
+  padding:8px 16px;transition:background .15s,opacity .15s}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select{font:inherit;color:var(--text);background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;
+  outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--blue)}
+::placeholder{color:var(--text3)}
+
+/* ── Login ── */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:radial-gradient(ellipse at 50% 0%,#161b2280,transparent 70%)}
+.login-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:40px;width:100%;max-width:380px;text-align:center}
+.login-card h1{font-size:22px;margin-bottom:4px;font-weight:600}
+.login-card .sub{color:var(--text2);font-size:13px;margin-bottom:28px}
+.login-card .logo{font-size:40px;margin-bottom:16px;display:block}
+.login-card .field{text-align:left;margin-bottom:16px}
+.login-card .field label{display:block;font-size:12px;color:var(--text2);
+  margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.login-card .field input{width:100%;padding:10px 12px}
+.login-card .btn-login{width:100%;padding:11px;background:var(--blue2);color:#fff;
+  font-weight:600;font-size:15px;margin-top:8px}
+.login-card .btn-login:hover{background:var(--blue)}
+.login-card .error{color:var(--red);font-size:13px;margin-top:12px;min-height:20px}
+
+/* ── Dashboard ── */
+#dash{display:none}
+.topbar{position:sticky;top:0;z-index:100;background:var(--surface);
+  border-bottom:1px solid var(--border);padding:0 24px;
+  display:flex;align-items:center;height:56px;gap:24px}
+.topbar .brand{font-size:16px;font-weight:700;white-space:nowrap;
+  display:flex;align-items:center;gap:8px}
+.topbar .brand span{color:var(--blue)}
+.topbar nav{display:flex;gap:4px;flex:1}
+.topbar nav button{background:transparent;color:var(--text2);padding:8px 16px;
+  font-weight:500;border-radius:var(--radius-sm);position:relative}
+.topbar nav button:hover{color:var(--text);background:var(--surface2)}
+.topbar nav button.active{color:var(--text);background:var(--surface2)}
+.topbar nav button.active::after{content:'';position:absolute;bottom:-1px;left:16px;
+  right:16px;height:2px;background:var(--blue);border-radius:2px 2px 0 0}
+.topbar .right{display:flex;align-items:center;gap:12px;margin-left:auto}
+.topbar .status{font-size:12px;color:var(--green);display:flex;align-items:center;gap:4px}
+.topbar .status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.btn-logout{background:var(--surface2);color:var(--text2);padding:6px 12px;font-size:13px}
+.btn-logout:hover{background:var(--surface3);color:var(--text)}
+.main{padding:24px;max-width:1400px;margin:0 auto}
+
+/* ── Stat Cards ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.stat .label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;
+  font-weight:500;margin-bottom:8px}
+.stat .value{font-size:28px;font-weight:700;line-height:1}
+.stat .value.blue{color:var(--blue)}
+.stat .value.green{color:var(--green)}
+.stat .value.yellow{color:var(--yellow)}
+.stat .value.red{color:var(--red)}
+.stat .value.purple{color:var(--purple)}
+.stat .detail{font-size:12px;color:var(--text3);margin-top:6px}
+
+/* ── Toolbar / Filtros ── */
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar select,.toolbar input[type=text]{padding:7px 10px;font-size:13px}
+.toolbar input[type=text]{min-width:200px}
+.btn-primary{background:var(--blue2);color:#fff;font-weight:500;font-size:13px}
+.btn-primary:hover{background:var(--blue)}
+.btn-secondary{background:var(--surface2);color:var(--text2);font-size:13px}
+.btn-secondary:hover{background:var(--surface3);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.spacer{flex:1}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-green{background:var(--green2);color:#fff}
+.tag-red{background:#da3633;color:#fff}
+.tag-yellow{background:#9e6a03;color:#fff}
+.tag-blue{background:var(--blue2);color:#fff}
+
+/* ── Tabela ── */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--surface2);position:sticky;top:0}
+th{text-align:left;padding:10px 14px;font-weight:600;color:var(--text2);font-size:12px;
+  text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;
+  user-select:none;border-bottom:1px solid var(--border)}
+th:hover{color:var(--text)}
+th .sort{margin-left:4px;opacity:.3;font-size:10px}
+th.sorted .sort{opacity:1;color:var(--blue)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+.mono{font-family:'SF Mono',SFMono-Regular,ui-monospace,Menlo,monospace;font-size:12px}
+.muted{color:var(--text2)}
+.empty{text-align:center;padding:40px;color:var(--text3)}
+
+/* ── Tab panels ── */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast-msg{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 20px;font-size:13px;box-shadow:0 8px 24px #00000060;
+  animation:slideIn .3s ease;display:flex;align-items:center;gap:8px}
+.toast-msg.success{border-left:3px solid var(--green)}
+.toast-msg.error{border-left:3px solid var(--red)}
+.toast-msg.info{border-left:3px solid var(--blue)}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);
+  border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{display:flex;align-items:center;justify-content:center;
+  padding:60px;color:var(--text2);gap:12px;font-size:14px}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .topbar{padding:0 12px;gap:12px}
+  .topbar .brand .hide-mobile{display:none}
+  .topbar nav button{padding:8px 10px;font-size:13px}
+  .main{padding:16px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{padding:14px}
+  .stat .value{font-size:22px}
+  .toolbar{gap:8px}
+  .toolbar input[type=text]{min-width:140px}
+}
+@media(max-width:480px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stat .value{font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ LOGIN ════════════════════ -->
+<div id="login">
+  <div class="login-card">
+    <span class="logo">📡</span>
+    <h1>KM Check</h1>
+    <div class="sub">Painel Administrativo</div>
+    <div class="field">
+      <label>Usuário</label>
+      <input type="text" id="lg-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="lg-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="lg-btn">Entrar</button>
+    <div class="error" id="lg-err"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ DASHBOARD ════════════════════ -->
+<div id="dash">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="brand">📡 <span>KM Check</span> <span class="hide-mobile" style="color:var(--text2);font-weight:400">Admin</span></div>
+    <nav>
+      <button class="active" data-tab="devices">Dispositivos</button>
+      <button data-tab="roads">Cobertura SNV</button>
+    </nav>
+    <div class="right">
+      <div class="status" id="conn-status">Online</div>
+      <button class="btn-logout" id="btn-logout">Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ──────── TAB: Dispositivos ──────── -->
+    <div class="tab-panel active" id="tab-devices">
+      <div class="stats" id="dev-stats">
+        <div class="stat"><div class="label">Total Dispositivos</div><div class="value blue" id="ds-total">—</div><div class="detail" id="ds-detail"></div></div>
+        <div class="stat"><div class="label">iOS (iPhone/iPad)</div><div class="value" id="ds-ios">—</div></div>
+        <div class="stat"><div class="label">Android</div><div class="value green" id="ds-android">—</div></div>
+        <div class="stat"><div class="label">Ativos hoje</div><div class="value yellow" id="ds-today">—</div><div class="detail" id="ds-week"></div></div>
+        <div class="stat"><div class="label">Versão mais usada</div><div class="value purple" id="ds-version">—</div></div>
+      </div>
+
+      <div class="toolbar">
+        <select id="dev-filter-plat">
+          <option value="">Todas plataformas</option>
+          <option value="iOS">iOS</option>
+          <option value="Android">Android</option>
+          <option value="Windows">Windows</option>
+          <option value="Mac">Mac</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <input type="text" id="dev-search" placeholder="Buscar device ID, versão…">
+        <span class="spacer"></span>
+        <button class="btn-secondary btn-sm" id="dev-refresh">↻ Atualizar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-col="device_id">Device ID <span class="sort">▲</span></th>
+              <th data-col="platform">Plataforma <span class="sort">▲</span></th>
+              <th data-col="app_version">Versão <span class="sort">▲</span></th>
+              <th data-col="screen">Tela <span class="sort">▲</span></th>
+              <th data-col="ip_address">IP <span class="sort">▲</span></th>
+              <th data-col="last_ping">Último Ping <span class="sort">▲</span></th>
+              <th data-col="first_seen">1º Acesso <span class="sort">▲</span></th>
+              <th data-col="ping_count">Pings <span class="sort">▲</span></th>
+            </tr>
+          </thead>
+          <tbody id="dev-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ──────── TAB: Cobertura SNV ──────── -->
+    <div class="tab-panel" id="tab-roads">
+      <div class="stats" id="road-stats">
+        <div class="stat"><div class="label">Disponíveis no KM Check</div><div class="value green" id="rs-avail">—</div><div class="detail" id="rs-snv"></div></div>
+        <div class="stat"><div class="label">Total no DNIT</div><div class="value blue" id="rs-dnit">—</div></div>
+        <div class="stat"><div class="label">Cobertura</div><div class="value yellow" id="rs-pct">—</div></div>
+        <div class="stat"><div class="label">Faltando</div><div class="value red" id="rs-missing">—</div></div>
+      </div>
+
+      <div class="toolbar">
+        <select id="road-filter-uf">
+          <option value="">Todas UFs</option>
+        </select>
+        <select id="road-filter-status">
+          <option value="">Todos</option>
+          <option value="disponivel">✅ Disponíveis</option>
+          <option value="faltando">❌ Faltando</option>
+        </select>
+        <input type="text" id="road-search" placeholder="Buscar BR, UF…">
+        <span class="spacer"></span>
+        <button class="btn-secondary btn-sm" id="road-sync" title="Atualizar catálogo do DNIT via WFS GeoServer">
+          🔄 Sincronizar DNIT
+        </button>
+        <button class="btn-secondary btn-sm" id="road-refresh">↻ Atualizar</button>
+      </div>
+
+      <div id="sync-status" style="display:none;margin-bottom:12px;font-size:13px;color:var(--text2);
+        display:flex;align-items:center;gap:8px"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-col="uf">UF <span class="sort">▲</span></th>
+              <th data-col="br">BR <span class="sort">▲</span></th>
+              <th data-col="codigos_dnit">Código <span class="sort">▲</span></th>
+              <th data-col="snv_version">Versão SNV <span class="sort">▲</span></th>
+              <th data-col="km">KM Total <span class="sort">▲</span></th>
+              <th data-col="segs">Segmentos <span class="sort">▲</span></th>
+              <th data-col="status">Status <span class="sort">▲</span></th>
+            </tr>
+          </thead>
+          <tbody id="road-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Versões do servidor -->
+      <div style="margin-top:24px">
+        <h3 style="font-size:14px;color:var(--text2);margin-bottom:12px;font-weight:600">
+          Versões SNV no Servidor
+        </h3>
+        <div id="versions-list" class="table-wrap">
+          <table>
+            <thead><tr><th>Versão</th><th>Status</th><th>Data</th></tr></thead>
+            <tbody id="ver-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .main -->
+</div><!-- #dash -->
+
+<div id="toast"></div>
+
+<script>
+/* ================================================================
+   KM CHECK ADMIN — Frontend
+   ================================================================ */
+const API = window.location.origin;
+let TOKEN = localStorage.getItem('kca-token');
+
+/* ── Utilidades ── */
+function $(s,p){ return (p||document).querySelector(s) }
+function $$(s,p){ return [...(p||document).querySelectorAll(s)] }
+
+function toast(msg, type='info'){
+  const el = document.createElement('div');
+  el.className = 'toast-msg ' + type;
+  el.textContent = msg;
+  $('#toast').appendChild(el);
+  setTimeout(()=>el.remove(), 4000);
+}
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso + (iso.includes('Z')?'':'Z'));
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function shortId(id){
+  if(!id) return '—';
+  return id.length > 12 ? id.slice(0,8)+'…'+id.slice(-4) : id;
+}
+
+/* ── API ── */
+async function api(path, opts={}){
+  const headers = { 'Content-Type':'application/json' };
+  if(TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  const r = await fetch(API + path, { ...opts, headers: { ...headers, ...(opts.headers||{}) } });
+  if(r.status === 401){
+    TOKEN = null; localStorage.removeItem('kca-token');
+    showLogin(); throw new Error('Sessão expirada');
+  }
+  const json = await r.json();
+  if(!r.ok) throw new Error(json.error || 'Erro HTTP '+r.status);
+  return json;
+}
+
+/* ── Login ── */
+function showLogin(){
+  $('#login').style.display = 'flex';
+  $('#dash').style.display = 'none';
+  $('#lg-user').value = 'admin';
+  $('#lg-pass').value = '';
+  $('#lg-err').textContent = '';
+  setTimeout(()=>$('#lg-pass').focus(), 100);
+}
+
+function showDash(){
+  $('#login').style.display = 'none';
+  $('#dash').style.display = 'block';
+  loadDevices();
+}
+
+$('#lg-btn').onclick = async () => {
+  const user = $('#lg-user').value.trim();
+  const password = $('#lg-pass').value;
+  if(!user||!password){ $('#lg-err').textContent='Preencha todos os campos'; return }
+  $('#lg-btn').disabled = true; $('#lg-btn').textContent = 'Entrando…';
+  try {
+    const r = await api('/api/admin/auth/login', {
+      method:'POST', body: JSON.stringify({ user, password })
+    });
+    TOKEN = r.token;
+    localStorage.setItem('kca-token', TOKEN);
+    toast('Bem-vindo, '+r.user+'!', 'success');
+    showDash();
+  } catch(e){
+    $('#lg-err').textContent = e.message;
+  } finally {
+    $('#lg-btn').disabled = false; $('#lg-btn').textContent = 'Entrar';
+  }
+};
+
+/* Enter no campo de senha */
+$('#lg-pass').onkeydown = e => { if(e.key==='Enter') $('#lg-btn').click() };
+$('#lg-user').onkeydown = e => { if(e.key==='Enter') $('#lg-pass').focus() };
+
+$('#btn-logout').onclick = () => {
+  TOKEN = null; localStorage.removeItem('kca-token');
+  showLogin(); toast('Desconectado', 'info');
+};
+
+/* ── Navegação por tabs ── */
+$$('.topbar nav button').forEach(btn => {
+  btn.onclick = () => {
+    $$('.topbar nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    $$('.tab-panel').forEach(p=>p.classList.remove('active'));
+    $('#tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'roads' && !_roadsLoaded) loadRoads();
+  };
+});
+
+/* ══════════════════════════════════════════════════
+   DISPOSITIVOS
+   ══════════════════════════════════════════════════ */
+let _devData = [];
+let _devSort = { col:'last_ping', asc:false };
+
+async function loadDevices(){
+  try {
+    const r = await api('/api/admin/devices');
+    _devData = r.devices || [];
+    const s = r.stats;
+    $('#ds-total').textContent = s.total;
+    $('#ds-detail').textContent = s.active_week+' ativos na semana';
+    $('#ds-ios').textContent = s.ios;
+    $('#ds-android').textContent = s.android;
+    $('#ds-today').textContent = s.active_today;
+    $('#ds-week').textContent = s.active_week+' na semana';
+    $('#ds-version').textContent = s.top_version || '—';
+    renderDevices();
+  } catch(e){
+    toast('Erro ao carregar dispositivos: '+e.message, 'error');
+  }
+}
+
+function renderDevices(){
+  const plat = $('#dev-filter-plat').value;
+  const search = $('#dev-search').value.toLowerCase();
+  let data = _devData;
+  if(plat) data = data.filter(d=>d.platform===plat);
+  if(search) data = data.filter(d=>
+    (d.device_id||'').toLowerCase().includes(search) ||
+    (d.app_version||'').toLowerCase().includes(search) ||
+    (d.platform||'').toLowerCase().includes(search) ||
+    (d.ip_address||'').toLowerCase().includes(search)
+  );
+  /* Ordenar */
+  const col = _devSort.col;
+  data.sort((a,b) => {
+    let va=a[col]||'', vb=b[col]||'';
+    if(col==='ping_count'){ va=+va; vb=+vb; }
+    if(va<vb) return _devSort.asc?-1:1;
+    if(va>vb) return _devSort.asc?1:-1;
+    return 0;
+  });
+  const tbody = $('#dev-tbody');
+  if(!data.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum dispositivo encontrado</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(d=>`<tr>
+    <td class="mono" title="${d.device_id}">${shortId(d.device_id)}</td>
+    <td>${platIcon(d.platform)} ${d.platform||'—'}</td>
+    <td><span class="tag tag-blue">v${d.app_version||'?'}</span></td>
+    <td class="muted">${d.screen||'—'}</td>
+    <td class="mono muted">${d.ip_address||'—'}</td>
+    <td>${fmtDate(d.last_ping)}</td>
+    <td class="muted">${fmtDate(d.first_seen)}</td>
+    <td style="text-align:center">${d.ping_count}</td>
+  </tr>`).join('');
+  updateSortHeaders('#tab-devices');
+}
+
+function platIcon(p){
+  if(p==='iOS') return '🍎';
+  if(p==='Android') return '🤖';
+  if(p==='Windows') return '🪟';
+  if(p==='Mac') return '💻';
+  return '📱';
+}
+
+$('#dev-filter-plat').onchange = renderDevices;
+$('#dev-search').oninput = renderDevices;
+$('#dev-refresh').onclick = () => { toast('Atualizando…','info'); loadDevices() };
+
+/* Ordenação por coluna */
+$$('#tab-devices th[data-col]').forEach(th=>{
+  th.onclick = () => {
+    const col = th.dataset.col;
+    if(_devSort.col===col) _devSort.asc = !_devSort.asc;
+    else { _devSort.col=col; _devSort.asc=true; }
+    renderDevices();
+  };
+});
+
+function updateSortHeaders(panelSel){
+  $$(panelSel+' th[data-col]').forEach(th=>{
+    const sort = panelSel==='#tab-devices'?_devSort:_roadSort;
+    th.classList.toggle('sorted', th.dataset.col===sort.col);
+    const s = th.querySelector('.sort');
+    if(s) s.textContent = th.dataset.col===sort.col ? (sort.asc?'▲':'▼') : '▲';
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   COBERTURA SNV
+   ══════════════════════════════════════════════════ */
+let _roadsLoaded = false;
+let _roadData = [];
+let _roadSort = { col:'uf', asc:true };
+
+async function loadRoads(){
+  try {
+    const [coverage, syncSt] = await Promise.all([
+      api('/api/admin/roads/coverage'),
+      api('/api/admin/roads/sync-status')
+    ]);
+    _roadData = coverage.roads || [];
+    _roadsLoaded = true;
+    const s = coverage.summary;
+    $('#rs-avail').textContent = s.total_available;
+    $('#rs-dnit').textContent = s.total_dnit || '—';
+    $('#rs-pct').textContent = s.total_dnit > 0 ? s.coverage_pct+'%' : '—';
+    $('#rs-missing').textContent = s.missing;
+    $('#rs-snv').textContent = _roadData.length>0 ? 'SNV '+(coverage.roads[0]?.snv_version||'') : '';
+
+    /* Preencher dropdown de UFs */
+    const ufs = [...new Set(_roadData.map(r=>r.uf))].sort();
+    const sel = $('#road-filter-uf');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Todas UFs</option>' +
+      ufs.map(u=>`<option value="${u}">${u}</option>`).join('');
+    if(cur) sel.value = cur;
+
+    renderRoads();
+
+    /* Versões do servidor */
+    try {
+      const avail = await api('/api/admin/roads/available');
+      const vers = avail.server_versions || [];
+      const vtb = $('#ver-tbody');
+      if(!vers.length){
+        vtb.innerHTML = '<tr><td colspan="3" class="empty">Nenhuma versão encontrada</td></tr>';
+      } else {
+        vtb.innerHTML = vers.map(v=>`<tr>
+          <td class="mono">${v.id}</td>
+          <td>${v.status==='concluido'?'<span class="tag tag-green">Concluído</span>':'<span class="tag tag-yellow">'+v.status+'</span>'}</td>
+          <td class="muted">${v.created_at ? fmtDate(v.created_at) : '—'}</td>
+        </tr>`).join('');
+      }
+    } catch(e){ console.warn('Versões indisponíveis:', e.message) }
+
+    /* Status do sync */
+    if(syncSt.last_sync){
+      const el = $('#sync-status');
+      el.style.display = 'flex';
+      el.innerHTML = `Catálogo DNIT: ${syncSt.total_roads} rodovias · Último sync: ${fmtDate(syncSt.last_sync)}`;
+    }
+  } catch(e){
+    toast('Erro ao carregar cobertura: '+e.message, 'error');
+  }
+}
+
+function renderRoads(){
+  const uf = $('#road-filter-uf').value;
+  const status = $('#road-filter-status').value;
+  const search = $('#road-search').value.toLowerCase();
+  let data = _roadData;
+  if(uf) data = data.filter(r=>r.uf===uf);
+  if(status) data = data.filter(r=>r.status===status);
+  if(search) data = data.filter(r=>
+    ('BR-'+r.br).toLowerCase().includes(search) ||
+    r.uf.toLowerCase().includes(search) ||
+    (r.codigos_dnit||'').toLowerCase().includes(search)
+  );
+  const col = _roadSort.col;
+  data.sort((a,b) => {
+    let va=a[col]||'', vb=b[col]||'';
+    if(col==='km'||col==='segs'){ va=+va||0; vb=+vb||0; }
+    if(va<vb) return _roadSort.asc?-1:1;
+    if(va>vb) return _roadSort.asc?1:-1;
+    return 0;
+  });
+  const tbody = $('#road-tbody');
+  if(!data.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma rodovia encontrada</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(r=>{
+    const st = r.status==='disponivel'
+      ? '<span class="tag tag-green">✅ Disponível</span>'
+      : '<span class="tag tag-red">❌ Faltando</span>';
+    return `<tr style="${r.status==='faltando'?'background:rgba(248,81,73,.06)':''}">
+      <td><b>${r.uf}</b></td>
+      <td class="mono">BR-${r.br}</td>
+      <td>${r.codigos_dnit||'—'}</td>
+      <td class="muted">${r.snv_version||'—'}</td>
+      <td>${r.km ? r.km.toFixed(1)+' km' : '—'}</td>
+      <td class="muted">${r.segs||'—'}</td>
+      <td>${st}</td>
+    </tr>`;
+  }).join('');
+  updateSortHeaders('#tab-roads');
+}
+
+$('#road-filter-uf').onchange = renderRoads;
+$('#road-filter-status').onchange = renderRoads;
+$('#road-search').oninput = renderRoads;
+$('#road-refresh').onclick = () => { toast('Atualizando…','info'); _roadsLoaded=false; loadRoads() };
+
+/* Sincronizar DNIT */
+$('#road-sync').onclick = async () => {
+  if(!confirm('Sincronizar o catálogo completo do DNIT via WFS?\nIsso pode levar alguns minutos.')) return;
+  try {
+    $('#road-sync').disabled = true;
+    $('#road-sync').textContent = '⏳ Sincronizando…';
+    toast('Sincronização iniciada. Aguarde…','info');
+    await api('/api/admin/roads/sync-dnit', { method:'POST' });
+    /* Polling para saber quando terminou */
+    let tries = 0;
+    const poll = setInterval(async ()=>{
+      tries++;
+      try {
+        const st = await api('/api/admin/roads/sync-status');
+        if(!st.syncing || tries > 60){
+          clearInterval(poll);
+          $('#road-sync').disabled = false;
+          $('#road-sync').textContent = '🔄 Sincronizar DNIT';
+          if(st.total_roads > 0){
+            toast(`✅ Catálogo atualizado: ${st.total_roads} rodovias`, 'success');
+            loadRoads();
+          } else {
+            toast('Sync concluído (sem dados novos)', 'info');
+          }
+        }
+      } catch(e){ /* ignora erro de polling */ }
+    }, 3000);
+  } catch(e){
+    toast('Erro: '+e.message, 'error');
+    $('#road-sync').disabled = false;
+    $('#road-sync').textContent = '🔄 Sincronizar DNIT';
+  }
+};
+
+/* Ordenação */
+$$('#tab-roads th[data-col]').forEach(th=>{
+  th.onclick = () => {
+    const col = th.dataset.col;
+    if(_roadSort.col===col) _roadSort.asc = !_roadSort.asc;
+    else { _roadSort.col=col; _roadSort.asc=true; }
+    renderRoads();
+  };
+});
+
+/* ══════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════ */
+(async function init(){
+  if(TOKEN){
+    try {
+      await api('/api/admin/auth/check');
+      showDash();
+    } catch {
+      showLogin();
+    }
+  } else {
+    showLogin();
+  }
+  /* Auto-refresh a cada 60s */
+  setInterval(()=>{
+    if(TOKEN && $('#tab-devices').classList.contains('active')) loadDevices();
+  }, 60000);
+})();
+</script>
+</body>
+</html>

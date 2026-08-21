@@ -1,0 +1,19 @@
+{
+  "name": "kmcheck-admin",
+  "version": "1.0.0",
+  "description": "Painel administrativo do KM Check — monitoramento de dispositivos e cobertura SNV",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "hash": "node -e \"import('bcryptjs').then(b=>b.default.hash(process.argv[1],12).then(h=>console.log('\\nHash (copie para ADMIN_HASH no .env):\\n'+h+'\\n')))\" --"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
