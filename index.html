@@ -3006,6 +3006,16 @@ if(svcAdd) svcAdd.onclick=()=>{
   /* Exibe versão do cache no header (lê do sw.js) */
   fetch('sw.js').then(r=>r.text()).then(t=>{
     const m=t.match(/kmcheck-v(\d+)/); if(m) document.getElementById('app-ver').textContent='VERSÃO '+m[1];
+    /* ── Ping anônimo para o painel admin — identifica o dispositivo sem dados pessoais ── */
+    if(m && SNV_API){
+      let did=localStorage.getItem('kc-device-id');
+      if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
+      const ua=navigator.userAgent||'';
+      const plat=(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
+      fetch(SNV_API+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({device_id:did,app_version:m[1],platform:plat,user_agent:ua,screen:screen.width+'x'+screen.height})
+      }).catch(()=>{});
+    }
   }).catch(()=>{});
   try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   // cobre o rearranjo do giro com preto (só age com a câmera aberta) — ver _maskRotation
