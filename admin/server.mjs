@@ -5,19 +5,21 @@
 // Funções: autenticação JWT, receber pings de dispositivos,
 // listar dispositivos, analisar cobertura de rodovias SNV.
 //
+// Armazenamento: arquivo JSON local (admin-data.json) — leve,
+// sem dependência nativa, funciona em qualquer OS.
+//
 // Uso:
 //   cp .env.example .env      # editar com suas credenciais
 //   npm install
 //   npm start
 // ================================================================
 import express from 'express';
-import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,7 +29,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = join(__dirname, '.env');
 if (existsSync(envPath)) {
   for (const ln of readFileSync(envPath, 'utf8').split('\n')) {
-    const m = ln.match(/^\s*([A-Z_]+)\s*=\s*(.+?)\s*$/);
+    const m = ln.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.+?)\s*$/);
     if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
   }
 }
@@ -47,66 +49,40 @@ if (!ADMIN_HASH) {
   process.exit(1);
 }
 
-/* ── SQLite ── */
-const db = new Database(join(__dirname, 'admin.db'));
-db.pragma('journal_mode = WAL');
-db.exec(`
-  CREATE TABLE IF NOT EXISTS devices (
-    device_id   TEXT PRIMARY KEY,
-    app_version TEXT,
-    platform    TEXT,
-    user_agent  TEXT,
-    screen      TEXT,
-    ip_address  TEXT,
-    first_seen  TEXT NOT NULL DEFAULT (datetime('now')),
-    last_ping   TEXT NOT NULL DEFAULT (datetime('now')),
-    ping_count  INTEGER NOT NULL DEFAULT 1
-  );
-  CREATE TABLE IF NOT EXISTS dnit_roads (
-    br        TEXT NOT NULL,
-    uf        TEXT NOT NULL,
-    codigo    TEXT NOT NULL DEFAULT 'B',
-    km_total  REAL DEFAULT 0,
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    PRIMARY KEY (br, uf, codigo)
-  );
-`);
+/* ── Banco JSON (persistido em disco) ──
+   Simples, sem dependência nativa, funciona em qualquer OS.
+   Estrutura: { devices: { [device_id]: {...} }, dnit_roads: [...] } */
+const DB_PATH = join(__dirname, 'admin-data.json');
 
-/* Prepared statements — desempenho */
-const stmt = {
-  upsertDevice: db.prepare(`
-    INSERT INTO devices (device_id, app_version, platform, user_agent, screen, ip_address)
-    VALUES (@device_id, @app_version, @platform, @user_agent, @screen, @ip_address)
-    ON CONFLICT(device_id) DO UPDATE SET
-      app_version = COALESCE(@app_version, app_version),
-      platform    = COALESCE(@platform, platform),
-      user_agent  = COALESCE(@user_agent, user_agent),
-      screen      = COALESCE(@screen, screen),
-      ip_address  = COALESCE(@ip_address, ip_address),
-      last_ping   = datetime('now'),
-      ping_count  = ping_count + 1
-  `),
-  listDevices:  db.prepare(`SELECT * FROM devices ORDER BY last_ping DESC`),
-  deviceStats:  db.prepare(`
-    SELECT
-      COUNT(*) as total,
-      SUM(CASE WHEN platform='iOS' THEN 1 ELSE 0 END) as ios,
-      SUM(CASE WHEN platform='Android' THEN 1 ELSE 0 END) as android,
-      SUM(CASE WHEN platform NOT IN ('iOS','Android') THEN 1 ELSE 0 END) as other
-    FROM devices
-  `),
-  activeToday: db.prepare(`SELECT COUNT(*) as n FROM devices WHERE last_ping >= datetime('now','-1 day')`),
-  activeWeek:  db.prepare(`SELECT COUNT(*) as n FROM devices WHERE last_ping >= datetime('now','-7 day')`),
-  topVersion:  db.prepare(`SELECT app_version, COUNT(*) as n FROM devices GROUP BY app_version ORDER BY n DESC LIMIT 1`),
-  listDnit:    db.prepare(`SELECT * FROM dnit_roads ORDER BY uf, br, codigo`),
-  upsertDnit:  db.prepare(`
-    INSERT INTO dnit_roads (br, uf, codigo, km_total)
-    VALUES (@br, @uf, @codigo, @km_total)
-    ON CONFLICT(br, uf, codigo) DO UPDATE SET
-      km_total = @km_total, updated_at = datetime('now')
-  `),
-  countDnit:   db.prepare(`SELECT COUNT(*) as n FROM dnit_roads`),
-};
+function loadDb() {
+  if (existsSync(DB_PATH)) {
+    try { return JSON.parse(readFileSync(DB_PATH, 'utf8')); }
+    catch { /* corrupto — recria */ }
+  }
+  return { devices: {}, dnit_roads: [], last_dnit_sync: null };
+}
+
+let _db = loadDb();
+let _saveTimer = null;
+
+/* Salva no disco com debounce (evita escrita a cada ping) */
+function saveDb() {
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    try { writeFileSync(DB_PATH, JSON.stringify(_db, null, 2)); }
+    catch (e) { console.error('Erro ao salvar DB:', e.message); }
+  }, 1000);
+}
+
+/* Salva imediatamente (para shutdown gracioso) */
+function saveDbNow() {
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  try { writeFileSync(DB_PATH, JSON.stringify(_db, null, 2)); }
+  catch (e) { console.error('Erro ao salvar DB:', e.message); }
+}
+process.on('SIGINT', () => { saveDbNow(); process.exit(0); });
+process.on('SIGTERM', () => { saveDbNow(); process.exit(0); });
 
 /* ── Express ── */
 const app = express();
@@ -159,11 +135,20 @@ app.post('/api/admin/devices/ping', (req, res) => {
     const { device_id, app_version, platform, user_agent, screen } = req.body || {};
     if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });
     const ip = req.ip || req.socket.remoteAddress || '';
-    stmt.upsertDevice.run({
-      device_id, app_version: app_version || null,
-      platform: platform || null, user_agent: user_agent || null,
-      screen: screen || null, ip_address: ip
-    });
+    const now = new Date().toISOString();
+    const existing = _db.devices[device_id];
+    _db.devices[device_id] = {
+      device_id,
+      app_version: app_version || existing?.app_version || null,
+      platform: platform || existing?.platform || null,
+      user_agent: user_agent || existing?.user_agent || null,
+      screen: screen || existing?.screen || null,
+      ip_address: ip || existing?.ip_address || null,
+      first_seen: existing?.first_seen || now,
+      last_ping: now,
+      ping_count: (existing?.ping_count || 0) + 1
+    };
+    saveDb();
     res.json({ ok: true });
   } catch (e) {
     console.error('Erro no ping:', e.message);
@@ -173,18 +158,30 @@ app.post('/api/admin/devices/ping', (req, res) => {
 
 /* Listar dispositivos — admin */
 app.get('/api/admin/devices', auth, (req, res) => {
-  const devices = stmt.listDevices.all();
-  const stats = stmt.deviceStats.get();
-  const today = stmt.activeToday.get();
-  const week = stmt.activeWeek.get();
-  const top = stmt.topVersion.get();
+  const devices = Object.values(_db.devices)
+    .sort((a, b) => (b.last_ping || '').localeCompare(a.last_ping || ''));
+  const now = Date.now();
+  const dayAgo = new Date(now - 86400000).toISOString();
+  const weekAgo = new Date(now - 7 * 86400000).toISOString();
+  let ios = 0, android = 0, other = 0, activeToday = 0, activeWeek = 0;
+  const versionCount = {};
+  for (const d of devices) {
+    if (d.platform === 'iOS') ios++;
+    else if (d.platform === 'Android') android++;
+    else other++;
+    if (d.last_ping >= dayAgo) activeToday++;
+    if (d.last_ping >= weekAgo) activeWeek++;
+    const v = d.app_version || '?';
+    versionCount[v] = (versionCount[v] || 0) + 1;
+  }
+  const topVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0];
   res.json({
     devices,
     stats: {
-      ...stats,
-      active_today: today.n,
-      active_week: week.n,
-      top_version: top ? top.app_version : null
+      total: devices.length, ios, android, other,
+      active_today: activeToday,
+      active_week: activeWeek,
+      top_version: topVersion ? topVersion[0] : null
     }
   });
 });
@@ -212,7 +209,7 @@ async function fetchAvailableRoads() {
     return data;
   } catch (e) {
     console.error('Erro ao buscar index.json:', e.message);
-    if (_availableCache) return _availableCache; // retorna cache velho se houver
+    if (_availableCache) return _availableCache;
     return { snv: '?', roads: [] };
   }
 }
@@ -260,9 +257,7 @@ app.get('/api/admin/roads/available', auth, async (req, res) => {
 
 /* Catálogo DNIT (do banco local) */
 app.get('/api/admin/roads/dnit', auth, (req, res) => {
-  const roads = stmt.listDnit.all();
-  const count = stmt.countDnit.get();
-  res.json({ roads, total: count.n });
+  res.json({ roads: _db.dnit_roads, total: _db.dnit_roads.length });
 });
 
 /* Cobertura: cruzamento disponíveis × DNIT */
@@ -271,14 +266,12 @@ app.get('/api/admin/roads/coverage', auth, async (req, res) => {
     const index = await fetchAvailableRoads();
     const available = (index.roads || []).map(r => `${r.br}-${r.uf}`);
     const availSet = new Set(available);
-    const dnit = stmt.listDnit.all();
     const dnitByKey = {};
-    for (const r of dnit) {
+    for (const r of _db.dnit_roads) {
       const k = `${r.br}-${r.uf}`;
       if (!dnitByKey[k]) dnitByKey[k] = [];
       dnitByKey[k].push(r);
     }
-    /* Montar lista unificada */
     const all = [];
     const seen = new Set();
     /* 1. Rodovias disponíveis */
@@ -288,16 +281,16 @@ app.get('/api/admin/roads/coverage', auth, async (req, res) => {
       all.push({
         br: r.br, uf: r.uf, km: r.km, segs: r.segs,
         snv_version: index.snv,
-        codigos_dnit: dnitByKey[k] ? dnitByKey[k].map(d=>d.codigo).join(',') : '',
+        codigos_dnit: dnitByKey[k] ? dnitByKey[k].map(d => d.codigo).join(',') : '',
         status: 'disponivel'
       });
     }
     /* 2. Rodovias que o DNIT tem mas não estão disponíveis */
-    for (const r of dnit) {
+    for (const r of _db.dnit_roads) {
       const k = `${r.br}-${r.uf}`;
       if (seen.has(k)) continue;
       seen.add(k);
-      const codigos = dnitByKey[k] ? dnitByKey[k].map(d=>d.codigo).join(',') : r.codigo;
+      const codigos = dnitByKey[k] ? dnitByKey[k].map(d => d.codigo).join(',') : r.codigo;
       all.push({
         br: r.br, uf: r.uf, km: r.km_total || 0, segs: 0,
         snv_version: '', codigos_dnit: codigos,
@@ -306,7 +299,7 @@ app.get('/api/admin/roads/coverage', auth, async (req, res) => {
     }
     all.sort((a, b) => a.uf.localeCompare(b.uf) || a.br.localeCompare(b.br));
     const totalAvail = available.length;
-    const totalDnit = new Set(dnit.map(r => `${r.br}-${r.uf}`)).size;
+    const totalDnit = new Set(_db.dnit_roads.map(r => `${r.br}-${r.uf}`)).size;
     const missing = all.filter(r => r.status === 'faltando').length;
     const pct = totalDnit > 0 ? Math.round(totalAvail / totalDnit * 100) : 0;
     res.json({
@@ -321,20 +314,17 @@ app.get('/api/admin/roads/coverage', auth, async (req, res) => {
 /* Sincronizar catálogo do DNIT via WFS GeoServer */
 app.post('/api/admin/roads/sync-dnit', auth, async (req, res) => {
   try {
-    res.json({ started: true }); // responde rápido, sync roda em background
+    res.json({ started: true });
     await syncDnitCatalog();
   } catch (e) {
     console.error('Erro no sync DNIT:', e.message);
   }
 });
 
-/* GET para checar status do último sync */
 app.get('/api/admin/roads/sync-status', auth, (req, res) => {
-  const count = stmt.countDnit.get();
-  const latest = db.prepare(`SELECT MAX(updated_at) as dt FROM dnit_roads`).get();
   res.json({
-    total_roads: count.n,
-    last_sync: latest.dt || null,
+    total_roads: _db.dnit_roads.length,
+    last_sync: _db.last_dnit_sync || null,
     syncing: _syncing
   });
 });
@@ -353,7 +343,7 @@ async function syncDnitCatalog() {
     const layers = [...capXml.matchAll(/<Name>(DNIT:snv_\w+)<\/Name>/g)]
       .map(m => m[1]).sort();
     if (!layers.length) throw new Error('Nenhuma layer SNV encontrada no WFS');
-    const layer = layers[layers.length - 1]; // mais recente
+    const layer = layers[layers.length - 1];
     console.log(`   Layer: ${layer}`);
 
     /* 2. Buscar features (sem geometria, só atributos) */
@@ -381,19 +371,16 @@ async function syncDnitCatalog() {
       if (!groups[k]) groups[k] = { br, uf, codigo: cod, km_total: 0 };
       groups[k].km_total += ext;
     }
-    const rows = Object.values(groups);
+    const rows = Object.values(groups).map(r => ({
+      ...r, km_total: Math.round(r.km_total * 10) / 10
+    }));
+    rows.sort((a, b) => a.uf.localeCompare(b.uf) || a.br.localeCompare(b.br) || a.codigo.localeCompare(b.codigo));
     console.log(`   ${rows.length} combinações BR/UF/código únicas`);
 
-    /* 4. Gravar no banco */
-    const upsert = db.transaction((items) => {
-      for (const r of items) {
-        stmt.upsertDnit.run({
-          br: r.br, uf: r.uf, codigo: r.codigo,
-          km_total: Math.round(r.km_total * 10) / 10
-        });
-      }
-    });
-    upsert(rows);
+    /* 4. Gravar */
+    _db.dnit_roads = rows;
+    _db.last_dnit_sync = new Date().toISOString();
+    saveDbNow();
     console.log(`✅ Catálogo DNIT atualizado: ${rows.length} registros`);
   } catch (e) {
     console.error('❌ Erro no sync DNIT:', e.message);
@@ -410,12 +397,12 @@ app.get('/', (req, res) => {
   res.type('html').send(html);
 });
 
-/* Arquivos estáticos (se houver no futuro) */
-app.use('/static', express.static(join(__dirname, 'static')));
-
 /* ── Start ── */
 app.listen(PORT, () => {
+  const devCount = Object.keys(_db.devices).length;
   console.log(`\n🔒 KM Check Admin rodando em http://localhost:${PORT}`);
   console.log(`   Usuário: ${ADMIN_USER}`);
+  console.log(`   Dispositivos no banco: ${devCount}`);
+  console.log(`   Rodovias DNIT no banco: ${_db.dnit_roads.length}`);
   console.log(`   API: ${CONTROLCHECK_API}\n`);
 });
