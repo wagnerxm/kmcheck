@@ -201,6 +201,11 @@ app.post('/api/admin/devices/ping', (req, res) => {
     const existing = _db.devices[device_id];
     /* Detecção server-side como fallback (clientes v174- não enviam esses campos) */
     const det = detectDevice(user_agent || existing?.user_agent, screen || existing?.screen);
+    /* Registro do ping no histórico (guarda últimos 500 por dispositivo) */
+    const hist = existing?.ping_history || [];
+    hist.push({ ts: now, ip, app_version, location: location || null,
+                bases_count: bases_count ?? 0 });
+    if (hist.length > 500) hist.splice(0, hist.length - 500);
     _db.devices[device_id] = {
       device_id,
       app_version: app_version || existing?.app_version || null,
@@ -216,7 +221,8 @@ app.post('/api/admin/devices/ping', (req, res) => {
       bases: bases || existing?.bases || [],
       first_seen: existing?.first_seen || now,
       last_ping: now,
-      ping_count: (existing?.ping_count || 0) + 1
+      ping_count: (existing?.ping_count || 0) + 1,
+      ping_history: hist
     };
     saveDb();
     res.json({ ok: true });
@@ -224,6 +230,42 @@ app.post('/api/admin/devices/ping', (req, res) => {
     console.error('Erro no ping:', e.message);
     res.status(500).json({ error: 'Erro interno' });
   }
+});
+
+/* Detalhes de um dispositivo — histórico completo de pings, agrupado por dia */
+app.get('/api/admin/devices/:id', auth, (req, res) => {
+  const d = _db.devices[req.params.id];
+  if (!d) return res.status(404).json({ error: 'Dispositivo não encontrado' });
+  /* Agrupa pings por dia */
+  const byDay = {};
+  for (const p of (d.ping_history || [])) {
+    const day = p.ts.slice(0, 10); // 'YYYY-MM-DD'
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(p);
+  }
+  const days = Object.entries(byDay)
+    .map(([date, pings]) => ({
+      date, count: pings.length,
+      first: pings[0].ts, last: pings[pings.length - 1].ts,
+      ips: [...new Set(pings.map(p => p.ip).filter(Boolean))],
+      locations: pings.filter(p => p.location).map(p => p.location),
+      versions: [...new Set(pings.map(p => p.app_version).filter(Boolean))]
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  /* IPs únicos do histórico */
+  const allIps = [...new Set((d.ping_history || []).map(p => p.ip).filter(Boolean))];
+  /* Localizações únicas */
+  const allLocs = (d.ping_history || []).filter(p => p.location).map(p => ({
+    ts: p.ts, ...p.location
+  }));
+  res.json({
+    device: d,
+    days,
+    total_days: days.length,
+    all_ips: allIps,
+    all_locations: allLocs,
+    ping_history: d.ping_history || []
+  });
 });
 
 /* Listar dispositivos — admin.
