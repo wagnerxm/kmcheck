@@ -103,25 +103,44 @@ function detectDevice(ua, screenStr) {
     const ov = ua.match(/Android ([\d.]+)/);
     os_version = ov ? 'Android ' + ov[1] : null;
   }
-  /* Modelo — iPhones pela resolução + pixelRatio inferido da tela */
+  /* Modelo — iPhones pela resolução CSS, cruzando com versão iOS para estreitar.
+     iOS 17+ não roda em iPhone X/8-; iOS 18+ não roda em XR/XS. */
+  const iosM = ua.match(/OS (\d+)/);
+  const iosV = iosM ? +iosM[1] : 0;
   if (/iPhone/.test(ua) && screenStr) {
     const [sw, sh] = screenStr.split('x').map(Number);
     const w = Math.min(sw, sh), h = Math.max(sw, sh);
-    /* Tabela de resoluções CSS conhecidas → modelo */
+    const k = w + 'x' + h;
     const iphones = {
       '320x568': 'iPhone SE 1ª', '375x667': 'iPhone 6/7/8/SE2/SE3',
-      '414x736': 'iPhone 6+/7+/8+', '375x812': 'iPhone X/XS/11Pro/12mini/13mini',
-      '414x896': 'iPhone XR/11/XS Max/11 Pro Max',
-      '390x844': 'iPhone 12/13/14', '428x926': 'iPhone 13 Pro Max/14 Plus',
-      '393x852': 'iPhone 14Pro/15/15Pro/16', '430x932': 'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
+      '414x736': 'iPhone 6+/7+/8+',
+      '414x896': iosV >= 18 ? 'iPhone 11' : 'iPhone XR/11',
+      '375x812': iosV >= 18 ? 'iPhone 12 mini/13 mini' :
+                 (iosV >= 17 ? 'iPhone XS/11Pro/12mini/13mini' : 'iPhone X/XS/11Pro/12mini/13mini'),
+      '390x844': iosV >= 18 ? 'iPhone 14' : 'iPhone 12/13/14',
+      '428x926': 'iPhone 13 Pro Max/14 Plus',
+      '393x852': iosV >= 18 ? 'iPhone 15/16' : 'iPhone 14Pro/15/15Pro/16',
+      '430x932': 'iPhone 15Plus/15Pro Max/16Plus',
       '402x874': 'iPhone 16 Pro', '440x956': 'iPhone 16 Pro Max'
     };
-    model = iphones[w + 'x' + h] || ('iPhone (' + w + 'x' + h + ')');
+    model = iphones[k] || ('iPhone (' + k + ')');
   } else if (/iPad/.test(ua)) {
     model = 'iPad';
   } else if (/Android/.test(ua)) {
     const am = ua.match(/;\s*([^;)]+?)\s*Build\//);
     model = am ? am[1].trim() : null;
+    /* Chrome moderno esconde o modelo (mostra "K"), limpa nesse caso */
+    if (model === 'K') model = null;
+    /* Infere marca pelo código do modelo Android */
+    if (model && !brand) {
+      if (/^SM-/.test(model)) brand = 'Samsung';
+      else if (/^RMX/.test(model)) brand = 'Realme';
+      else if (/^M\d{4}/.test(model) || /^22\d{3}/.test(model)) brand = 'Xiaomi';
+      else if (/^CPH/.test(model)) brand = 'OPPO';
+      else if (/^V\d{4}/.test(model)) brand = 'vivo';
+      else if (/^moto/.test(model)) brand = 'Motorola';
+      else if (/^Pixel/.test(model)) brand = 'Google';
+    }
   }
   return { brand, model, os_version };
 }
@@ -214,12 +233,11 @@ app.get('/api/admin/devices', auth, (req, res) => {
   let dirty = false;
   const devices = Object.values(_db.devices)
     .map(d => {
-      if (!d.brand || !d.model || !d.os_version) {
-        const det = detectDevice(d.user_agent, d.screen);
-        if (det.brand && !d.brand) { d.brand = det.brand; dirty = true; }
-        if (det.model && !d.model) { d.model = det.model; dirty = true; }
-        if (det.os_version && !d.os_version) { d.os_version = det.os_version; dirty = true; }
-      }
+      /* Sempre recalcula modelo/marca/OS server-side — a lógica pode ter melhorado */
+      const det = detectDevice(d.user_agent, d.screen);
+      if (det.brand && det.brand !== d.brand) { d.brand = det.brand; dirty = true; }
+      if (det.model && det.model !== d.model) { d.model = det.model; dirty = true; }
+      if (det.os_version && det.os_version !== d.os_version) { d.os_version = det.os_version; dirty = true; }
       return d;
     })
     .sort((a, b) => (b.last_ping || '').localeCompare(a.last_ping || ''));

@@ -3023,19 +3023,46 @@ if(svcAdd) svcAdd.onclick=()=>{
         if(/iPhone|iPad/.test(ua)){const ov=ua.match(/OS (\d+[_\.]\d+[_\.]?\d*)/);osVer=ov?'iOS '+ov[1].replace(/_/g,'.'):''}
         else if(/Android/.test(ua)){const ov=ua.match(/Android ([\d.]+)/);osVer=ov?'Android '+ov[1]:''}
         else if(/Windows/.test(ua)){const ov=ua.match(/Windows NT ([\d.]+)/);osVer=ov?'Windows '+({'10.0':'10/11','6.3':'8.1','6.2':'8','6.1':'7'}[ov[1]]||ov[1]):''}
-        /* Modelo — iPhones identificados pela resolução + pixelRatio */
+        /* Modelo — iPhones pela resolução+pixelRatio+versãoiOS; Android via userAgentData (preciso) */
         let model='';
         if(/iPhone/.test(ua)){
           const w=Math.min(screen.width,screen.height),h=Math.max(screen.width,screen.height),r=Math.round(devicePixelRatio||2);
           const k=w+'x'+h+'@'+r;
-          const ip={'320x568@2':'iPhone SE 1ª','375x667@2':'iPhone 6/7/8/SE2/SE3','414x736@3':'iPhone 6+/7+/8+',
-            '375x812@3':'iPhone X/XS/11Pro/12mini/13mini','414x896@2':'iPhone XR/11','414x896@3':'iPhone XS Max/11 Pro Max',
-            '390x844@3':'iPhone 12/13/14','428x926@3':'iPhone 13 Pro Max/14 Plus',
-            '393x852@3':'iPhone 14Pro/15/15Pro/16','430x932@3':'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
+          /* Cruza resolução com versão iOS pra estreitar o modelo.
+             iOS 17+ não roda em iPhone X/8 ou menor; iOS 18+ não roda em XR/XS. */
+          const iosM=ua.match(/OS (\d+)/); const iosV=iosM?+iosM[1]:0;
+          const ip={
+            '320x568@2':'iPhone SE 1ª','375x667@2':'iPhone 6/7/8/SE2/SE3','414x736@3':'iPhone 6+/7+/8+',
+            '414x896@2':iosV>=18?'iPhone 11':'iPhone XR/11',
+            '414x896@3':'iPhone XS Max/11 Pro Max',
+            '375x812@3':iosV>=18?'iPhone 12 mini/13 mini':(iosV>=17?'iPhone XS/11Pro/12mini/13mini':'iPhone X/XS/11Pro/12mini/13mini'),
+            '390x844@3':iosV>=18?'iPhone 14':'iPhone 12/13/14',
+            '428x926@3':'iPhone 13 Pro Max/14 Plus',
+            '393x852@3':iosV>=18?'iPhone 15/16':'iPhone 14Pro/15/15Pro/16',
+            '430x932@3':'iPhone 15Plus/15Pro Max/16Plus',
             '402x874@3':'iPhone 16 Pro','440x956@3':'iPhone 16 Pro Max'};
           model=ip[k]||('iPhone ('+k+')');
         }else if(/iPad/.test(ua)){model='iPad'}
-        else{const am=ua.match(/;\s*([^;)]+?)\s*Build\//);model=am?am[1].trim():''}
+        else{
+          /* Android: tenta userAgentData (preciso) senão cai no UA clássico */
+          const am=ua.match(/;\s*([^;)]+?)\s*Build\//);model=am?am[1].trim():'';
+          if((!model||model==='K')&&navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues){
+            try{const hi=await navigator.userAgentData.getHighEntropyValues(['model','platformVersion']);
+              if(hi.model&&hi.model!=='') model=hi.model;
+              if(hi.platformVersion) osVer='Android '+hi.platformVersion;
+            }catch(e){}
+          }
+          /* Tenta extrair marca do modelo Android (ex: SM-A546 → Samsung, RMX3474 → Realme) */
+          if(model&&!brand){
+            if(/^SM-/.test(model))brand='Samsung';
+            else if(/^RMX/.test(model))brand='Realme';
+            else if(/^M\d{4}/.test(model)||/^22\d{3}/.test(model))brand='Xiaomi';
+            else if(/^CPH/.test(model))brand='OPPO';
+            else if(/^V\d{4}/.test(model))brand='vivo';
+            else if(/^moto/.test(model))brand='Motorola';
+            else if(/^Pixel/.test(model))brand='Google';
+          }
+        }
         /* GPS — usa a posição já fixada pelo watchPosition */
         let loc=null;
         if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(6),lon:+S.pos.lon.toFixed(6),acc:Math.round(S.pos.acc||0)};
