@@ -751,6 +751,12 @@ function renderDevDetail(r){
   html += infoItem('Primeiro Acesso', fmtDate(d.first_seen));
   html += infoItem('Último Acesso', fmtDate(d.last_ping));
   html += infoItem('Bases Baixadas', (d.bases_count || 0) + ' rodovias');
+  if (d.hw) {
+    if (d.hw.gpu) html += infoItem('GPU', d.hw.gpu);
+    html += infoItem('CPU Cores', d.hw.cores || '—');
+    html += infoItem('ProMotion', d.hw.proMotion === true ? '✅ 120Hz (Pro)' : d.hw.proMotion === false ? '❌ 60Hz' : '—');
+    if (d.hw.mem) html += infoItem('RAM', d.hw.mem + ' GB');
+  }
   if (d.bases && d.bases.length) {
     const list = d.bases.map(b => (b.br.startsWith('BR-') ? b.br : 'BR-' + b.br) + '/' + b.uf).join(', ');
     html += '<div class="item" style="grid-column:1/-1"><div class="lbl">Rodovias</div><div class="val" style="font-size:12px;word-break:break-all">' + list + '</div></div>';

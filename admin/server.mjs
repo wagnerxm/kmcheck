@@ -108,11 +108,14 @@ function saveDbNow() {
 process.on('SIGINT', () => { saveDbNow(); process.exit(0); });
 process.on('SIGTERM', () => { saveDbNow(); process.exit(0); });
 
-/* ── Detecção server-side de modelo/marca/OS via user_agent + tela ──
-   Funciona como fallback quando o cliente (v174-) não envia esses campos. */
-function detectDevice(ua, screenStr) {
+/* ── Detecção server-side de modelo/marca/OS via user_agent + tela + hw ──
+   Funciona como fallback quando o cliente (v174-) não envia esses campos.
+   O campo `hw` (hardware) inclui: cores, gpu, proMotion (120Hz), mem.
+   ProMotion=true → modelo Pro (iPhone 13 Pro+). Crucial para precisão. */
+function detectDevice(ua, screenStr, hw) {
   if (!ua) return { brand: null, model: null, os_version: null };
   let brand = null, model = null, os_version = null;
+  const pro = hw?.proMotion === true; /* 120Hz = modelo Pro */
   /* Marca */
   if (/iPhone|iPad|Macintosh/.test(ua)) brand = 'Apple';
   else {
@@ -127,8 +130,9 @@ function detectDevice(ua, screenStr) {
     const ov = ua.match(/Android ([\d.]+)/);
     os_version = ov ? 'Android ' + ov[1] : null;
   }
-  /* Modelo — iPhones pela resolução CSS, cruzando com versão iOS para estreitar.
-     iOS 17+ não roda em iPhone X/8-; iOS 18+ não roda em XR/XS. */
+  /* Modelo — iPhones pela resolução CSS + versão iOS + ProMotion.
+     ProMotion (120Hz) só existe nos Pro a partir do iPhone 13 Pro (2021).
+     Isso corta pela metade a ambiguidade dos grupos de mesma resolução. */
   const iosM = ua.match(/OS (\d+)/);
   const iosV = iosM ? +iosM[1] : 0;
   if (/iPhone/.test(ua) && screenStr) {
@@ -139,11 +143,11 @@ function detectDevice(ua, screenStr) {
       '320x568': 'iPhone SE 1ª', '375x667': 'iPhone 6/7/8/SE2/SE3',
       '414x736': 'iPhone 6+/7+/8+',
       '414x896': iosV >= 17 ? 'iPhone 11' : 'iPhone XR/11',
-      '375x812': iosV >= 17 ? 'iPhone 12 mini/13 mini' : 'iPhone X/XS/11Pro/12mini/13mini',
-      '390x844': 'iPhone 12/12Pro/13/13Pro/14',
-      '428x926': 'iPhone 13 Pro Max/14 Plus',
-      '393x852': 'iPhone 14Pro/15/15Pro/16',
-      '430x932': 'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
+      '375x812': iosV >= 17 ? 'iPhone 12 mini/13 mini' : 'iPhone X/XS/11 Pro/12 mini/13 mini',
+      '390x844': pro ? 'iPhone 13 Pro' : (iosV >= 17 ? 'iPhone 12/13/14' : 'iPhone 12/12 Pro/13/14'),
+      '428x926': pro ? 'iPhone 14 Pro Max (?)' : 'iPhone 13 Pro Max/14 Plus',
+      '393x852': pro ? 'iPhone 14 Pro/15 Pro' : 'iPhone 15/16',
+      '430x932': pro ? 'iPhone 14 Pro Max/15 Pro Max' : 'iPhone 15 Plus/16 Plus',
       '402x874': 'iPhone 16 Pro', '440x956': 'iPhone 16 Pro Max'
     };
     model = iphones[k] || ('iPhone (' + k + ')');
@@ -218,13 +222,13 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
 app.post('/api/admin/devices/ping', (req, res) => {
   try {
     const { device_id, app_version, platform, user_agent, screen,
-            brand, os_version, model, location, bases_count, bases } = req.body || {};
+            brand, os_version, model, hw, location, bases_count, bases } = req.body || {};
     if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });
     const ip = req.ip || req.socket.remoteAddress || '';
     const now = new Date().toISOString();
     const existing = _db.devices[device_id];
     /* Detecção server-side como fallback (clientes v174- não enviam esses campos) */
-    const det = detectDevice(user_agent || existing?.user_agent, screen || existing?.screen);
+    const det = detectDevice(user_agent || existing?.user_agent, screen || existing?.screen, hw || existing?.hw);
     /* Registro do ping no histórico (guarda últimos 500 por dispositivo) */
     const hist = existing?.ping_history || [];
     hist.push({ ts: now, ip, app_version, location: location || null,
@@ -243,6 +247,7 @@ app.post('/api/admin/devices/ping', (req, res) => {
       location: location || existing?.location || null,
       bases_count: bases_count ?? existing?.bases_count ?? 0,
       bases: bases || existing?.bases || [],
+      hw: hw || existing?.hw || null,
       first_seen: existing?.first_seen || now,
       last_ping: now,
       ping_count: (existing?.ping_count || 0) + 1,
@@ -299,7 +304,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
   const devices = Object.values(_db.devices)
     .map(d => {
       /* Sempre recalcula modelo/marca/OS server-side — a lógica pode ter melhorado */
-      const det = detectDevice(d.user_agent, d.screen);
+      const det = detectDevice(d.user_agent, d.screen, d.hw);
       if (det.brand && det.brand !== d.brand) { d.brand = det.brand; dirty = true; }
       if (det.model && det.model !== d.model) { d.model = det.model; dirty = true; }
       if (det.os_version && det.os_version !== d.os_version) { d.os_version = det.os_version; dirty = true; }

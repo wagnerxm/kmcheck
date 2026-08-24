@@ -3008,7 +3008,20 @@ if(svcAdd) svcAdd.onclick=()=>{
     const m=t.match(/kmcheck-v(\d+)/); if(m) document.getElementById('app-ver').textContent='VERSÃO '+m[1];
     /* ── Ping aprimorado para o painel admin — coleta dados do dispositivo, GPS e bases ── */
     if(m && SNV_API){
-      /* Aguarda 4s para o GPS fixar e as bases carregarem do IndexedDB */
+      /* Detecta ProMotion (120Hz) via requestAnimationFrame — sinais de hardware do iPhone Pro.
+         Roda antes do setTimeout para ter ~4s de frames coletados. */
+      let _proMotion=null; // null=não testou, true=120Hz, false=60Hz
+      if(/iPhone/.test(navigator.userAgent)){
+        const ts=[];
+        const rAF=t=>{ts.push(t);if(ts.length<30)requestAnimationFrame(rAF);else{
+          /* Calcula fps médio pelos intervalos entre frames */
+          let sum=0;for(let i=1;i<ts.length;i++)sum+=ts[i]-ts[i-1];
+          const fps=1000/(sum/(ts.length-1));
+          _proMotion=fps>75; /* ProMotion costuma rodar >90fps; telas 60Hz ficam ~60fps */
+        }};
+        requestAnimationFrame(rAF);
+      }
+      /* Aguarda 4s para o GPS fixar, bases carregarem e a detecção de ProMotion concluir */
       setTimeout(async()=>{try{
         let did=localStorage.getItem('kc-device-id');
         if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
@@ -3023,24 +3036,43 @@ if(svcAdd) svcAdd.onclick=()=>{
         if(/iPhone|iPad/.test(ua)){const ov=ua.match(/OS (\d+[_\.]\d+[_\.]?\d*)/);osVer=ov?'iOS '+ov[1].replace(/_/g,'.'):''}
         else if(/Android/.test(ua)){const ov=ua.match(/Android ([\d.]+)/);osVer=ov?'Android '+ov[1]:''}
         else if(/Windows/.test(ua)){const ov=ua.match(/Windows NT ([\d.]+)/);osVer=ov?'Windows '+({'10.0':'10/11','6.3':'8.1','6.2':'8','6.1':'7'}[ov[1]]||ov[1]):''}
-        /* Modelo — iPhones pela resolução+pixelRatio+versãoiOS; Android via userAgentData (preciso) */
+        /* ── Fingerprint de hardware (GPU, cores, ProMotion) ──
+           Esses sinais ajudam a distinguir modelos de iPhone com mesma resolução.
+           Ex.: ProMotion=120Hz → modelo Pro; GPU "Apple A14" → chip específico. */
+        let gpuRenderer='';
+        try{const c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+          if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');
+            if(ext) gpuRenderer=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)||'';
+          }
+        }catch(e){}
+        const hw={
+          cores:navigator.hardwareConcurrency||0,
+          gpu:gpuRenderer,
+          proMotion:_proMotion, /* true=120Hz (Pro), false=60Hz, null=não-iPhone */
+          mem:navigator.deviceMemory||null /* Chrome/Android expõe RAM; Safari não */
+        };
+        /* Modelo — iPhones pela resolução+pixelRatio+versãoiOS+ProMotion; Android via userAgentData */
         let model='';
         if(/iPhone/.test(ua)){
           const w=Math.min(screen.width,screen.height),h=Math.max(screen.width,screen.height),r=Math.round(devicePixelRatio||2);
           const k=w+'x'+h+'@'+r;
-          /* Cruza resolução com versão iOS pra estreitar o modelo.
-             iOS 17+ não roda em iPhone X/8 ou menor; iOS 18+ não roda em XR/XS. */
           const iosM=ua.match(/OS (\d+)/); const iosV=iosM?+iosM[1]:0;
+          const pro=_proMotion===true; /* ProMotion detectado = modelo Pro */
+          /* Tabela revisada: ProMotion separa Pro (120Hz) dos não-Pro (60Hz).
+             Isso corta pela metade a ambiguidade dos grupos de resolução. */
           const ip={
-            '320x568@2':'iPhone SE 1ª','375x667@2':'iPhone 6/7/8/SE2/SE3','414x736@3':'iPhone 6+/7+/8+',
+            '320x568@2':'iPhone SE 1ª',
+            '375x667@2':'iPhone 6/7/8/SE2/SE3',
+            '414x736@3':'iPhone 6+/7+/8+',
             '414x896@2':iosV>=17?'iPhone 11':'iPhone XR/11',
             '414x896@3':'iPhone XS Max/11 Pro Max',
-            '375x812@3':iosV>=17?'iPhone 12 mini/13 mini':'iPhone X/XS/11Pro/12mini/13mini',
-            '390x844@3':'iPhone 12/12Pro/13/13Pro/14',
-            '428x926@3':'iPhone 13 Pro Max/14 Plus',
-            '393x852@3':'iPhone 14Pro/15/15Pro/16',
-            '430x932@3':'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
-            '402x874@3':'iPhone 16 Pro','440x956@3':'iPhone 16 Pro Max'};
+            '375x812@3':iosV>=17?'iPhone 12 mini/13 mini':'iPhone X/XS/11 Pro/12 mini/13 mini',
+            '390x844@3':pro?'iPhone 13 Pro':(iosV>=17?'iPhone 12/13/14':'iPhone 12/12 Pro/13/14'),
+            '428x926@3':pro?'iPhone 14 Pro Max (?)':'iPhone 13 Pro Max/14 Plus',
+            '393x852@3':pro?'iPhone 14 Pro/15 Pro':'iPhone 15/16',
+            '430x932@3':pro?'iPhone 14 Pro Max/15 Pro Max':'iPhone 15 Plus/16 Plus',
+            '402x874@3':'iPhone 16 Pro',
+            '440x956@3':'iPhone 16 Pro Max'};
           model=ip[k]||('iPhone ('+k+')');
         }else if(/iPad/.test(ua)){model='iPad'}
         else{
@@ -3071,7 +3103,7 @@ if(svcAdd) svcAdd.onclick=()=>{
         try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.n||0}))}catch(e){}
         fetch(SNV_API+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({device_id:did,app_version:m[1],platform:plat,user_agent:ua,
-            screen:screen.width+'x'+screen.height,brand,os_version:osVer,model,
+            screen:screen.width+'x'+screen.height,brand,os_version:osVer,model,hw,
             location:loc,bases_count:bases.length,bases})
         }).catch(()=>{});
       }catch(e){}},4000);
