@@ -198,7 +198,8 @@ tbody tr:hover{background:var(--surface2)}
         <div class="stat"><div class="label">iOS (iPhone/iPad)</div><div class="value" id="ds-ios">—</div></div>
         <div class="stat"><div class="label">Android</div><div class="value green" id="ds-android">—</div></div>
         <div class="stat"><div class="label">Ativos hoje</div><div class="value yellow" id="ds-today">—</div><div class="detail" id="ds-week"></div></div>
-        <div class="stat"><div class="label">Versão mais usada</div><div class="value purple" id="ds-version">—</div></div>
+        <div class="stat"><div class="label">Modelo + usado</div><div class="value purple" id="ds-model">—</div><div class="detail" id="ds-brand"></div></div>
+        <div class="stat"><div class="label">Bases baixadas</div><div class="value" id="ds-bases" style="color:var(--blue)">—</div><div class="detail" id="ds-version"></div></div>
       </div>
 
       <div class="toolbar">
@@ -210,7 +211,7 @@ tbody tr:hover{background:var(--surface2)}
           <option value="Mac">Mac</option>
           <option value="Outro">Outro</option>
         </select>
-        <input type="text" id="dev-search" placeholder="Buscar device ID, versão…">
+        <input type="text" id="dev-search" placeholder="Buscar device ID, modelo, marca…">
         <span class="spacer"></span>
         <button class="btn-secondary btn-sm" id="dev-refresh">↻ Atualizar</button>
       </div>
@@ -220,12 +221,14 @@ tbody tr:hover{background:var(--surface2)}
           <thead>
             <tr>
               <th data-col="device_id">Device ID <span class="sort">▲</span></th>
-              <th data-col="platform">Plataforma <span class="sort">▲</span></th>
-              <th data-col="app_version">Versão <span class="sort">▲</span></th>
+              <th data-col="model">Modelo <span class="sort">▲</span></th>
+              <th data-col="brand">Marca <span class="sort">▲</span></th>
+              <th data-col="os_version">Sistema <span class="sort">▲</span></th>
+              <th data-col="app_version">Versão App <span class="sort">▲</span></th>
               <th data-col="screen">Tela <span class="sort">▲</span></th>
-              <th data-col="ip_address">IP <span class="sort">▲</span></th>
+              <th data-col="bases_count">Bases <span class="sort">▲</span></th>
+              <th data-col="location">Localização <span class="sort">▲</span></th>
               <th data-col="last_ping">Último Ping <span class="sort">▲</span></th>
-              <th data-col="first_seen">1º Acesso <span class="sort">▲</span></th>
               <th data-col="ping_count">Pings <span class="sort">▲</span></th>
             </tr>
           </thead>
@@ -417,11 +420,29 @@ async function loadDevices(){
     $('#ds-android').textContent = s.android;
     $('#ds-today').textContent = s.active_today;
     $('#ds-week').textContent = s.active_week+' na semana';
-    $('#ds-version').textContent = s.top_version || '—';
+    /* Novos stats: modelo, marca, bases */
+    $('#ds-model').textContent = s.top_model ? s.top_model.name : '—';
+    $('#ds-brand').textContent = s.top_brand ? s.top_brand.name+' ('+s.top_brand.count+')' : '';
+    $('#ds-bases').textContent = s.total_bases || '0';
+    $('#ds-version').textContent = 'v'+(s.top_version||'?')+' mais usada';
     renderDevices();
   } catch(e){
     toast('Erro ao carregar dispositivos: '+e.message, 'error');
   }
+}
+
+/* Formata localização como link do Google Maps */
+function fmtLoc(loc){
+  if(!loc||!loc.lat) return '<span class="muted">—</span>';
+  return `<a href="https://maps.google.com/?q=${loc.lat},${loc.lon}" target="_blank" title="Precisão: ${loc.acc||'?'}m">${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}</a>`;
+}
+
+/* Tooltip com as bases baixadas */
+function fmtBases(d){
+  const n=d.bases_count||0;
+  if(!n) return '<span class="muted">0</span>';
+  const list=(d.bases||[]).map(b=>'BR-'+b.br+'/'+b.uf).join(', ');
+  return `<span title="${list}" style="cursor:help">${n}</span>`;
 }
 
 function renderDevices(){
@@ -431,6 +452,9 @@ function renderDevices(){
   if(plat) data = data.filter(d=>d.platform===plat);
   if(search) data = data.filter(d=>
     (d.device_id||'').toLowerCase().includes(search) ||
+    (d.model||'').toLowerCase().includes(search) ||
+    (d.brand||'').toLowerCase().includes(search) ||
+    (d.os_version||'').toLowerCase().includes(search) ||
     (d.app_version||'').toLowerCase().includes(search) ||
     (d.platform||'').toLowerCase().includes(search) ||
     (d.ip_address||'').toLowerCase().includes(search)
@@ -438,25 +462,30 @@ function renderDevices(){
   /* Ordenar */
   const col = _devSort.col;
   data.sort((a,b) => {
-    let va=a[col]||'', vb=b[col]||'';
-    if(col==='ping_count'){ va=+va; vb=+vb; }
+    let va, vb;
+    if(col==='location'){
+      va=a.location?a.location.lat:0; vb=b.location?b.location.lat:0;
+    } else { va=a[col]||''; vb=b[col]||''; }
+    if(col==='ping_count'||col==='bases_count'){ va=+va; vb=+vb; }
     if(va<vb) return _devSort.asc?-1:1;
     if(va>vb) return _devSort.asc?1:-1;
     return 0;
   });
   const tbody = $('#dev-tbody');
   if(!data.length){
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">Nenhum dispositivo encontrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Nenhum dispositivo encontrado</td></tr>';
     return;
   }
   tbody.innerHTML = data.map(d=>`<tr>
     <td class="mono" title="${d.device_id}">${shortId(d.device_id)}</td>
-    <td>${platIcon(d.platform)} ${d.platform||'—'}</td>
-    <td><span class="tag tag-blue">v${d.app_version||'?'}</span></td>
+    <td>${d.model||'<span class=muted>—</span>'}</td>
+    <td>${platIcon(d.platform)} ${d.brand||d.platform||'—'}</td>
+    <td><span class="tag tag-blue">${d.os_version||d.platform||'?'}</span></td>
+    <td><span class="tag" style="background:var(--surface3)">v${d.app_version||'?'}</span></td>
     <td class="muted">${d.screen||'—'}</td>
-    <td class="mono muted">${d.ip_address||'—'}</td>
+    <td style="text-align:center">${fmtBases(d)}</td>
+    <td>${fmtLoc(d.location)}</td>
     <td>${fmtDate(d.last_ping)}</td>
-    <td class="muted">${fmtDate(d.first_seen)}</td>
     <td style="text-align:center">${d.ping_count}</td>
   </tr>`).join('');
   updateSortHeaders('#tab-devices');

@@ -129,10 +129,12 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
    ROTAS — DISPOSITIVOS
    ================================================================ */
 
-/* Ping público — chamado pelo app mobile no boot */
+/* Ping público — chamado pelo app mobile no boot.
+   Recebe dados aprimorados: marca, modelo, OS, GPS, bases baixadas. */
 app.post('/api/admin/devices/ping', (req, res) => {
   try {
-    const { device_id, app_version, platform, user_agent, screen } = req.body || {};
+    const { device_id, app_version, platform, user_agent, screen,
+            brand, os_version, model, location, bases_count, bases } = req.body || {};
     if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });
     const ip = req.ip || req.socket.remoteAddress || '';
     const now = new Date().toISOString();
@@ -144,6 +146,13 @@ app.post('/api/admin/devices/ping', (req, res) => {
       user_agent: user_agent || existing?.user_agent || null,
       screen: screen || existing?.screen || null,
       ip_address: ip || existing?.ip_address || null,
+      /* Novos campos v175 */
+      brand: brand || existing?.brand || null,
+      os_version: os_version || existing?.os_version || null,
+      model: model || existing?.model || null,
+      location: location || existing?.location || null,
+      bases_count: bases_count ?? existing?.bases_count ?? 0,
+      bases: bases || existing?.bases || [],
       first_seen: existing?.first_seen || now,
       last_ping: now,
       ping_count: (existing?.ping_count || 0) + 1
@@ -164,7 +173,8 @@ app.get('/api/admin/devices', auth, (req, res) => {
   const dayAgo = new Date(now - 86400000).toISOString();
   const weekAgo = new Date(now - 7 * 86400000).toISOString();
   let ios = 0, android = 0, other = 0, activeToday = 0, activeWeek = 0;
-  const versionCount = {};
+  let totalBases = 0;
+  const versionCount = {}, brandCount = {}, modelCount = {};
   for (const d of devices) {
     if (d.platform === 'iOS') ios++;
     else if (d.platform === 'Android') android++;
@@ -173,15 +183,25 @@ app.get('/api/admin/devices', auth, (req, res) => {
     if (d.last_ping >= weekAgo) activeWeek++;
     const v = d.app_version || '?';
     versionCount[v] = (versionCount[v] || 0) + 1;
+    if (d.brand) brandCount[d.brand] = (brandCount[d.brand] || 0) + 1;
+    if (d.model) modelCount[d.model] = (modelCount[d.model] || 0) + 1;
+    totalBases += d.bases_count || 0;
   }
   const topVersion = Object.entries(versionCount).sort((a, b) => b[1] - a[1])[0];
+  const topBrand = Object.entries(brandCount).sort((a, b) => b[1] - a[1])[0];
+  const topModel = Object.entries(modelCount).sort((a, b) => b[1] - a[1])[0];
   res.json({
     devices,
     stats: {
       total: devices.length, ios, android, other,
       active_today: activeToday,
       active_week: activeWeek,
-      top_version: topVersion ? topVersion[0] : null
+      top_version: topVersion ? topVersion[0] : null,
+      top_brand: topBrand ? { name: topBrand[0], count: topBrand[1] } : null,
+      top_model: topModel ? { name: topModel[0], count: topModel[1] } : null,
+      total_bases: totalBases,
+      brands: brandCount,
+      models: modelCount
     }
   });
 });

@@ -3006,15 +3006,48 @@ if(svcAdd) svcAdd.onclick=()=>{
   /* Exibe versão do cache no header (lê do sw.js) */
   fetch('sw.js').then(r=>r.text()).then(t=>{
     const m=t.match(/kmcheck-v(\d+)/); if(m) document.getElementById('app-ver').textContent='VERSÃO '+m[1];
-    /* ── Ping anônimo para o painel admin — identifica o dispositivo sem dados pessoais ── */
+    /* ── Ping aprimorado para o painel admin — coleta dados do dispositivo, GPS e bases ── */
     if(m && SNV_API){
-      let did=localStorage.getItem('kc-device-id');
-      if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
-      const ua=navigator.userAgent||'';
-      const plat=(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
-      fetch(SNV_API+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({device_id:did,app_version:m[1],platform:plat,user_agent:ua,screen:screen.width+'x'+screen.height})
-      }).catch(()=>{});
+      /* Aguarda 4s para o GPS fixar e as bases carregarem do IndexedDB */
+      setTimeout(async()=>{try{
+        let did=localStorage.getItem('kc-device-id');
+        if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
+        const ua=navigator.userAgent||'';
+        const plat=(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
+        /* Marca do dispositivo */
+        let brand='';
+        if(/iPhone|iPad|Macintosh/.test(ua)) brand='Apple';
+        else{const bm=ua.match(/;\s*(Samsung|Xiaomi|Redmi|POCO|Motorola|moto|Huawei|HONOR|LG|OnePlus|OPPO|vivo|Realme|Google|Pixel|Nokia|Sony|ASUS|ZTE|Alcatel|HTC|Nothing)/i);brand=bm?bm[1]:''}
+        /* Versão do SO */
+        let osVer='';
+        if(/iPhone|iPad/.test(ua)){const ov=ua.match(/OS (\d+[_\.]\d+[_\.]?\d*)/);osVer=ov?'iOS '+ov[1].replace(/_/g,'.'):''}
+        else if(/Android/.test(ua)){const ov=ua.match(/Android ([\d.]+)/);osVer=ov?'Android '+ov[1]:''}
+        else if(/Windows/.test(ua)){const ov=ua.match(/Windows NT ([\d.]+)/);osVer=ov?'Windows '+({'10.0':'10/11','6.3':'8.1','6.2':'8','6.1':'7'}[ov[1]]||ov[1]):''}
+        /* Modelo — iPhones identificados pela resolução + pixelRatio */
+        let model='';
+        if(/iPhone/.test(ua)){
+          const w=Math.min(screen.width,screen.height),h=Math.max(screen.width,screen.height),r=Math.round(devicePixelRatio||2);
+          const k=w+'x'+h+'@'+r;
+          const ip={'320x568@2':'iPhone SE 1ª','375x667@2':'iPhone 6/7/8/SE2/SE3','414x736@3':'iPhone 6+/7+/8+',
+            '375x812@3':'iPhone X/XS/11Pro/12mini/13mini','414x896@2':'iPhone XR/11','414x896@3':'iPhone XS Max/11 Pro Max',
+            '390x844@3':'iPhone 12/13/14','428x926@3':'iPhone 13 Pro Max/14 Plus',
+            '393x852@3':'iPhone 14Pro/15/15Pro/16','430x932@3':'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
+            '402x874@3':'iPhone 16 Pro','440x956@3':'iPhone 16 Pro Max'};
+          model=ip[k]||('iPhone ('+k+')');
+        }else if(/iPad/.test(ua)){model='iPad'}
+        else{const am=ua.match(/;\s*([^;)]+?)\s*Build\//);model=am?am[1].trim():''}
+        /* GPS — usa a posição já fixada pelo watchPosition */
+        let loc=null;
+        if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(6),lon:+S.pos.lon.toFixed(6),acc:Math.round(S.pos.acc||0)};
+        /* Bases baixadas no IndexedDB */
+        let bases=[];
+        try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.n||0}))}catch(e){}
+        fetch(SNV_API+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({device_id:did,app_version:m[1],platform:plat,user_agent:ua,
+            screen:screen.width+'x'+screen.height,brand,os_version:osVer,model,
+            location:loc,bases_count:bases.length,bases})
+        }).catch(()=>{});
+      }catch(e){}},4000);
     }
   }).catch(()=>{});
   try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
