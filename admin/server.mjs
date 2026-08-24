@@ -114,13 +114,12 @@ function detectDevice(ua, screenStr) {
     const iphones = {
       '320x568': 'iPhone SE 1ª', '375x667': 'iPhone 6/7/8/SE2/SE3',
       '414x736': 'iPhone 6+/7+/8+',
-      '414x896': iosV >= 18 ? 'iPhone 11' : 'iPhone XR/11',
-      '375x812': iosV >= 18 ? 'iPhone 12 mini/13 mini' :
-                 (iosV >= 17 ? 'iPhone XS/11Pro/12mini/13mini' : 'iPhone X/XS/11Pro/12mini/13mini'),
-      '390x844': iosV >= 18 ? 'iPhone 14' : 'iPhone 12/13/14',
+      '414x896': iosV >= 17 ? 'iPhone 11' : 'iPhone XR/11',
+      '375x812': iosV >= 17 ? 'iPhone 12 mini/13 mini' : 'iPhone X/XS/11Pro/12mini/13mini',
+      '390x844': 'iPhone 12/12Pro/13/13Pro/14',
       '428x926': 'iPhone 13 Pro Max/14 Plus',
-      '393x852': iosV >= 18 ? 'iPhone 15/16' : 'iPhone 14Pro/15/15Pro/16',
-      '430x932': 'iPhone 15Plus/15Pro Max/16Plus',
+      '393x852': 'iPhone 14Pro/15/15Pro/16',
+      '430x932': 'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
       '402x874': 'iPhone 16 Pro', '440x956': 'iPhone 16 Pro Max'
     };
     model = iphones[k] || ('iPhone (' + k + ')');
