@@ -65,6 +65,30 @@ function loadDb() {
 let _db = loadDb();
 let _saveTimer = null;
 
+/* ── Migração: popular ping_history para dispositivos antigos ──
+   Dispositivos que pingaram antes da v178 não têm ping_history.
+   Cria pelo menos 1 entry com os dados disponíveis para que o
+   histórico não fique vazio no modal de detalhes. */
+{
+  let migrated = 0;
+  for (const d of Object.values(_db.devices)) {
+    if (d.ping_count > 0 && (!d.ping_history || !d.ping_history.length)) {
+      d.ping_history = [{
+        ts: d.last_ping || d.first_seen || new Date().toISOString(),
+        ip: d.ip_address || null,
+        app_version: d.app_version || null,
+        location: d.location || null,
+        bases_count: d.bases_count || 0
+      }];
+      migrated++;
+    }
+  }
+  if (migrated) {
+    console.log(`Migração: ${migrated} dispositivo(s) ganhou ping_history inicial`);
+    try { writeFileSync(DB_PATH, JSON.stringify(_db, null, 2)); } catch {}
+  }
+}
+
 /* Salva no disco com debounce (evita escrita a cada ping) */
 function saveDb() {
   if (_saveTimer) return;
