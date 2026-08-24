@@ -84,6 +84,48 @@ function saveDbNow() {
 process.on('SIGINT', () => { saveDbNow(); process.exit(0); });
 process.on('SIGTERM', () => { saveDbNow(); process.exit(0); });
 
+/* ── Detecção server-side de modelo/marca/OS via user_agent + tela ──
+   Funciona como fallback quando o cliente (v174-) não envia esses campos. */
+function detectDevice(ua, screenStr) {
+  if (!ua) return { brand: null, model: null, os_version: null };
+  let brand = null, model = null, os_version = null;
+  /* Marca */
+  if (/iPhone|iPad|Macintosh/.test(ua)) brand = 'Apple';
+  else {
+    const bm = ua.match(/;\s*(Samsung|Xiaomi|Redmi|POCO|Motorola|moto|Huawei|HONOR|LG|OnePlus|OPPO|vivo|Realme|Google|Pixel|Nokia|Sony|ASUS|ZTE|Alcatel|HTC|Nothing)/i);
+    if (bm) brand = bm[1];
+  }
+  /* Versão do SO */
+  if (/iPhone|iPad/.test(ua)) {
+    const ov = ua.match(/OS (\d+[_.]\d+[_.]?\d*)/);
+    os_version = ov ? 'iOS ' + ov[1].replace(/_/g, '.') : null;
+  } else if (/Android/.test(ua)) {
+    const ov = ua.match(/Android ([\d.]+)/);
+    os_version = ov ? 'Android ' + ov[1] : null;
+  }
+  /* Modelo — iPhones pela resolução + pixelRatio inferido da tela */
+  if (/iPhone/.test(ua) && screenStr) {
+    const [sw, sh] = screenStr.split('x').map(Number);
+    const w = Math.min(sw, sh), h = Math.max(sw, sh);
+    /* Tabela de resoluções CSS conhecidas → modelo */
+    const iphones = {
+      '320x568': 'iPhone SE 1ª', '375x667': 'iPhone 6/7/8/SE2/SE3',
+      '414x736': 'iPhone 6+/7+/8+', '375x812': 'iPhone X/XS/11Pro/12mini/13mini',
+      '414x896': 'iPhone XR/11/XS Max/11 Pro Max',
+      '390x844': 'iPhone 12/13/14', '428x926': 'iPhone 13 Pro Max/14 Plus',
+      '393x852': 'iPhone 14Pro/15/15Pro/16', '430x932': 'iPhone 14Pro Max/15Plus/15Pro Max/16Plus',
+      '402x874': 'iPhone 16 Pro', '440x956': 'iPhone 16 Pro Max'
+    };
+    model = iphones[w + 'x' + h] || ('iPhone (' + w + 'x' + h + ')');
+  } else if (/iPad/.test(ua)) {
+    model = 'iPad';
+  } else if (/Android/.test(ua)) {
+    const am = ua.match(/;\s*([^;)]+?)\s*Build\//);
+    model = am ? am[1].trim() : null;
+  }
+  return { brand, model, os_version };
+}
+
 /* ── Express ── */
 const app = express();
 app.set('trust proxy', true);
@@ -139,6 +181,8 @@ app.post('/api/admin/devices/ping', (req, res) => {
     const ip = req.ip || req.socket.remoteAddress || '';
     const now = new Date().toISOString();
     const existing = _db.devices[device_id];
+    /* Detecção server-side como fallback (clientes v174- não enviam esses campos) */
+    const det = detectDevice(user_agent || existing?.user_agent, screen || existing?.screen);
     _db.devices[device_id] = {
       device_id,
       app_version: app_version || existing?.app_version || null,
@@ -146,10 +190,9 @@ app.post('/api/admin/devices/ping', (req, res) => {
       user_agent: user_agent || existing?.user_agent || null,
       screen: screen || existing?.screen || null,
       ip_address: ip || existing?.ip_address || null,
-      /* Novos campos v175 */
-      brand: brand || existing?.brand || null,
-      os_version: os_version || existing?.os_version || null,
-      model: model || existing?.model || null,
+      brand: brand || existing?.brand || det.brand || null,
+      os_version: os_version || existing?.os_version || det.os_version || null,
+      model: model || existing?.model || det.model || null,
       location: location || existing?.location || null,
       bases_count: bases_count ?? existing?.bases_count ?? 0,
       bases: bases || existing?.bases || [],
@@ -165,10 +208,22 @@ app.post('/api/admin/devices/ping', (req, res) => {
   }
 });
 
-/* Listar dispositivos — admin */
+/* Listar dispositivos — admin.
+   Preenche campos detectáveis retroativamente (dispositivos que pingaram antes da v175). */
 app.get('/api/admin/devices', auth, (req, res) => {
+  let dirty = false;
   const devices = Object.values(_db.devices)
+    .map(d => {
+      if (!d.brand || !d.model || !d.os_version) {
+        const det = detectDevice(d.user_agent, d.screen);
+        if (det.brand && !d.brand) { d.brand = det.brand; dirty = true; }
+        if (det.model && !d.model) { d.model = det.model; dirty = true; }
+        if (det.os_version && !d.os_version) { d.os_version = det.os_version; dirty = true; }
+      }
+      return d;
+    })
     .sort((a, b) => (b.last_ping || '').localeCompare(a.last_ping || ''));
+  if (dirty) saveDb(); /* persiste os campos preenchidos */
   const now = Date.now();
   const dayAgo = new Date(now - 86400000).toISOString();
   const weekAgo = new Date(now - 7 * 86400000).toISOString();
