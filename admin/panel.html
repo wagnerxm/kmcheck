@@ -184,6 +184,15 @@ tbody tr:hover{background:var(--surface2)}
   font-family:monospace;font-size:12px;color:var(--text2)}
 .dev-id-link{color:var(--blue);cursor:pointer;text-decoration:none}
 .dev-id-link:hover{text-decoration:underline}
+/* Ícones de plataforma inline SVG */
+.plat-icon{width:16px;height:16px;vertical-align:middle;display:inline-block;margin-right:4px}
+/* Campo editável de nome do usuário */
+.user-name{background:transparent;border:1px solid transparent;color:var(--text);padding:2px 6px;
+  border-radius:4px;font-size:12px;width:100%;min-width:70px;max-width:120px;
+  transition:border-color .15s,background .15s}
+.user-name:hover{border-color:var(--border)}
+.user-name:focus{border-color:var(--blue);background:var(--surface2);outline:none}
+.user-name::placeholder{color:var(--text3);font-style:italic}
 </style>
 </head>
 <body>
@@ -253,6 +262,7 @@ tbody tr:hover{background:var(--surface2)}
         <table>
           <thead>
             <tr>
+              <th data-col="nickname">Usuário <span class="sort">▲</span></th>
               <th data-col="device_id">Device ID <span class="sort">▲</span></th>
               <th data-col="model">Modelo <span class="sort">▲</span></th>
               <th data-col="brand">Marca <span class="sort">▲</span></th>
@@ -497,6 +507,7 @@ function renderDevices(){
   let data = _devData;
   if(plat) data = data.filter(d=>d.platform===plat);
   if(search) data = data.filter(d=>
+    (d.nickname||'').toLowerCase().includes(search) ||
     (d.device_id||'').toLowerCase().includes(search) ||
     (d.model||'').toLowerCase().includes(search) ||
     (d.brand||'').toLowerCase().includes(search) ||
@@ -519,10 +530,11 @@ function renderDevices(){
   });
   const tbody = $('#dev-tbody');
   if(!data.length){
-    tbody.innerHTML = '<tr><td colspan="10" class="empty">Nenhum dispositivo encontrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">Nenhum dispositivo encontrado</td></tr>';
     return;
   }
   tbody.innerHTML = data.map(d=>`<tr>
+    <td><input class="user-name" type="text" value="${(d.nickname||'').replace(/"/g,'&quot;')}" placeholder="…" data-did="${d.device_id}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="mono" title="${d.device_id}"><a class="dev-id-link" href="#" onclick="openDevDetail('${d.device_id}');return false">${shortId(d.device_id)}</a></td>
     <td>${d.model||'<span class=muted>—</span>'}</td>
     <td>${platIcon(d.platform)} ${d.brand||d.platform||'—'}</td>
@@ -537,12 +549,29 @@ function renderDevices(){
   updateSortHeaders('#tab-devices');
 }
 
+/* Ícones SVG reais de plataforma (Apple e Android) */
+const _svgApple='<svg class="plat-icon" viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184 4 273.5c0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-62.1 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>';
+const _svgAndroid='<svg class="plat-icon" viewBox="0 0 24 24" fill="#3DDC84"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0012 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 006 7h12c0-2.17-1.16-4.06-2.97-5.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>';
 function platIcon(p){
-  if(p==='iOS') return '🍎';
-  if(p==='Android') return '🤖';
-  if(p==='Windows') return '🪟';
-  if(p==='Mac') return '💻';
-  return '📱';
+  if(p==='iOS') return _svgApple;
+  if(p==='Android') return _svgAndroid;
+  if(p==='Windows') return '<span class="plat-icon" style="font-size:14px">🪟</span>';
+  if(p==='Mac') return _svgApple;
+  return '<span class="plat-icon" style="font-size:14px">📱</span>';
+}
+
+/* Salvar apelido do usuário no servidor */
+async function saveNickname(el){
+  const did = el.dataset.did;
+  const nick = el.value.trim();
+  /* Atualiza no array local para não perder ao re-renderizar */
+  const dev = _devData.find(d=>d.device_id===did);
+  if(dev) dev.nickname = nick;
+  try {
+    await api('/api/admin/devices/'+encodeURIComponent(did)+'/nickname', {
+      method:'PATCH', body:JSON.stringify({nickname:nick})
+    });
+  } catch(e){ toast('Erro ao salvar nome: '+e.message,'error'); }
 }
 
 $('#dev-filter-plat').onchange = renderDevices;
@@ -728,6 +757,9 @@ async function openDevDetail(id){
   $('#dm-body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Carregando…</div>';
   try {
     const r = await api('/api/admin/devices/' + encodeURIComponent(id));
+    /* Atualiza título do modal com apelido se existir */
+    const nick = r.device?.nickname;
+    $('#dm-title').textContent = nick ? nick + ' — ' + shortId(id) : shortId(id);
     renderDevDetail(r);
   } catch(e){
     $('#dm-body').innerHTML = `<div style="text-align:center;padding:40px;color:var(--red)">Erro: ${e.message}</div>`;
@@ -741,6 +773,7 @@ function renderDevDetail(r){
 
   /* Cabeçalho de info do dispositivo */
   let html = '<div class="dev-info">';
+  if (d.nickname) html += infoItem('Usuário', d.nickname);
   html += infoItem('Device ID', d.device_id);
   html += infoItem('Modelo', d.model || '—');
   html += infoItem('Marca', d.brand || '—');

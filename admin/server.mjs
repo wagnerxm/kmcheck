@@ -261,6 +261,16 @@ app.post('/api/admin/devices/ping', (req, res) => {
   }
 });
 
+/* Atualizar apelido/nome do usuário de um dispositivo — configuração manual do admin */
+app.patch('/api/admin/devices/:id/nickname', auth, (req, res) => {
+  const d = _db.devices[req.params.id];
+  if (!d) return res.status(404).json({ error: 'Dispositivo não encontrado' });
+  const { nickname } = req.body || {};
+  d.nickname = (nickname || '').trim() || null;
+  saveDb();
+  res.json({ ok: true, nickname: d.nickname });
+});
+
 /* Detalhes de um dispositivo — histórico completo de pings, agrupado por dia */
 app.get('/api/admin/devices/:id', auth, (req, res) => {
   const d = _db.devices[req.params.id];
