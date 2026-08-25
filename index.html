@@ -1810,7 +1810,7 @@ function fmtSnv(fonte){
   if(!m) return '';
   const ms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const mi=parseInt(m[2],10);
-  return (ms[mi-1]||m[2])+'/'+m[1].slice(2);
+  return 'SNV '+(ms[mi-1]||m[2])+'/'+m[1].slice(2);
 }
 function legendLines(info){
   const L=[]; let err=false;
