@@ -3119,11 +3119,30 @@ if(svcAdd) svcAdd.onclick=()=>{
           if(model&&!brand){
             if(/^SM-/.test(model))brand='Samsung';
             else if(/^RMX/.test(model))brand='Realme';
-            else if(/^M\d{4}/.test(model)||/^22\d{3}/.test(model))brand='Xiaomi';
+            else if(/^M\d{4}/.test(model)||/^2[234]\d{3}/.test(model))brand='Xiaomi';
             else if(/^CPH/.test(model))brand='OPPO';
             else if(/^V\d{4}/.test(model))brand='vivo';
-            else if(/^moto/.test(model))brand='Motorola';
+            else if(/^moto|^edge/i.test(model))brand='Motorola';
             else if(/^Pixel/.test(model))brand='Google';
+          }
+          /* Mapeamento de códigos → nomes amigáveis (modelos populares no Brasil) */
+          if(model){const _m={'SM-A145M':'Galaxy A14','SM-A146M':'Galaxy A14 5G','SM-A155M':'Galaxy A15',
+            'SM-A245M':'Galaxy A24','SM-A256M':'Galaxy A25 5G','SM-A346M':'Galaxy A34 5G',
+            'SM-A356M':'Galaxy A35 5G','SM-A546E':'Galaxy A54 5G','SM-A556E':'Galaxy A55 5G',
+            'SM-S901B':'Galaxy S22','SM-S911B':'Galaxy S23','SM-S921B':'Galaxy S24',
+            'SM-S928B':'Galaxy S24 Ultra','SM-S711B':'Galaxy S23 FE',
+            'SM-F731B':'Galaxy Z Flip5','SM-F946B':'Galaxy Z Fold5',
+            '24049RN28L':'Redmi Note 13 4G','23129RA5FL':'Redmi 13C',
+            '23117RA68G':'Redmi Note 13 Pro','2303ERA42L':'Redmi 12C',
+            '2310FPCA4G':'POCO M6 Pro','23108RN04Y':'Redmi 13',
+            '23076RN4BI':'POCO X5 Pro','M2101K6G':'POCO F3',
+            '22120RN86G':'Redmi 12','23073RPBFG':'POCO M6 Pro 5G',
+            '2303FPN6LG':'POCO C55','22071219CG':'POCO X4 GT'};
+            /* Match exato ou Samsung sem sufixo de região */
+            let fn=_m[model];
+            if(!fn&&/^SM-/.test(model)){const b=model.replace(/[A-Z]$/,'');
+              for(const[k,v] of Object.entries(_m)){if(k.replace(/[A-Z]$/,'')===b){fn=v;break}}}
+            if(fn) model=fn;
           }
         }
         /* GPS — usa a posição já fixada pelo watchPosition */

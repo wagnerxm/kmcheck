@@ -108,10 +108,88 @@ function saveDbNow() {
 process.on('SIGINT', () => { saveDbNow(); process.exit(0); });
 process.on('SIGTERM', () => { saveDbNow(); process.exit(0); });
 
+/* ── Mapeamento de códigos de modelo Android → nomes amigáveis ──
+   Foco no mercado brasileiro (Samsung, Xiaomi/Redmi/POCO, Motorola, Realme). */
+const ANDROID_MODELS = {
+  /* Samsung Galaxy A */
+  'SM-A145M':'Galaxy A14','SM-A146M':'Galaxy A14 5G','SM-A155M':'Galaxy A15',
+  'SM-A156M':'Galaxy A15 5G','SM-A245M':'Galaxy A24','SM-A256M':'Galaxy A25 5G',
+  'SM-A346M':'Galaxy A34 5G','SM-A356M':'Galaxy A35 5G',
+  'SM-A546E':'Galaxy A54 5G','SM-A556E':'Galaxy A55 5G',
+  'SM-A057M':'Galaxy A05s','SM-A047M':'Galaxy A04s','SM-A037M':'Galaxy A03s',
+  'SM-A127M':'Galaxy A12','SM-A137M':'Galaxy A13','SM-A235M':'Galaxy A23',
+  'SM-A325M':'Galaxy A32','SM-A525M':'Galaxy A52','SM-A536E':'Galaxy A53 5G',
+  /* Samsung Galaxy S */
+  'SM-S901B':'Galaxy S22','SM-S906B':'Galaxy S22+','SM-S908B':'Galaxy S22 Ultra',
+  'SM-S911B':'Galaxy S23','SM-S916B':'Galaxy S23+','SM-S918B':'Galaxy S23 Ultra',
+  'SM-S921B':'Galaxy S24','SM-S926B':'Galaxy S24+','SM-S928B':'Galaxy S24 Ultra',
+  'SM-S711B':'Galaxy S23 FE',
+  /* Samsung Galaxy M */
+  'SM-M346B':'Galaxy M34 5G','SM-M546B':'Galaxy M54 5G',
+  'SM-M236B':'Galaxy M23','SM-M336B':'Galaxy M33',
+  /* Samsung Galaxy Z */
+  'SM-F731B':'Galaxy Z Flip5','SM-F946B':'Galaxy Z Fold5',
+  'SM-F741B':'Galaxy Z Flip6','SM-F956B':'Galaxy Z Fold6',
+  /* Samsung Galaxy Note */
+  'SM-N986B':'Galaxy Note 20 Ultra','SM-N981B':'Galaxy Note 20',
+  /* Xiaomi / Redmi / POCO — códigos internos */
+  '24049RN28L':'Redmi Note 13 4G','24053RN02A':'Redmi Note 13 5G',
+  '23129RA5FL':'Redmi 13C','23108RN04Y':'Redmi 13',
+  '23117RA68G':'Redmi Note 13 Pro','23090RA98G':'Redmi Note 13 Pro+',
+  '2303ERA42L':'Redmi 12C','22120RN86G':'Redmi 12',
+  '2310FPCA4G':'POCO M6 Pro','23073RPBFG':'POCO M6 Pro 5G',
+  '23076RN4BI':'POCO X5 Pro','22101320G':'POCO X5',
+  'M2101K6G':'POCO F3','23049PCD8G':'POCO F5',
+  '2201116SG':'Xiaomi 12','2203129G':'POCO X4 Pro 5G',
+  '22071219CG':'POCO X4 GT','21121210G':'Xiaomi 11 Lite 5G NE',
+  '2201117SG':'Xiaomi 12 Pro','23078PKD5I':'Xiaomi 13T',
+  '2303FPN6LG':'POCO C55',
+  /* Motorola */
+  'moto g84 5G':'Moto G84 5G','moto g73 5G':'Moto G73 5G',
+  'moto g54 5G':'Moto G54 5G','moto g34 5G':'Moto G34 5G',
+  'moto g24':'Moto G24','moto g14':'Moto G14',
+  'moto g53 5G':'Moto G53 5G','moto g52':'Moto G52',
+  'moto e22':'Moto E22','moto e13':'Moto E13',
+  'moto g 5G (2024)':'Moto G 5G 2024',
+  'moto g200 5G':'Moto G200 5G','moto g82 5G':'Moto G82 5G',
+  'edge 40':'Motorola Edge 40','edge 30':'Motorola Edge 30',
+  'edge 40 pro':'Motorola Edge 40 Pro','edge 50 pro':'Motorola Edge 50 Pro',
+  /* Realme */
+  'RMX3474':'Realme 9i','RMX3630':'Realme 11','RMX3710':'Realme 12 Pro',
+  'RMX3085':'Realme 8','RMX3393':'Realme 9 Pro+','RMX3761':'Realme C53',
+  'RMX3762':'Realme C55',
+  /* Google Pixel */
+  'Pixel 7':'Pixel 7','Pixel 7a':'Pixel 7a','Pixel 7 Pro':'Pixel 7 Pro',
+  'Pixel 8':'Pixel 8','Pixel 8a':'Pixel 8a','Pixel 8 Pro':'Pixel 8 Pro',
+  'Pixel 9':'Pixel 9','Pixel 9 Pro':'Pixel 9 Pro',
+};
+
+/* Tenta encontrar nome amigável para modelo Android.
+   1. Match exato no mapa   2. Match por prefixo Samsung (SM-Axx5 → Galaxy Axx)
+   3. Retorna o código original se não encontrar */
+function friendlyModel(code) {
+  if (!code) return null;
+  /* Match exato */
+  if (ANDROID_MODELS[code]) return ANDROID_MODELS[code];
+  /* Samsung: SM-A145M e SM-A145F são o mesmo modelo (sufixo = região) */
+  if (/^SM-/.test(code)) {
+    const base = code.replace(/[A-Z]$/, ''); /* remove sufixo de região */
+    for (const [k, v] of Object.entries(ANDROID_MODELS)) {
+      if (k.replace(/[A-Z]$/, '') === base) return v;
+    }
+  }
+  /* Motorola: model pode vir com espaços extras */
+  const motoKey = code.trim().toLowerCase();
+  for (const [k, v] of Object.entries(ANDROID_MODELS)) {
+    if (k.toLowerCase() === motoKey) return v;
+  }
+  return null; /* sem match — retorna null, usa o código original */
+}
+
 /* ── Detecção server-side de modelo/marca/OS via user_agent + tela + hw ──
    Funciona como fallback quando o cliente (v174-) não envia esses campos.
-   O campo `hw` (hardware) inclui: cores, gpu, proMotion (120Hz), mem.
-   ProMotion=true → modelo Pro (iPhone 13 Pro+). Crucial para precisão. */
+   O campo `hw` (hardware) inclui: cores, gpu, proMotion (120Hz), cam, mem.
+   ProMotion=true → modelo Pro (iPhone 13 Pro+). Telephoto=true → Pro. */
 function detectDevice(ua, screenStr, hw) {
   if (!ua) return { brand: null, model: null, os_version: null };
   let brand = null, model = null, os_version = null;
@@ -159,18 +237,24 @@ function detectDevice(ua, screenStr, hw) {
     model = 'iPad';
   } else if (/Android/.test(ua)) {
     const am = ua.match(/;\s*([^;)]+?)\s*Build\//);
-    model = am ? am[1].trim() : null;
+    let rawModel = am ? am[1].trim() : null;
     /* Chrome moderno esconde o modelo (mostra "K"), limpa nesse caso */
-    if (model === 'K') model = null;
+    if (rawModel === 'K') rawModel = null;
+    model = rawModel;
     /* Infere marca pelo código do modelo Android */
-    if (model && !brand) {
-      if (/^SM-/.test(model)) brand = 'Samsung';
-      else if (/^RMX/.test(model)) brand = 'Realme';
-      else if (/^M\d{4}/.test(model) || /^22\d{3}/.test(model)) brand = 'Xiaomi';
-      else if (/^CPH/.test(model)) brand = 'OPPO';
-      else if (/^V\d{4}/.test(model)) brand = 'vivo';
-      else if (/^moto/.test(model)) brand = 'Motorola';
-      else if (/^Pixel/.test(model)) brand = 'Google';
+    if (rawModel && !brand) {
+      if (/^SM-/.test(rawModel)) brand = 'Samsung';
+      else if (/^RMX/.test(rawModel)) brand = 'Realme';
+      else if (/^M\d{4}/.test(rawModel) || /^22\d{3}/.test(rawModel) || /^2[34]\d{3}/.test(rawModel)) brand = 'Xiaomi';
+      else if (/^CPH/.test(rawModel)) brand = 'OPPO';
+      else if (/^V\d{4}/.test(rawModel)) brand = 'vivo';
+      else if (/^moto|^edge/i.test(rawModel)) brand = 'Motorola';
+      else if (/^Pixel/.test(rawModel)) brand = 'Google';
+    }
+    /* Traduz código do modelo → nome amigável (ex: SM-A145M → Galaxy A14) */
+    if (rawModel) {
+      const friendly = friendlyModel(rawModel);
+      if (friendly) model = friendly;
     }
   }
   return { brand, model, os_version };
