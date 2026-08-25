@@ -406,6 +406,23 @@ app.get('/api/admin/devices', auth, (req, res) => {
       if (det.brand && det.brand !== d.brand) { d.brand = det.brand; dirty = true; }
       if (det.model && det.model !== d.model) { d.model = det.model; dirty = true; }
       if (det.os_version && det.os_version !== d.os_version) { d.os_version = det.os_version; dirty = true; }
+      /* Traduz código cru do modelo Android → nome amigável.
+         O Chrome moderno esconde o modelo no UA (mostra "K"), então detectDevice()
+         não consegue extrair. Mas o client envia o código via userAgentData.
+         Aqui aplicamos o friendlyModel() diretamente no campo armazenado. */
+      if (d.model && d.platform !== 'iOS') {
+        const friendly = friendlyModel(d.model);
+        if (friendly && friendly !== d.model) { d.model = friendly; dirty = true; }
+      }
+      /* Infere marca se faltando (dispositivos antigos podem ter brand vazio) */
+      if (d.model && !d.brand) {
+        if (/Galaxy|^SM-/.test(d.model)) d.brand = 'Samsung';
+        else if (/Redmi|POCO|Xiaomi/.test(d.model)) d.brand = 'Xiaomi';
+        else if (/Moto|Edge/.test(d.model)) d.brand = 'Motorola';
+        else if (/Realme/.test(d.model)) d.brand = 'Realme';
+        else if (/Pixel/.test(d.model)) d.brand = 'Google';
+        if (d.brand) dirty = true;
+      }
       return d;
     })
     .sort((a, b) => (b.last_ping || '').localeCompare(a.last_ping || ''));
