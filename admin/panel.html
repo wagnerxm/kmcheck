@@ -785,10 +785,13 @@ function renderDevDetail(r){
   html += infoItem('Último Acesso', fmtDate(d.last_ping));
   html += infoItem('Bases Baixadas', (d.bases_count || 0) + ' rodovias');
   if (d.hw) {
+    if (d.hw.chip) html += infoItem('Chip', '🧠 ' + d.hw.chip + (d.hw.bench != null ? ' (bench: ' + d.hw.bench + 'ms)' : ''));
+    else if (d.hw.bench != null) html += infoItem('Benchmark CPU', d.hw.bench + 'ms');
     if (d.hw.gpu) html += infoItem('GPU', d.hw.gpu);
     html += infoItem('CPU Cores', d.hw.cores || '—');
     html += infoItem('ProMotion', d.hw.proMotion === true ? '✅ 120Hz (Pro)' : d.hw.proMotion === false ? '❌ 60Hz' : '—');
     if (d.hw.mem) html += infoItem('RAM', d.hw.mem + ' GB');
+    if (d.hw.glExts) html += infoItem('WebGL Exts', d.hw.glExts);
     if (d.hw.cam) {
       const cam = d.hw.cam;
       html += infoItem('Câmeras', cam.back + ' traseiras' + (cam.telephoto ? ' (📷 teleobjetiva = Pro)' : ''));

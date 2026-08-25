@@ -186,16 +186,33 @@ function friendlyModel(code) {
   return null; /* sem match — retorna null, usa o código original */
 }
 
+/* ── Estimativa do chip Apple pelo benchmark de CPU ──
+   O cliente roda 300K iterações de sin/cos/sqrt (3x, mediana) e envia hw.bench.
+   Cada geração de chip Apple (A14→A18) produz tempos consistentemente diferentes.
+   Ranges calibráveis — ajustar conforme dados reais. */
+function estimateChip(benchMs) {
+  if (benchMs == null) return null;
+  if (benchMs > 250) return 'A11-';   /* A8-A11: iPhone 6 a X/8 */
+  if (benchMs > 180) return 'A12';    /* A12: XR/XS */
+  if (benchMs > 140) return 'A13';    /* A13: iPhone 11 */
+  if (benchMs > 110) return 'A14';    /* A14: iPhone 12 */
+  if (benchMs > 85)  return 'A15';    /* A15: iPhone 13/14/15 */
+  if (benchMs > 65)  return 'A16';    /* A16: iPhone 14 Pro/15 */
+  if (benchMs > 50)  return 'A17';    /* A17 Pro: iPhone 15 Pro */
+  return 'A18';                       /* A18/Pro: iPhone 16 */
+}
+
 /* ── Detecção server-side de modelo/marca/OS via user_agent + tela + hw ──
    Funciona como fallback quando o cliente (v174-) não envia esses campos.
-   O campo `hw` (hardware) inclui: cores, gpu, proMotion (120Hz), cam, mem.
-   ProMotion=true → modelo Pro (iPhone 13 Pro+). Telephoto=true → Pro. */
+   O campo `hw` (hardware) inclui: cores, gpu, proMotion, cam, bench, chip.
+   ProMotion=true → Pro (13 Pro+). Telephoto=true → Pro. Chip (bench) → geração. */
 function detectDevice(ua, screenStr, hw) {
   if (!ua) return { brand: null, model: null, os_version: null };
   let brand = null, model = null, os_version = null;
-  const pro120 = hw?.proMotion === true; /* 120Hz = modelo Pro (13 Pro+) */
-  const tele = hw?.cam?.telephoto === true; /* Teleobjetiva = Pro (inclui 12 Pro) */
-  const isPro = pro120 || tele; /* Qualquer sinal de Pro */
+  const pro120 = hw?.proMotion === true;
+  const tele = hw?.cam?.telephoto === true;
+  /* Chip: usa o pré-calculado pelo cliente, senão estima pelo bench */
+  const chip = hw?.chip || estimateChip(hw?.bench);
   /* Marca */
   if (/iPhone|iPad|Macintosh/.test(ua)) brand = 'Apple';
   else {
@@ -210,38 +227,86 @@ function detectDevice(ua, screenStr, hw) {
     const ov = ua.match(/Android ([\d.]+)/);
     os_version = ov ? 'Android ' + ov[1] : null;
   }
-  /* Modelo — iPhones pela resolução CSS + versão iOS + ProMotion + câmeras.
-     ProMotion (120Hz) só existe nos Pro a partir do 13 Pro.
-     Teleobjetiva só existe nos Pro (inclui 12 Pro que não tem ProMotion).
-     Combinando: 120Hz → Pro (13+), telephoto → Pro (qualquer geração). */
+  /* Modelo — iPhones por resolução + chip + ProMotion + câmeras.
+     O chip (estimado pelo benchmark de CPU) é o sinal principal que
+     diferencia modelos com a mesma resolução de tela. */
   const iosM = ua.match(/OS (\d+)/);
   const iosV = iosM ? +iosM[1] : 0;
   if (/iPhone/.test(ua) && screenStr) {
     const [sw, sh] = screenStr.split('x').map(Number);
     const w = Math.min(sw, sh), h = Math.max(sw, sh);
     const k = w + 'x' + h;
-    const iphones = {
-      '320x568': 'iPhone SE 1ª', '375x667': 'iPhone 6/7/8/SE2/SE3',
-      '414x736': 'iPhone 6+/7+/8+',
-      '414x896': iosV >= 17 ? 'iPhone 11' : 'iPhone XR/11',
-      '414x896x3': tele ? 'iPhone XS Max' : 'iPhone 11 Pro Max',
-      '375x812': iosV >= 17 ? (tele ? 'iPhone 12 mini' : 'iPhone 13 mini') : 'iPhone X/XS/11 Pro/12 mini/13 mini',
-      '390x844': pro120 ? 'iPhone 13 Pro' : (tele ? 'iPhone 12 Pro' : 'iPhone 12/13/14'),
-      '428x926': pro120 ? 'iPhone 14 Pro Max (?)' : 'iPhone 13 Pro Max/14 Plus',
-      '393x852': isPro ? 'iPhone 14 Pro/15 Pro' : 'iPhone 15/16',
-      '430x932': isPro ? 'iPhone 14 Pro Max/15 Pro Max' : 'iPhone 15 Plus/16 Plus',
-      '402x874': 'iPhone 16 Pro', '440x956': 'iPhone 16 Pro Max'
-    };
-    model = iphones[k] || ('iPhone (' + k + ')');
+    /* Resoluções únicas — sem ambiguidade */
+    if (k === '320x568') model = 'iPhone SE 1ª';
+    else if (k === '402x874') model = 'iPhone 16 Pro';
+    else if (k === '440x956') model = 'iPhone 16 Pro Max';
+    /* 375x667 — iPhone 6/7/8/SE2/SE3 → chip diferencia */
+    else if (k === '375x667') {
+      if (chip === 'A15') model = 'iPhone SE 3ª';
+      else if (chip === 'A13') model = 'iPhone SE 2ª';
+      else if (chip === 'A11-') model = 'iPhone 8';
+      else model = 'iPhone 6/7/8/SE';
+    }
+    /* 414x736 */
+    else if (k === '414x736') {
+      if (chip === 'A11-') model = 'iPhone 8 Plus';
+      else model = 'iPhone 6+/7+/8+';
+    }
+    /* 414x896 @2x — XR(A12) / 11(A13) */
+    else if (k === '414x896') {
+      if (chip === 'A13' || iosV >= 17) model = 'iPhone 11';
+      else if (chip === 'A12') model = 'iPhone XR';
+      else model = 'iPhone XR/11';
+    }
+    /* 375x812 — X(A11)/XS(A12)/11Pro(A13)/12mini(A14)/13mini(A15) */
+    else if (k === '375x812') {
+      if (chip === 'A11-') model = 'iPhone X';
+      else if (chip === 'A12') model = 'iPhone XS';
+      else if (chip === 'A13') model = 'iPhone 11 Pro';
+      else if (chip === 'A14') model = 'iPhone 12 mini';
+      else if (chip === 'A15') model = 'iPhone 13 mini';
+      else model = iosV >= 17 ? (tele ? 'iPhone 12 mini' : 'iPhone 13 mini') : 'iPhone X/XS/11 Pro/12 mini/13 mini';
+    }
+    /* 390x844 — 12(A14)/12Pro(A14,tele)/13Pro(A15,120Hz)/13(A15)/14(A15) */
+    else if (k === '390x844') {
+      if (pro120) model = 'iPhone 13 Pro';
+      else if (chip === 'A14' && tele) model = 'iPhone 12 Pro';
+      else if (chip === 'A14') model = 'iPhone 12';
+      else if (tele) model = 'iPhone 12 Pro';
+      else if (chip === 'A15') model = 'iPhone 13/14';
+      else model = 'iPhone 12/13/14';
+    }
+    /* 428x926 — 13ProMax(A15,120Hz) / 14Plus(A15,60Hz) */
+    else if (k === '428x926') {
+      if (pro120) model = 'iPhone 13 Pro Max';
+      else model = 'iPhone 14 Plus';
+    }
+    /* 393x852 — 14Pro(A16,120Hz)/15Pro(A17,120Hz)/15(A16,60Hz)/16(A18,60Hz) */
+    else if (k === '393x852') {
+      if (pro120 && chip === 'A16') model = 'iPhone 14 Pro';
+      else if (pro120 && chip === 'A17') model = 'iPhone 15 Pro';
+      else if (pro120) model = 'iPhone 14 Pro/15 Pro';
+      else if (chip === 'A16') model = 'iPhone 15';
+      else if (chip === 'A18') model = 'iPhone 16';
+      else model = 'iPhone 15/16';
+    }
+    /* 430x932 — 14ProMax(A16,120Hz)/15ProMax(A17,120Hz)/15Plus(A16)/16Plus(A18) */
+    else if (k === '430x932') {
+      if (pro120 && chip === 'A16') model = 'iPhone 14 Pro Max';
+      else if (pro120 && chip === 'A17') model = 'iPhone 15 Pro Max';
+      else if (pro120) model = 'iPhone 14 Pro Max/15 Pro Max';
+      else if (chip === 'A16') model = 'iPhone 15 Plus';
+      else if (chip === 'A18') model = 'iPhone 16 Plus';
+      else model = 'iPhone 15 Plus/16 Plus';
+    }
+    else model = 'iPhone (' + k + ')';
   } else if (/iPad/.test(ua)) {
     model = 'iPad';
   } else if (/Android/.test(ua)) {
     const am = ua.match(/;\s*([^;)]+?)\s*Build\//);
     let rawModel = am ? am[1].trim() : null;
-    /* Chrome moderno esconde o modelo (mostra "K"), limpa nesse caso */
     if (rawModel === 'K') rawModel = null;
     model = rawModel;
-    /* Infere marca pelo código do modelo Android */
     if (rawModel && !brand) {
       if (/^SM-/.test(rawModel)) brand = 'Samsung';
       else if (/^RMX/.test(rawModel)) brand = 'Realme';
@@ -251,7 +316,6 @@ function detectDevice(ua, screenStr, hw) {
       else if (/^moto|^edge/i.test(rawModel)) brand = 'Motorola';
       else if (/^Pixel/.test(rawModel)) brand = 'Google';
     }
-    /* Traduz código do modelo → nome amigável (ex: SM-A145M → Galaxy A14) */
     if (rawModel) {
       const friendly = friendlyModel(rawModel);
       if (friendly) model = friendly;
