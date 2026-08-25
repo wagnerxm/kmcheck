@@ -199,7 +199,8 @@ function estimateChip(benchMs) {
   if (benchMs > 85)  return 'A15';    /* A15: iPhone 13/14/15 */
   if (benchMs > 65)  return 'A16';    /* A16: iPhone 14 Pro/15 */
   if (benchMs > 50)  return 'A17';    /* A17 Pro: iPhone 15 Pro */
-  return 'A18';                       /* A18/Pro: iPhone 16 */
+  if (benchMs > 38)  return 'A18';    /* A18/Pro: iPhone 16 */
+  return 'A19';                       /* A19/Pro: iPhone 17 */
 }
 
 /* ── Detecção server-side de modelo/marca/OS via user_agent + tela + hw ──
@@ -236,10 +237,8 @@ function detectDevice(ua, screenStr, hw) {
     const [sw, sh] = screenStr.split('x').map(Number);
     const w = Math.min(sw, sh), h = Math.max(sw, sh);
     const k = w + 'x' + h;
-    /* Resoluções únicas — sem ambiguidade */
+    /* Resolução única — sem ambiguidade */
     if (k === '320x568') model = 'iPhone SE 1ª';
-    else if (k === '402x874') model = 'iPhone 16 Pro';
-    else if (k === '440x956') model = 'iPhone 16 Pro Max';
     /* 375x667 — iPhone 6/7/8/SE2/SE3 → chip diferencia */
     else if (k === '375x667') {
       if (chip === 'A15') model = 'iPhone SE 3ª';
@@ -281,23 +280,35 @@ function detectDevice(ua, screenStr, hw) {
       if (pro120) model = 'iPhone 13 Pro Max';
       else model = 'iPhone 14 Plus';
     }
-    /* 393x852 — 14Pro(A16,120Hz)/15Pro(A17,120Hz)/15(A16,60Hz)/16(A18,60Hz) */
+    /* 393x852 — 14Pro(A16,120Hz)/15Pro(A17,120Hz)/15(A16)/16(A18)/17(A19) */
     else if (k === '393x852') {
       if (pro120 && chip === 'A16') model = 'iPhone 14 Pro';
       else if (pro120 && chip === 'A17') model = 'iPhone 15 Pro';
       else if (pro120) model = 'iPhone 14 Pro/15 Pro';
       else if (chip === 'A16') model = 'iPhone 15';
       else if (chip === 'A18') model = 'iPhone 16';
-      else model = 'iPhone 15/16';
+      else if (chip === 'A19') model = 'iPhone 17';
+      else model = 'iPhone 15/16/17';
     }
-    /* 430x932 — 14ProMax(A16,120Hz)/15ProMax(A17,120Hz)/15Plus(A16)/16Plus(A18) */
+    /* 402x874 — 16Pro(A18)/17Pro(A19) → chip diferencia */
+    else if (k === '402x874') {
+      if (chip === 'A19') model = 'iPhone 17 Pro';
+      else model = 'iPhone 16 Pro';
+    }
+    /* 430x932 — 14ProMax(A16,120Hz)/15ProMax(A17,120Hz)/15Plus(A16)/16Plus(A18)/17Air(A19) */
     else if (k === '430x932') {
       if (pro120 && chip === 'A16') model = 'iPhone 14 Pro Max';
       else if (pro120 && chip === 'A17') model = 'iPhone 15 Pro Max';
       else if (pro120) model = 'iPhone 14 Pro Max/15 Pro Max';
       else if (chip === 'A16') model = 'iPhone 15 Plus';
       else if (chip === 'A18') model = 'iPhone 16 Plus';
+      else if (chip === 'A19') model = 'iPhone 17 Air';
       else model = 'iPhone 15 Plus/16 Plus';
+    }
+    /* 440x956 — 16ProMax(A18)/17ProMax(A19) → chip diferencia */
+    else if (k === '440x956') {
+      if (chip === 'A19') model = 'iPhone 17 Pro Max';
+      else model = 'iPhone 16 Pro Max';
     }
     else model = 'iPhone (' + k + ')';
   } else if (/iPad/.test(ua)) {

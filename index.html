@@ -3098,7 +3098,8 @@ if(svcAdd) svcAdd.onclick=()=>{
           else if(benchMs>85)  chip='A15';  /* A15: iPhone 13/14/15 */
           else if(benchMs>65)  chip='A16';  /* A16: iPhone 14 Pro/15 */
           else if(benchMs>50)  chip='A17';  /* A17 Pro: iPhone 15 Pro */
-          else chip='A18';                  /* A18/Pro: iPhone 16 */
+          else if(benchMs>38)  chip='A18';  /* A18/Pro: iPhone 16 */
+          else chip='A19';                  /* A19/Pro: iPhone 17 */
         }
         const hw={
           cores:navigator.hardwareConcurrency||0,
@@ -3120,15 +3121,13 @@ if(svcAdd) svcAdd.onclick=()=>{
           const pro120=_proMotion===true; /* ProMotion (120Hz) = Pro a partir do 13 Pro */
           const tele=camInfo?.telephoto===true; /* Teleobjetiva = Pro (inclui 12 Pro que não tem ProMotion) */
           /* ── Identificação precisa por resolução + chip + sinais Pro ──
-             O benchmark de CPU identifica o chip (A14/A15/A16/A17/A18).
+             O benchmark de CPU identifica o chip (A14→A19).
              Combinado com a resolução, elimina quase toda ambiguidade.
              Único caso irresolvível: iPhone 13 vs 14 (ambos A15, mesma tela, 60Hz).
              ┌──────────────┬────────┬──────────┬──────┬──────────────────────────┐
              │ Resolução    │ Chip   │ ProMotion│ Tele │ Modelo                   │
              ├──────────────┼────────┼──────────┼──────┼──────────────────────────┤
              │ 320x568@2    │ *      │          │      │ iPhone SE 1ª             │
-             │ 402x874@3    │ *      │          │      │ iPhone 16 Pro            │
-             │ 440x956@3    │ *      │          │      │ iPhone 16 Pro Max        │
              │ 375x667@2    │ A15    │          │      │ iPhone SE 3ª             │
              │ 375x667@2    │ A13    │          │      │ iPhone SE 2ª             │
              │ 375x667@2    │ A11    │          │      │ iPhone 8                 │
@@ -3144,18 +3143,22 @@ if(svcAdd) svcAdd.onclick=()=>{
              │ 393x852@3    │ A16    │ Y        │      │ iPhone 14 Pro            │
              │ 393x852@3    │ A16    │ N        │      │ iPhone 15                │
              │ 393x852@3    │ A17    │ Y        │      │ iPhone 15 Pro            │
-             │ 393x852@3    │ A18    │          │      │ iPhone 16                │
+             │ 393x852@3    │ A18    │ N        │      │ iPhone 16                │
+             │ 393x852@3    │ A19    │ N        │      │ iPhone 17                │
+             │ 402x874@3    │ A18    │          │      │ iPhone 16 Pro            │
+             │ 402x874@3    │ A19    │          │      │ iPhone 17 Pro            │
              │ 428x926@3    │ A15    │ Y        │      │ iPhone 13 Pro Max        │
              │ 428x926@3    │ A15    │ N        │      │ iPhone 14 Plus           │
              │ 430x932@3    │ A16    │ Y        │      │ iPhone 14 Pro Max        │
              │ 430x932@3    │ A16    │ N        │      │ iPhone 15 Plus           │
              │ 430x932@3    │ A17    │ Y        │      │ iPhone 15 Pro Max        │
-             │ 430x932@3    │ A18    │          │      │ iPhone 16 Plus           │
+             │ 430x932@3    │ A18    │ N        │      │ iPhone 16 Plus           │
+             │ 430x932@3    │ A19    │ N        │      │ iPhone 17 Air            │
+             │ 440x956@3    │ A18    │          │      │ iPhone 16 Pro Max        │
+             │ 440x956@3    │ A19    │          │      │ iPhone 17 Pro Max        │
              └──────────────┴────────┴──────────┴──────┴──────────────────────────┘ */
-          /* Resoluções únicas — sem ambiguidade */
+          /* Resolução única — sem ambiguidade */
           if(k==='320x568@2') model='iPhone SE 1ª';
-          else if(k==='402x874@3') model='iPhone 16 Pro';
-          else if(k==='440x956@3') model='iPhone 16 Pro Max';
           /* 375x667@2 — iPhone 6/7/8/SE2/SE3 → chip diferencia */
           else if(k==='375x667@2'){
             if(chip==='A15') model='iPhone SE 3ª';
@@ -3203,23 +3206,40 @@ if(svcAdd) svcAdd.onclick=()=>{
             if(pro120) model='iPhone 13 Pro Max';
             else model='iPhone 14 Plus'; /* sem ProMotion é 14 Plus com certeza */
           }
-          /* 393x852@3 — 14Pro(A16,120Hz)/15Pro(A17,120Hz)/15(A16,60Hz)/16(A18,60Hz) */
+          /* 393x852@3 — 14Pro(A16,120Hz)/15Pro(A17,120Hz)/15(A16)/16(A18)/17(A19) */
           else if(k==='393x852@3'){
             if(pro120&&chip==='A16') model='iPhone 14 Pro';
             else if(pro120&&chip==='A17') model='iPhone 15 Pro';
             else if(pro120) model='iPhone 14 Pro/15 Pro';
             else if(chip==='A16') model='iPhone 15';
             else if(chip==='A18') model='iPhone 16';
-            else model='iPhone 15/16';
+            else if(chip==='A19') model='iPhone 17';
+            else model='iPhone 15/16/17';
           }
-          /* 430x932@3 — 14ProMax(A16,120Hz)/15ProMax(A17,120Hz)/15Plus(A16,60Hz)/16Plus(A18,60Hz) */
+          /* 402x874@3 — 16Pro(A18)/17Pro(A19) → chip diferencia */
+          else if(k==='402x874@3'){
+            if(chip==='A19') model='iPhone 17 Pro';
+            else model='iPhone 16 Pro'; /* A18 ou sem bench → 16 Pro (mais antigo) */
+          }
+          /* 428x926@3 — 13ProMax(A15,120Hz) / 14Plus(A15,60Hz) */
+          else if(k==='428x926@3'){
+            if(pro120) model='iPhone 13 Pro Max';
+            else model='iPhone 14 Plus';
+          }
+          /* 430x932@3 — 14ProMax(A16,120Hz)/15ProMax(A17,120Hz)/15Plus(A16)/16Plus(A18)/17Air(A19) */
           else if(k==='430x932@3'){
             if(pro120&&chip==='A16') model='iPhone 14 Pro Max';
             else if(pro120&&chip==='A17') model='iPhone 15 Pro Max';
             else if(pro120) model='iPhone 14 Pro Max/15 Pro Max';
             else if(chip==='A16') model='iPhone 15 Plus';
             else if(chip==='A18') model='iPhone 16 Plus';
+            else if(chip==='A19') model='iPhone 17 Air';
             else model='iPhone 15 Plus/16 Plus';
+          }
+          /* 440x956@3 — 16ProMax(A18)/17ProMax(A19) → chip diferencia */
+          else if(k==='440x956@3'){
+            if(chip==='A19') model='iPhone 17 Pro Max';
+            else model='iPhone 16 Pro Max';
           }
           else model='iPhone ('+k+')';
         }else if(/iPad/.test(ua)){model='iPad'}
