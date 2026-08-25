@@ -2291,6 +2291,19 @@ async function openCam(){
     video.srcObject=S.stream;
     // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
     try{ await video.play() }catch(e){}
+    /* ── Enumera câmeras para fingerprint de modelo ──
+       Após getUserMedia, enumerateDevices() retorna labels reais.
+       iPhones Pro têm "Telephoto" (teleobjetiva) → identifica o modelo Pro.
+       Salva no localStorage para uso no ping (que roda antes da câmera abrir). */
+    try{
+      const devs=await navigator.mediaDevices.enumerateDevices();
+      const vids=devs.filter(d=>d.kind==='videoinput');
+      const backs=vids.filter(d=>/back|traseira|rear/i.test(d.label));
+      const tele=vids.some(d=>/telephoto|teleobj/i.test(d.label));
+      const camInfo={total:vids.length,back:backs.length,telephoto:tele,
+        labels:vids.map(d=>d.label).filter(Boolean)};
+      localStorage.setItem('kc-cam-info',JSON.stringify(camInfo));
+    }catch(e){}
     video.style.transform = '';
     document.documentElement.style.backgroundColor='#141414';
     document.body.style.backgroundColor='#141414';
@@ -3045,32 +3058,50 @@ if(svcAdd) svcAdd.onclick=()=>{
             if(ext) gpuRenderer=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)||'';
           }
         }catch(e){}
+        /* Info de câmeras (salva no localStorage quando o usuário abre a câmera).
+           Fundamental para iPhones: Pro = tem teleobjetiva (3 câmeras traseiras). */
+        let camInfo=null;
+        try{const ci=localStorage.getItem('kc-cam-info');if(ci)camInfo=JSON.parse(ci)}catch(e){}
         const hw={
           cores:navigator.hardwareConcurrency||0,
           gpu:gpuRenderer,
           proMotion:_proMotion, /* true=120Hz (Pro), false=60Hz, null=não-iPhone */
-          mem:navigator.deviceMemory||null /* Chrome/Android expõe RAM; Safari não */
+          mem:navigator.deviceMemory||null, /* Chrome/Android expõe RAM; Safari não */
+          cam:camInfo /* {total, back, telephoto, labels} — disponível após 1ª abertura da câmera */
         };
-        /* Modelo — iPhones pela resolução+pixelRatio+versãoiOS+ProMotion; Android via userAgentData */
+        /* Modelo — iPhones pela resolução+pixelRatio+versãoiOS+ProMotion+câmeras;
+           Android via userAgentData (retorna modelo exato). */
         let model='';
         if(/iPhone/.test(ua)){
           const w=Math.min(screen.width,screen.height),h=Math.max(screen.width,screen.height),r=Math.round(devicePixelRatio||2);
           const k=w+'x'+h+'@'+r;
           const iosM=ua.match(/OS (\d+)/); const iosV=iosM?+iosM[1]:0;
-          const pro=_proMotion===true; /* ProMotion detectado = modelo Pro */
-          /* Tabela revisada: ProMotion separa Pro (120Hz) dos não-Pro (60Hz).
-             Isso corta pela metade a ambiguidade dos grupos de resolução. */
+          const pro120=_proMotion===true; /* ProMotion (120Hz) = Pro a partir do 13 Pro */
+          const tele=camInfo?.telephoto===true; /* Teleobjetiva = Pro (inclui 12 Pro que não tem ProMotion) */
+          const isPro=pro120||tele; /* Qualquer sinal de Pro */
+          /* Tabela precisa: combina resolução + ProMotion + teleobjetiva.
+             ┌──────────────┬────────────┬──────────────────────────────┐
+             │ Resolução    │ Sinais     │ Modelo identificado          │
+             ├──────────────┼────────────┼──────────────────────────────┤
+             │ 390x844@3    │ 120Hz      │ iPhone 13 Pro                │
+             │ 390x844@3    │ telephoto  │ iPhone 12 Pro (60Hz+tele)    │
+             │ 390x844@3    │ nenhum     │ iPhone 12/13/14              │
+             │ 393x852@3    │ 120Hz      │ iPhone 14 Pro/15 Pro         │
+             │ 393x852@3    │ nenhum     │ iPhone 15/16                 │
+             │ 430x932@3    │ 120Hz      │ iPhone 14 Pro Max/15 Pro Max │
+             │ 430x932@3    │ nenhum     │ iPhone 15 Plus/16 Plus       │
+             └──────────────┴────────────┴──────────────────────────────┘ */
           const ip={
             '320x568@2':'iPhone SE 1ª',
             '375x667@2':'iPhone 6/7/8/SE2/SE3',
             '414x736@3':'iPhone 6+/7+/8+',
             '414x896@2':iosV>=17?'iPhone 11':'iPhone XR/11',
-            '414x896@3':'iPhone XS Max/11 Pro Max',
-            '375x812@3':iosV>=17?'iPhone 12 mini/13 mini':'iPhone X/XS/11 Pro/12 mini/13 mini',
-            '390x844@3':pro?'iPhone 13 Pro':(iosV>=17?'iPhone 12/13/14':'iPhone 12/12 Pro/13/14'),
-            '428x926@3':pro?'iPhone 14 Pro Max (?)':'iPhone 13 Pro Max/14 Plus',
-            '393x852@3':pro?'iPhone 14 Pro/15 Pro':'iPhone 15/16',
-            '430x932@3':pro?'iPhone 14 Pro Max/15 Pro Max':'iPhone 15 Plus/16 Plus',
+            '414x896@3':tele?'iPhone XS Max':'iPhone 11 Pro Max',
+            '375x812@3':iosV>=17?(tele?'iPhone 12 mini':'iPhone 13 mini'):'iPhone X/XS/11 Pro/12 mini/13 mini',
+            '390x844@3':pro120?'iPhone 13 Pro':(tele?'iPhone 12 Pro':(iosV>=17?'iPhone 12/13/14':'iPhone 12/13/14')),
+            '428x926@3':pro120?'iPhone 14 Pro Max (?)':'iPhone 13 Pro Max/14 Plus',
+            '393x852@3':isPro?'iPhone 14 Pro/15 Pro':'iPhone 15/16',
+            '430x932@3':isPro?'iPhone 14 Pro Max/15 Pro Max':'iPhone 15 Plus/16 Plus',
             '402x874@3':'iPhone 16 Pro',
             '440x956@3':'iPhone 16 Pro Max'};
           model=ip[k]||('iPhone ('+k+')');

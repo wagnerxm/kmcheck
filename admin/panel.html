@@ -789,6 +789,11 @@ function renderDevDetail(r){
     html += infoItem('CPU Cores', d.hw.cores || '—');
     html += infoItem('ProMotion', d.hw.proMotion === true ? '✅ 120Hz (Pro)' : d.hw.proMotion === false ? '❌ 60Hz' : '—');
     if (d.hw.mem) html += infoItem('RAM', d.hw.mem + ' GB');
+    if (d.hw.cam) {
+      const cam = d.hw.cam;
+      html += infoItem('Câmeras', cam.back + ' traseiras' + (cam.telephoto ? ' (📷 teleobjetiva = Pro)' : ''));
+      if (cam.labels && cam.labels.length) html += '<div class="item" style="grid-column:1/-1"><div class="lbl">Labels câmeras</div><div class="val" style="font-size:11px">' + cam.labels.join(', ') + '</div></div>';
+    }
   }
   if (d.bases && d.bases.length) {
     const list = d.bases.map(b => (b.br.startsWith('BR-') ? b.br : 'BR-' + b.br) + '/' + b.uf).join(', ');

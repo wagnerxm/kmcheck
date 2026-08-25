@@ -115,7 +115,9 @@ process.on('SIGTERM', () => { saveDbNow(); process.exit(0); });
 function detectDevice(ua, screenStr, hw) {
   if (!ua) return { brand: null, model: null, os_version: null };
   let brand = null, model = null, os_version = null;
-  const pro = hw?.proMotion === true; /* 120Hz = modelo Pro */
+  const pro120 = hw?.proMotion === true; /* 120Hz = modelo Pro (13 Pro+) */
+  const tele = hw?.cam?.telephoto === true; /* Teleobjetiva = Pro (inclui 12 Pro) */
+  const isPro = pro120 || tele; /* Qualquer sinal de Pro */
   /* Marca */
   if (/iPhone|iPad|Macintosh/.test(ua)) brand = 'Apple';
   else {
@@ -130,9 +132,10 @@ function detectDevice(ua, screenStr, hw) {
     const ov = ua.match(/Android ([\d.]+)/);
     os_version = ov ? 'Android ' + ov[1] : null;
   }
-  /* Modelo — iPhones pela resolução CSS + versão iOS + ProMotion.
-     ProMotion (120Hz) só existe nos Pro a partir do iPhone 13 Pro (2021).
-     Isso corta pela metade a ambiguidade dos grupos de mesma resolução. */
+  /* Modelo — iPhones pela resolução CSS + versão iOS + ProMotion + câmeras.
+     ProMotion (120Hz) só existe nos Pro a partir do 13 Pro.
+     Teleobjetiva só existe nos Pro (inclui 12 Pro que não tem ProMotion).
+     Combinando: 120Hz → Pro (13+), telephoto → Pro (qualquer geração). */
   const iosM = ua.match(/OS (\d+)/);
   const iosV = iosM ? +iosM[1] : 0;
   if (/iPhone/.test(ua) && screenStr) {
@@ -143,11 +146,12 @@ function detectDevice(ua, screenStr, hw) {
       '320x568': 'iPhone SE 1ª', '375x667': 'iPhone 6/7/8/SE2/SE3',
       '414x736': 'iPhone 6+/7+/8+',
       '414x896': iosV >= 17 ? 'iPhone 11' : 'iPhone XR/11',
-      '375x812': iosV >= 17 ? 'iPhone 12 mini/13 mini' : 'iPhone X/XS/11 Pro/12 mini/13 mini',
-      '390x844': pro ? 'iPhone 13 Pro' : (iosV >= 17 ? 'iPhone 12/13/14' : 'iPhone 12/12 Pro/13/14'),
-      '428x926': pro ? 'iPhone 14 Pro Max (?)' : 'iPhone 13 Pro Max/14 Plus',
-      '393x852': pro ? 'iPhone 14 Pro/15 Pro' : 'iPhone 15/16',
-      '430x932': pro ? 'iPhone 14 Pro Max/15 Pro Max' : 'iPhone 15 Plus/16 Plus',
+      '414x896x3': tele ? 'iPhone XS Max' : 'iPhone 11 Pro Max',
+      '375x812': iosV >= 17 ? (tele ? 'iPhone 12 mini' : 'iPhone 13 mini') : 'iPhone X/XS/11 Pro/12 mini/13 mini',
+      '390x844': pro120 ? 'iPhone 13 Pro' : (tele ? 'iPhone 12 Pro' : 'iPhone 12/13/14'),
+      '428x926': pro120 ? 'iPhone 14 Pro Max (?)' : 'iPhone 13 Pro Max/14 Plus',
+      '393x852': isPro ? 'iPhone 14 Pro/15 Pro' : 'iPhone 15/16',
+      '430x932': isPro ? 'iPhone 14 Pro Max/15 Pro Max' : 'iPhone 15 Plus/16 Plus',
       '402x874': 'iPhone 16 Pro', '440x956': 'iPhone 16 Pro Max'
     };
     model = iphones[k] || ('iPhone (' + k + ')');
