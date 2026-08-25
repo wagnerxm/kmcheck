@@ -774,6 +774,10 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="checkbox" id="cfg-estaca">
       </div>
       <div class="listrow">
+        <span class="ltext"><b>Exibir SNV</b><i>Versão do SNV na linha da data (ex.: Out/19)</i></span>
+        <input type="checkbox" id="cfg-snv">
+      </div>
+      <div class="listrow">
         <span class="ltext"><b>Nome da OAE</b><i>Ponte/viaduto quando estiver sobre um</i></span>
         <input type="checkbox" id="cfg-oae" checked>
       </div>
@@ -996,7 +1000,7 @@ const S = {
 const CFG = {
   get oae(){ return ls('oae', true) }, get coord(){ return ls('coord', true) },
   get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 },
-  get estaca(){ return ls('estaca', false) },
+  get estaca(){ return ls('estaca', false) }, get snv(){ return ls('snv', false) },
   get preview(){ return ls('preview', false) }, get autosave(){ return ls('autosave', true) },
   get res(){ return localStorage.getItem('kc-res') || 'max' },
   get qual(){ return +localStorage.getItem('kc-qual') || 0.92 },
@@ -1057,7 +1061,7 @@ function findKm(lat,lon){
   const km=b.km[i]+t*(b.km[i+1]-b.km[i]);
   const dist=Math.sqrt(best.d2)*D2R*R;
   const lat2=b.lat[i]+t*(b.lat[i+1]-b.lat[i]), lon2=b.lon[i]+t*(b.lon[i+1]-b.lon[i]);
-  return {km, dist, br:b.br, uf:b.uf, axLat:lat2, axLon:lon2};
+  return {km, dist, br:b.br, uf:b.uf, axLat:lat2, axLon:lon2, fonte:b.fonte};
 }
 function kmToCoord(base, km){
   const a=base.km;
@@ -1740,16 +1744,40 @@ function paintGps(){
     }
   }
   // placa da câmera — atualiza texto sem recriar o DOM (evita reflow/flicker no Android)
-  const {L,err}=legendLines(buildInfo());
+  const {L,err,snvTag}=legendLines(buildInfo());
   const lp=document.getElementById('liveplate');
-  const kids=[...lp.children];
-  if(kids.length!==L.length){
-    lp.innerHTML=L.map((t,i)=>`<div class="${i===0?'l1':'l2'}"></div>`).join('');
-    [...lp.children].forEach((el,i)=>el.textContent=L[i]);
+  /* monta a quantidade esperada de divs: cada linha + opcional span do SNV na última */
+  const needRebuild=(()=>{
+    if(lp.children.length!==L.length) return true;
+    const last=lp.children[lp.children.length-1];
+    const hasSnvSpan=!!last.querySelector('.snvtag');
+    if(!!snvTag!==hasSnvSpan) return true;
+    return false;
+  })();
+  if(needRebuild){
+    lp.innerHTML=L.map((t,i)=>{
+      if(i===L.length-1 && snvTag)
+        return `<div class="${i===0?'l1':'l2'}" style="display:flex;justify-content:space-between;gap:.5em"><span></span><span class="snvtag"></span></div>`;
+      return `<div class="${i===0?'l1':'l2'}"></div>`;
+    }).join('');
+    for(let i=0;i<L.length;i++){
+      const el=lp.children[i];
+      const span=el.querySelector('span:first-child');
+      if(span) span.textContent=L[i]; else el.textContent=L[i];
+    }
+    const st=lp.querySelector('.snvtag');
+    if(st) st.textContent=snvTag;
     styleLivePlate();
   } else {
     let changed=false;
-    kids.forEach((el,i)=>{ if(el.textContent!==L[i]){ el.textContent=L[i]; changed=true } });
+    for(let i=0;i<L.length;i++){
+      const el=lp.children[i];
+      const span=el.querySelector('span:first-child');
+      const node=span||el;
+      if(node.textContent!==L[i]){ node.textContent=L[i]; changed=true }
+    }
+    const st=lp.querySelector('.snvtag');
+    if(st && st.textContent!==snvTag){ st.textContent=snvTag; changed=true }
     if(changed) styleLivePlate();
   }
   lp.classList.toggle('err', err);
@@ -1760,7 +1788,7 @@ function buildInfo(){
   const t=now();
   const info={data:t.data, hora:t.hora, dt:t.d, src:'gps'};
   if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc }
-  if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist }
+  if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist; info.fonte=S.fix.fonte }
   return info;
 }
 /* formato da legenda (padrão do exemplo do usuário):
@@ -1774,6 +1802,15 @@ function estacaDe(km){
   const est = Math.floor(m/20);
   const resto = m - est*20;
   return `Est. ${est}+${Math.round(resto)}`;
+}
+/* formata versão do SNV para exibição curta na legenda — "SNV 202607a B" → "Jul/26" */
+function fmtSnv(fonte){
+  if(!fonte) return '';
+  const m=fonte.match(/(\d{4})(\d{2})\w?/);
+  if(!m) return '';
+  const ms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const mi=parseInt(m[2],10);
+  return (ms[mi-1]||m[2])+'/'+m[1].slice(2);
 }
 function legendLines(info){
   const L=[]; let err=false;
@@ -1801,7 +1838,9 @@ function legendLines(info){
     L.push(lc);
   }
   L.push(formatDateLine(info.dt||new Date()));
-  return {L,err};
+  /* tag do SNV — renderizada à direita na linha da data (separada para posicionar no canvas/HTML) */
+  const snvTag = CFG.snv ? fmtSnv(info.fonte) : '';
+  return {L,err,snvTag};
 }
 
 /* ================= contratos ================= */
@@ -2644,7 +2683,7 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
    tiltDeg gira o grupo (logo+legenda) em torno do centro, acompanhando a
    inclinação física do aparelho no momento da foto, igual à prévia ao vivo. */
 function burnLegend(ctx,W,H,info,tiltDeg){
-  const {L}=legendLines(info);
+  const {L,snvTag}=legendLines(info);
   // A legenda acompanha a INCLINAÇÃO da imagem, igual à prévia ao vivo: quando o celular está
   // deitado (tilt ±90), a caixa da legenda troca largura<->altura e o grupo (legenda+logo) gira
   // em torno do centro — assim ela cai "em pé" em relação à cena, no mesmo canto da prévia.
@@ -2664,12 +2703,20 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   const legTop   = CFG.legpos==='tl' || CFG.legpos==='tr';
   ctx.textAlign = legRight ? 'right' : 'left';
   const lx = legRight ? BW-pad : pad;
+  /* largura do SNV para considerar no cálculo do fundo */
+  const snvW = snvTag ? ctx.measureText(snvTag).width : 0;
+  const snvGap = snvTag ? size*1.5 : 0;  // espaço mínimo entre data e SNV
   /* fundo semi-transparente atrás do texto (claro ou escuro) */
   if(CFG.legbg && L.length){
     const bgPad=size*0.4;                        // folga em torno do texto
     const blockH=lh*L.length+bgPad*2-lh+size;    // altura total do bloco
     let maxTw=0;
-    for(let i=0;i<L.length;i++){ const tw=ctx.measureText(L[i]).width; if(tw>maxTw) maxTw=tw; }
+    for(let i=0;i<L.length;i++){
+      let tw=ctx.measureText(L[i]).width;
+      /* na última linha, soma a largura do SNV (data + gap + snv) */
+      if(i===L.length-1 && snvTag) tw+=snvGap+snvW;
+      if(tw>maxTw) maxTw=tw;
+    }
     const blockW=maxTw+bgPad*2;
     const bx = legRight ? BW-pad-maxTw-bgPad : pad-bgPad;
     const by = legTop ? pad-bgPad+size*0.18 : BH-pad-blockH+bgPad+lh-size;
@@ -2693,12 +2740,51 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   }
   ctx.globalAlpha=CFG.legop;
   ctx.fillStyle=CFG.legcolor;
+  /* maxTw para posicionar o SNV no canto direito do bloco (precisa recalcular se não havia fundo) */
+  let blockTextW=0;
+  if(snvTag){
+    for(let i=0;i<L.length;i++){
+      let tw=ctx.measureText(L[i]).width;
+      if(i===L.length-1) tw+=snvGap+snvW;
+      if(tw>blockTextW) blockTextW=tw;
+    }
+  }
   if(legTop){
     let y=pad+size;
-    for(let i=0;i<L.length;i++){ ctx.fillText(L[i], lx, y); y+=lh }
+    for(let i=0;i<L.length;i++){
+      ctx.textAlign = legRight ? 'right' : 'left';
+      ctx.fillText(L[i], lx, y);
+      /* SNV à direita da última linha (linha da data) */
+      if(i===L.length-1 && snvTag){
+        if(legRight){
+          /* legenda à direita: data fica à direita, SNV à esquerda da data */
+          ctx.textAlign='left';
+          ctx.fillText(snvTag, BW-pad-blockTextW, y);
+        } else {
+          /* legenda à esquerda: data fica à esquerda, SNV empurrado à direita */
+          ctx.textAlign='right';
+          ctx.fillText(snvTag, pad+blockTextW, y);
+        }
+      }
+      y+=lh;
+    }
   } else {
     let y=BH-pad;
-    for(let i=L.length-1;i>=0;i--){ ctx.fillText(L[i], lx, y); y-=lh }
+    for(let i=L.length-1;i>=0;i--){
+      ctx.textAlign = legRight ? 'right' : 'left';
+      ctx.fillText(L[i], lx, y);
+      /* SNV à direita da última linha (linha da data) */
+      if(i===L.length-1 && snvTag){
+        if(legRight){
+          ctx.textAlign='left';
+          ctx.fillText(snvTag, BW-pad-blockTextW, y);
+        } else {
+          ctx.textAlign='right';
+          ctx.fillText(snvTag, pad+blockTextW, y);
+        }
+      }
+      y-=lh;
+    }
   }
   ctx.globalAlpha=1;
   // logo da empresa
@@ -2927,7 +3013,7 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-legbg',false],['cfg-soundalert',false],
-                        ['cfg-estaca',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
+                        ['cfg-estaca',false],['cfg-snv',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
