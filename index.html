@@ -3100,7 +3100,19 @@ if(svcAdd) svcAdd.onclick=()=>{
   loadLogo();
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      /* Força atualização imediata: checa o sw.js no servidor agora, e se houver
+         nova versão o skipWaiting + clients.claim já ativam — o controllerchange
+         abaixo recarrega a página automaticamente para o usuário receber tudo novo. */
+      reg.update().catch(()=>{});
+    }).catch(()=>{});
+    /* Quando um novo SW assume o controle, recarrega a página para garantir que
+       o HTML e os assets correspondam à versão nova do cache. */
+    let refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(refreshing) return; refreshing=true;
+      location.reload();
+    });
   }
   /* Exibe versão do cache no header (lê do sw.js) */
   fetch('sw.js').then(r=>r.text()).then(t=>{
