@@ -597,7 +597,7 @@ function fmtRoadKm(d){
   const fix = getDevFix(d);
   if(!fix) return '<span class="muted">—</span>';
   if(fix.dist > 5000) return '<span class="muted">—</span>';
-  const kmStr = fix.km.toFixed(1);
+  const kmStr = fix.km.toFixed(2);
   const distStr = Math.round(fix.dist)+'m';
   const cls = fix.dist > 200 ? 'color:var(--yellow)' : '';
   return `<span title="Distância do eixo: ${distStr}" style="cursor:help;${cls}">${kmStr}</span>`;
