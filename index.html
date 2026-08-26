@@ -2392,12 +2392,46 @@ function camConstraints(){
 }
 async function openCam(){
   /* Pede o sensor de movimento ANTES de qualquer "await" — no iPhone, a autorização de
-     toque do usuário expira rápido. Se negar, a câmera NÃO abre (o sensor é obrigatório
-     para o giro automático funcionar corretamente). */
-  const tiltOk=await enableTiltSensor();
-  if(!tiltOk){
-    toast('Permita o sensor de movimento para usar a câmera.');
-    return;
+     toque do usuário expira rápido. Se negar, mostra diálogo bloqueante com botão para
+     tentar de novo (iOS exige gesto do usuário para re-pedir). Fica em loop até permitir. */
+  if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+    let granted=false;
+    /* primeira tentativa (dentro do gesto do toque em "Registrar Evidência") */
+    try{ granted=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
+    if(!granted){
+      /* mostra diálogo bloqueante — fica pedindo até permitir */
+      const dlg=document.getElementById('dlg-perm');
+      const gpsDot=document.getElementById('perm-gps-dot');
+      const gpsTxt=document.getElementById('perm-gps-txt');
+      const camDot=document.getElementById('perm-cam-dot');
+      const camTxt=document.getElementById('perm-cam-txt');
+      const btn=document.getElementById('perm-allow');
+      /* reusa o diálogo de permissões, mas agora para o sensor */
+      gpsDot.className='perm-dot ok'; gpsTxt.textContent='📍 Localização — ✓ permitida';
+      camDot.className='perm-dot denied'; camTxt.textContent='🔄 Sensor de movimento — negado';
+      btn.textContent='Permitir sensor de movimento';
+      btn.disabled=false;
+      dlg.addEventListener('cancel', e=>e.preventDefault());
+      dlg.showModal();
+      btn.onclick=async()=>{
+        try{ granted=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
+        if(granted){
+          camDot.className='perm-dot ok'; camTxt.textContent='🔄 Sensor de movimento — ✓ permitido';
+          btn.textContent='✓ Tudo certo!'; btn.disabled=true;
+          setTimeout(()=>dlg.close(), 400);
+        } else {
+          toast('Permita o sensor de movimento nas configurações do navegador.');
+        }
+      };
+      await new Promise(res=>dlg.addEventListener('close', res, {once:true}));
+    }
+    if(granted){
+      tiltGranted=true;
+      window.removeEventListener('devicemotion', onDeviceMotion);
+      window.addEventListener('devicemotion', onDeviceMotion);
+    } else return; /* não deveria chegar aqui, mas por segurança */
+  } else {
+    await enableTiltSensor();
   }
   // reforço: tenta travar a tela em retrato (fire-and-forget — não bloqueia a abertura da câmera)
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
