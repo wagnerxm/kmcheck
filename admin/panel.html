@@ -271,6 +271,8 @@ tbody tr:hover{background:var(--surface2)}
               <th data-col="screen">Tela <span class="sort">▲</span></th>
               <th data-col="bases_count">Bases <span class="sort">▲</span></th>
               <th data-col="location">Localização <span class="sort">▲</span></th>
+              <th data-col="road">Rodovia <span class="sort">▲</span></th>
+              <th data-col="road_km">KM <span class="sort">▲</span></th>
               <th data-col="last_ping">Último Ping <span class="sort">▲</span></th>
               <th data-col="ping_count">Pings <span class="sort">▲</span></th>
             </tr>
@@ -417,6 +419,7 @@ function showDash(){
   $('#login').style.display = 'none';
   $('#dash').style.display = 'block';
   loadDevices();
+  loadSnvGeometry(); /* carrega geometria das rodovias para colunas Rodovia/KM */
 }
 
 $('#lg-btn').onclick = async () => {
@@ -493,6 +496,110 @@ function fmtLoc(loc){
   return `<a href="https://maps.google.com/?q=${loc.lat},${loc.lon}" target="_blank" title="Precisão: ${loc.acc||'?'}m">${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}</a>`;
 }
 
+/* ── Geometria SNV para interpolar Rodovia/KM a partir da localização ── */
+const D2R = Math.PI/180, R_EARTH = 6371000;
+let _snvBases = []; /* arrays planas {br, uf, lat[], lon[], km[]} — mesma estrutura do app */
+let _snvLoading = false, _snvReady = false;
+
+/* Carrega todos os JSONs de rodovia do diretório data/rodovias/ e monta arrays planas */
+async function loadSnvGeometry(){
+  if(_snvLoading||_snvReady) return;
+  _snvLoading = true;
+  try {
+    const idx = await fetch('../data/rodovias/index.json').then(r=>r.json());
+    const roads = idx.roads || [];
+    /* Carregar em lotes de 30 para não travar o browser */
+    const BATCH = 30;
+    for(let i=0; i<roads.length; i+=BATCH){
+      const batch = roads.slice(i, i+BATCH);
+      const results = await Promise.all(batch.map(async rd => {
+        try {
+          const data = await fetch('../data/rodovias/'+rd.file).then(r=>r.json());
+          if(!data.segments||!data.segments.length) return null;
+          const lat=[], lon=[], km=[];
+          for(const seg of data.segments.sort((a,b)=>a.ki-b.ki)){
+            const cc=seg.c; if(!cc||cc.length<2) continue;
+            let total=0; const cum=[0];
+            for(let j=1;j<cc.length;j++){
+              const cos=Math.cos((cc[j-1][1]+cc[j][1])/2*D2R);
+              const dx=(cc[j][0]-cc[j-1][0])*cos, dy=cc[j][1]-cc[j-1][1];
+              total+=Math.sqrt(dx*dx+dy*dy); cum.push(total);
+            }
+            const range=seg.kf-seg.ki;
+            for(let j=0;j<cc.length;j++){
+              const frac=total>0?cum[j]/total:0;
+              km.push(seg.ki+frac*range); lon.push(cc[j][0]); lat.push(cc[j][1]);
+            }
+          }
+          if(!lat.length) return null;
+          return {br:'BR-'+data.br, uf:data.uf, lat, lon, km};
+        } catch(e){ return null; }
+      }));
+      for(const b of results) if(b) _snvBases.push(b);
+    }
+    _snvReady = true;
+    /* Re-renderiza a tabela agora que os dados estão prontos */
+    if(_devData.length) renderDevices();
+  } catch(e){
+    console.warn('Erro ao carregar geometria SNV:', e);
+  } finally { _snvLoading = false; }
+}
+
+/* Encontra a rodovia e KM mais próximos de uma coordenada GPS */
+function findKm(lat, lon){
+  if(!_snvReady||!_snvBases.length) return null;
+  let best = null;
+  const cos = Math.cos(lat*D2R), px = lon, py = lat;
+  for(const b of _snvBases){
+    for(let i=0; i<b.lat.length-1; i++){
+      const ax=b.lon[i], ay=b.lat[i], bx=b.lon[i+1], by=b.lat[i+1];
+      const dx=(bx-ax)*cos, dy=by-ay, ex=(px-ax)*cos, ey=py-ay;
+      const L2=dx*dx+dy*dy; if(L2===0) continue;
+      let t=(ex*dx+ey*dy)/L2; t=t<0?0:(t>1?1:t);
+      const fx=ex-t*dx, fy=ey-t*dy;
+      const d2=fx*fx+fy*fy;
+      if(!best||d2<best.d2) best={d2, t, i, b};
+    }
+  }
+  if(!best) return null;
+  const {t,i,b}=best;
+  const km=b.km[i]+t*(b.km[i+1]-b.km[i]);
+  const dist=Math.sqrt(best.d2)*D2R*R_EARTH;
+  return {km, dist, br:b.br, uf:b.uf};
+}
+
+/* Cache de findKm por device_id para não recalcular a cada re-render */
+const _kmCache = new Map();
+function getDevFix(d){
+  if(!d.location||!d.location.lat) return null;
+  const key = d.device_id+'|'+d.location.lat+'|'+d.location.lon;
+  if(_kmCache.has(key)) return _kmCache.get(key);
+  const fix = findKm(d.location.lat, d.location.lon);
+  _kmCache.set(key, fix);
+  return fix;
+}
+
+/* Formata a coluna "Rodovia" */
+function fmtRoad(d){
+  if(!_snvReady) return '<span class="muted">…</span>';
+  const fix = getDevFix(d);
+  if(!fix) return '<span class="muted">—</span>';
+  if(fix.dist > 5000) return '<span class="muted" title="Distância: '+Math.round(fix.dist)+'m">—</span>';
+  return `<span class="tag tag-blue">${fix.br}/${fix.uf}</span>`;
+}
+
+/* Formata a coluna "KM" */
+function fmtRoadKm(d){
+  if(!_snvReady) return '<span class="muted">…</span>';
+  const fix = getDevFix(d);
+  if(!fix) return '<span class="muted">—</span>';
+  if(fix.dist > 5000) return '<span class="muted">—</span>';
+  const kmStr = fix.km.toFixed(1);
+  const distStr = Math.round(fix.dist)+'m';
+  const cls = fix.dist > 200 ? 'color:var(--yellow)' : '';
+  return `<span title="Distância do eixo: ${distStr}" style="cursor:help;${cls}">${kmStr}</span>`;
+}
+
 /* Tooltip com as bases baixadas */
 function fmtBases(d){
   const n=d.bases_count||0;
@@ -506,31 +613,44 @@ function renderDevices(){
   const search = $('#dev-search').value.toLowerCase();
   let data = _devData;
   if(plat) data = data.filter(d=>d.platform===plat);
-  if(search) data = data.filter(d=>
-    (d.nickname||'').toLowerCase().includes(search) ||
-    (d.device_id||'').toLowerCase().includes(search) ||
-    (d.model||'').toLowerCase().includes(search) ||
-    (d.brand||'').toLowerCase().includes(search) ||
-    (d.os_version||'').toLowerCase().includes(search) ||
-    (d.app_version||'').toLowerCase().includes(search) ||
-    (d.platform||'').toLowerCase().includes(search) ||
-    (d.ip_address||'').toLowerCase().includes(search)
-  );
+  if(search) data = data.filter(d=>{
+    if((d.nickname||'').toLowerCase().includes(search) ||
+      (d.device_id||'').toLowerCase().includes(search) ||
+      (d.model||'').toLowerCase().includes(search) ||
+      (d.brand||'').toLowerCase().includes(search) ||
+      (d.os_version||'').toLowerCase().includes(search) ||
+      (d.app_version||'').toLowerCase().includes(search) ||
+      (d.platform||'').toLowerCase().includes(search) ||
+      (d.ip_address||'').toLowerCase().includes(search)) return true;
+    /* Buscar também por rodovia (ex.: "BR-101", "MG") */
+    const fix = getDevFix(d);
+    if(fix && fix.dist<=5000){
+      const road = (fix.br+'/'+fix.uf).toLowerCase();
+      if(road.includes(search)) return true;
+    }
+    return false;
+  });
   /* Ordenar */
   const col = _devSort.col;
   data.sort((a,b) => {
     let va, vb;
     if(col==='location'){
       va=a.location?a.location.lat:0; vb=b.location?b.location.lat:0;
+    } else if(col==='road'){
+      const fa=getDevFix(a), fb=getDevFix(b);
+      va=fa&&fa.dist<=5000?(fa.br+'/'+fa.uf):''; vb=fb&&fb.dist<=5000?(fb.br+'/'+fb.uf):'';
+    } else if(col==='road_km'){
+      const fa=getDevFix(a), fb=getDevFix(b);
+      va=fa&&fa.dist<=5000?fa.km:-1; vb=fb&&fb.dist<=5000?fb.km:-1;
     } else { va=a[col]||''; vb=b[col]||''; }
-    if(col==='ping_count'||col==='bases_count'){ va=+va; vb=+vb; }
+    if(col==='ping_count'||col==='bases_count'||col==='road_km'){ va=+va; vb=+vb; }
     if(va<vb) return _devSort.asc?-1:1;
     if(va>vb) return _devSort.asc?1:-1;
     return 0;
   });
   const tbody = $('#dev-tbody');
   if(!data.length){
-    tbody.innerHTML = '<tr><td colspan="11" class="empty">Nenhum dispositivo encontrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="empty">Nenhum dispositivo encontrado</td></tr>';
     return;
   }
   tbody.innerHTML = data.map(d=>`<tr>
@@ -543,6 +663,8 @@ function renderDevices(){
     <td class="muted">${d.screen||'—'}</td>
     <td style="text-align:center">${fmtBases(d)}</td>
     <td>${fmtLoc(d.location)}</td>
+    <td>${fmtRoad(d)}</td>
+    <td class="mono">${fmtRoadKm(d)}</td>
     <td>${fmtDate(d.last_ping)}</td>
     <td style="text-align:center">${d.ping_count}</td>
   </tr>`).join('');
