@@ -3012,8 +3012,8 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 });
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
-for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-legbg',false],['cfg-soundalert',false],
-                        ['cfg-estaca',false],['cfg-snv',false],['cfg-autoaccept',true],['cfg-autosave',true]]){
+for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-legbg',true],['cfg-soundalert',false],
+                        ['cfg-estaca',false],['cfg-snv',true],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
