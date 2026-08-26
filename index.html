@@ -426,6 +426,28 @@ dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:
 #dlg-rotlock .rl-actions button:active{background:rgba(255,255,255,.06)}
 #dlg-rotlock .rl-actions button:first-child{border-right:1px solid var(--glassborder);color:var(--mut);font-weight:400}
 #dlg-rotlock .rl-actions button:last-child{font-weight:700}
+/* diálogo obrigatório de permissão GPS — não pode fechar com Esc */
+#dlg-perm{max-width:min(88vw,320px);padding:0;overflow:hidden;text-align:center;border-radius:18px}
+#dlg-perm .perm-body{padding:28px 22px 20px}
+#dlg-perm .perm-icon{width:56px;height:56px;display:block;margin:0 auto 14px;
+  background:rgba(76,175,80,.15);border-radius:50%;padding:12px;box-sizing:border-box}
+#dlg-perm .perm-icon svg{width:100%;height:100%}
+#dlg-perm h3{margin:0 0 8px;font-size:18px;font-weight:700;font-family:var(--sans);color:var(--text)}
+#dlg-perm p{margin:0 0 6px;font-size:13.5px;line-height:1.5;color:var(--mut)}
+#dlg-perm .perm-list{text-align:left;margin:14px 0 4px;padding:0;list-style:none}
+#dlg-perm .perm-list li{display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-bottom:1px solid var(--glassborder);font-size:13px;color:var(--text)}
+#dlg-perm .perm-list li:last-child{border-bottom:none}
+#dlg-perm .perm-list .perm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#dlg-perm .perm-list .perm-dot.ok{background:#4caf50}
+#dlg-perm .perm-list .perm-dot.wait{background:#ff9800}
+#dlg-perm .perm-list .perm-dot.denied{background:#f44336}
+#dlg-perm .perm-actions{border-top:1px solid var(--glassborder)}
+#dlg-perm .perm-actions button{width:100%;background:none;border:none;padding:14px 8px;font-size:16px;
+  font-family:var(--sans);color:var(--gold);cursor:pointer;font-weight:700;
+  -webkit-tap-highlight-color:transparent}
+#dlg-perm .perm-actions button:active{background:rgba(255,255,255,.06)}
+#dlg-perm .perm-actions button:disabled{color:var(--mut);font-weight:400;cursor:default}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
@@ -927,6 +949,27 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="rl-actions">
     <button id="rotlock-never">Não mostrar</button>
     <button id="rotlock-ok">Entendi</button>
+  </div>
+</dialog>
+
+<!-- diálogo obrigatório de permissões (GPS + câmera) -->
+<dialog id="dlg-perm">
+  <div class="perm-body">
+    <div class="perm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+    </div>
+    <h3>Permissões necessárias</h3>
+    <p>O KM Check precisa acessar sua <b>localização</b> e <b>câmera</b> para gravar coordenadas e KM nas fotos.</p>
+    <ul class="perm-list">
+      <li><span class="perm-dot wait" id="perm-gps-dot"></span><span id="perm-gps-txt">📍 Localização — aguardando</span></li>
+      <li><span class="perm-dot wait" id="perm-cam-dot"></span><span id="perm-cam-txt">📷 Câmera — aguardando</span></li>
+    </ul>
+  </div>
+  <div class="perm-actions">
+    <button id="perm-allow">Permitir acesso</button>
   </div>
 </dialog>
 
@@ -3124,6 +3167,80 @@ if(svcAdd) svcAdd.onclick=()=>{
   };
 })();
 
+/* ================= permissões obrigatórias =================
+   Pede GPS e câmera ANTES de liberar o app. O diálogo não fecha até ambos
+   serem concedidos. Sem GPS, a foto sairia sem coordenadas/EXIF. */
+async function ensurePermissions(){
+  const dlg=document.getElementById('dlg-perm');
+  const gpsDot=document.getElementById('perm-gps-dot');
+  const gpsTxt=document.getElementById('perm-gps-txt');
+  const camDot=document.getElementById('perm-cam-dot');
+  const camTxt=document.getElementById('perm-cam-txt');
+  const btn=document.getElementById('perm-allow');
+
+  /* checa o estado atual (pode já estar concedido de visita anterior) */
+  let gpsOk=false, camOk=false;
+  async function checkState(){
+    if(navigator.permissions){
+      try{ const g=await navigator.permissions.query({name:'geolocation'}); gpsOk=(g.state==='granted') }catch(e){}
+      try{ const c=await navigator.permissions.query({name:'camera'}); camOk=(c.state==='granted') }catch(e){}
+    }
+    paintDots();
+  }
+  function paintDots(){
+    gpsDot.className='perm-dot '+(gpsOk?'ok':'wait');
+    gpsTxt.textContent=gpsOk?'📍 Localização — ✓ permitida':'📍 Localização — aguardando';
+    camDot.className='perm-dot '+(camOk?'ok':'wait');
+    camTxt.textContent=camOk?'📷 Câmera — ✓ permitida':'📷 Câmera — aguardando';
+    btn.disabled=(gpsOk && camOk);
+    if(gpsOk && camOk) btn.textContent='✓ Tudo certo!';
+    else btn.textContent='Permitir acesso';
+  }
+
+  await checkState();
+  if(gpsOk && camOk) return; /* já tem tudo — segue direto */
+
+  /* impede fechar o diálogo com Esc */
+  dlg.addEventListener('cancel', e=>{ if(!gpsOk||!camOk) e.preventDefault() });
+  dlg.showModal();
+
+  btn.onclick=async()=>{
+    /* 1) Pede GPS */
+    if(!gpsOk){
+      try{
+        await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000}));
+        gpsOk=true;
+      }catch(e){
+        gpsDot.className='perm-dot denied';
+        gpsTxt.textContent='📍 Localização — negada ✗';
+        toast('Permita a localização nas configurações do navegador.');
+      }
+      paintDots();
+    }
+    /* 2) Pede câmera */
+    if(!camOk){
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia({video:true});
+        stream.getTracks().forEach(t=>t.stop()); /* libera a câmera — só precisava da permissão */
+        camOk=true;
+      }catch(e){
+        camDot.className='perm-dot denied';
+        camTxt.textContent='📷 Câmera — negada ✗';
+        toast('Permita a câmera nas configurações do navegador.');
+      }
+      paintDots();
+    }
+    /* se ambos ok, fecha o diálogo */
+    if(gpsOk && camOk){
+      btn.textContent='✓ Tudo certo!';
+      setTimeout(()=>dlg.close(), 600);
+    }
+  };
+
+  /* espera o diálogo fechar (só fecha quando ambos estão OK) */
+  await new Promise(res=>{ dlg.addEventListener('close', res, {once:true}) });
+}
+
 /* ================= boot ================= */
 (async function(){
   try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
@@ -3132,6 +3249,7 @@ if(svcAdd) svcAdd.onclick=()=>{
   renderServices();
   paintTags();
   loadLogo();
+  await ensurePermissions();
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{
