@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#11382C" />
+  <meta name="theme-color" content="#b7d92d" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,7 +14,299 @@
   <title>ControlCheck</title>
   <script type="module" crossorigin src="/kmcheck/controlmed/assets/index-BsI3gWkC.js"></script>
   <link rel="stylesheet" crossorigin href="/kmcheck/controlmed/assets/index-Bf6Pk6Zp.css">
-<link rel="manifest" href="/kmcheck/controlmed/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/kmcheck/controlmed/registerSW.js"></script></head>
+<link rel="manifest" href="/kmcheck/controlmed/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/kmcheck/controlmed/registerSW.js"></script>
+
+<!-- ======= Layout 01 — override de tema ======= -->
+<style>
+/* ── 1. CSS Custom Properties — remapear paleta para Layout 01 ── */
+:root, :host {
+  /* Acento: verde-limão no lugar de teal */
+  --color-accent: #b7d92d !important;
+  --color-accent-soft: rgba(183,217,45,.15) !important;
+
+  /* Gold → gold do Layout 01 (mantém semelhante) */
+  --color-gold: #b7d92d !important;
+  --color-gold-soft: rgba(183,217,45,.15) !important;
+
+  /* Superfícies escuras — cards e painéis */
+  --color-forest: #121212 !important;
+  --color-surface: #121212 !important;
+  --color-surface-2: #1a1a1a !important;
+
+  /* Texto — claro sobre escuro (dentro de cards) */
+  --color-text: #ffffff !important;
+  --color-text-2: #a0a0a0 !important;
+  --color-text-3: #6a6a6a !important;
+
+  /* Sage → tom muted do Layout 01 */
+  --color-sage: #6a6a6a !important;
+  --color-sage-soft: rgba(106,106,106,.12) !important;
+
+  /* Bordas e divisores */
+  --color-border: rgba(255,255,255,.14) !important;
+  --color-divider: rgba(255,255,255,.10) !important;
+
+  /* Danger inalterado */
+  --color-danger: #ef5350 !important;
+
+  /* Radius — mais generoso conforme Layout 01 */
+  --radius-sm: 14px !important;
+  --radius-md: 18px !important;
+  --radius-lg: 26px !important;
+  --radius-xl: 30px !important;
+}
+
+/* ── 2. Body — fundo claro quente ── */
+body {
+  color-scheme: light dark !important;
+  background: linear-gradient(180deg, #f7f7f5 0%, #f1f2f3 100%) !important;
+  color: #1c2333 !important;
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text',
+               'Inter Variable', Inter, 'DM Sans', Helvetica, sans-serif !important;
+}
+
+/* ── 3. Ambient BG — gradientes suaves sobre fundo claro ── */
+.ambient-bg {
+  background:
+    radial-gradient(600px 600px at 20% 10%, rgba(183,217,45,.06), transparent 70%),
+    radial-gradient(500px 500px at 80% 30%, rgba(183,217,45,.04), transparent 70%),
+    radial-gradient(400px 400px at 50% 80%, rgba(183,217,45,.03), transparent 70%),
+    linear-gradient(180deg, #f7f7f5 0%, #f1f2f3 100%) !important;
+}
+
+/* ── 4. Topo pattern — adaptar para fundo claro ── */
+.topo-pattern::before {
+  background:
+    radial-gradient(400px 200px at 90% 20%, rgba(183,217,45,.10), transparent 70%),
+    radial-gradient(300px 300px at 10% 80%, rgba(183,217,45,.06), transparent 70%) !important;
+}
+.topo-pattern::after {
+  opacity: .06 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cpath d='M20 60 Q70 20 150 55 T280 50' fill='none' stroke='%23000' stroke-width='0.8'/%3E%3Cpath d='M10 100 Q80 65 160 95 T290 90' fill='none' stroke='%23000' stroke-width='0.8'/%3E%3Cpath d='M15 140 Q90 110 170 140 T285 130' fill='none' stroke='%23000' stroke-width='0.8'/%3E%3Cpath d='M5 180 Q75 150 155 180 T295 175' fill='none' stroke='%23000' stroke-width='0.7'/%3E%3Cpath d='M25 220 Q85 195 165 220 T275 215' fill='none' stroke='%23000' stroke-width='0.7'/%3E%3Cpath d='M10 260 Q70 235 150 260 T290 255' fill='none' stroke='%23000' stroke-width='0.6'/%3E%3C/svg%3E") !important;
+}
+
+/* ── 5. Cards escuros glassmórficos — Layout 01 ── */
+.card-premium {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
+    linear-gradient(200deg, transparent 55%, rgba(255,255,255,.03) 60%, transparent 68%),
+    #121212 !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  border-radius: 26px !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 20px 45px rgba(0,0,0,.22),
+    0 8px 18px rgba(0,0,0,.12) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.card-glow {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
+    linear-gradient(200deg, transparent 55%, rgba(255,255,255,.03) 60%, transparent 68%),
+    #121212 !important;
+  border: 1px solid rgba(183,217,45,.25) !important;
+  border-radius: 26px !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 20px 45px rgba(0,0,0,.22),
+    0 0 0 1px rgba(183,217,45,.10) !important;
+}
+
+/* ── 6. Bottom nav — vidro claro com dock pill escuro ── */
+.bottom-nav {
+  background: rgba(244,244,242,.82) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  border: none !important;
+  border-top: 1px solid rgba(0,0,0,.06) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 -1px 0 rgba(0,0,0,.06) !important;
+}
+
+/* Botões dentro da nav — estilo dock pill escuro */
+.bottom-nav > div,
+.bottom-nav > nav,
+.bottom-nav > [class*="flex"] {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 55%),
+    rgba(24,26,28,.88) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  border-radius: 999px !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(255,255,255,.04),
+    0 14px 34px rgba(0,0,0,.45) !important;
+  margin: 4px 8px !important;
+  padding: 4px !important;
+}
+
+/* Botão ativo na nav — acento verde-limão */
+.bottom-nav button[class*="on"],
+.bottom-nav button[class*="active"],
+.bottom-nav a[class*="active"] {
+  color: #0d0f08 !important;
+  background: #b7d92d !important;
+  border-radius: 999px !important;
+}
+
+/* Indicador da nav */
+.nav-indicator {
+  background: linear-gradient(90deg, #b7d92d, #9bc420) !important;
+  box-shadow: 0 0 8px rgba(183,217,45,.50) !important;
+}
+
+/* ── 7. Inputs — estilo escuro em contexto de card ── */
+.input-premium {
+  background: #0b0d0f !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 14px !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.input-premium::placeholder {
+  color: #6a6a6a !important;
+}
+.input-premium:focus {
+  border-color: #b7d92d !important;
+  background: #0b0d0f !important;
+  box-shadow: 0 0 0 3px rgba(183,217,45,.10) !important;
+  outline: none !important;
+}
+
+/* ── 8. Botão primário — acento verde-limão ── */
+.btn-primary {
+  background: #b7d92d !important;
+  color: #0d0f08 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(183,217,45,.35) !important;
+  border-radius: 999px !important;
+}
+.btn-primary::after {
+  display: none !important;
+}
+.btn-primary:active {
+  filter: brightness(1.1) !important;
+  box-shadow: 0 2px 8px rgba(183,217,45,.25) !important;
+}
+
+/* ── 9. Botão glass — adaptar para fundo claro ── */
+.btn-glass {
+  background: rgba(0,0,0,.05) !important;
+  border: 1px solid rgba(0,0,0,.08) !important;
+  color: #1c2333 !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+}
+.btn-glass:active {
+  background: rgba(0,0,0,.10) !important;
+}
+
+/* ── 10. Badge pill ── */
+.badge-pill {
+  text-transform: uppercase !important;
+  letter-spacing: .14em !important;
+  font-weight: 600 !important;
+  font-size: 10px !important;
+}
+
+/* ── 11. Glow dot — acento verde-limão ── */
+.glow-dot {
+  background: #b7d92d !important;
+  box-shadow: 0 0 8px rgba(183,217,45,.50) !important;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(183,217,45,.50) }
+  50% { box-shadow: 0 0 16px rgba(183,217,45,.80), 0 0 32px rgba(183,217,45,.30) }
+}
+
+/* ── 12. Icon float — acento verde-limão ── */
+.icon-float {
+  background: linear-gradient(135deg, rgba(183,217,45,.15), rgba(183,217,45,.08)) !important;
+  border: 1px solid rgba(183,217,45,.12) !important;
+}
+
+/* ── 13. Shimmer — adaptar para fundo claro ── */
+.shimmer::after {
+  background: linear-gradient(105deg, transparent 40%, rgba(0,0,0,.03), transparent 60%) !important;
+}
+
+/* ── 14. Override classes utilitárias Tailwind para fundo claro ── */
+
+/* Backgrounds que eram escuros no body-level → transparentes sobre claro */
+.bg-forest { background-color: transparent !important; }
+.bg-surface { background-color: #121212 !important; }
+.bg-surface-2 { background-color: #1a1a1a !important; }
+
+/* Accent overrides */
+.bg-accent { background-color: #b7d92d !important; }
+.text-accent { color: #b7d92d !important; }
+.border-accent { border-color: #b7d92d !important; }
+
+/* Texto sobre fundo claro (body-level) — escuro */
+/* Elementos filho direto do root que não estão dentro de card/surface */
+#root > div > [class*="text-text"]:not([class*="bg-surface"]):not([class*="bg-forest"]):not(.card-premium):not(.card-glow) {
+  color: #1c2333;
+}
+
+/* Headers / topo — vidro claro */
+[class*="pt-[max(env(safe-area-inset-top)"] {
+  background: rgba(244,244,242,.82);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+
+/* ── 15. Focus rings — verde-limão ── */
+.focus\:border-accent\/30:focus {
+  border-color: rgba(183,217,45,.30) !important;
+}
+.focus\:shadow-\[0_0_0_3px_rgba\(78\,205\,196\,0\.1\)\]:focus {
+  --tw-shadow: 0 0 0 3px rgba(183,217,45,.10) !important;
+}
+
+/* ── 16. Cores de status (mantidas conforme Layout 01) ── */
+/* OK/Conforme */
+.bg-green-500 { background-color: #4caf50 !important; }
+.text-green-600 { color: #4caf50 !important; }
+
+/* Danger/NC */
+.bg-red-500 { background-color: #ef5350 !important; }
+.text-red-500 { color: #ef5350 !important; }
+
+/* ── 17. Overlays de modal ── */
+.bg-black\/50 {
+  background: rgba(0,0,0,.5) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* ── 18. Textos sobre fundo claro — corrigir legibilidade ── */
+/* Texto muted sobre fundo claro */
+.bg-forest .text-text-2,
+.ambient-bg > .text-text-2,
+.topo-pattern .text-text-2 {
+  color: #6a6a6a !important;
+}
+.bg-forest .text-text-3,
+.ambient-bg > .text-text-3,
+.topo-pattern .text-text-3 {
+  color: #999 !important;
+}
+
+/* ── 19. Scrollbar estilizada ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.15);
+  border-radius: 999px;
+}
+</style>
+
+</head>
 <body>
   <div id="root"></div>
 </body>
