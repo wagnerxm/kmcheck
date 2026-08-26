@@ -262,7 +262,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 /* seletor de PROPORÇÃO (1:1 / 4:3 / 16:9), logo acima da barra inferior — igual ao iPhone.
    O formato ativo fica destacado; tocar recorta a área útil da câmera na hora. */
-#camratio{flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;
+#camratio{flex:0 0 auto;display:flex;justify-content:center;align-items:center;gap:4px;
   padding:9px 0 5px;background:rgba(16,16,16,.86);position:relative;z-index:3}
 .ratiobtn{background:transparent;border:none;color:rgba(255,255,255,.55);font-family:var(--sans);
   font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:7px 16px;border-radius:999px;cursor:pointer;
@@ -270,26 +270,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ratiobtn:active{transform:scale(.92)}
 .ratiobtn.on{color:#0d0f08;background:var(--gold)}
 #camfmts{display:flex;gap:4px}
-/* seletor Foto / Vídeo — estilo segmented control, bem visível */
-#cammode{display:flex;gap:0;margin-bottom:6px;background:rgba(255,255,255,.12);border-radius:999px;padding:3px;
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.modebtn{background:transparent;border:none;color:rgba(255,255,255,.6);font-family:var(--sans);
-  font-size:14px;font-weight:700;padding:7px 22px;border-radius:999px;cursor:pointer;
-  transition:background .2s, color .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-  user-select:none;-webkit-user-select:none;letter-spacing:.02em}
-.modebtn:active{transform:scale(.95)}
-.modebtn.on{color:#fff;background:rgba(255,255,255,.22)}
-.modebtn[data-mode="video"].on{color:#ff3b30;background:rgba(255,59,48,.18)}
-/* indicador de gravação */
-#camrec{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:58;
-  display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);
-  padding:5px 14px;border-radius:20px;pointer-events:none}
-.rec-dot{width:10px;height:10px;border-radius:50%;background:#ff3b30;animation:recBlink 1s infinite}
-@keyframes recBlink{0%,100%{opacity:1}50%{opacity:.3}}
-#rec-timer{color:#fff;font-size:14px;font-weight:700;font-family:var(--sans);font-variant-numeric:tabular-nums}
-/* shutter no modo vídeo */
-#shutter.video-mode::before{background:#ff3b30;width:64px;height:64px}
-#shutter.recording::before{background:#ff3b30;width:30px;height:30px;border-radius:6px}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
@@ -917,22 +897,13 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <div id="camflashfx"></div>
     <div id="camzoom" style="display:none">1.0×</div>
   </div>
-  <!-- seletor de modo (Foto/Vídeo) + proporção -->
+  <!-- seletor de proporção -->
   <div id="camratio">
-    <div id="cammode">
-      <button class="modebtn on" data-mode="photo">Foto</button>
-      <button class="modebtn" data-mode="video">Vídeo</button>
-    </div>
     <div id="camfmts">
       <button class="ratiobtn" data-fmt="1:1">1:1</button>
       <button class="ratiobtn" data-fmt="3:4">4:3</button>
       <button class="ratiobtn" data-fmt="9:16">16:9</button>
     </div>
-  </div>
-  <!-- indicador de gravação -->
-  <div id="camrec" style="display:none">
-    <span class="rec-dot"></span>
-    <span id="rec-timer">00:00</span>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -2538,13 +2509,6 @@ function closeCam(instant){
   document.querySelector('main').style.display='';
   clearInterval(camTick); camTick=null;
   disableTiltSensor();
-  /* para gravação em andamento antes de fechar a câmera */
-  if(mediaRecorder && mediaRecorder.state==='recording') try{ mediaRecorder.stop() }catch(e){}
-  cancelAnimationFrame(recRAF); recRAF=0;
-  if(recAudioStream){ recAudioStream.getTracks().forEach(t=>t.stop()); recAudioStream=null }
-  recCanvas=null; recCtx=null;
-  recIndicator.style.display='none'; clearInterval(recTimerInterval);
-  shutterBtn.classList.remove('recording','video-mode');
   if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
 }
 document.getElementById('camback').onclick=closeCam;
@@ -2575,12 +2539,6 @@ function playShutterSound(){
   }catch(e){}
 }
 document.getElementById('shutter').onclick=()=>{
-  /* modo vídeo: alterna gravar/parar */
-  if(camMode==='video'){
-    if(mediaRecorder && mediaRecorder.state==='recording') stopRecording();
-    else startRecording();
-    return;
-  }
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
   // feedback imediato no toque, sincronizado com o disparo: piscada + vibração + som, ANTES do
   // processamento pesado do canvas (senão o retorno chegaria com atraso perceptível)
@@ -2822,144 +2780,7 @@ function applyZoom(z){
   }, {passive:false});
 })();
 
-/* ---- modo Foto/Vídeo + gravação de vídeo ----
-   O seletor alterna entre Foto e Vídeo. No modo vídeo, o shutter vira botão
-   de gravar (vermelho). Grava com MediaRecorder, incluindo áudio.
-   ── LEGENDA NO VÍDEO ──
-   Usa um <canvas> offscreen: a cada frame o requestAnimationFrame desenha
-   o vídeo + burnLegend() sobre o canvas, e captureStream() alimenta o
-   MediaRecorder. Resultado = vídeo final com a mesma legenda que a foto. */
-let camMode='photo'; // 'photo' | 'video'
-let mediaRecorder=null, recChunks=[], recStartTime=0, recTimerInterval=0;
-let recCanvas=null, recCtx=null, recRAF=0, recAudioStream=null;
-const recIndicator=document.getElementById('camrec');
-const recTimerEl=document.getElementById('rec-timer');
 const shutterBtn=document.getElementById('shutter');
-
-document.querySelectorAll('#cammode .modebtn').forEach(b=>b.onclick=()=>{
-  if(mediaRecorder && mediaRecorder.state==='recording') return; /* não trocar durante gravação */
-  camMode=b.dataset.mode;
-  document.querySelectorAll('#cammode .modebtn').forEach(x=>x.classList.toggle('on', x===b));
-  /* no modo vídeo, esconde seletor de proporção (grava na proporção nativa do stream) */
-  document.getElementById('camfmts').style.display=(camMode==='video')?'none':'';
-  shutterBtn.classList.toggle('video-mode', camMode==='video');
-  shutterBtn.classList.remove('recording');
-  shutterBtn.setAttribute('aria-label', camMode==='photo'?'Tirar foto':'Gravar vídeo');
-});
-
-function formatRecTime(ms){
-  const s=Math.floor(ms/1000), m=Math.floor(s/60);
-  return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-}
-function pickMimeType(){
-  /* tenta MP4 (Safari iOS), depois WebM (Chrome Android) */
-  const types=['video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-  for(const t of types) if(MediaRecorder.isTypeSupported(t)) return t;
-  return '';
-}
-
-/* Loop de composição: desenha vídeo + legenda no canvas offscreen a cada frame.
-   O canvas é capturado pelo captureStream() que alimenta o MediaRecorder.
-   A legenda é atualizada ao vivo (GPS, KM, hora mudam durante a gravação). */
-function recDrawFrame(){
-  if(!mediaRecorder || mediaRecorder.state!=='recording') return;
-  const vw=video.videoWidth, vh=video.videoHeight;
-  if(!vw || !vh){ recRAF=requestAnimationFrame(recDrawFrame); return }
-  /* dimensiona o canvas na 1ª vez ou se resolução da câmera mudou */
-  if(recCanvas.width!==vw || recCanvas.height!==vh){
-    recCanvas.width=vw; recCanvas.height=vh;
-  }
-  /* espelha câmera frontal */
-  const isFront=S.facing==='user';
-  recCtx.save();
-  if(isFront){
-    recCtx.translate(vw,0);
-    recCtx.scale(-1,1);
-  }
-  recCtx.drawImage(video, 0, 0, vw, vh);
-  recCtx.restore();
-  /* queima a legenda com os dados GPS/KM ao vivo */
-  const info=buildInfo(); S.lastInfo=info;
-  burnLegend(recCtx, vw, vh, info, 0);
-  recRAF=requestAnimationFrame(recDrawFrame);
-}
-
-async function startRecording(){
-  if(!S.stream || !S.stream.active){ toast('Câmera não está ativa.'); return }
-  const vw=video.videoWidth, vh=video.videoHeight;
-  if(!vw || !vh){ toast('Câmera ainda carregando…'); return }
-  /* cria canvas offscreen para composição vídeo+legenda */
-  recCanvas=document.createElement('canvas');
-  recCanvas.width=vw; recCanvas.height=vh;
-  recCtx=recCanvas.getContext('2d');
-  /* captura o stream do canvas (30fps = fluidez boa sem sobrecarregar) */
-  const fps=30;
-  const canvasStream=recCanvas.captureStream(fps);
-  /* adiciona áudio (microfone) */
-  recAudioStream=null;
-  try{ recAudioStream=await navigator.mediaDevices.getUserMedia({audio:true}) }catch(e){}
-  if(recAudioStream) canvasStream.addTrack(recAudioStream.getAudioTracks()[0]);
-  const mime=pickMimeType();
-  if(!mime){ toast('Navegador não suporta gravação de vídeo.'); return }
-  /* bitrate alto para qualidade de excelência — 12 Mbps para 1080p, proporcional */
-  const pixels=vw*vh;
-  const bps=Math.max(8_000_000, Math.round(pixels/1920/1080 * 12_000_000));
-  try{
-    mediaRecorder=new MediaRecorder(canvasStream, {mimeType:mime, videoBitsPerSecond:bps});
-  }catch(e){ toast('Erro ao iniciar gravação.'); return }
-  recChunks=[];
-  mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recChunks.push(e.data) };
-  mediaRecorder.onstop=()=>{
-    /* para o loop de composição */
-    cancelAnimationFrame(recRAF); recRAF=0;
-    /* para os tracks de áudio que abrimos */
-    if(recAudioStream){ recAudioStream.getTracks().forEach(t=>t.stop()); recAudioStream=null }
-    const ext=mime.startsWith('video/mp4')?'.mp4':'.webm';
-    const blob=new Blob(recChunks, {type:mime});
-    saveAndShareVideo(blob, ext);
-    recChunks=[];
-    mediaRecorder=null;
-    recCanvas=null; recCtx=null;
-    /* UI de volta */
-    shutterBtn.classList.remove('recording');
-    shutterBtn.classList.add('video-mode');
-    recIndicator.style.display='none';
-    clearInterval(recTimerInterval);
-  };
-  /* inicia o loop de desenho ANTES do recorder, para ter frames prontos */
-  recRAF=requestAnimationFrame(recDrawFrame);
-  mediaRecorder.start(1000); /* dados a cada 1s */
-  recStartTime=Date.now();
-  shutterBtn.classList.remove('video-mode');
-  shutterBtn.classList.add('recording');
-  recIndicator.style.display='';
-  recTimerEl.textContent='00:00';
-  recTimerInterval=setInterval(()=>{
-    recTimerEl.textContent=formatRecTime(Date.now()-recStartTime);
-  }, 500);
-  toast('Gravando…');
-}
-function stopRecording(){
-  if(mediaRecorder && mediaRecorder.state==='recording'){
-    mediaRecorder.stop();
-  }
-}
-function saveAndShareVideo(blob, ext){
-  const info=S.lastInfo||{}, t=new Date();
-  const {L}=legendLines(info);
-  const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'VIDEO';
-  const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
-  const name=`${base} ${hhmmss}${ext}`;
-  const file=new File([blob], name, {type:blob.type});
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({files:[file]}).catch(()=>{});
-  } else {
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download=name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
-  }
-  toast('Vídeo salvo: '+formatRecTime(Date.now()-recStartTime));
-}
 
 /* ---- galeria de fotos registradas pelo app (IndexedDB + swipe) ---- */
 async function savePhotoToGallery(blob, name){
