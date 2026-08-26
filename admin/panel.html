@@ -501,12 +501,15 @@ const D2R = Math.PI/180, R_EARTH = 6371000;
 let _snvBases = []; /* arrays planas {br, uf, lat[], lon[], km[]} — mesma estrutura do app */
 let _snvLoading = false, _snvReady = false;
 
-/* Carrega todos os JSONs de rodovia do diretório data/rodovias/ e monta arrays planas */
+/* Base dos JSONs de rodovia — hospedados no GitHub Pages, não no VPS */
+const SNV_CDN = 'https://wagnerxm.github.io/kmcheck/data/rodovias/';
+
+/* Carrega todos os JSONs de rodovia e monta arrays planas */
 async function loadSnvGeometry(){
   if(_snvLoading||_snvReady) return;
   _snvLoading = true;
   try {
-    const idx = await fetch('../data/rodovias/index.json').then(r=>r.json());
+    const idx = await fetch(SNV_CDN+'index.json').then(r=>r.json());
     const roads = idx.roads || [];
     /* Carregar em lotes de 30 para não travar o browser */
     const BATCH = 30;
@@ -514,7 +517,7 @@ async function loadSnvGeometry(){
       const batch = roads.slice(i, i+BATCH);
       const results = await Promise.all(batch.map(async rd => {
         try {
-          const data = await fetch('../data/rodovias/'+rd.file).then(r=>r.json());
+          const data = await fetch(SNV_CDN+rd.file).then(r=>r.json());
           if(!data.segments||!data.segments.length) return null;
           const lat=[], lon=[], km=[];
           for(const seg of data.segments.sort((a,b)=>a.ki-b.ki)){
