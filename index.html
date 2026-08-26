@@ -2192,22 +2192,19 @@ function onDeviceMotion(e){
   refreshTilt();
 }
 let tiltGranted=false;   // lembra a autorização do sensor durante a sessão (iOS pede 1x)
+/* Retorna true se o sensor foi ativado (ou não precisa de permissão), false se negou.
+   No iOS 13+, precisa de gesto do usuário — por isso é chamado no toque do openCam. */
 async function enableTiltSensor(){
   try{
-    /* iOS 13+ exige permissão explícita para giroscópio/acelerômetro. Pede no toque do
-       usuário (openCam) — se negar, avisa que o giro automático não funciona. Android/
-       desktop não têm esse gate, entram direto no addEventListener. */
     if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
       const res=await DeviceMotionEvent.requestPermission();
-      if(res!=='granted'){
-        toast('⚠ Sensor de movimento negado — giro automático desativado.');
-        return;
-      }
+      if(res!=='granted') return false;
     }
     tiltGranted=true;
-    window.removeEventListener('devicemotion', onDeviceMotion);   // evita listener duplicado
+    window.removeEventListener('devicemotion', onDeviceMotion);
     window.addEventListener('devicemotion', onDeviceMotion);
-  }catch(e){ /* sensor indisponível neste aparelho/navegador — interface simplesmente não acompanha */ }
+    return true;
+  }catch(e){ return true; /* sensor indisponível — não bloqueia (Android/desktop) */ }
 }
 function enableScreenLock(){
   _wasLand=window.innerWidth>window.innerHeight;
@@ -2366,10 +2363,14 @@ function camConstraints(){
   return {video:{facingMode:S.facing, width:{ideal:R.w}, height:{ideal:R.h}}, audio:false};
 }
 async function openCam(){
-  // pede a permissão do giroscópio ANTES de qualquer "await" — no iPhone, a autorização de
-  // toque do usuário expira rápido, e se pedirmos depois de aguardar a câmera abrir, o pedido
-  // falha em silêncio (sem erro, sem aviso — só não gira nada, foi exatamente o que aconteceu)
-  enableTiltSensor();
+  /* Pede o sensor de movimento ANTES de qualquer "await" — no iPhone, a autorização de
+     toque do usuário expira rápido. Se negar, a câmera NÃO abre (o sensor é obrigatório
+     para o giro automático funcionar corretamente). */
+  const tiltOk=await enableTiltSensor();
+  if(!tiltOk){
+    toast('Permita o sensor de movimento para usar a câmera.');
+    return;
+  }
   // reforço: tenta travar a tela em retrato (fire-and-forget — não bloqueia a abertura da câmera)
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
