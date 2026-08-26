@@ -492,9 +492,18 @@ async function loadDevices(){
   }
 }
 
+/* Normaliza marca — corrige dados antigos no banco */
+function normBrand(b){
+  if(!b) return '';
+  if(/^pixel$/i.test(b)) return 'Google';
+  if(/^moto$/i.test(b)) return 'Motorola';
+  if(/^redmi|^poco$/i.test(b)) return 'Xiaomi';
+  return b;
+}
+
 /* Formata localização como link do Google Maps */
 function fmtLoc(loc){
-  if(!loc||!loc.lat) return '<span class="muted">—</span>';
+  if(!loc||!loc.lat) return '<span class="muted" title="GPS desativado ou sem permissão">Sem GPS</span>';
   return `<a href="https://maps.google.com/?q=${loc.lat},${loc.lon}" target="_blank" title="Precisão: ${loc.acc||'?'}m">${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}</a>`;
 }
 
@@ -662,7 +671,7 @@ function renderDevices(){
     <td><input class="user-name" type="text" value="${(d.nickname||'').replace(/"/g,'&quot;')}" placeholder="…" data-did="${d.device_id}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="mono" title="${d.device_id}"><a class="dev-id-link" href="#" onclick="openDevDetail('${d.device_id}');return false">${shortId(d.device_id)}</a></td>
     <td>${d.model||'<span class=muted>—</span>'}</td>
-    <td>${platIcon(d.platform)} ${d.brand||d.platform||'—'}</td>
+    <td>${platIcon(d.platform)} ${normBrand(d.brand)||d.platform||'—'}</td>
     <td><span class="tag tag-blue">${d.os_version||d.platform||'?'}</span></td>
     <td><span class="tag" style="background:var(--surface3)">v${d.app_version||'?'}</span></td>
     <td class="muted">${d.screen||'—'}</td>

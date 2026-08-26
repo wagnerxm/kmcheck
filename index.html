@@ -3269,7 +3269,9 @@ if(svcAdd) svcAdd.onclick=()=>{
         /* Marca do dispositivo */
         let brand='';
         if(/iPhone|iPad|Macintosh/.test(ua)) brand='Apple';
-        else{const bm=ua.match(/;\s*(Samsung|Xiaomi|Redmi|POCO|Motorola|moto|Huawei|HONOR|LG|OnePlus|OPPO|vivo|Realme|Google|Pixel|Nokia|Sony|ASUS|ZTE|Alcatel|HTC|Nothing)/i);brand=bm?bm[1]:''}
+        else{const bm=ua.match(/;\s*(Samsung|Xiaomi|Redmi|POCO|Motorola|moto|Huawei|HONOR|LG|OnePlus|OPPO|vivo|Realme|Google|Nokia|Sony|ASUS|ZTE|Alcatel|HTC|Nothing)/i);brand=bm?bm[1]:''}
+        /* Normalizar marcas — "moto" → "Motorola" */
+        if(/^moto$/i.test(brand)) brand='Motorola';
         /* Versão do SO */
         let osVer='';
         if(/iPhone|iPad/.test(ua)){const ov=ua.match(/OS (\d+[_\.]\d+[_\.]?\d*)/);osVer=ov?'iOS '+ov[1].replace(/_/g,'.'):''}
@@ -3299,8 +3301,9 @@ if(svcAdd) svcAdd.onclick=()=>{
           const _b=()=>{const t=performance.now();let v=1.0;
             for(let i=0;i<300000;i++)v=Math.sin(v*1.1)*Math.cos(v*0.9)+Math.sqrt(Math.abs(v));
             return performance.now()-t};
-          const rs=[_b(),_b(),_b()].sort((a,b)=>a-b);
-          benchMs=Math.round(rs[1]*10)/10; /* mediana com 1 decimal */
+          _b(); /* warmup — descarta a 1ª rodada (JIT ainda frio) */
+          const rs=[_b(),_b(),_b(),_b(),_b()].sort((a,b)=>a-b);
+          benchMs=Math.round(rs[2]*10)/10; /* mediana de 5 runs (mais estável) */
         }catch(e){}
         /* Extensões WebGL — cada geração de GPU suporta lista diferente */
         let glExtCount=0;
@@ -3423,9 +3426,10 @@ if(svcAdd) svcAdd.onclick=()=>{
             if(pro120) model='iPhone 13 Pro';
             else if(chip==='A14'&&tele) model='iPhone 12 Pro';
             else if(chip==='A14') model='iPhone 12';
-            else if(tele) model='iPhone 12 Pro'; /* fallback: tele=Pro */
+            else if(tele) model='iPhone 12 Pro';
             else if(chip==='A15') model='iPhone 13/14'; /* A15 em ambos — irresolvível */
-            else model='iPhone 12/13/14';
+            else if(chip) model='iPhone 12'; /* chip detectado mas fora das faixas A15 = mais antigo */
+            else model='iPhone 12/13/14'; /* benchmark falhou */
           }
           /* 428x926@3 — 13ProMax(A15,120Hz) / 14Plus(A15,60Hz) */
           else if(k==='428x926@3'){
