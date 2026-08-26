@@ -431,28 +431,6 @@ dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:
 #dlg-rotlock .rl-actions button:active{background:rgba(255,255,255,.06)}
 #dlg-rotlock .rl-actions button:first-child{border-right:1px solid var(--glassborder);color:var(--mut);font-weight:400}
 #dlg-rotlock .rl-actions button:last-child{font-weight:700}
-/* diálogo obrigatório de permissão GPS — não pode fechar com Esc */
-#dlg-perm{max-width:min(88vw,320px);padding:0;overflow:hidden;text-align:center;border-radius:18px}
-#dlg-perm .perm-body{padding:28px 22px 20px}
-#dlg-perm .perm-icon{width:56px;height:56px;display:block;margin:0 auto 14px;
-  background:rgba(76,175,80,.15);border-radius:50%;padding:12px;box-sizing:border-box}
-#dlg-perm .perm-icon svg{width:100%;height:100%}
-#dlg-perm h3{margin:0 0 8px;font-size:18px;font-weight:700;font-family:var(--sans);color:var(--text)}
-#dlg-perm p{margin:0 0 6px;font-size:13.5px;line-height:1.5;color:var(--mut)}
-#dlg-perm .perm-list{text-align:left;margin:14px 0 4px;padding:0;list-style:none}
-#dlg-perm .perm-list li{display:flex;align-items:center;gap:10px;padding:9px 0;
-  border-bottom:1px solid var(--glassborder);font-size:13px;color:var(--text)}
-#dlg-perm .perm-list li:last-child{border-bottom:none}
-#dlg-perm .perm-list .perm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-#dlg-perm .perm-list .perm-dot.ok{background:#4caf50}
-#dlg-perm .perm-list .perm-dot.wait{background:#ff9800}
-#dlg-perm .perm-list .perm-dot.denied{background:#f44336}
-#dlg-perm .perm-actions{border-top:1px solid var(--glassborder)}
-#dlg-perm .perm-actions button{width:100%;background:none;border:none;padding:14px 8px;font-size:16px;
-  font-family:var(--sans);color:var(--gold);cursor:pointer;font-weight:700;
-  -webkit-tap-highlight-color:transparent}
-#dlg-perm .perm-actions button:active{background:rgba(255,255,255,.06)}
-#dlg-perm .perm-actions button:disabled{color:var(--mut);font-weight:400;cursor:default}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
@@ -957,27 +935,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="rl-actions">
     <button id="rotlock-never">Não mostrar</button>
     <button id="rotlock-ok">Entendi</button>
-  </div>
-</dialog>
-
-<!-- diálogo obrigatório de permissões (GPS + câmera) -->
-<dialog id="dlg-perm">
-  <div class="perm-body">
-    <div class="perm-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/>
-        <circle cx="12" cy="9" r="2.5"/>
-      </svg>
-    </div>
-    <h3>Permissões necessárias</h3>
-    <p>Para gravar coordenadas e KM nas fotos, o KM Check precisa de acesso à <b>localização</b> e <b>câmera</b>. Libere nas configurações do navegador.</p>
-    <ul class="perm-list">
-      <li><span class="perm-dot wait" id="perm-gps-dot"></span><span id="perm-gps-txt">📍 Localização — aguardando</span></li>
-      <li><span class="perm-dot wait" id="perm-cam-dot"></span><span id="perm-cam-txt">📷 Câmera — aguardando</span></li>
-    </ul>
-  </div>
-  <div class="perm-actions">
-    <button id="perm-allow">Permitir acesso</button>
   </div>
 </dialog>
 
@@ -2371,13 +2328,19 @@ function camConstraints(){
   }, audio:false};
 }
 async function openCam(){
-  /* Abre a câmera PRIMEIRO (sem delay) e depois pede permissões pendentes
-     por cima da tela da câmera já aberta. Assim o usuário vê a câmera na hora. */
+  /* Abre a câmera direto, sem diálogo — o mais rápido possível.
+     Sensor de movimento é pedido silenciosamente (prompt nativo do iOS);
+     se negar, a câmera funciona normal, só sem auto-rotação da legenda. */
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
   document.querySelector('main').style.display='none';
+  /* fundo preto imediato — evita flash branco enquanto a câmera carrega */
+  document.documentElement.style.backgroundColor='#000';
+  document.body.style.backgroundColor='#000';
+  document.getElementById('meta-theme').content='#000';
+  camwrap.classList.add('on');
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
   try{
     S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
@@ -2397,7 +2360,6 @@ async function openCam(){
     document.documentElement.style.backgroundColor='#141414';
     document.body.style.backgroundColor='#141414';
     document.getElementById('meta-theme').content='#141414';
-    camwrap.classList.add('on');
     camGeom=null;
     paintRatioSel();
     enableScreenLock();
@@ -2409,81 +2371,30 @@ async function openCam(){
     video.addEventListener('resize', layoutOverlays);
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
+    camwrap.classList.remove('on');
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
     document.querySelector('main').style.display='';
+    var _l=document.documentElement.getAttribute('data-theme')==='light';
+    var _bg=_l?'#f1f2f3':'#0a0c0e';
+    document.documentElement.style.backgroundColor=_bg;
+    document.body.style.backgroundColor=_bg;
+    document.getElementById('meta-theme').content=_bg;
     toast('Câmera negada ou indisponível.');
     return;
   }
-  /* ── Permissões pendentes: GPS + sensor de movimento ──
-     Aparece como diálogo sobre a câmera já aberta (sem delay). */
-  let gpsOk=!!S.pos; /* se já tem posição, GPS já está ok */
-  if(!gpsOk && navigator.permissions){
-    try{ const g=await navigator.permissions.query({name:'geolocation'}); gpsOk=(g.state==='granted') }catch(e){}
-  }
-  let motionOk=tiltGranted;
-  /* no iOS, requestPermission exige gesto → usamos o botão do diálogo */
-  const needsMotionPrompt=!motionOk && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function';
-  if(!gpsOk || needsMotionPrompt){
-    /* tenta pedir GPS silenciosamente */
-    if(!gpsOk){
-      try{
-        await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:10000}));
-        gpsOk=true;
-      }catch(e){}
-    }
-    /* tenta pedir sensor direto (pode funcionar se o gesto original ainda estiver válido) */
-    if(needsMotionPrompt && !motionOk){
-      try{ motionOk=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
-    }
-    /* se algo ainda falta, mostra diálogo bloqueante sobre a câmera */
-    if(!gpsOk || (!motionOk && needsMotionPrompt)){
-      const dlg=document.getElementById('dlg-perm');
-      const gpsDot=document.getElementById('perm-gps-dot');
-      const gpsTxt=document.getElementById('perm-gps-txt');
-      const camDot=document.getElementById('perm-cam-dot');
-      const camTxt=document.getElementById('perm-cam-txt');
-      const btn=document.getElementById('perm-allow');
-      function paintPermDots(){
-        gpsDot.className='perm-dot '+(gpsOk?'ok':'denied');
-        gpsTxt.textContent=gpsOk?'📍 Localização — ✓ permitida':'📍 Localização — negada';
-        if(needsMotionPrompt){
-          camDot.className='perm-dot '+(motionOk?'ok':'denied');
-          camTxt.textContent=motionOk?'🔄 Sensor de movimento — ✓ permitido':'🔄 Sensor de movimento — negado';
-        } else {
-          camDot.className='perm-dot ok';
-          camTxt.textContent='📷 Câmera — ✓ permitida';
-        }
-        const allOk=gpsOk && (motionOk || !needsMotionPrompt);
-        btn.textContent=allOk?'✓ Continuar':'Permitir';
-        btn.disabled=allOk;
+  /* sensor de movimento — pede silenciosamente, sem diálogo customizado.
+     No iOS dispara o prompt nativo; se negar, a câmera funciona sem rotação. */
+  if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+    try{
+      const r=await DeviceMotionEvent.requestPermission();
+      if(r==='granted'){
+        tiltGranted=true;
+        window.removeEventListener('devicemotion', onDeviceMotion);
+        window.addEventListener('devicemotion', onDeviceMotion);
       }
-      paintPermDots();
-      dlg.addEventListener('cancel', e=>{ if(!gpsOk || (!motionOk && needsMotionPrompt)) e.preventDefault() });
-      dlg.showModal();
-      btn.onclick=async()=>{
-        if(!gpsOk){
-          try{
-            await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000}));
-            gpsOk=true;
-          }catch(e){ toast('Permita a localização nas configurações do navegador.') }
-        }
-        if(needsMotionPrompt && !motionOk){
-          try{ motionOk=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
-          if(!motionOk) toast('Permita o sensor de movimento nas configurações do navegador.');
-        }
-        paintPermDots();
-        if(gpsOk && (motionOk || !needsMotionPrompt)) setTimeout(()=>dlg.close(), 400);
-      };
-      await new Promise(res=>dlg.addEventListener('close', res, {once:true}));
-    }
-  }
-  /* ativa sensor de movimento após permissão */
-  if(motionOk && !tiltGranted){
-    tiltGranted=true;
-    window.removeEventListener('devicemotion', onDeviceMotion);
-    window.addEventListener('devicemotion', onDeviceMotion);
-  } else if(!needsMotionPrompt){
+    }catch(e){}
+  } else {
     await enableTiltSensor();
   }
 }
@@ -3302,76 +3213,6 @@ if(svcAdd) svcAdd.onclick=()=>{
     }
   };
 })();
-
-/* ================= permissões obrigatórias =================
-   Dispara os prompts NATIVOS do navegador (GPS → câmera) direto no boot.
-   Se já foram concedidos antes, não aparece nada. Se o usuário negar,
-   mostra o diálogo bloqueante orientando a liberar nas configurações. */
-async function ensurePermissions(){
-  /* 1) checa estado prévio — se já tem tudo, sai sem mostrar nada */
-  let gpsOk=false, camOk=false;
-  if(navigator.permissions){
-    try{ const g=await navigator.permissions.query({name:'geolocation'}); gpsOk=(g.state==='granted') }catch(e){}
-    try{ const c=await navigator.permissions.query({name:'camera'}); camOk=(c.state==='granted') }catch(e){}
-  }
-  if(gpsOk && camOk) return;
-
-  /* 2) pede GPS (prompt nativo do navegador — sem diálogo nosso) */
-  if(!gpsOk){
-    try{
-      await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:20000}));
-      gpsOk=true;
-    }catch(e){ /* negou ou expirou */ }
-  }
-  /* 3) pede câmera (prompt nativo) */
-  if(!camOk){
-    try{
-      const stream=await navigator.mediaDevices.getUserMedia({video:true});
-      stream.getTracks().forEach(t=>t.stop()); /* libera — só precisava da permissão */
-      camOk=true;
-    }catch(e){ /* negou */ }
-  }
-
-  if(gpsOk && camOk) return; /* tudo certo — segue */
-
-  /* 4) se algum foi negado, aí sim mostra o diálogo bloqueante com orientação */
-  const dlg=document.getElementById('dlg-perm');
-  const gpsDot=document.getElementById('perm-gps-dot');
-  const gpsTxt=document.getElementById('perm-gps-txt');
-  const camDot=document.getElementById('perm-cam-dot');
-  const camTxt=document.getElementById('perm-cam-txt');
-  const btn=document.getElementById('perm-allow');
-
-  function paintDots(){
-    gpsDot.className='perm-dot '+(gpsOk?'ok':'denied');
-    gpsTxt.textContent=gpsOk?'📍 Localização — ✓ permitida':'📍 Localização — negada';
-    camDot.className='perm-dot '+(camOk?'ok':'denied');
-    camTxt.textContent=camOk?'📷 Câmera — ✓ permitida':'📷 Câmera — negada';
-    btn.textContent=(gpsOk && camOk)?'✓ Continuar':'Tentar novamente';
-  }
-  paintDots();
-  dlg.addEventListener('cancel', e=>{ if(!gpsOk||!camOk) e.preventDefault() });
-  dlg.showModal();
-
-  btn.onclick=async()=>{
-    if(!gpsOk){
-      try{
-        await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:20000}));
-        gpsOk=true;
-      }catch(e){ toast('Permita a localização nas configurações do navegador.') }
-    }
-    if(!camOk){
-      try{
-        const stream=await navigator.mediaDevices.getUserMedia({video:true});
-        stream.getTracks().forEach(t=>t.stop());
-        camOk=true;
-      }catch(e){ toast('Permita a câmera nas configurações do navegador.') }
-    }
-    paintDots();
-    if(gpsOk && camOk) setTimeout(()=>dlg.close(), 400);
-  };
-  await new Promise(res=>dlg.addEventListener('close', res, {once:true}));
-}
 
 /* ================= boot ================= */
 (async function(){
