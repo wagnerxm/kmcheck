@@ -6,7 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vistoria PATO">
 <meta name="theme-color" content="#f4f4f2">
+<link rel="manifest" href="vistoria-manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <style>
   :root {
     --bg:#f4f4f2;
@@ -866,6 +870,13 @@ function buildPlan(){
 /* ===== Init ===== */
 document.getElementById('inp-data').value=new Date().toISOString().split('T')[0];
 renderHistList();
+
+/* ===== Service Worker — permite instalar como PWA e funcionar offline ===== */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+    .then(r=>r.update())
+    .catch(()=>{});
+}
 </script>
 </body>
 </html>
