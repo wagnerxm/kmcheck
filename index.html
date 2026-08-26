@@ -2400,49 +2400,8 @@ function camConstraints(){
   }, audio:false};
 }
 async function openCam(){
-  /* Pede o sensor de movimento ANTES de qualquer "await" — no iPhone, a autorização de
-     toque do usuário expira rápido. Se negar, mostra diálogo bloqueante com botão para
-     tentar de novo (iOS exige gesto do usuário para re-pedir). Fica em loop até permitir. */
-  if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
-    let granted=false;
-    /* primeira tentativa (dentro do gesto do toque em "Registrar Evidência") */
-    try{ granted=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
-    if(!granted){
-      /* mostra diálogo bloqueante — fica pedindo até permitir */
-      const dlg=document.getElementById('dlg-perm');
-      const gpsDot=document.getElementById('perm-gps-dot');
-      const gpsTxt=document.getElementById('perm-gps-txt');
-      const camDot=document.getElementById('perm-cam-dot');
-      const camTxt=document.getElementById('perm-cam-txt');
-      const btn=document.getElementById('perm-allow');
-      /* reusa o diálogo de permissões, mas agora para o sensor */
-      gpsDot.className='perm-dot ok'; gpsTxt.textContent='📍 Localização — ✓ permitida';
-      camDot.className='perm-dot denied'; camTxt.textContent='🔄 Sensor de movimento — negado';
-      btn.textContent='Permitir sensor de movimento';
-      btn.disabled=false;
-      dlg.addEventListener('cancel', e=>e.preventDefault());
-      dlg.showModal();
-      btn.onclick=async()=>{
-        try{ granted=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
-        if(granted){
-          camDot.className='perm-dot ok'; camTxt.textContent='🔄 Sensor de movimento — ✓ permitido';
-          btn.textContent='✓ Tudo certo!'; btn.disabled=true;
-          setTimeout(()=>dlg.close(), 400);
-        } else {
-          toast('Permita o sensor de movimento nas configurações do navegador.');
-        }
-      };
-      await new Promise(res=>dlg.addEventListener('close', res, {once:true}));
-    }
-    if(granted){
-      tiltGranted=true;
-      window.removeEventListener('devicemotion', onDeviceMotion);
-      window.addEventListener('devicemotion', onDeviceMotion);
-    } else return; /* não deveria chegar aqui, mas por segurança */
-  } else {
-    await enableTiltSensor();
-  }
-  // reforço: tenta travar a tela em retrato (fire-and-forget — não bloqueia a abertura da câmera)
+  /* Abre a câmera PRIMEIRO (sem delay) e depois pede permissões pendentes
+     por cima da tela da câmera já aberta. Assim o usuário vê a câmera na hora. */
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
   document.querySelector('nav').style.display='none';
@@ -2452,12 +2411,8 @@ async function openCam(){
   try{
     S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
     video.srcObject=S.stream;
-    // Android Chrome pode não iniciar o playback automaticamente mesmo com autoplay — força play()
     try{ await video.play() }catch(e){}
-    /* ── Enumera câmeras para fingerprint de modelo ──
-       Após getUserMedia, enumerateDevices() retorna labels reais.
-       iPhones Pro têm "Telephoto" (teleobjetiva) → identifica o modelo Pro.
-       Salva no localStorage para uso no ping (que roda antes da câmera abrir). */
+    /* ── Enumera câmeras para fingerprint de modelo ── */
     try{
       const devs=await navigator.mediaDevices.enumerateDevices();
       const vids=devs.filter(d=>d.kind==='videoinput');
@@ -2485,7 +2440,80 @@ async function openCam(){
   }catch(e){
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
+    document.querySelector('main').style.display='';
     toast('Câmera negada ou indisponível.');
+    return;
+  }
+  /* ── Permissões pendentes: GPS + sensor de movimento ──
+     Aparece como diálogo sobre a câmera já aberta (sem delay). */
+  let gpsOk=!!S.pos; /* se já tem posição, GPS já está ok */
+  if(!gpsOk && navigator.permissions){
+    try{ const g=await navigator.permissions.query({name:'geolocation'}); gpsOk=(g.state==='granted') }catch(e){}
+  }
+  let motionOk=tiltGranted;
+  /* no iOS, requestPermission exige gesto → usamos o botão do diálogo */
+  const needsMotionPrompt=!motionOk && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function';
+  if(!gpsOk || needsMotionPrompt){
+    /* tenta pedir GPS silenciosamente */
+    if(!gpsOk){
+      try{
+        await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:10000}));
+        gpsOk=true;
+      }catch(e){}
+    }
+    /* tenta pedir sensor direto (pode funcionar se o gesto original ainda estiver válido) */
+    if(needsMotionPrompt && !motionOk){
+      try{ motionOk=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
+    }
+    /* se algo ainda falta, mostra diálogo bloqueante sobre a câmera */
+    if(!gpsOk || (!motionOk && needsMotionPrompt)){
+      const dlg=document.getElementById('dlg-perm');
+      const gpsDot=document.getElementById('perm-gps-dot');
+      const gpsTxt=document.getElementById('perm-gps-txt');
+      const camDot=document.getElementById('perm-cam-dot');
+      const camTxt=document.getElementById('perm-cam-txt');
+      const btn=document.getElementById('perm-allow');
+      function paintPermDots(){
+        gpsDot.className='perm-dot '+(gpsOk?'ok':'denied');
+        gpsTxt.textContent=gpsOk?'📍 Localização — ✓ permitida':'📍 Localização — negada';
+        if(needsMotionPrompt){
+          camDot.className='perm-dot '+(motionOk?'ok':'denied');
+          camTxt.textContent=motionOk?'🔄 Sensor de movimento — ✓ permitido':'🔄 Sensor de movimento — negado';
+        } else {
+          camDot.className='perm-dot ok';
+          camTxt.textContent='📷 Câmera — ✓ permitida';
+        }
+        const allOk=gpsOk && (motionOk || !needsMotionPrompt);
+        btn.textContent=allOk?'✓ Continuar':'Permitir';
+        btn.disabled=allOk;
+      }
+      paintPermDots();
+      dlg.addEventListener('cancel', e=>{ if(!gpsOk || (!motionOk && needsMotionPrompt)) e.preventDefault() });
+      dlg.showModal();
+      btn.onclick=async()=>{
+        if(!gpsOk){
+          try{
+            await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000}));
+            gpsOk=true;
+          }catch(e){ toast('Permita a localização nas configurações do navegador.') }
+        }
+        if(needsMotionPrompt && !motionOk){
+          try{ motionOk=(await DeviceMotionEvent.requestPermission())==='granted' }catch(e){}
+          if(!motionOk) toast('Permita o sensor de movimento nas configurações do navegador.');
+        }
+        paintPermDots();
+        if(gpsOk && (motionOk || !needsMotionPrompt)) setTimeout(()=>dlg.close(), 400);
+      };
+      await new Promise(res=>dlg.addEventListener('close', res, {once:true}));
+    }
+  }
+  /* ativa sensor de movimento após permissão */
+  if(motionOk && !tiltGranted){
+    tiltGranted=true;
+    window.removeEventListener('devicemotion', onDeviceMotion);
+    window.addEventListener('devicemotion', onDeviceMotion);
+  } else if(!needsMotionPrompt){
+    await enableTiltSensor();
   }
 }
 function closeCam(instant){
@@ -3532,7 +3560,7 @@ async function ensurePermissions(){
   renderServices();
   paintTags();
   loadLogo();
-  await ensurePermissions();
+  /* GPS inicia no boot sem diálogo — permissões são pedidas quando a câmera abre */
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{
