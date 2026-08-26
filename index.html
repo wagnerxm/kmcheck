@@ -2189,12 +2189,15 @@ function onDeviceMotion(e){
 let tiltGranted=false;   // lembra a autorização do sensor durante a sessão (iOS pede 1x)
 async function enableTiltSensor(){
   try{
-    // só pede a permissão do movimento se ainda não foi concedida nesta sessão — assim trocar
-    // de câmera ou reabrir não dispara o pedido de novo. O iOS já lembra entre sessões; isto
-    // evita qualquer re-pergunta redundante dentro da mesma sessão.
+    /* iOS 13+ exige permissão explícita para giroscópio/acelerômetro. Pede no toque do
+       usuário (openCam) — se negar, avisa que o giro automático não funciona. Android/
+       desktop não têm esse gate, entram direto no addEventListener. */
     if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
       const res=await DeviceMotionEvent.requestPermission();
-      if(res!=='granted') return;   // usuário negou: interface fica fixa, resto do app funciona normal
+      if(res!=='granted'){
+        toast('⚠ Sensor de movimento negado — giro automático desativado.');
+        return;
+      }
     }
     tiltGranted=true;
     window.removeEventListener('devicemotion', onDeviceMotion);   // evita listener duplicado
