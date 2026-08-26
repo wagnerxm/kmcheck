@@ -2330,12 +2330,26 @@ function camConstraints(){
 async function openCam(){
   /* Câmera abre limpa: tela preta enquanto o iOS pede permissão,
      UI da câmera só aparece DEPOIS do vídeo estar rodando. */
+  /* ── Sensor de movimento PRIMEIRO — precisa do gesto do toque ainda válido ──
+     No iOS, requestPermission() só funciona durante um gesto do usuário.
+     Chamar depois do getUserMedia (async) faz o gesto expirar e falhar.
+     É um prompt nativo rápido — não causa delay perceptível. */
+  if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+    try{
+      const r=await DeviceMotionEvent.requestPermission();
+      if(r==='granted'){
+        tiltGranted=true;
+        window.removeEventListener('devicemotion', onDeviceMotion);
+        window.addEventListener('devicemotion', onDeviceMotion);
+      }
+    }catch(e){}
+  }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
   document.querySelector('main').style.display='none';
-  /* fundo preto imediato — tela preta limpa enquanto iOS pede permissão */
+  /* fundo preto imediato — tela preta limpa enquanto iOS pede permissão de câmera */
   document.documentElement.style.backgroundColor='#000';
   document.body.style.backgroundColor='#000';
   document.getElementById('meta-theme').content='#000';
@@ -2382,18 +2396,8 @@ async function openCam(){
     toast('Câmera negada ou indisponível.');
     return;
   }
-  /* sensor de movimento — pede silenciosamente, sem diálogo customizado.
-     No iOS dispara o prompt nativo; se negar, a câmera funciona sem rotação. */
-  if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
-    try{
-      const r=await DeviceMotionEvent.requestPermission();
-      if(r==='granted'){
-        tiltGranted=true;
-        window.removeEventListener('devicemotion', onDeviceMotion);
-        window.addEventListener('devicemotion', onDeviceMotion);
-      }
-    }catch(e){}
-  } else {
+  /* no Android e outros, ativa o sensor direto (não precisa de permissão) */
+  if(!tiltGranted && !(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function')){
     await enableTiltSensor();
   }
 }
