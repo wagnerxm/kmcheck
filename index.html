@@ -272,6 +272,10 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
+#camzoom{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:55;
+  background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:700;font-family:var(--sans);
+  padding:4px 14px;border-radius:20px;pointer-events:none;backdrop-filter:blur(6px);
+  transition:opacity .3s;white-space:nowrap}
 #camflashfx.on{animation:camflash .18s ease-out}
 /* máscara de giro: cobre TODA a câmera (inclusive as barras) com preto durante a rotação da
    página, para o rearranjo do layout acontecer por baixo, invisível. Aparece instantânea e some
@@ -890,6 +894,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <div id="liveplate"></div>
     </div>
     <div id="camflashfx"></div>
+    <div id="camzoom" style="display:none">1.0×</div>
   </div>
   <!-- seletor de proporção da foto (recorta a área útil na hora) -->
   <div id="camratio">
@@ -2399,6 +2404,7 @@ async function openCam(){
     paintRatioSel();
     enableScreenLock();
     initFlashSupport();
+    initZoom();
     video.removeEventListener('loadedmetadata', layoutOverlays);
     video.removeEventListener('resize', layoutOverlays);
     video.addEventListener('loadedmetadata', layoutOverlays);
@@ -2648,6 +2654,60 @@ document.getElementById('cam-flash').onclick=async()=>{
     paintFlashIcon();
   }catch(e){ toast('Não consegui controlar o flash.'); }
 };
+
+/* ---- zoom da câmera (pinch-to-zoom com zoom real do hardware) ----
+   Usa track.applyConstraints({advanced:[{zoom}]}) quando suportado.
+   Funciona em Chrome Android, Safari iOS 17.4+. Em navegadores que não
+   suportam zoom via MediaStream, o gesto é ignorado (sem erro). */
+let zoomMin=1, zoomMax=1, zoomCur=1, zoomSupported=false;
+let _zoomHideTimer=0;
+const zoomLabel=document.getElementById('camzoom');
+function initZoom(){
+  zoomMin=1; zoomMax=1; zoomCur=1; zoomSupported=false;
+  zoomLabel.style.display='none';
+  try{
+    const track=S.stream && S.stream.getVideoTracks()[0];
+    const caps=track && track.getCapabilities && track.getCapabilities();
+    if(caps && caps.zoom){
+      zoomMin=caps.zoom.min||1;
+      zoomMax=caps.zoom.max||1;
+      zoomCur=zoomMin;
+      zoomSupported=(zoomMax>zoomMin);
+    }
+  }catch(e){}
+}
+function applyZoom(z){
+  z=Math.max(zoomMin, Math.min(zoomMax, z));
+  if(z===zoomCur && zoomLabel.style.display!=='none') return;
+  zoomCur=z;
+  try{
+    const track=S.stream.getVideoTracks()[0];
+    track.applyConstraints({advanced:[{zoom:zoomCur}]});
+  }catch(e){}
+  /* indicador visual */
+  zoomLabel.textContent=zoomCur.toFixed(1)+'×';
+  zoomLabel.style.display='';
+  clearTimeout(_zoomHideTimer);
+  /* esconde o indicador 1.5s depois do último gesto (exceto se >1x, mantém visível) */
+  if(zoomCur<=zoomMin+0.05) _zoomHideTimer=setTimeout(()=>{ zoomLabel.style.display='none' }, 1500);
+}
+/* pinch-to-zoom: calcula distância entre dois toques */
+(function(){
+  let startDist=0, startZoom=1;
+  function dist(t){ return Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY) }
+  camstage.addEventListener('touchstart', e=>{
+    if(!zoomSupported || e.touches.length!==2) return;
+    startDist=dist(e.touches);
+    startZoom=zoomCur;
+  }, {passive:true});
+  camstage.addEventListener('touchmove', e=>{
+    if(!zoomSupported || e.touches.length!==2) return;
+    e.preventDefault(); /* evita scroll/zoom da página */
+    const d=dist(e.touches);
+    const scale=d/startDist;
+    applyZoom(startZoom*scale);
+  }, {passive:false});
+})();
 
 /* ---- galeria de fotos registradas pelo app (IndexedDB + swipe) ---- */
 async function savePhotoToGallery(blob, name){
