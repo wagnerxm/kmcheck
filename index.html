@@ -2328,19 +2328,17 @@ function camConstraints(){
   }, audio:false};
 }
 async function openCam(){
-  /* Abre a câmera direto, sem diálogo — o mais rápido possível.
-     Sensor de movimento é pedido silenciosamente (prompt nativo do iOS);
-     se negar, a câmera funciona normal, só sem auto-rotação da legenda. */
+  /* Câmera abre limpa: tela preta enquanto o iOS pede permissão,
+     UI da câmera só aparece DEPOIS do vídeo estar rodando. */
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
   document.querySelector('main').style.display='none';
-  /* fundo preto imediato — evita flash branco enquanto a câmera carrega */
+  /* fundo preto imediato — tela preta limpa enquanto iOS pede permissão */
   document.documentElement.style.backgroundColor='#000';
   document.body.style.backgroundColor='#000';
   document.getElementById('meta-theme').content='#000';
-  camwrap.classList.add('on');
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
   try{
     S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
@@ -2360,6 +2358,8 @@ async function openCam(){
     document.documentElement.style.backgroundColor='#141414';
     document.body.style.backgroundColor='#141414';
     document.getElementById('meta-theme').content='#141414';
+    /* UI da câmera só aparece AGORA — vídeo já está rodando, sem bugs visuais */
+    camwrap.classList.add('on');
     camGeom=null;
     paintRatioSel();
     enableScreenLock();
@@ -2371,7 +2371,6 @@ async function openCam(){
     video.addEventListener('resize', layoutOverlays);
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
-    camwrap.classList.remove('on');
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
     document.querySelector('main').style.display='';
