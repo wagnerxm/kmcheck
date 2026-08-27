@@ -1013,16 +1013,16 @@ button {
 
     <!-- Tela Importar SNV -->
     <div class="tela" id="tela-importar-snv">
-      <h2 style="color:var(--amarelo); margin-bottom:4px">Importar Rodovia (SNV/DNIT)</h2>
+      <h2 style="color:var(--amarelo); margin-bottom:4px">Importar Rodovia</h2>
       <p style="font-size:12px; color:var(--texto-sec); margin-bottom:20px">
-        Carregue a geometria da rodovia a partir de um arquivo JSON do SNV/DNIT.
-        Cada arquivo contém os segmentos com coordenadas geográficas e quilometragem.
+        Carregue a geometria da rodovia a partir de um arquivo. Formatos aceitos:
+        <strong>JSON</strong> (SNV/DNIT), <strong>KMZ/KML</strong> (Google Earth) e <strong>CSV</strong> (planilha com coordenadas).
       </p>
       <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px">
         <div class="export-card" onclick="document.getElementById('inputSNV').click()" style="min-width:200px">
           <span class="icone">&#128194;</span>
           <div class="titulo">Arquivo Local</div>
-          <div class="desc">Selecionar arquivo JSON do SNV<br>(ex.: BR-116-MG.json)</div>
+          <div class="desc">JSON, KMZ, KML ou CSV<br>(ex.: BR-116-MG.json)</div>
         </div>
         <div class="export-card" onclick="carregarSNVExemplo()" style="min-width:200px">
           <span class="icone">&#127758;</span>
@@ -1035,7 +1035,7 @@ button {
           <div class="desc">Navegar rodovias do banco<br>de dados local (364 BRs)</div>
         </div>
       </div>
-      <input type="file" id="inputSNV" accept=".json" onchange="importarArquivoSNV(this)" style="display:none">
+      <input type="file" id="inputSNV" accept=".json,.kmz,.kml,.csv" onchange="importarArquivoSNV(this)" style="display:none">
 
       <!-- Lista de rodovias do banco (Electron) -->
       <div id="snvLista" style="display:none; margin-bottom:20px">
@@ -2479,18 +2479,304 @@ function atualizarCamada(chave, valor) {
 function importarArquivoSNV(input) {
   const file = input.files[0];
   if (!file) return;
+  const nome = file.name.toLowerCase();
   atualizarStatus('Carregando ' + file.name + '...');
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const json = JSON.parse(e.target.result);
-      carregarSNV(json, file.name);
-    } catch (err) {
-      toast('Erro ao ler arquivo: ' + err.message, 'erro');
-      atualizarStatus('Erro na importação.');
+
+  if (nome.endsWith('.kmz')) {
+    /* KMZ = ZIP contendo .kml */
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const json = await parsarKMZ(e.target.result, file.name);
+        carregarSNV(json, file.name);
+      } catch (err) {
+        toast('Erro ao ler KMZ: ' + err.message, 'erro');
+        atualizarStatus('Erro na importação.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else if (nome.endsWith('.kml')) {
+    /* KML = XML direto */
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = parsarKML(e.target.result, file.name);
+        carregarSNV(json, file.name);
+      } catch (err) {
+        toast('Erro ao ler KML: ' + err.message, 'erro');
+        atualizarStatus('Erro na importação.');
+      }
+    };
+    reader.readAsText(file);
+  } else if (nome.endsWith('.csv')) {
+    /* CSV com colunas de coordenadas */
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = parsarCSV(e.target.result, file.name);
+        carregarSNV(json, file.name);
+      } catch (err) {
+        toast('Erro ao ler CSV: ' + err.message, 'erro');
+        atualizarStatus('Erro na importação.');
+      }
+    };
+    reader.readAsText(file);
+  } else {
+    /* JSON (SNV/DNIT ou .brlegal2.json) */
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target.result);
+        carregarSNV(json, file.name);
+      } catch (err) {
+        toast('Erro ao ler arquivo: ' + err.message, 'erro');
+        atualizarStatus('Erro na importação.');
+      }
+    };
+    reader.readAsText(file);
+  }
+  /* Limpar input para permitir reimportação do mesmo arquivo */
+  input.value = '';
+}
+
+/* =============================================================
+ *  PARSERS DE IMPORTAÇÃO — KMZ, KML, CSV
+ * ============================================================= */
+
+/**
+ * Descompacta KMZ (ZIP) e extrai o KML contido.
+ * Usa decompressão manual via DecompressionStream (nativo dos navegadores modernos).
+ */
+async function parsarKMZ(arrayBuffer, nomeArquivo) {
+  const bytes = new Uint8Array(arrayBuffer);
+
+  /* Encontrar arquivos no ZIP — formato simples: Local File Headers */
+  let kmlTexto = null;
+  let pos = 0;
+
+  while (pos < bytes.length - 30) {
+    /* Assinatura do Local File Header: PK\x03\x04 */
+    if (bytes[pos] !== 0x50 || bytes[pos+1] !== 0x4B ||
+        bytes[pos+2] !== 0x03 || bytes[pos+3] !== 0x04) break;
+
+    const compressao = bytes[pos + 8] | (bytes[pos + 9] << 8);
+    const tamanhoComp = bytes[pos + 18] | (bytes[pos + 19] << 8) |
+                        (bytes[pos + 20] << 16) | (bytes[pos + 21] << 24);
+    const tamanhoNome = bytes[pos + 26] | (bytes[pos + 27] << 8);
+    const tamanhoExtra = bytes[pos + 28] | (bytes[pos + 29] << 8);
+
+    const nomeBytes = bytes.slice(pos + 30, pos + 30 + tamanhoNome);
+    const nomeEntrada = new TextDecoder().decode(nomeBytes);
+    const inicioData = pos + 30 + tamanhoNome + tamanhoExtra;
+    const dadosComp = bytes.slice(inicioData, inicioData + tamanhoComp);
+
+    if (nomeEntrada.toLowerCase().endsWith('.kml')) {
+      if (compressao === 0) {
+        /* Sem compressão — dados crus */
+        kmlTexto = new TextDecoder('utf-8').decode(dadosComp);
+      } else if (compressao === 8) {
+        /* Deflate — usar DecompressionStream nativo */
+        try {
+          const ds = new DecompressionStream('raw');
+          const writer = ds.writable.getWriter();
+          writer.write(dadosComp);
+          writer.close();
+          const reader = ds.readable.getReader();
+          const chunks = [];
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+          const merged = new Uint8Array(totalLen);
+          let offset = 0;
+          for (const c of chunks) { merged.set(c, offset); offset += c.length; }
+          kmlTexto = new TextDecoder('utf-8').decode(merged);
+        } catch (e) {
+          throw new Error('Falha ao descompactar KMZ: ' + e.message);
+        }
+      }
+      break; /* Usa o primeiro .kml encontrado */
     }
+
+    pos = inicioData + tamanhoComp;
+  }
+
+  if (!kmlTexto) throw new Error('Nenhum arquivo .kml encontrado dentro do KMZ.');
+  return parsarKML(kmlTexto, nomeArquivo);
+}
+
+/**
+ * Extrai coordenadas de um arquivo KML (Google Earth).
+ * Procura tags <coordinates> dentro de <Placemark>/<LineString>.
+ * Retorna no formato SNV: {segments: [{ki, kf, c: [[lon,lat],...]}]}
+ */
+function parsarKML(textoKML, nomeArquivo) {
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(textoKML, 'text/xml');
+
+  /* Verificar erro de parsing */
+  const erroXML = xml.querySelector('parsererror');
+  if (erroXML) throw new Error('KML inválido — erro de XML.');
+
+  /* Coletar todas as coordenadas de LineString e LinearRing */
+  const coordsTags = xml.querySelectorAll('coordinates');
+  if (coordsTags.length === 0) throw new Error('KML sem coordenadas — verifique o arquivo.');
+
+  const segmentos = [];
+  let kmAcumulado = 0;
+
+  for (const tag of coordsTags) {
+    const texto = tag.textContent.trim();
+    if (!texto) continue;
+
+    /* Formato KML: "lon,lat,alt lon,lat,alt ..." separado por espaço/newline */
+    const pares = texto.split(/\s+/).filter(s => s.includes(','));
+    if (pares.length < 2) continue; /* Precisa de pelo menos 2 pontos para uma linha */
+
+    const coords = [];
+    for (const par of pares) {
+      const partes = par.split(',');
+      const lon = parseFloat(partes[0]);
+      const lat = parseFloat(partes[1]);
+      if (!isNaN(lon) && !isNaN(lat)) coords.push([lon, lat]);
+    }
+
+    if (coords.length < 2) continue;
+
+    /* Calcular extensão do segmento em km */
+    let distSeg = 0;
+    for (let i = 1; i < coords.length; i++) {
+      distSeg += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]);
+    }
+    const kmSeg = distSeg / 1000;
+
+    segmentos.push({
+      ki: kmAcumulado,
+      kf: kmAcumulado + kmSeg,
+      c: coords,
+    });
+    kmAcumulado += kmSeg;
+  }
+
+  if (segmentos.length === 0) throw new Error('KML sem linhas válidas (apenas pontos?).');
+
+  /* Tentar extrair nome da rodovia do KML */
+  const nomeTag = xml.querySelector('Document > name, Folder > name, Placemark > name');
+  const nomeKML = nomeTag ? nomeTag.textContent.trim() : '';
+  const matchBR = nomeKML.match(/BR[- ]?(\d{3})/i) || nomeArquivo.match(/BR[- ]?(\d{3})/i);
+  const matchUF = nomeKML.match(/\b([A-Z]{2})\b/) || nomeArquivo.match(/([A-Z]{2})/);
+
+  return {
+    br: matchBR ? matchBR[1] : '',
+    uf: matchUF ? matchUF[1] : '',
+    snv: 'kml',
+    updated: 'importado de ' + nomeArquivo,
+    km: kmAcumulado,
+    segments: segmentos,
   };
-  reader.readAsText(file);
+}
+
+/**
+ * Importa rodovia de um arquivo CSV.
+ * Detecta automaticamente separador (;,\t) e colunas de lat/lon/km.
+ * Aceita colunas: latitude/lat/y, longitude/lon/lng/x, km/estaca/estaqueamento
+ */
+function parsarCSV(textoCSV, nomeArquivo) {
+  /* Detectar separador */
+  const primeiraLinha = textoCSV.split('\n')[0];
+  let sep = ',';
+  if (primeiraLinha.split(';').length > primeiraLinha.split(',').length) sep = ';';
+  if (primeiraLinha.split('\t').length > primeiraLinha.split(sep).length) sep = '\t';
+
+  const linhas = textoCSV.trim().split('\n').map(l => l.trim()).filter(l => l);
+  if (linhas.length < 2) throw new Error('CSV vazio ou com apenas cabeçalho.');
+
+  /* Parsear cabeçalho — normalizar nomes */
+  const header = linhas[0].split(sep).map(h => h.trim().toLowerCase()
+    .replace(/[""]/g, '').replace(/\s+/g, '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') /* remover acentos */
+  );
+
+  /* Detectar colunas */
+  const iLat = header.findIndex(h => /^(lat|latitude|y)$/.test(h));
+  const iLon = header.findIndex(h => /^(lon|lng|longitude|long|x)$/.test(h));
+  const iKM = header.findIndex(h => /^(km|quilometro|quilometragem|estaca|estaqueamento|pk)$/.test(h));
+
+  if (iLat < 0 || iLon < 0) {
+    throw new Error(
+      'CSV precisa de colunas de latitude e longitude.\n' +
+      'Colunas encontradas: ' + header.join(', ') + '\n' +
+      'Nomes aceitos: lat/latitude/y e lon/longitude/lng/x'
+    );
+  }
+
+  /* Parsear dados */
+  const coords = [];
+  const kms = [];
+  let erros = 0;
+
+  for (let i = 1; i < linhas.length; i++) {
+    const cols = linhas[i].split(sep).map(c => c.trim().replace(/[""]/g, ''));
+    const lat = parseFloat(cols[iLat]?.replace(',', '.'));
+    const lon = parseFloat(cols[iLon]?.replace(',', '.'));
+    if (isNaN(lat) || isNaN(lon)) { erros++; continue; }
+
+    /* Validar coordenadas razoáveis */
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) { erros++; continue; }
+
+    coords.push([lon, lat]);
+
+    if (iKM >= 0) {
+      const km = parseFloat(cols[iKM]?.replace(',', '.'));
+      kms.push(isNaN(km) ? null : km);
+    }
+  }
+
+  if (coords.length < 2) {
+    throw new Error('CSV precisa de pelo menos 2 pontos válidos. ' +
+      (erros > 0 ? erros + ' linhas ignoradas por coordenadas inválidas.' : ''));
+  }
+
+  if (erros > 0) {
+    toast(erros + ' linhas ignoradas por coordenadas inválidas.', 'erro');
+  }
+
+  /* Calcular KMs se não vieram no CSV */
+  let kmInicio = 0;
+  let kmFim = 0;
+
+  if (iKM >= 0 && kms.filter(k => k !== null).length > 1) {
+    /* Usar KMs do arquivo */
+    const kmsValidos = kms.filter(k => k !== null);
+    kmInicio = Math.min(...kmsValidos);
+    kmFim = Math.max(...kmsValidos);
+  } else {
+    /* Calcular distância acumulada */
+    let dist = 0;
+    for (let i = 1; i < coords.length; i++) {
+      dist += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]);
+    }
+    kmFim = dist / 1000;
+  }
+
+  /* Tentar extrair BR/UF do nome do arquivo */
+  const matchBR = nomeArquivo.match(/BR[- ]?(\d{3})/i);
+  const matchUF = nomeArquivo.match(/([A-Z]{2})/);
+
+  return {
+    br: matchBR ? matchBR[1] : '',
+    uf: matchUF ? matchUF[1] : '',
+    snv: 'csv',
+    updated: 'importado de ' + nomeArquivo,
+    km: kmFim - kmInicio,
+    segments: [{
+      ki: kmInicio,
+      kf: kmFim,
+      c: coords,
+    }],
+  };
 }
 
 function carregarSNV(json, nomeArquivo) {
