@@ -101,20 +101,24 @@ input:focus,select:focus{border-color:var(--blue)}
 
 /* ── Tabela ── */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:var(--radius)}
-table{width:100%;min-width:1500px;border-collapse:collapse;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
 thead{background:var(--surface2);position:sticky;top:0}
-th{text-align:left;padding:10px 14px;font-weight:600;color:var(--text2);font-size:12px;
-  text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;
-  user-select:none;border-bottom:1px solid var(--border)}
+th{text-align:left;padding:7px 8px;font-weight:600;color:var(--text2);font-size:11px;
+  text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;cursor:pointer;
+  user-select:none;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis}
 th:hover{color:var(--text)}
-th .sort{margin-left:4px;opacity:.3;font-size:10px}
+th .sort{margin-left:2px;opacity:.3;font-size:9px}
 th.sorted .sort{opacity:1;color:var(--blue)}
-td{padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 tr:last-child td{border-bottom:none}
 tbody tr:hover{background:var(--surface2)}
-.mono{font-family:'SF Mono',SFMono-Regular,ui-monospace,Menlo,monospace;font-size:12px}
+.mono{font-family:'SF Mono',SFMono-Regular,ui-monospace,Menlo,monospace;font-size:11px}
 .muted{color:var(--text2)}
 .empty{text-align:center;padding:40px;color:var(--text3)}
+/* larguras fixas por coluna — 13 colunas compactas */
+.col-user{width:8%} .col-did{width:9%} .col-model{width:10%} .col-brand{width:7%}
+.col-os{width:8%} .col-ver{width:5%} .col-tela{width:6%} .col-bases{width:4%;text-align:center}
+.col-loc{width:13%} .col-road{width:7%} .col-km{width:5%} .col-ping{width:13%} .col-pings{width:5%;text-align:center}
 
 /* ── Tab panels ── */
 .tab-panel{display:none}
@@ -144,8 +148,6 @@ tbody tr:hover{background:var(--surface2)}
   .stats{grid-template-columns:repeat(3,1fr);gap:10px}
   .stat{padding:14px}
   .stat .value{font-size:22px}
-  th{padding:8px 10px;font-size:11px}
-  td{padding:8px 10px;font-size:12px}
 }
 @media(max-width:768px){
   .topbar{padding:0 12px;gap:12px}
@@ -158,8 +160,8 @@ tbody tr:hover{background:var(--surface2)}
   .stat .label{font-size:11px}
   .toolbar{gap:8px}
   .toolbar input[type=text]{min-width:120px}
-  th{padding:6px 8px;font-size:10px;letter-spacing:.3px}
-  td{padding:6px 8px;font-size:11px}
+  th{padding:5px 6px;font-size:10px}
+  td{padding:5px 6px;font-size:10px}
 }
 @media(max-width:480px){
   .stats{grid-template-columns:1fr 1fr}
@@ -203,8 +205,8 @@ tbody tr:hover{background:var(--surface2)}
 /* Ícones de plataforma inline SVG */
 .plat-icon{width:16px;height:16px;vertical-align:middle;display:inline-block;margin-right:4px}
 /* Campo editável de nome do usuário */
-.user-name{background:transparent;border:1px solid transparent;color:var(--text);padding:2px 6px;
-  border-radius:4px;font-size:12px;width:100%;min-width:70px;max-width:120px;
+.user-name{background:transparent;border:1px solid transparent;color:var(--text);padding:2px 4px;
+  border-radius:4px;font-size:11px;width:100%;min-width:50px;max-width:100%;
   transition:border-color .15s,background .15s}
 .user-name:hover{border-color:var(--border)}
 .user-name:focus{border-color:var(--blue);background:var(--surface2);outline:none}
@@ -278,19 +280,19 @@ tbody tr:hover{background:var(--surface2)}
         <table>
           <thead>
             <tr>
-              <th data-col="nickname">Usuário <span class="sort">▲</span></th>
-              <th data-col="device_id">Device ID <span class="sort">▲</span></th>
-              <th data-col="model">Modelo <span class="sort">▲</span></th>
-              <th data-col="brand">Marca <span class="sort">▲</span></th>
-              <th data-col="os_version">Sistema <span class="sort">▲</span></th>
-              <th data-col="app_version">Versão App <span class="sort">▲</span></th>
-              <th data-col="screen">Tela <span class="sort">▲</span></th>
-              <th data-col="bases_count">Bases <span class="sort">▲</span></th>
-              <th data-col="location">Localização <span class="sort">▲</span></th>
-              <th data-col="road">Rodovia <span class="sort">▲</span></th>
-              <th data-col="road_km">KM <span class="sort">▲</span></th>
-              <th data-col="last_ping">Último Ping <span class="sort">▲</span></th>
-              <th data-col="ping_count">Pings <span class="sort">▲</span></th>
+              <th class="col-user" data-col="nickname">Usuário <span class="sort">▲</span></th>
+              <th class="col-did" data-col="device_id">Device ID <span class="sort">▲</span></th>
+              <th class="col-model" data-col="model">Modelo <span class="sort">▲</span></th>
+              <th class="col-brand" data-col="brand">Marca <span class="sort">▲</span></th>
+              <th class="col-os" data-col="os_version">Sistema <span class="sort">▲</span></th>
+              <th class="col-ver" data-col="app_version">Versão <span class="sort">▲</span></th>
+              <th class="col-tela" data-col="screen">Tela <span class="sort">▲</span></th>
+              <th class="col-bases" data-col="bases_count">Bases <span class="sort">▲</span></th>
+              <th class="col-loc" data-col="location">Localização <span class="sort">▲</span></th>
+              <th class="col-road" data-col="road">Rodovia <span class="sort">▲</span></th>
+              <th class="col-km" data-col="road_km">KM <span class="sort">▲</span></th>
+              <th class="col-ping" data-col="last_ping">Último Ping <span class="sort">▲</span></th>
+              <th class="col-pings" data-col="ping_count">Pings <span class="sort">▲</span></th>
             </tr>
           </thead>
           <tbody id="dev-tbody"></tbody>
