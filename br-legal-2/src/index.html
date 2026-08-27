@@ -1,0 +1,4026 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BR-Legal 2 — Projeto de Sinalização</title>
+<style>
+/* =============================================================
+ *  VARIÁVEIS DE TEMA
+ *  Paleta escura com visual técnico/rodoviário
+ * ============================================================= */
+:root {
+  /* Fundos */
+  --bg-app:       #1A1F2B;
+  --bg-sidebar:   #141820;
+  --bg-card:      #222836;
+  --bg-card-hover:#2A3040;
+  --bg-input:     #1E2432;
+  --bg-header:    #161B26;
+
+  /* Bordas */
+  --borda:        #2D3548;
+  --borda-foco:   #E8B818;
+
+  /* Acentos */
+  --amarelo:      #E8B818;   /* demarcação viária */
+  --amarelo-dim:  #A68510;
+  --vermelho:     #E53E3E;   /* regulamentação */
+  --verde:        #38A169;   /* indicação */
+  --azul:         #3182CE;   /* serviços */
+  --azul-claro:   #63B3ED;
+  --laranja:      #DD6B20;
+
+  /* Texto */
+  --texto:        #E2E8F0;
+  --texto-sec:    #A0AEC0;
+  --texto-dim:    #718096;
+
+  /* Tipografia */
+  --fonte:        'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono:         'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+  /* Layout */
+  --sidebar-w:    240px;
+  --propanel-w:   260px;
+  --bottom-h:     44px;
+  --header-h:     42px;
+  --radius:       6px;
+}
+
+/* =============================================================
+ *  RESET + BASE
+ * ============================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--fonte);
+  font-size: 13px;
+  color: var(--texto);
+  background: var(--bg-app);
+  user-select: none;
+  -webkit-user-select: none;
+}
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--texto-dim); }
+
+input, select, textarea, button { font-family: inherit; font-size: inherit; color: inherit; }
+input, select, textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--borda-foco); }
+
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--texto);
+}
+
+/* =============================================================
+ *  LAYOUT — grade principal de 4 painéis
+ * ============================================================= */
+#app {
+  display: grid;
+  height: 100vh;
+  grid-template-columns: var(--sidebar-w) 1fr var(--propanel-w);
+  grid-template-rows: var(--header-h) 1fr var(--bottom-h);
+  grid-template-areas:
+    "header  header  header"
+    "sidebar centro  props"
+    "rodape  rodape  rodape";
+}
+
+/* --- Cabeçalho ------------------------------------------------ */
+#header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--borda);
+  -webkit-app-region: drag;
+}
+#header .titulo {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .3px;
+  color: var(--amarelo);
+  white-space: nowrap;
+}
+#header .subtitulo {
+  font-size: 12px;
+  color: var(--texto-sec);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#header .acoes {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+.btn-header {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--texto-sec);
+  transition: background .15s, color .15s;
+}
+.btn-header:hover { background: var(--bg-card); color: var(--texto); }
+.btn-header.destaque {
+  background: var(--amarelo);
+  color: #000;
+  font-weight: 600;
+}
+.btn-header.destaque:hover { background: #d4a716; }
+
+/* --- Barra lateral -------------------------------------------- */
+#sidebar {
+  grid-area: sidebar;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--borda);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-titulo {
+  padding: 10px 14px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--texto-dim);
+  font-weight: 700;
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 18px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--texto-sec);
+  transition: background .12s, color .12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-item:hover { background: var(--bg-card); color: var(--texto); }
+.tree-item.ativo { background: var(--bg-card); color: var(--amarelo); font-weight: 600; }
+.tree-item .icone { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+.tree-item.nivel-2 { padding-left: 34px; }
+.tree-item.nivel-3 { padding-left: 50px; font-size: 11px; }
+.tree-grupo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto);
+  transition: background .12s;
+}
+.tree-grupo:hover { background: var(--bg-card); }
+.tree-grupo .seta {
+  font-size: 10px;
+  transition: transform .15s;
+  width: 14px;
+  text-align: center;
+}
+.tree-grupo.aberto .seta { transform: rotate(90deg); }
+.tree-filhos { display: none; }
+.tree-grupo.aberto + .tree-filhos { display: block; }
+
+/* --- Área central --------------------------------------------- */
+#centro {
+  grid-area: centro;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+/* --- Painel de propriedades ----------------------------------- */
+#propanel {
+  grid-area: props;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--borda);
+  overflow-y: auto;
+  padding: 12px;
+}
+.prop-titulo {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-dim);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.prop-campo { margin-bottom: 10px; }
+.prop-campo label {
+  display: block;
+  font-size: 11px;
+  color: var(--texto-sec);
+  margin-bottom: 3px;
+}
+.prop-campo input, .prop-campo select { width: 100%; }
+.prop-info {
+  font-size: 11px;
+  color: var(--texto-dim);
+  line-height: 1.5;
+  padding: 8px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+/* --- Rodapé / Status ------------------------------------------ */
+#rodape {
+  grid-area: rodape;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  background: var(--bg-header);
+  border-top: 1px solid var(--borda);
+  font-size: 11px;
+  color: var(--texto-dim);
+}
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--verde);
+}
+
+/* =============================================================
+ *  TELA INICIAL
+ * ============================================================= */
+.tela-inicial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 24px;
+  text-align: center;
+}
+.tela-inicial .logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tela-inicial .logo-texto {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.tela-inicial .logo-texto span { color: var(--amarelo); }
+.tela-inicial .logo-sub {
+  font-size: 14px;
+  color: var(--texto-sec);
+  max-width: 420px;
+  line-height: 1.5;
+}
+.tela-inicial .acoes-iniciais {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+.btn-primario, .btn-secundario {
+  padding: 12px 28px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background .15s, transform .1s;
+}
+.btn-primario {
+  background: var(--amarelo);
+  color: #000;
+}
+.btn-primario:hover { background: #d4a716; transform: translateY(-1px); }
+.btn-secundario {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+}
+.btn-secundario:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
+
+.tela-inicial .recentes {
+  margin-top: 20px;
+  text-align: left;
+  width: 360px;
+}
+.tela-inicial .recentes h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-dim);
+  margin-bottom: 8px;
+}
+.recente-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .12s;
+  font-size: 12px;
+  color: var(--texto-sec);
+}
+.recente-item:hover { background: var(--bg-card); color: var(--texto); }
+.recente-item .icone { font-size: 16px; }
+
+/* =============================================================
+ *  TELA: DADOS DO PROJETO
+ * ============================================================= */
+.tela-dados { max-width: 700px; }
+.tela-dados h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--amarelo);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.form-grid .col-full { grid-column: 1 / -1; }
+.form-campo label {
+  display: block;
+  font-size: 11px;
+  color: var(--texto-sec);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.form-campo input, .form-campo select { width: 100%; }
+.form-acoes {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* =============================================================
+ *  TELA: TABELA (Volume II)
+ * ============================================================= */
+.tela-tabela h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.tela-tabela .subtitulo-tabela {
+  font-size: 12px;
+  color: var(--texto-sec);
+  margin-bottom: 12px;
+}
+.toolbar-tabela {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.toolbar-tabela input[type="search"] { width: 200px; }
+.btn-toolbar {
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  transition: background .12s;
+}
+.btn-toolbar:hover { background: var(--bg-card-hover); }
+.btn-toolbar.verde { background: var(--verde); color: #fff; border-color: var(--verde); }
+.btn-toolbar.verde:hover { background: #2e8b57; }
+.btn-toolbar.ativo { background: var(--amarelo); color: #000; border-color: var(--amarelo); font-weight: 600; }
+
+.tabela-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 200px);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+}
+.tabela-dados {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.tabela-dados th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-header);
+  padding: 7px 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--texto-sec);
+  border-bottom: 2px solid var(--borda);
+  white-space: nowrap;
+  z-index: 2;
+}
+.tabela-dados td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+}
+.tabela-dados tr:hover td { background: var(--bg-card); }
+.tabela-dados tr.selecionada td { background: rgba(232, 184, 24, .1); }
+.tabela-dados td input, .tabela-dados td select {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px 4px;
+  width: 100%;
+  min-width: 60px;
+  border-radius: 3px;
+}
+.tabela-dados td input:focus, .tabela-dados td select:focus {
+  background: var(--bg-input);
+  border-color: var(--borda-foco);
+}
+.celula-numero { text-align: right; }
+.celula-km { text-align: center; font-variant-numeric: tabular-nums; }
+
+/* =============================================================
+ *  TELA: PLANTA — canvas + paleta de ferramentas
+ * ============================================================= */
+.tela-planta {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.tela-planta h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.toolbar-planta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.toolbar-planta .sep { width: 1px; height: 20px; background: var(--borda); margin: 0 2px; }
+.canvas-area {
+  flex: 1;
+  display: flex;
+  position: relative;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #0F1219;
+}
+
+/* Paleta de ferramentas (lateral esquerda do canvas) */
+.tool-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  background: rgba(20, 24, 32, .95);
+  border-right: 1px solid var(--borda);
+  z-index: 5;
+}
+.tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--texto-sec);
+  transition: background .12s, color .12s;
+  border: 1px solid transparent;
+  position: relative;
+}
+.tool-btn:hover { background: var(--bg-card); color: var(--texto); }
+.tool-btn.ativo { background: var(--amarelo); color: #000; border-color: var(--amarelo-dim); }
+.tool-btn[title]::after {
+  content: attr(title);
+  position: absolute;
+  left: 38px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #000;
+  color: var(--texto);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 10;
+}
+.tool-btn:hover::after { opacity: 1; }
+
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+}
+.canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+.canvas-wrap canvas.arrastando { cursor: grabbing; }
+.canvas-wrap canvas.ferramenta-colocar { cursor: crosshair; }
+.canvas-info {
+  position: absolute;
+  bottom: 8px; right: 12px;
+  font-size: 11px;
+  color: var(--texto-dim);
+  pointer-events: none;
+  display: flex;
+  gap: 16px;
+}
+.canvas-info-left {
+  position: absolute;
+  bottom: 8px; left: 12px;
+  font-size: 11px;
+  color: var(--texto-dim);
+  pointer-events: none;
+}
+
+/* =============================================================
+ *  TELA: QUANTITATIVOS
+ * ============================================================= */
+.tela-quanti h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--amarelo);
+}
+.tela-quanti .subtitulo { font-size: 12px; color: var(--texto-sec); margin-bottom: 16px; }
+.quanti-resumo {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.quanti-card {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  min-width: 140px;
+  text-align: center;
+}
+.quanti-card .valor {
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.quanti-card .rotulo {
+  font-size: 11px;
+  color: var(--texto-sec);
+  margin-top: 4px;
+}
+.quanti-card.vertical .valor { color: var(--vermelho); }
+.quanti-card.horizontal .valor { color: var(--amarelo); }
+.quanti-card.dispositivos .valor { color: var(--azul); }
+.quanti-card.total .valor { color: var(--verde); }
+
+/* =============================================================
+ *  TELA: MEMORIAL DESCRITIVO
+ * ============================================================= */
+.tela-memorial h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--amarelo);
+}
+.tela-memorial .subtitulo { font-size: 12px; color: var(--texto-sec); margin-bottom: 16px; }
+.memorial-texto {
+  width: 100%;
+  min-height: 500px;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 20px;
+  font-family: var(--fonte);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--texto);
+  resize: vertical;
+  white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* =============================================================
+ *  TELA: EXPORTAR
+ * ============================================================= */
+.tela-exportar h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--amarelo);
+}
+.tela-exportar .subtitulo { font-size: 12px; color: var(--texto-sec); margin-bottom: 16px; }
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  max-width: 800px;
+}
+.export-card {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  text-align: center;
+}
+.export-card:hover { border-color: var(--amarelo); background: var(--bg-card-hover); }
+.export-card .icone { font-size: 32px; margin-bottom: 10px; display: block; }
+.export-card .titulo { font-weight: 600; margin-bottom: 6px; }
+.export-card .desc { font-size: 11px; color: var(--texto-sec); line-height: 1.4; }
+
+/* =============================================================
+ *  MODAL (diálogos sobrepostos)
+ * ============================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.oculto { display: none; }
+.modal-dialog {
+  background: var(--bg-app);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+.modal-dialog h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--amarelo);
+}
+.modal-dialog .modal-acoes {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.btn-modal {
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+}
+.btn-modal.primario { background: var(--amarelo); color: #000; }
+.btn-modal.primario:hover { background: #d4a716; }
+.btn-modal.cancelar { background: var(--bg-card); border: 1px solid var(--borda); }
+.btn-modal.cancelar:hover { background: var(--bg-card-hover); }
+
+/* =============================================================
+ *  TOAST (notificações temporárias)
+ * ============================================================= */
+.toast {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--texto);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  z-index: 200;
+  pointer-events: none;
+}
+.toast.visivel { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.sucesso { border-color: var(--verde); }
+.toast.erro { border-color: var(--vermelho); }
+
+/* =============================================================
+ *  COMPONENTES GERAIS
+ * ============================================================= */
+.separador {
+  height: 1px;
+  background: var(--borda);
+  margin: 10px 0;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.badge-r { background: rgba(229,62,62,.2); color: var(--vermelho); }
+.badge-a { background: rgba(232,184,24,.2); color: var(--amarelo); }
+.badge-i { background: rgba(56,161,105,.2); color: var(--verde); }
+.badge-s { background: rgba(49,130,206,.2); color: var(--azul); }
+
+.vazio-msg {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--texto-dim);
+  font-size: 13px;
+}
+.vazio-msg .icone-grande { font-size: 40px; margin-bottom: 12px; display: block; }
+
+/* Esconder todas as telas; a ativa recebe display via JS */
+.tela { display: none; }
+.tela.visivel { display: block; }
+.tela-inicial.visivel, .tela-planta.visivel { display: flex; }
+
+/* =============================================================
+ *  IMPRESSÃO — folha A3 paisagem para pranchas de sinalização
+ * ============================================================= */
+@media print {
+  @page { size: A3 landscape; margin: 10mm; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  #header, #sidebar, #propanel, #rodape, .toast, .modal-overlay,
+  .toolbar-planta, .btn-toolbar, .btn-header, .acoes, .form-acoes,
+  .export-card, .acoes-iniciais { display: none !important; }
+  #app {
+    display: block !important;
+    height: auto;
+  }
+  #centro {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .tela { display: none !important; }
+  .tela.visivel { display: block !important; page-break-after: always; }
+  .tela-planta.visivel {
+    display: block !important;
+    flex-direction: column;
+  }
+  #plantaCanvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 80vh;
+  }
+  .tabela-dados { border-collapse: collapse; width: 100%; }
+  .tabela-dados th, .tabela-dados td {
+    border: 1px solid #ccc; padding: 4px 6px; font-size: 9pt;
+  }
+  .tabela-dados th { background: #f0f0f0; }
+  .memorial-texto {
+    border: none; padding: 0; font-size: 11pt;
+    min-height: auto; background: #fff; color: #000;
+    white-space: pre-wrap;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ========== CABEÇALHO ========== -->
+  <header id="header">
+    <div class="titulo">BR-Legal 2</div>
+    <div class="subtitulo" id="headerSubtitulo">Projeto de Sinalização Rodoviária</div>
+    <div class="acoes">
+      <button class="btn-header" onclick="mostrarTela('inicio')" title="Início">Início</button>
+      <button class="btn-header" onclick="acaoSalvar()" title="Salvar projeto">Salvar</button>
+      <button class="btn-header" onclick="mostrarTela('exportar')" title="Exportar">Exportar</button>
+      <button class="btn-header destaque" onclick="acaoNovoProjeto()" title="Novo projeto">+ Novo</button>
+    </div>
+  </header>
+
+  <!-- ========== BARRA LATERAL ========== -->
+  <nav id="sidebar">
+    <div class="sidebar-titulo">Projeto</div>
+
+    <div class="tree-item ativo" data-tela="dados" onclick="navegar(this)">
+      <span class="icone">&#128203;</span> Dados do Projeto
+    </div>
+    <div class="tree-item" data-tela="importar-snv" onclick="navegar(this)">
+      <span class="icone">&#127758;</span> Importar Rodovia (SNV)
+    </div>
+
+    <div class="separador"></div>
+    <div class="sidebar-titulo">Projeto Básico</div>
+
+    <!-- Volume I -->
+    <div class="tree-grupo aberto" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume I — Apresentação
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2" data-tela="vol1-memorial" onclick="navegar(this)">
+        <span class="icone">&#128196;</span> Memorial de Estudos
+      </div>
+    </div>
+
+    <!-- Volume II -->
+    <div class="tree-grupo aberto" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume II — Cadastro / Necessidades
+    </div>
+    <div class="tree-filhos" id="treeVolII"></div>
+
+    <!-- Volume III -->
+    <div class="tree-grupo" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume III — Pranchas
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2" data-tela="planta" onclick="navegar(this)">
+        <span class="icone">&#128506;</span> Planta de Sinalização
+      </div>
+    </div>
+
+    <div class="separador"></div>
+    <div class="sidebar-titulo">Projeto Executivo</div>
+
+    <!-- Volume IV -->
+    <div class="tree-grupo" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume IV — Memorial + PLQ
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2" data-tela="memorial" onclick="navegar(this)">
+        <span class="icone">&#128221;</span> Memorial Descritivo
+      </div>
+    </div>
+
+    <!-- Volume V -->
+    <div class="tree-grupo" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume V — Orçamento
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2" data-tela="quantitativos" onclick="navegar(this)">
+        <span class="icone">&#128202;</span> Quantitativos
+      </div>
+    </div>
+
+    <div class="separador"></div>
+    <div class="sidebar-titulo">Ferramentas</div>
+    <div class="tree-item" data-tela="exportar" onclick="navegar(this)">
+      <span class="icone">&#128228;</span> Exportar
+    </div>
+  </nav>
+
+  <!-- ========== ÁREA CENTRAL ========== -->
+  <main id="centro">
+
+    <!-- Tela Inicial -->
+    <div class="tela tela-inicial visivel" id="tela-inicio">
+      <div class="logo-area">
+        <div class="logo-texto"><span>BR-Legal</span> 2</div>
+        <div class="logo-sub">
+          Sistema de elaboração de projetos de sinalização rodoviária para
+          rodovias federais, conforme padrões DNIT/IPR.
+        </div>
+      </div>
+      <div class="acoes-iniciais">
+        <button class="btn-primario" onclick="acaoNovoProjeto()">&#10133; Novo Projeto</button>
+        <button class="btn-secundario" onclick="acaoAbrirProjeto()">&#128194; Abrir Projeto</button>
+      </div>
+
+      <!-- Ações rápidas -->
+      <div style="margin-top:30px; max-width:700px">
+        <h3 style="font-size:13px; color:var(--texto-sec); margin-bottom:12px; letter-spacing:.5px; text-transform:uppercase">Ações Rápidas</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px">
+          <div class="export-card" onclick="mostrarTela('importar-snv')" style="padding:14px; text-align:left">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:20px">&#128738;</span>
+              <div>
+                <div style="font-weight:600; font-size:12px">Importar Rodovia</div>
+                <div style="font-size:10px; color:var(--texto-dim); margin-top:2px">Carregar dados SNV/DNIT</div>
+              </div>
+            </div>
+          </div>
+          <div class="export-card" onclick="mostrarTela('planta')" style="padding:14px; text-align:left">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:20px">&#128506;</span>
+              <div>
+                <div style="font-weight:600; font-size:12px">Planta de Sinalização</div>
+                <div style="font-size:10px; color:var(--texto-dim); margin-top:2px">Canvas interativo (F5)</div>
+              </div>
+            </div>
+          </div>
+          <div class="export-card" onclick="mostrarTela('exportar')" style="padding:14px; text-align:left">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:20px">&#128228;</span>
+              <div>
+                <div style="font-weight:600; font-size:12px">Exportar</div>
+                <div style="font-size:10px; color:var(--texto-dim); margin-top:2px">PDF, DXF, CSV, JSON</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info do sistema -->
+      <div style="margin-top:30px; max-width:700px; padding:14px; background:var(--bg-card); border:1px solid var(--borda); border-radius:var(--radius)">
+        <h3 style="font-size:13px; color:var(--texto-sec); margin-bottom:8px">&#9432; Fluxo de Trabalho</h3>
+        <div style="font-size:11px; color:var(--texto-dim); line-height:1.8">
+          <strong style="color:var(--amarelo)">1.</strong> Criar projeto e preencher dados (rodovia, lote, trecho)<br>
+          <strong style="color:var(--amarelo)">2.</strong> Importar geometria da rodovia (SNV/DNIT)<br>
+          <strong style="color:var(--amarelo)">3.</strong> Abrir planta e posicionar sinais verticais, horizontais e dispositivos<br>
+          <strong style="color:var(--amarelo)">4.</strong> Preencher planilhas do Volume II (inventário, interseções, OAEs...)<br>
+          <strong style="color:var(--amarelo)">5.</strong> Gerar quantitativos e memorial descritivo<br>
+          <strong style="color:var(--amarelo)">6.</strong> Exportar: DXF (pranchas), CSV (planilhas), PDF (relatórios), JSON (backup)
+        </div>
+      </div>
+
+      <div class="recentes" id="listaRecentes" style="margin-top:20px; max-width:700px">
+        <h3>Projetos Recentes</h3>
+        <div class="recente-item" style="color:var(--texto-dim); cursor:default;">
+          Nenhum projeto recente.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela Dados do Projeto -->
+    <div class="tela tela-dados" id="tela-dados">
+      <h2>Dados do Projeto</h2>
+      <div class="form-grid">
+        <div class="form-campo col-full">
+          <label>Nome do Projeto</label>
+          <input type="text" id="projNome" placeholder="Ex.: Projeto BR-LEGAL 2 — Lote 06">
+        </div>
+        <div class="form-campo">
+          <label>Lote</label>
+          <input type="text" id="projLote" placeholder="Ex.: 06">
+        </div>
+        <div class="form-campo">
+          <label>UF</label>
+          <select id="projUF"><option value="">Selecione...</option></select>
+        </div>
+        <div class="form-campo">
+          <label>Rodovia (BR)</label>
+          <input type="text" id="projBR" placeholder="Ex.: BR-116">
+        </div>
+        <div class="form-campo">
+          <label>Trecho</label>
+          <input type="text" id="projTrecho" placeholder="Ex.: Divisa MG/RJ — Além Paraíba">
+        </div>
+        <div class="form-campo">
+          <label>KM Início</label>
+          <input type="number" id="projKmIni" step="0.1" placeholder="000,0">
+        </div>
+        <div class="form-campo">
+          <label>KM Fim</label>
+          <input type="number" id="projKmFim" step="0.1" placeholder="000,0">
+        </div>
+        <div class="form-campo col-full">
+          <label>Contratada / Empresa</label>
+          <input type="text" id="projContratada" placeholder="Nome da empresa responsável">
+        </div>
+        <div class="form-campo col-full">
+          <label>Contrato DNIT</label>
+          <input type="text" id="projContrato" placeholder="Ex.: TED xxx/2024">
+        </div>
+        <div class="form-campo">
+          <label>Data de Início</label>
+          <input type="date" id="projDataIni">
+        </div>
+        <div class="form-campo">
+          <label>Responsável Técnico</label>
+          <input type="text" id="projRT" placeholder="Nome do eng. responsável">
+        </div>
+      </div>
+      <div class="form-acoes">
+        <button class="btn-primario" onclick="salvarDadosProjeto()">Salvar Dados</button>
+      </div>
+    </div>
+
+    <!-- Tela Importar SNV -->
+    <div class="tela" id="tela-importar-snv">
+      <h2 style="color:var(--amarelo); margin-bottom:4px">Importar Rodovia (SNV/DNIT)</h2>
+      <p style="font-size:12px; color:var(--texto-sec); margin-bottom:20px">
+        Carregue a geometria da rodovia a partir de um arquivo JSON do SNV/DNIT.
+        Cada arquivo contém os segmentos com coordenadas geográficas e quilometragem.
+      </p>
+      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px">
+        <div class="export-card" onclick="document.getElementById('inputSNV').click()" style="min-width:200px">
+          <span class="icone">&#128194;</span>
+          <div class="titulo">Arquivo Local</div>
+          <div class="desc">Selecionar arquivo JSON do SNV<br>(ex.: BR-116-MG.json)</div>
+        </div>
+        <div class="export-card" onclick="carregarSNVExemplo()" style="min-width:200px">
+          <span class="icone">&#127758;</span>
+          <div class="titulo">Exemplo Embutido</div>
+          <div class="desc">Carregar rodovia de demonstração<br>para testar o sistema</div>
+        </div>
+        <div class="export-card" onclick="listarRodoviasSNV()" id="btnListarSNV" style="min-width:200px; display:none">
+          <span class="icone">&#128269;</span>
+          <div class="titulo">Banco KM Check</div>
+          <div class="desc">Navegar rodovias do banco<br>de dados local (364 BRs)</div>
+        </div>
+      </div>
+      <input type="file" id="inputSNV" accept=".json" onchange="importarArquivoSNV(this)" style="display:none">
+
+      <!-- Lista de rodovias do banco (Electron) -->
+      <div id="snvLista" style="display:none; margin-bottom:20px">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px">
+          <h3 style="font-size:14px; color:var(--azul-claro); margin:0">Rodovias Disponíveis</h3>
+          <input type="text" id="snvBusca" placeholder="Filtrar... (ex.: BR-116, MG)" oninput="filtrarListaSNV()"
+                 style="flex:1; max-width:300px; font-size:12px">
+          <span id="snvContador" style="font-size:11px; color:var(--texto-dim)"></span>
+        </div>
+        <div id="snvListaItens" style="max-height:300px; overflow-y:auto; border:1px solid var(--borda); border-radius:var(--radius); background:var(--bg-card)"></div>
+      </div>
+
+      <div id="snvInfo" style="display:none">
+        <h3 style="font-size:14px; margin-bottom:10px; color:var(--verde)">&#9989; Rodovia Carregada</h3>
+        <div id="snvDetalhes" class="prop-info" style="font-size:12px; line-height:1.8"></div>
+        <div style="margin-top:14px; display:flex; gap:10px">
+          <button class="btn-primario" onclick="mostrarTela('planta')">Abrir Planta &#8594;</button>
+          <button class="btn-toolbar" onclick="document.getElementById('snvInfo').style.display='none'">Importar outra</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela Volume I — Memorial de Estudos -->
+    <div class="tela" id="tela-vol1-memorial">
+      <h2>Volume I — Memorial de Estudos Preliminares</h2>
+      <div style="font-size:12px; color:var(--texto-dim); margin-bottom:12px">
+        Descreva os estudos preliminares, justificativas técnicas, condições da rodovia e critérios de projeto.
+        O conteúdo é salvo automaticamente no projeto.
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap">
+        <button class="btn-toolbar" onclick="vol1InserirSecao('introducao')">+ Introdução</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('objetivo')">+ Objetivo</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('diagnostico')">+ Diagnóstico</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('criterios')">+ Critérios</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('conclusao')">+ Conclusão</button>
+        <div style="flex:1"></div>
+        <button class="btn-toolbar verde" onclick="vol1ExportarPDF()">Exportar PDF</button>
+      </div>
+      <textarea id="vol1Texto" style="width:100%; min-height:500px; padding:16px; font-size:13px;
+        line-height:1.8; font-family:inherit; background:var(--bg-card); color:var(--texto);
+        border:1px solid var(--borda); border-radius:var(--radius); resize:vertical"
+        placeholder="Digite aqui o memorial de estudos preliminares...&#10;&#10;Use os botões acima para inserir seções modelo."
+        oninput="vol1Salvar()"></textarea>
+    </div>
+
+    <!-- Tela Tabela (genérica para Volume II) -->
+    <div class="tela tela-tabela" id="tela-tabela">
+      <h2 id="tabelaTitulo"></h2>
+      <div class="subtitulo-tabela" id="tabelaSubtitulo"></div>
+      <div class="toolbar-tabela">
+        <input type="search" id="tabelaBusca" placeholder="Buscar..." oninput="filtrarTabela()">
+        <button class="btn-toolbar verde" onclick="adicionarLinha()">+ Adicionar</button>
+        <button class="btn-toolbar" onclick="removerLinhaSelecionada()">Remover</button>
+        <button class="btn-toolbar" onclick="preencherDoSNV()">Preencher do SNV</button>
+        <div style="flex:1"></div>
+        <span style="font-size:11px; color:var(--texto-dim)" id="tabelaContagem"></span>
+      </div>
+      <div class="tabela-wrap">
+        <table class="tabela-dados" id="tabelaGrid">
+          <thead id="tabelaHead"></thead>
+          <tbody id="tabelaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tela Planta (Plan View) -->
+    <div class="tela tela-planta" id="tela-planta">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px">
+        <h2 style="margin:0">Planta de Sinalização</h2>
+        <span style="font-size:11px; color:var(--texto-dim)" id="plantaRodoviaInfo"></span>
+      </div>
+      <div class="toolbar-planta">
+        <button class="btn-toolbar" onclick="plantaZoom(1.3)" title="Aproximar">+ Zoom</button>
+        <button class="btn-toolbar" onclick="plantaZoom(0.77)" title="Afastar">- Zoom</button>
+        <button class="btn-toolbar" onclick="plantaFitRodovia()" title="Enquadrar rodovia">Enquadrar</button>
+        <button class="btn-toolbar" onclick="plantaReset()" title="Resetar vista">Reset</button>
+        <div class="sep"></div>
+        <button class="btn-toolbar" id="btnCamadas" onclick="toggleCamadas()">Camadas</button>
+        <div style="flex:1"></div>
+        <span style="font-size:11px; color:var(--texto-dim)" id="plantaEscala">Escala: 1:1000</span>
+      </div>
+      <div class="canvas-area">
+        <!-- Paleta de ferramentas -->
+        <div class="tool-palette">
+          <button class="tool-btn ativo" data-tool="selecao" onclick="selecionarFerramenta('selecao')" title="Seleção">&#9995;</button>
+          <button class="tool-btn" data-tool="mover" onclick="selecionarFerramenta('mover')" title="Mover vista">&#9994;</button>
+          <div style="height:1px; background:var(--borda); margin:4px 0"></div>
+          <button class="tool-btn" data-tool="vertical" onclick="selecionarFerramenta('vertical')" title="Placa vertical">&#128308;</button>
+          <button class="tool-btn" data-tool="horizontal" onclick="selecionarFerramenta('horizontal')" title="Sinalização horizontal">&#9644;</button>
+          <button class="tool-btn" data-tool="dispositivo" onclick="selecionarFerramenta('dispositivo')" title="Dispositivo de segurança">&#128679;</button>
+          <div style="height:1px; background:var(--borda); margin:4px 0"></div>
+          <button class="tool-btn" data-tool="medir" onclick="selecionarFerramenta('medir')" title="Medir distância">&#128207;</button>
+        </div>
+        <!-- Canvas -->
+        <div class="canvas-wrap">
+          <canvas id="plantaCanvas"></canvas>
+          <div class="canvas-info">
+            <span id="plantaCoords">—</span>
+            <span id="plantaInfo"></span>
+          </div>
+          <div class="canvas-info-left" id="plantaFerramenta">Ferramenta: Seleção</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela Quantitativos -->
+    <div class="tela tela-quanti" id="tela-quantitativos">
+      <h2>Quantitativos</h2>
+      <div class="subtitulo">Resumo de todos os elementos de sinalização do projeto</div>
+      <div class="quanti-resumo" id="quantiResumo"></div>
+      <div class="toolbar-tabela" style="margin-top:10px">
+        <button class="btn-toolbar verde" onclick="recalcularQuantitativos()">&#8635; Recalcular</button>
+        <button class="btn-toolbar" onclick="exportarQuantCSV()">Exportar CSV</button>
+        <div style="flex:1"></div>
+        <span style="font-size:11px; color:var(--texto-dim)" id="quantiTotal"></span>
+      </div>
+      <div class="tabela-wrap" style="max-height:calc(100vh - 300px)">
+        <table class="tabela-dados" id="quantiTabela">
+          <thead><tr>
+            <th>#</th>
+            <th>Código</th>
+            <th>Descrição</th>
+            <th>Tipo</th>
+            <th style="text-align:right">Qtde</th>
+            <th>Unid.</th>
+          </tr></thead>
+          <tbody id="quantiBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tela Memorial Descritivo -->
+    <div class="tela tela-memorial" id="tela-memorial">
+      <h2>Memorial Descritivo</h2>
+      <div class="subtitulo">Texto gerado automaticamente a partir dos dados do projeto</div>
+      <div class="toolbar-tabela">
+        <button class="btn-toolbar verde" onclick="gerarMemorial()">&#8635; Gerar Memorial</button>
+        <button class="btn-toolbar" onclick="copiarMemorial()">Copiar Texto</button>
+        <button class="btn-toolbar" onclick="exportarMemorialTXT()">Salvar .TXT</button>
+      </div>
+      <textarea class="memorial-texto" id="memorialTexto" readonly
+        placeholder="Clique em 'Gerar Memorial' para criar o texto automaticamente."></textarea>
+    </div>
+
+    <!-- Tela Exportar -->
+    <div class="tela tela-exportar" id="tela-exportar">
+      <h2>Exportar Projeto</h2>
+      <div class="subtitulo">Escolha o formato de exportação desejado</div>
+      <div class="export-grid">
+        <div class="export-card" onclick="exportarPDF()">
+          <span class="icone">&#128196;</span>
+          <div class="titulo">PDF — Pranchas</div>
+          <div class="desc">Planta de sinalização em pranchas A1 com carimbo DNIT</div>
+        </div>
+        <div class="export-card" onclick="exportarCSV()">
+          <span class="icone">&#128200;</span>
+          <div class="titulo">CSV — Planilhas</div>
+          <div class="desc">Planilhas do Volume II em formato CSV (importável no Excel)</div>
+        </div>
+        <div class="export-card" onclick="exportarDXF()">
+          <span class="icone">&#128208;</span>
+          <div class="titulo">DXF — AutoCAD</div>
+          <div class="desc">Planta de sinalização em formato DXF para AutoCAD/Civil 3D</div>
+        </div>
+        <div class="export-card" onclick="exportarJSON()">
+          <span class="icone">&#128190;</span>
+          <div class="titulo">JSON — Dados</div>
+          <div class="desc">Todos os dados do projeto em formato JSON (backup)</div>
+        </div>
+        <div class="export-card" onclick="exportarQuantCSV()">
+          <span class="icone">&#128202;</span>
+          <div class="titulo">CSV — Quantitativos</div>
+          <div class="desc">Tabela de quantitativos de sinalização em CSV</div>
+        </div>
+        <div class="export-card" onclick="exportarMemorialTXT()">
+          <span class="icone">&#128221;</span>
+          <div class="titulo">TXT — Memorial</div>
+          <div class="desc">Memorial descritivo em formato texto</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========== PAINEL DE PROPRIEDADES ========== -->
+  <aside id="propanel">
+    <div class="prop-titulo">Propriedades</div>
+    <div id="propConteudo">
+      <div class="prop-info">
+        Selecione um item na árvore do projeto ou uma linha na tabela
+        para ver suas propriedades aqui.
+      </div>
+    </div>
+    <div class="separador"></div>
+    <div class="prop-titulo">Catálogo Rápido</div>
+    <div style="margin-bottom:8px;">
+      <select id="catalogoFiltro" onchange="filtrarCatalogo()" style="width:100%; font-size:11px;">
+        <option value="">Todas as categorias</option>
+        <option value="regulamentacao">Regulamentação (R)</option>
+        <option value="advertencia">Advertência (A)</option>
+        <option value="indicacao">Indicação (I)</option>
+        <option value="educativa">Educativas (E)</option>
+        <option value="servicos">Serviços (SAT/SIR/SIT/SEA)</option>
+        <option value="horizontal">Horizontal (LFO/LMS/FTP)</option>
+        <option value="dispositivos">Dispositivos de segurança</option>
+      </select>
+    </div>
+    <div id="catalogoLista" style="max-height:300px; overflow-y:auto;"></div>
+  </aside>
+
+  <!-- ========== RODAPÉ / STATUS ========== -->
+  <footer id="rodape">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      <span id="statusTexto">Pronto</span>
+    </div>
+    <div class="status-item" id="statusProjeto" style="display:none">
+      Projeto: <strong id="statusNomeProjeto"></strong>
+    </div>
+    <div style="flex:1"></div>
+    <div class="status-item" id="statusSinais" style="display:none">
+      Sinais: <strong id="statusQtdSinais">0</strong>
+    </div>
+    <div class="status-item">BR-Legal 2 v0.2.0</div>
+  </footer>
+
+</div>
+
+<!-- ============================================================
+     MODAIS
+     ============================================================ -->
+
+<!-- Modal: Colocar Sinal -->
+<div class="modal-overlay oculto" id="modalSinal">
+  <div class="modal-dialog">
+    <h3 id="modalSinalTitulo">Colocar Sinal Vertical</h3>
+    <div class="form-grid" style="gap:10px 12px">
+      <div class="form-campo">
+        <label>KM</label>
+        <input type="number" id="sinalKM" step="0.1" readonly>
+      </div>
+      <div class="form-campo">
+        <label>Lado</label>
+        <select id="sinalLado">
+          <option value="D">Direito</option>
+          <option value="E">Esquerdo</option>
+          <option value="S">Suspenso (sobre a pista)</option>
+        </select>
+      </div>
+      <div class="form-campo col-full">
+        <label>Categoria</label>
+        <select id="sinalCategoria" onchange="filtrarSinaisModal()">
+          <option value="">Todas</option>
+          <option value="regulamentacao">Regulamentação (R)</option>
+          <option value="advertencia">Advertência (A)</option>
+          <option value="indicacao">Indicação (I)</option>
+          <option value="educativa">Educativas (E)</option>
+          <option value="servicos">Serviços</option>
+        </select>
+      </div>
+      <div class="form-campo col-full">
+        <label>Sinal</label>
+        <select id="sinalCodigo" style="width:100%">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+      <div class="form-campo col-full">
+        <label>Complemento / Observação</label>
+        <input type="text" id="sinalComplemento" placeholder="Ex.: 60 km/h, Escola Municipal...">
+      </div>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-modal cancelar" onclick="fecharModal('modalSinal')">Cancelar</button>
+      <button class="btn-modal primario" onclick="confirmarColocarSinal()">Colocar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Camadas -->
+<div class="modal-overlay oculto" id="modalCamadas">
+  <div class="modal-dialog" style="min-width:320px; max-width:380px">
+    <h3>Camadas Visíveis</h3>
+    <div style="display:flex; flex-direction:column; gap:10px">
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camGrade" onchange="atualizarCamada('grade', this.checked)"> Grade de referência
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camKM" onchange="atualizarCamada('kmMarkers', this.checked)"> Marcadores de KM
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camVertical" onchange="atualizarCamada('vertical', this.checked)"> Sinalização vertical
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camHorizontal" onchange="atualizarCamada('horizontal', this.checked)"> Sinalização horizontal
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camDispositivos" onchange="atualizarCamada('dispositivos', this.checked)"> Dispositivos de segurança
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camAcostamento" onchange="atualizarCamada('acostamento', this.checked)"> Acostamento
+      </label>
+    </div>
+    <div class="modal-acoes" style="margin-top:16px">
+      <button class="btn-modal cancelar" onclick="fecharModal('modalCamadas')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ================================================================
+     DADOS EXTERNOS — catálogos completos e modelos
+     ================================================================ -->
+<script src="data/modelo-dados.js"></script>
+<script src="data/catalogo-sinais.js"></script>
+<script src="data/catalogo-horizontal.js"></script>
+<script src="data/catalogo-dispositivos.js"></script>
+
+<!-- ================================================================
+     JAVASCRIPT PRINCIPAL
+     ================================================================ -->
+<script>
+'use strict';
+
+/* =============================================================
+ *  ESTADO GLOBAL
+ * ============================================================= */
+const ESTADO = {
+  projeto: null,
+  telaAtual: 'inicio',
+  tabelaAtual: null,
+  linhaSelecionada: -1,
+  dados: {},           /* { chaveEsquema: [registros...] } */
+
+  /* Geometria da rodovia (SNV) */
+  rodovia: null,       /* objeto JSON original do SNV */
+  pontos: [],          /* pontos projetados [{x, y, km, lon, lat}] */
+  geoCenter: [0, 0],   /* [lon, lat] centro da projeção */
+  kmTotal: 0,
+
+  /* Canvas / Vista */
+  viewX: 0,
+  viewY: 0,
+  viewZoom: 0.5,       /* px por metro */
+
+  /* Interação com canvas */
+  arrastando: false,
+  arrastarIniX: 0,
+  arrastarIniY: 0,
+  viewIniX: 0,
+  viewIniY: 0,
+
+  /* Ferramentas */
+  ferramenta: 'selecao',
+
+  /* Elementos colocados na planta */
+  sinaisColocados: [],
+  nextId: 1,
+  sinalSelecionado: -1,
+
+  /* Desfazer/Refazer — pilha de snapshots dos sinaisColocados */
+  _undoStack: [],
+  _redoStack: [],
+
+  /* Camadas visíveis */
+  camadas: {
+    grade: true,
+    kmMarkers: true,
+    vertical: true,
+    horizontal: true,
+    dispositivos: true,
+    acostamento: true,
+  },
+
+  /* Ferramenta medir — pontos de medição */
+  _medirPontoA: null, /* {x, y} em coordenadas mundo */
+  _medirPontoB: null,
+  _medirPreview: null, /* ponto dinâmico sob o mouse */
+};
+
+/* =============================================================
+ *  ESQUEMAS — usa os modelos externos ou fallback inline
+ *  MODELO_DADOS vem de data/modelo-dados.js
+ * ============================================================= */
+const ESQUEMAS = (typeof MODELO_DADOS !== 'undefined') ? MODELO_DADOS : {};
+
+/* Lista de UFs — do modelo externo ou fallback */
+const LISTA_UFS = (typeof UFS !== 'undefined') ? UFS : [
+  'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+  'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO',
+];
+
+/* =============================================================
+ *  CATÁLOGO UNIFICADO
+ *  Combina sinais verticais, horizontais e dispositivos
+ * ============================================================= */
+function obterCatalogo(tipo) {
+  if (tipo === 'horizontal' && typeof CATALOGO_HORIZONTAL !== 'undefined') return CATALOGO_HORIZONTAL;
+  if (tipo === 'dispositivos' && typeof CATALOGO_DISPOSITIVOS !== 'undefined') return CATALOGO_DISPOSITIVOS;
+  if (typeof CATALOGO_SINAIS !== 'undefined') return CATALOGO_SINAIS;
+  return [];
+}
+
+/* Catálogo resumido para o painel lateral — combina tudo */
+function obterCatalogoResumo() {
+  const lista = [];
+  if (typeof CATALOGO_SINAIS !== 'undefined') {
+    for (const s of CATALOGO_SINAIS) lista.push({ codigo: s.codigo, nome: s.nome, categoria: s.categoria });
+  }
+  if (typeof CATALOGO_HORIZONTAL !== 'undefined') {
+    for (const h of CATALOGO_HORIZONTAL) lista.push({ codigo: h.codigo, nome: h.nome, categoria: 'horizontal' });
+  }
+  if (typeof CATALOGO_DISPOSITIVOS !== 'undefined') {
+    for (const d of CATALOGO_DISPOSITIVOS) lista.push({ codigo: d.codigo, nome: d.nome, categoria: 'dispositivos' });
+  }
+  return lista;
+}
+
+/* =============================================================
+ *  GEOMETRIA — projeção e interpolação
+ * ============================================================= */
+
+/** Projeção equirretangular simples: [lon, lat] → [x (m), y (m)] */
+function projetar(lon, lat) {
+  const R = 111319.5; /* metros por grau */
+  const cx = ESTADO.geoCenter[0];
+  const cy = ESTADO.geoCenter[1];
+  const x = (lon - cx) * Math.cos(cy * Math.PI / 180) * R;
+  const y = -(lat - cy) * R; /* Y invertido para tela */
+  return [x, y];
+}
+
+/** Distância haversine entre dois pontos em metros */
+function haversine(lon1, lat1, lon2, lat2) {
+  const toRad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * toRad;
+  const dLon = (lon2 - lon1) * toRad;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.sin(dLon / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Processa os segmentos do SNV e cria array de pontos projetados com KM */
+function processarGeometria(rodovia) {
+  /* Encontrar centro para a projeção */
+  let sumLon = 0, sumLat = 0, n = 0;
+  for (const seg of rodovia.segments) {
+    for (const [lon, lat] of seg.c) { sumLon += lon; sumLat += lat; n++; }
+  }
+  ESTADO.geoCenter = [sumLon / n, sumLat / n];
+
+  /* Construir array de pontos com KM contínuo */
+  const pontos = [];
+  for (const seg of rodovia.segments) {
+    const kmBase = seg.ki;
+    const kmRange = seg.kf - seg.ki;
+    /* Calcular distância total do segmento para interpolar KM */
+    let distTotal = 0;
+    const dists = [0];
+    for (let i = 1; i < seg.c.length; i++) {
+      const d = haversine(seg.c[i-1][0], seg.c[i-1][1], seg.c[i][0], seg.c[i][1]);
+      distTotal += d;
+      dists.push(distTotal);
+    }
+    for (let i = 0; i < seg.c.length; i++) {
+      const [lon, lat] = seg.c[i];
+      const [x, y] = projetar(lon, lat);
+      const frac = distTotal > 0 ? dists[i] / distTotal : 0;
+      const km = kmBase + frac * kmRange;
+      pontos.push({ x, y, km, lon, lat });
+    }
+  }
+
+  /* Ordenar por KM e remover duplicatas próximas */
+  pontos.sort((a, b) => a.km - b.km);
+  ESTADO.pontos = pontos;
+  ESTADO.kmTotal = rodovia.km || (pontos.length > 0 ? pontos[pontos.length - 1].km : 0);
+}
+
+/** Interpolar posição no polilinha para um dado KM */
+function interpolarPosicao(km) {
+  const pts = ESTADO.pontos;
+  if (pts.length === 0) return null;
+  if (km <= pts[0].km) return { x: pts[0].x, y: pts[0].y, ang: 0 };
+  if (km >= pts[pts.length - 1].km) return { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y, ang: 0 };
+
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i].km >= km) {
+      const t = (km - pts[i-1].km) / (pts[i].km - pts[i-1].km);
+      const x = pts[i-1].x + t * (pts[i].x - pts[i-1].x);
+      const y = pts[i-1].y + t * (pts[i].y - pts[i-1].y);
+      const ang = Math.atan2(pts[i].y - pts[i-1].y, pts[i].x - pts[i-1].x);
+      return { x, y, ang };
+    }
+  }
+  return null;
+}
+
+/** Encontrar o KM mais próximo de um ponto (x, y) no mundo */
+function snapParaRodovia(wx, wy) {
+  const pts = ESTADO.pontos;
+  if (pts.length < 2) return null;
+
+  let melhorDist = Infinity;
+  let melhorKM = 0;
+  let melhorX = 0, melhorY = 0, melhorAng = 0;
+
+  for (let i = 1; i < pts.length; i++) {
+    const ax = pts[i-1].x, ay = pts[i-1].y;
+    const bx = pts[i].x, by = pts[i].y;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) continue;
+    let t = ((wx - ax) * dx + (wy - ay) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const px = ax + t * dx;
+    const py = ay + t * dy;
+    const dist = Math.hypot(wx - px, wy - py);
+    if (dist < melhorDist) {
+      melhorDist = dist;
+      melhorX = px;
+      melhorY = py;
+      melhorKM = pts[i-1].km + t * (pts[i].km - pts[i-1].km);
+      melhorAng = Math.atan2(dy, dx);
+    }
+  }
+
+  /* Determinar lado (direito/esquerdo) */
+  const normal = melhorAng + Math.PI / 2;
+  const sideVec = Math.cos(normal) * (wx - melhorX) + Math.sin(normal) * (wy - melhorY);
+  const lado = sideVec >= 0 ? 'D' : 'E';
+
+  return { km: melhorKM, x: melhorX, y: melhorY, ang: melhorAng, dist: melhorDist, lado };
+}
+
+/* =============================================================
+ *  CANVAS — transformações de coordenadas
+ * ============================================================= */
+let plantaCtx = null;
+let plantaW = 0, plantaH = 0;
+
+function mundoParaTela(wx, wy) {
+  return [
+    (wx - ESTADO.viewX) * ESTADO.viewZoom + plantaW / 2,
+    (wy - ESTADO.viewY) * ESTADO.viewZoom + plantaH / 2,
+  ];
+}
+
+function telaParaMundo(sx, sy) {
+  return [
+    (sx - plantaW / 2) / ESTADO.viewZoom + ESTADO.viewX,
+    (sy - plantaH / 2) / ESTADO.viewZoom + ESTADO.viewY,
+  ];
+}
+
+/* =============================================================
+ *  CANVAS — inicialização e eventos
+ * ============================================================= */
+function inicializarPlanta() {
+  const canvas = document.getElementById('plantaCanvas');
+  if (!canvas) return;
+  plantaCtx = canvas.getContext('2d');
+
+  /* Observar redimensionamento */
+  const wrap = canvas.parentElement;
+  const ro = new ResizeObserver(() => {
+    plantaW = wrap.clientWidth;
+    plantaH = wrap.clientHeight;
+    canvas.width = plantaW;
+    canvas.height = plantaH;
+    desenharPlanta();
+  });
+  ro.observe(wrap);
+
+  /* Mouse move — coordenadas e hover */
+  canvas.addEventListener('mousemove', (e) => {
+    const [wx, wy] = telaParaMundo(e.offsetX, e.offsetY);
+
+    /* Mostrar KM se perto da rodovia */
+    const snap = snapParaRodovia(wx, wy);
+    if (snap && snap.dist < 200) {
+      document.getElementById('plantaCoords').textContent =
+        'KM ' + snap.km.toFixed(1) + ' | Lado ' + snap.lado + ' | ' +
+        snap.dist.toFixed(0) + 'm da pista';
+    } else {
+      document.getElementById('plantaCoords').textContent =
+        'X: ' + wx.toFixed(0) + ' Y: ' + (-wy).toFixed(0);
+    }
+
+    /* Preview da medição — linha elástica enquanto move o mouse */
+    if (ESTADO.ferramenta === 'medir' && ESTADO._medirPontoA && !ESTADO._medirPontoB) {
+      ESTADO._medirPreview = { x: wx, y: wy };
+      desenharPlanta();
+    }
+
+    /* Arrastar (pan) */
+    if (ESTADO.arrastando) {
+      ESTADO.viewX = ESTADO.viewIniX - (e.offsetX - ESTADO.arrastarIniX) / ESTADO.viewZoom;
+      ESTADO.viewY = ESTADO.viewIniY - (e.offsetY - ESTADO.arrastarIniY) / ESTADO.viewZoom;
+      desenharPlanta();
+    }
+  });
+
+  /* Mouse down */
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+
+    if (ESTADO.ferramenta === 'mover' || e.shiftKey) {
+      /* Iniciar arrasto (pan) */
+      ESTADO.arrastando = true;
+      ESTADO.arrastarIniX = e.offsetX;
+      ESTADO.arrastarIniY = e.offsetY;
+      ESTADO.viewIniX = ESTADO.viewX;
+      ESTADO.viewIniY = ESTADO.viewY;
+      canvas.classList.add('arrastando');
+      return;
+    }
+
+    const [wx, wy] = telaParaMundo(e.offsetX, e.offsetY);
+
+    if (ESTADO.ferramenta === 'vertical' || ESTADO.ferramenta === 'horizontal' || ESTADO.ferramenta === 'dispositivo') {
+      /* Colocar sinal */
+      const snap = snapParaRodovia(wx, wy);
+      if (!snap || snap.dist > 300) {
+        toast('Clique mais perto da rodovia para colocar um elemento.', 'erro');
+        return;
+      }
+      abrirModalSinal(snap);
+      return;
+    }
+
+    if (ESTADO.ferramenta === 'medir') {
+      /* Ferramenta medir: primeiro clique = ponto A, segundo = ponto B */
+      if (!ESTADO._medirPontoA) {
+        ESTADO._medirPontoA = { x: wx, y: wy };
+        ESTADO._medirPontoB = null;
+        toast('Ponto A definido. Clique no ponto B para medir.', 'sucesso');
+      } else {
+        ESTADO._medirPontoB = { x: wx, y: wy };
+        const dx = ESTADO._medirPontoB.x - ESTADO._medirPontoA.x;
+        const dy = ESTADO._medirPontoB.y - ESTADO._medirPontoA.y;
+        const dist = Math.hypot(dx, dy);
+        const texto = dist >= 1000
+          ? (dist / 1000).toFixed(2) + ' km'
+          : dist.toFixed(1) + ' m';
+        toast('Distância: ' + texto, 'sucesso');
+        ESTADO._medirPreview = null;
+      }
+      desenharPlanta();
+      return;
+    }
+
+    if (ESTADO.ferramenta === 'selecao') {
+      /* Selecionar sinal existente */
+      const idx = encontrarSinalProximo(wx, wy);
+      ESTADO.sinalSelecionado = idx;
+      if (idx >= 0) {
+        mostrarPropriedadesSinal(idx);
+      }
+      desenharPlanta();
+
+      /* Se não selecionou nada, iniciar pan */
+      if (idx < 0) {
+        ESTADO.arrastando = true;
+        ESTADO.arrastarIniX = e.offsetX;
+        ESTADO.arrastarIniY = e.offsetY;
+        ESTADO.viewIniX = ESTADO.viewX;
+        ESTADO.viewIniY = ESTADO.viewY;
+        canvas.classList.add('arrastando');
+      }
+    }
+  });
+
+  /* Mouse up */
+  canvas.addEventListener('mouseup', () => {
+    ESTADO.arrastando = false;
+    canvas.classList.remove('arrastando');
+  });
+  canvas.addEventListener('mouseleave', () => {
+    ESTADO.arrastando = false;
+    canvas.classList.remove('arrastando');
+  });
+
+  /* Mouse wheel — zoom */
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const fator = e.deltaY < 0 ? 1.15 : 0.87;
+    /* Zoom centrado no mouse */
+    const [wx, wy] = telaParaMundo(e.offsetX, e.offsetY);
+    ESTADO.viewZoom = Math.max(0.01, Math.min(50, ESTADO.viewZoom * fator));
+    /* Ajustar offset para manter o ponto sob o mouse */
+    ESTADO.viewX = wx - (e.offsetX - plantaW / 2) / ESTADO.viewZoom;
+    ESTADO.viewY = wy - (e.offsetY - plantaH / 2) / ESTADO.viewZoom;
+    desenharPlanta();
+  }, { passive: false });
+
+  /* Atualizar cursor conforme ferramenta */
+  atualizarCursorCanvas();
+}
+
+function atualizarCursorCanvas() {
+  const canvas = document.getElementById('plantaCanvas');
+  if (!canvas) return;
+  canvas.classList.remove('ferramenta-colocar');
+  const f = ESTADO.ferramenta;
+  if (f === 'vertical' || f === 'horizontal' || f === 'dispositivo' || f === 'medir') {
+    canvas.classList.add('ferramenta-colocar');
+  }
+}
+
+/* =============================================================
+ *  CANVAS — desenho principal
+ * ============================================================= */
+function desenharPlanta() {
+  const ctx = plantaCtx;
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, plantaW, plantaH);
+
+  /* Fundo */
+  ctx.fillStyle = '#0F1219';
+  ctx.fillRect(0, 0, plantaW, plantaH);
+
+  /* Se não há rodovia, mostra mensagem */
+  if (ESTADO.pontos.length < 2) {
+    ctx.fillStyle = '#718096';
+    ctx.font = '14px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'center';
+    ctx.fillText('Importe uma rodovia (SNV) para visualizar a planta de sinalização', plantaW / 2, plantaH / 2 - 10);
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('Use o menu "Importar Rodovia" na barra lateral', plantaW / 2, plantaH / 2 + 14);
+    ctx.textAlign = 'left';
+    return;
+  }
+
+  ctx.save();
+
+  /* Grade */
+  if (ESTADO.camadas.grade) desenharGrade(ctx);
+
+  /* Rodovia */
+  desenharRodovia(ctx);
+
+  /* Acostamento */
+  if (ESTADO.camadas.acostamento) desenharAcostamento(ctx);
+
+  /* Marcadores de KM */
+  if (ESTADO.camadas.kmMarkers) desenharMarcadoresKM(ctx);
+
+  /* Sinais colocados */
+  desenharSinaisColocados(ctx);
+
+  /* Linha de medição (ferramenta medir) */
+  desenharMedicao(ctx);
+
+  ctx.restore();
+
+  /* Escala e bússola */
+  desenharBarraEscala(ctx);
+  desenharBussola(ctx);
+  document.getElementById('plantaEscala').textContent =
+    'Zoom: ' + ESTADO.viewZoom.toFixed(2) + ' px/m';
+}
+
+function desenharGrade(ctx) {
+  /* Grade adaptativa baseada no zoom */
+  let intervalo = 100; /* metros */
+  const pixPorMetro = ESTADO.viewZoom;
+  if (pixPorMetro * 100 < 20) intervalo = 1000;
+  else if (pixPorMetro * 100 < 50) intervalo = 500;
+  else if (pixPorMetro * 100 > 200) intervalo = 50;
+  if (pixPorMetro * intervalo > 400) intervalo = Math.max(10, intervalo / 5);
+
+  /* Calcular limites visíveis em coords mundo */
+  const [wx0, wy0] = telaParaMundo(0, 0);
+  const [wx1, wy1] = telaParaMundo(plantaW, plantaH);
+  const xMin = Math.floor(Math.min(wx0, wx1) / intervalo) * intervalo;
+  const xMax = Math.ceil(Math.max(wx0, wx1) / intervalo) * intervalo;
+  const yMin = Math.floor(Math.min(wy0, wy1) / intervalo) * intervalo;
+  const yMax = Math.ceil(Math.max(wy0, wy1) / intervalo) * intervalo;
+
+  ctx.strokeStyle = '#1E2432';
+  ctx.lineWidth = 1;
+  for (let x = xMin; x <= xMax; x += intervalo) {
+    const [sx] = mundoParaTela(x, 0);
+    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, plantaH); ctx.stroke();
+  }
+  for (let y = yMin; y <= yMax; y += intervalo) {
+    const [, sy] = mundoParaTela(0, y);
+    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(plantaW, sy); ctx.stroke();
+  }
+}
+
+function desenharRodovia(ctx) {
+  const pts = ESTADO.pontos;
+  if (pts.length < 2) return;
+
+  /* Largura visual da pista (2 faixas = ~7m cada) */
+  const larguraPista = 14; /* metros */
+  const lp = larguraPista * ESTADO.viewZoom / 2;
+
+  /* Pista (preenchimento escuro) */
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const [sx, sy] = mundoParaTela(pts[i].x, pts[i].y);
+    if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+  }
+  ctx.lineWidth = lp * 2;
+  ctx.strokeStyle = '#2A2E38';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  /* Bordas da pista (linhas brancas contínuas) */
+  ctx.lineWidth = Math.max(1, ESTADO.viewZoom * 0.3);
+  ctx.strokeStyle = '#FFFFFF';
+  /* Borda superior */
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const ang = i < pts.length - 1
+      ? Math.atan2(pts[i+1].y - pts[i].y, pts[i+1].x - pts[i].x)
+      : Math.atan2(pts[i].y - pts[i-1].y, pts[i].x - pts[i-1].x);
+    const normal = ang + Math.PI / 2;
+    const off = larguraPista / 2;
+    const [sx, sy] = mundoParaTela(pts[i].x + Math.cos(normal) * off, pts[i].y + Math.sin(normal) * off);
+    if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+  /* Borda inferior */
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const ang = i < pts.length - 1
+      ? Math.atan2(pts[i+1].y - pts[i].y, pts[i+1].x - pts[i].x)
+      : Math.atan2(pts[i].y - pts[i-1].y, pts[i].x - pts[i-1].x);
+    const normal = ang - Math.PI / 2;
+    const off = larguraPista / 2;
+    const [sx, sy] = mundoParaTela(pts[i].x + Math.cos(normal) * off, pts[i].y + Math.sin(normal) * off);
+    if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  /* Eixo central (amarelo tracejado) */
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const [sx, sy] = mundoParaTela(pts[i].x, pts[i].y);
+    if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+  }
+  ctx.strokeStyle = '#E8B818';
+  ctx.lineWidth = Math.max(1, ESTADO.viewZoom * 0.25);
+  ctx.setLineDash([8, 6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.restore();
+}
+
+function desenharAcostamento(ctx) {
+  const pts = ESTADO.pontos;
+  if (pts.length < 2) return;
+  const larguraPista = 14;
+  const larguraAcost = 3; /* metros */
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = larguraAcost * ESTADO.viewZoom;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (const sinal of [1, -1]) {
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const ang = i < pts.length - 1
+        ? Math.atan2(pts[i+1].y - pts[i].y, pts[i+1].x - pts[i].x)
+        : Math.atan2(pts[i].y - pts[i-1].y, pts[i].x - pts[i-1].x);
+      const normal = ang + (sinal * Math.PI / 2);
+      const off = larguraPista / 2 + larguraAcost / 2;
+      const [sx, sy] = mundoParaTela(pts[i].x + Math.cos(normal) * off, pts[i].y + Math.sin(normal) * off);
+      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function desenharMarcadoresKM(ctx) {
+  const pts = ESTADO.pontos;
+  if (pts.length < 2) return;
+
+  /* Decidir intervalo de marcadores baseado no zoom */
+  let intervaloKM = 1;
+  if (ESTADO.viewZoom < 0.05) intervaloKM = 10;
+  else if (ESTADO.viewZoom < 0.2) intervaloKM = 5;
+  else if (ESTADO.viewZoom > 2) intervaloKM = 0.5;
+  else if (ESTADO.viewZoom > 5) intervaloKM = 0.1;
+
+  const kmMin = Math.ceil(pts[0].km / intervaloKM) * intervaloKM;
+  const kmMax = pts[pts.length - 1].km;
+
+  ctx.save();
+  const fontSz = Math.max(8, Math.min(12, 10 / Math.sqrt(ESTADO.viewZoom)));
+  ctx.font = fontSz + 'px ' + getComputedStyle(document.body).fontFamily;
+
+  for (let km = kmMin; km <= kmMax; km += intervaloKM) {
+    const pos = interpolarPosicao(km);
+    if (!pos) continue;
+    const [sx, sy] = mundoParaTela(pos.x, pos.y);
+
+    /* Tiqueta perpendicular à rodovia */
+    const normal = pos.ang + Math.PI / 2;
+    const offset = 14 / ESTADO.viewZoom; /* metros de offset */
+    const [tx, ty] = mundoParaTela(
+      pos.x + Math.cos(normal) * offset,
+      pos.y + Math.sin(normal) * offset
+    );
+
+    /* Linha de tiqueta */
+    ctx.strokeStyle = '#718096';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx + Math.cos(normal) * 8 * ESTADO.viewZoom, sy + Math.sin(normal) * 8 * ESTADO.viewZoom);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+
+    /* Texto do KM */
+    ctx.fillStyle = '#718096';
+    ctx.textAlign = 'center';
+    const [lx, ly] = mundoParaTela(
+      pos.x + Math.cos(normal) * (offset + 8 / ESTADO.viewZoom),
+      pos.y + Math.sin(normal) * (offset + 8 / ESTADO.viewZoom)
+    );
+    ctx.fillText(formatarKM(km), lx, ly + 3);
+  }
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
+function desenharSinaisColocados(ctx) {
+  for (let i = 0; i < ESTADO.sinaisColocados.length; i++) {
+    const s = ESTADO.sinaisColocados[i];
+    if (s.tipo === 'vertical' && !ESTADO.camadas.vertical) continue;
+    if (s.tipo === 'horizontal' && !ESTADO.camadas.horizontal) continue;
+    if (s.tipo === 'dispositivo' && !ESTADO.camadas.dispositivos) continue;
+
+    const pos = interpolarPosicao(s.km);
+    if (!pos) continue;
+
+    /* Offset lateral (direito/esquerdo) */
+    const normal = pos.ang + Math.PI / 2;
+    const offMetros = s.lado === 'E' ? -12 : (s.lado === 'S' ? 0 : 12);
+    const wx = pos.x + Math.cos(normal) * offMetros;
+    const wy = pos.y + Math.sin(normal) * offMetros;
+    const [sx, sy] = mundoParaTela(wx, wy);
+
+    const selecionado = (i === ESTADO.sinalSelecionado);
+    const raio = selecionado ? 10 : 7;
+
+    ctx.save();
+
+    /* Cor por categoria */
+    let cor = '#E53E3E';
+    if (s.categoria === 'advertencia') cor = '#E8B818';
+    else if (s.categoria === 'indicacao') cor = '#38A169';
+    else if (s.categoria === 'servicos') cor = '#3182CE';
+    else if (s.tipo === 'horizontal') cor = '#FFFFFF';
+    else if (s.tipo === 'dispositivo') cor = '#DD6B20';
+
+    /* Linha conectora até a rodovia */
+    const [rx, ry] = mundoParaTela(pos.x, pos.y);
+    ctx.strokeStyle = cor;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(rx, ry);
+    ctx.lineTo(sx, sy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    /* Símbolo do sinal */
+    if (s.tipo === 'vertical') {
+      /* Círculo para regulamentação, losango para advertência, retângulo para indicação */
+      if (s.categoria === 'regulamentacao') {
+        ctx.beginPath();
+        ctx.arc(sx, sy, raio, 0, Math.PI * 2);
+        ctx.fillStyle = cor;
+        ctx.fill();
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold ' + (raio - 2) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('R', sx, sy + (raio - 2) / 3);
+      } else if (s.categoria === 'advertencia') {
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - raio);
+        ctx.lineTo(sx + raio, sy + raio * 0.6);
+        ctx.lineTo(sx - raio, sy + raio * 0.6);
+        ctx.closePath();
+        ctx.fillStyle = cor;
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold ' + (raio - 2) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('A', sx, sy + (raio - 2) / 3);
+      } else {
+        /* Retângulo para indicação e outros */
+        ctx.fillStyle = cor;
+        ctx.fillRect(sx - raio, sy - raio * 0.7, raio * 2, raio * 1.4);
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold ' + (raio - 2) + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('I', sx, sy + (raio - 2) / 3);
+      }
+    } else if (s.tipo === 'horizontal') {
+      /* Marcação horizontal — retângulo achatado */
+      ctx.fillStyle = '#FFFFFF';
+      ctx.globalAlpha = 0.8;
+      ctx.fillRect(sx - raio, sy - 2, raio * 2, 4);
+      ctx.globalAlpha = 1;
+    } else {
+      /* Dispositivo — diamante */
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - raio);
+      ctx.lineTo(sx + raio, sy);
+      ctx.lineTo(sx, sy + raio);
+      ctx.lineTo(sx - raio, sy);
+      ctx.closePath();
+      ctx.fillStyle = cor;
+      ctx.fill();
+    }
+
+    /* Halo de seleção */
+    if (selecionado) {
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sx, sy, raio + 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    /* Rótulo */
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#A0AEC0';
+    ctx.font = '9px sans-serif';
+    ctx.fillText(s.codigo, sx + raio + 4, sy + 3);
+
+    ctx.restore();
+  }
+}
+
+function desenharBarraEscala(ctx) {
+  /* Barra de escala no canto inferior direito */
+  const targetPx = 100; /* largura desejada da barra em pixels */
+  const metrosPorPx = 1 / ESTADO.viewZoom;
+  let metros = targetPx * metrosPorPx;
+
+  /* Arredondar para valor "bonito" */
+  const potencia = Math.pow(10, Math.floor(Math.log10(metros)));
+  const normalizado = metros / potencia;
+  let arredondado;
+  if (normalizado < 1.5) arredondado = 1;
+  else if (normalizado < 3) arredondado = 2;
+  else if (normalizado < 7) arredondado = 5;
+  else arredondado = 10;
+  metros = arredondado * potencia;
+
+  const barraPx = metros * ESTADO.viewZoom;
+  const x = plantaW - 24 - barraPx;
+  const y = plantaH - 24;
+
+  ctx.save();
+  ctx.strokeStyle = '#A0AEC0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y); ctx.lineTo(x + barraPx, y);
+  ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 1);
+  ctx.moveTo(x + barraPx, y - 5); ctx.lineTo(x + barraPx, y + 1);
+  ctx.stroke();
+
+  ctx.fillStyle = '#A0AEC0';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  const label = metros >= 1000 ? (metros / 1000) + ' km' : metros + ' m';
+  ctx.fillText(label, x + barraPx / 2, y - 8);
+  ctx.restore();
+}
+
+function desenharBussola(ctx) {
+  /* Rosa dos ventos no canto superior direito — norte sempre para cima */
+  const cx = plantaW - 40;
+  const cy = 40;
+  const r = 18;
+
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+
+  /* Flecha norte (preta com ponta branca) */
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.lineTo(cx + 5, cy + 2);
+  ctx.lineTo(cx, cy - 4);
+  ctx.closePath();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.lineTo(cx - 5, cy + 2);
+  ctx.lineTo(cx, cy - 4);
+  ctx.closePath();
+  ctx.fillStyle = '#A0AEC0';
+  ctx.fill();
+
+  /* Flecha sul */
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r);
+  ctx.lineTo(cx + 4, cy + 2);
+  ctx.lineTo(cx, cy + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#4A5568';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r);
+  ctx.lineTo(cx - 4, cy + 2);
+  ctx.lineTo(cx, cy + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#2D3748';
+  ctx.fill();
+
+  /* Letra N */
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('N', cx, cy - r - 4);
+
+  ctx.restore();
+}
+
+/* =============================================================
+ *  DESENHO DA MEDIÇÃO (ferramenta medir)
+ * ============================================================= */
+function desenharMedicao(ctx) {
+  const pA = ESTADO._medirPontoA;
+  if (!pA) return;
+
+  /* Ponto B pode ser definitivo ou preview (mouse move) */
+  const pB = ESTADO._medirPontoB || ESTADO._medirPreview;
+  if (!pB) {
+    /* Só ponto A — desenhar marcador */
+    const [sx, sy] = mundoParaTela(pA.x, pA.y);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00FFAA';
+    ctx.fill();
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  const [sx1, sy1] = mundoParaTela(pA.x, pA.y);
+  const [sx2, sy2] = mundoParaTela(pB.x, pB.y);
+  const definitivo = !!ESTADO._medirPontoB;
+
+  ctx.save();
+
+  /* Linha tracejada entre os pontos */
+  ctx.beginPath();
+  ctx.moveTo(sx1, sy1);
+  ctx.lineTo(sx2, sy2);
+  ctx.strokeStyle = definitivo ? '#00FFAA' : 'rgba(0,255,170,0.6)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* Marcadores nos pontos */
+  for (const [px, py] of [[sx1, sy1], [sx2, sy2]]) {
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00FFAA';
+    ctx.fill();
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  /* Texto da distância no meio da linha */
+  const dx = pB.x - pA.x;
+  const dy = pB.y - pA.y;
+  const dist = Math.hypot(dx, dy);
+  const texto = dist >= 1000
+    ? (dist / 1000).toFixed(2) + ' km'
+    : dist.toFixed(1) + ' m';
+
+  const mx = (sx1 + sx2) / 2;
+  const my = (sy1 + sy2) / 2;
+  const font = getComputedStyle(document.body).fontFamily;
+
+  /* Fundo semi-transparente para legibilidade */
+  ctx.font = 'bold 12px ' + font;
+  const tw = ctx.measureText(texto).width;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(mx - tw / 2 - 6, my - 18, tw + 12, 22);
+  ctx.fillStyle = '#00FFAA';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(texto, mx, my - 7);
+
+  ctx.restore();
+}
+
+/* Limpar medição ao trocar de ferramenta */
+function limparMedicao() {
+  ESTADO._medirPontoA = null;
+  ESTADO._medirPontoB = null;
+  ESTADO._medirPreview = null;
+}
+
+/* =============================================================
+ *  FERRAMENTAS E SINAIS
+ * ============================================================= */
+function selecionarFerramenta(ferramenta) {
+  /* Limpar medição ao trocar de ferramenta */
+  if (ESTADO.ferramenta === 'medir' && ferramenta !== 'medir') limparMedicao();
+  ESTADO.ferramenta = ferramenta;
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.classList.toggle('ativo', btn.dataset.tool === ferramenta);
+  });
+  const nomes = {
+    selecao: 'Seleção', mover: 'Mover vista', vertical: 'Placa vertical',
+    horizontal: 'Sinalização horizontal', dispositivo: 'Dispositivo', medir: 'Medir',
+  };
+  document.getElementById('plantaFerramenta').textContent = 'Ferramenta: ' + (nomes[ferramenta] || ferramenta);
+  atualizarCursorCanvas();
+}
+
+function encontrarSinalProximo(wx, wy) {
+  let melhor = -1;
+  let melhorDist = 20 / ESTADO.viewZoom; /* raio de clique em metros */
+  for (let i = 0; i < ESTADO.sinaisColocados.length; i++) {
+    const s = ESTADO.sinaisColocados[i];
+    const pos = interpolarPosicao(s.km);
+    if (!pos) continue;
+    const normal = pos.ang + Math.PI / 2;
+    const offMetros = s.lado === 'E' ? -12 : (s.lado === 'S' ? 0 : 12);
+    const sx = pos.x + Math.cos(normal) * offMetros;
+    const sy = pos.y + Math.sin(normal) * offMetros;
+    const d = Math.hypot(wx - sx, wy - sy);
+    if (d < melhorDist) { melhorDist = d; melhor = i; }
+  }
+  return melhor;
+}
+
+function abrirModalSinal(snap) {
+  const tipo = ESTADO.ferramenta; /* 'vertical', 'horizontal', 'dispositivo' */
+  const titulos = { vertical: 'Colocar Sinal Vertical', horizontal: 'Sinalização Horizontal', dispositivo: 'Dispositivo de Segurança' };
+  document.getElementById('modalSinalTitulo').textContent = titulos[tipo] || 'Colocar Elemento';
+  document.getElementById('sinalKM').value = snap.km.toFixed(1);
+  document.getElementById('sinalLado').value = snap.lado;
+  document.getElementById('sinalComplemento').value = '';
+
+  /* Preencher lista de sinais conforme tipo */
+  ESTADO._modalTipo = tipo;
+  ESTADO._modalSnap = snap;
+  filtrarSinaisModal();
+
+  document.getElementById('modalSinal').classList.remove('oculto');
+}
+
+function filtrarSinaisModal() {
+  const tipo = ESTADO._modalTipo;
+  const catFiltro = document.getElementById('sinalCategoria').value;
+  const select = document.getElementById('sinalCodigo');
+  select.innerHTML = '<option value="">Selecione...</option>';
+
+  let catalogo;
+  if (tipo === 'horizontal') {
+    catalogo = (typeof CATALOGO_HORIZONTAL !== 'undefined') ? CATALOGO_HORIZONTAL : [];
+    /* Esconder filtro de categoria para horizontal */
+    document.getElementById('sinalCategoria').parentElement.style.display = 'none';
+  } else if (tipo === 'dispositivo') {
+    catalogo = (typeof CATALOGO_DISPOSITIVOS !== 'undefined') ? CATALOGO_DISPOSITIVOS : [];
+    document.getElementById('sinalCategoria').parentElement.style.display = 'none';
+  } else {
+    catalogo = (typeof CATALOGO_SINAIS !== 'undefined') ? CATALOGO_SINAIS : [];
+    document.getElementById('sinalCategoria').parentElement.style.display = '';
+  }
+
+  for (const s of catalogo) {
+    if (catFiltro && s.categoria !== catFiltro) continue;
+    const opt = document.createElement('option');
+    opt.value = s.codigo;
+    opt.textContent = s.codigo + ' — ' + s.nome;
+    select.appendChild(opt);
+  }
+}
+
+function confirmarColocarSinal() {
+  const codigo = document.getElementById('sinalCodigo').value;
+  if (!codigo) { toast('Selecione um sinal/elemento.', 'erro'); return; }
+
+  const tipo = ESTADO._modalTipo;
+  const km = parseFloat(document.getElementById('sinalKM').value);
+  const lado = document.getElementById('sinalLado').value;
+  const complemento = document.getElementById('sinalComplemento').value;
+
+  /* Buscar info do catálogo */
+  let catalogo;
+  if (tipo === 'horizontal') catalogo = (typeof CATALOGO_HORIZONTAL !== 'undefined') ? CATALOGO_HORIZONTAL : [];
+  else if (tipo === 'dispositivo') catalogo = (typeof CATALOGO_DISPOSITIVOS !== 'undefined') ? CATALOGO_DISPOSITIVOS : [];
+  else catalogo = (typeof CATALOGO_SINAIS !== 'undefined') ? CATALOGO_SINAIS : [];
+
+  const info = catalogo.find(s => s.codigo === codigo) || {};
+
+  const sinal = {
+    id: ESTADO.nextId++,
+    tipo: tipo,
+    codigo: codigo,
+    nome: info.nome || codigo,
+    categoria: info.categoria || '',
+    km: km,
+    lado: lado,
+    complemento: complemento,
+  };
+
+  salvarSnapshot();
+  ESTADO.sinaisColocados.push(sinal);
+  fecharModal('modalSinal');
+  desenharPlanta();
+  atualizarContadorSinais();
+  toast(codigo + ' colocado no KM ' + km.toFixed(1), 'sucesso');
+}
+
+function fecharModal(id) {
+  document.getElementById(id).classList.add('oculto');
+}
+
+function mostrarPropriedadesSinal(idx) {
+  const s = ESTADO.sinaisColocados[idx];
+  if (!s) return;
+  const container = document.getElementById('propConteudo');
+  const lados = { D: 'Direito', E: 'Esquerdo', S: 'Suspenso' };
+  container.innerHTML =
+    '<div class="prop-info" style="color:var(--amarelo)">' + s.codigo + ' — ' + s.nome + '</div>' +
+    '<div class="prop-campo"><label>Tipo</label><div style="font-size:12px">' + s.tipo + '</div></div>' +
+    '<div class="prop-campo"><label>KM</label><div style="font-size:12px">' + formatarKM(s.km) + '</div></div>' +
+    '<div class="prop-campo"><label>Lado</label><div style="font-size:12px">' + (lados[s.lado] || s.lado) + '</div></div>' +
+    (s.complemento ? '<div class="prop-campo"><label>Complemento</label><div style="font-size:12px">' + escapeHTML(s.complemento) + '</div></div>' : '') +
+    '<div style="margin-top:12px"><button class="btn-toolbar" style="color:var(--vermelho)" onclick="removerSinal(' + idx + ')">&#128465; Remover</button></div>';
+}
+
+function removerSinal(idx) {
+  salvarSnapshot();
+  ESTADO.sinaisColocados.splice(idx, 1);
+  ESTADO.sinalSelecionado = -1;
+  desenharPlanta();
+  atualizarContadorSinais();
+  document.getElementById('propConteudo').innerHTML =
+    '<div class="prop-info">Sinal removido.</div>';
+  toast('Sinal removido.', 'sucesso');
+}
+
+function atualizarContadorSinais() {
+  const n = ESTADO.sinaisColocados.length;
+  document.getElementById('statusSinais').style.display = n > 0 ? 'flex' : 'none';
+  document.getElementById('statusQtdSinais').textContent = n;
+}
+
+/* =============================================================
+ *  PLANTA — controles de vista
+ * ============================================================= */
+function plantaZoom(fator) {
+  ESTADO.viewZoom = Math.max(0.01, Math.min(50, ESTADO.viewZoom * fator));
+  desenharPlanta();
+}
+
+function plantaReset() {
+  ESTADO.viewZoom = 0.5;
+  ESTADO.viewX = 0;
+  ESTADO.viewY = 0;
+  desenharPlanta();
+}
+
+function plantaFitRodovia() {
+  const pts = ESTADO.pontos;
+  if (pts.length < 2) return;
+
+  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+  for (const p of pts) {
+    if (p.x < xMin) xMin = p.x;
+    if (p.x > xMax) xMax = p.x;
+    if (p.y < yMin) yMin = p.y;
+    if (p.y > yMax) yMax = p.y;
+  }
+
+  const dx = xMax - xMin || 100;
+  const dy = yMax - yMin || 100;
+  const margem = 0.1; /* 10% de margem */
+
+  ESTADO.viewX = (xMin + xMax) / 2;
+  ESTADO.viewY = (yMin + yMax) / 2;
+  ESTADO.viewZoom = Math.min(
+    plantaW * (1 - margem * 2) / dx,
+    plantaH * (1 - margem * 2) / dy
+  );
+
+  desenharPlanta();
+}
+
+function toggleCamadas() {
+  /* Abrir diálogo de camadas com checkboxes sincronizados */
+  const mapa = {
+    camGrade: 'grade',
+    camKM: 'kmMarkers',
+    camVertical: 'vertical',
+    camHorizontal: 'horizontal',
+    camDispositivos: 'dispositivos',
+    camAcostamento: 'acostamento',
+  };
+  for (const [id, chave] of Object.entries(mapa)) {
+    const el = document.getElementById(id);
+    if (el) el.checked = ESTADO.camadas[chave];
+  }
+  document.getElementById('modalCamadas').classList.remove('oculto');
+}
+
+function atualizarCamada(chave, valor) {
+  ESTADO.camadas[chave] = valor;
+  desenharPlanta();
+}
+
+/* =============================================================
+ *  IMPORTAR SNV
+ * ============================================================= */
+function importarArquivoSNV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  atualizarStatus('Carregando ' + file.name + '...');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const json = JSON.parse(e.target.result);
+      carregarSNV(json, file.name);
+    } catch (err) {
+      toast('Erro ao ler arquivo: ' + err.message, 'erro');
+      atualizarStatus('Erro na importação.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function carregarSNV(json, nomeArquivo) {
+  if (!json.segments || !json.segments.length) {
+    toast('Arquivo inválido — não contém segmentos de rodovia.', 'erro');
+    return;
+  }
+
+  ESTADO.rodovia = json;
+  processarGeometria(json);
+
+  /* Preencher dados do projeto se estiverem vazios */
+  if (ESTADO.projeto && json.br) {
+    if (!ESTADO.projeto.br) {
+      ESTADO.projeto.br = 'BR-' + json.br;
+      document.getElementById('projBR').value = ESTADO.projeto.br;
+    }
+    if (!ESTADO.projeto.uf && json.uf) {
+      ESTADO.projeto.uf = json.uf;
+      document.getElementById('projUF').value = json.uf;
+    }
+  }
+
+  /* Mostrar info */
+  const detalhes = document.getElementById('snvDetalhes');
+  detalhes.innerHTML =
+    '<strong>Rodovia:</strong> BR-' + (json.br || '?') + '/' + (json.uf || '?') + '<br>' +
+    '<strong>Extensão:</strong> ' + (json.km || ESTADO.kmTotal).toFixed(1) + ' km<br>' +
+    '<strong>Segmentos:</strong> ' + json.segments.length + '<br>' +
+    '<strong>Pontos:</strong> ' + ESTADO.pontos.length + '<br>' +
+    '<strong>Atualização SNV:</strong> ' + (json.updated || '—');
+  document.getElementById('snvInfo').style.display = 'block';
+
+  /* Info na planta */
+  document.getElementById('plantaRodoviaInfo').textContent =
+    'BR-' + (json.br || '?') + '/' + (json.uf || '?') + ' — ' +
+    (json.km || ESTADO.kmTotal).toFixed(1) + ' km';
+
+  /* Enquadrar rodovia no canvas */
+  if (plantaCtx) {
+    plantaFitRodovia();
+  }
+
+  atualizarStatus('Rodovia BR-' + (json.br || '?') + '/' + (json.uf || '?') + ' carregada — ' +
+    ESTADO.pontos.length + ' pontos.');
+  toast('Rodovia carregada com sucesso!', 'sucesso');
+}
+
+/** Carregar exemplo embutido para demonstração */
+function carregarSNVExemplo() {
+  atualizarStatus('Gerando rodovia de exemplo...');
+
+  /* Gerar rodovia de demonstração: reta com curvas suaves */
+  const segmentos = [];
+  const latBase = -15.5;
+  const lonBase = -47.5;
+  const kmTotal = 20;
+
+  const coords = [];
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const km = t * kmTotal;
+    /* Traçado com curvas suaves */
+    const lon = lonBase + t * 0.2 + Math.sin(t * Math.PI * 3) * 0.01;
+    const lat = latBase + t * 0.05 + Math.cos(t * Math.PI * 2) * 0.008;
+    coords.push([lon, lat]);
+  }
+
+  segmentos.push({ ki: 0, kf: kmTotal, c: coords });
+
+  const json = {
+    br: '999',
+    uf: 'DF',
+    snv: 'exemplo',
+    updated: 'demonstração',
+    km: kmTotal,
+    segments: segmentos,
+  };
+
+  carregarSNV(json, 'exemplo.json');
+  mostrarTela('planta');
+}
+
+/** Listar rodovias disponíveis no banco local (Electron via IPC) */
+async function listarRodoviasSNV() {
+  if (!window.api || !window.api.listarSNV) {
+    toast('Funcionalidade disponível apenas no Electron.', 'erro');
+    return;
+  }
+  atualizarStatus('Carregando lista de rodovias...');
+  const res = await window.api.listarSNV();
+  if (!res || !res.ok) {
+    toast('Não foi possível listar as rodovias.', 'erro');
+    return;
+  }
+
+  ESTADO._snvLista = res.arquivos || [];
+  document.getElementById('snvLista').style.display = 'block';
+  filtrarListaSNV();
+  atualizarStatus(res.arquivos.length + ' rodovias encontradas no banco.');
+}
+
+/** Filtrar a lista de rodovias exibida */
+function filtrarListaSNV() {
+  const lista = ESTADO._snvLista || [];
+  const busca = (document.getElementById('snvBusca')?.value || '').toUpperCase().trim();
+  const container = document.getElementById('snvListaItens');
+  if (!container) return;
+
+  const filtradas = busca
+    ? lista.filter(r => r.nome.toUpperCase().includes(busca))
+    : lista;
+
+  document.getElementById('snvContador').textContent = filtradas.length + ' de ' + lista.length;
+
+  if (filtradas.length === 0) {
+    container.innerHTML = '<div style="padding:14px; color:var(--texto-dim); font-size:12px">Nenhuma rodovia encontrada.</div>';
+    return;
+  }
+
+  /* Limitar a 100 para performance */
+  const exibir = filtradas.slice(0, 100);
+  let html = '';
+  for (const r of exibir) {
+    const fonteCor = r.fonte === 'projeto' ? 'var(--verde)' : 'var(--azul-claro)';
+    const fonteLabel = r.fonte === 'projeto' ? 'PROJETO' : 'KMCHECK';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--borda);' +
+      'cursor:pointer;font-size:12px;transition:background .12s" ' +
+      'onmouseenter="this.style.background=\'var(--bg-card-hover)\'" ' +
+      'onmouseleave="this.style.background=\'transparent\'" ' +
+      'onclick="carregarRodoviaSNV(\'' + escapeHTML(r.caminho.replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\',\'' + escapeHTML(r.nome) + '\')">' +
+      '<span style="font-weight:600;color:var(--amarelo);min-width:100px">' + escapeHTML(r.nome) + '</span>' +
+      '<span style="font-size:10px;color:' + fonteCor + ';background:rgba(255,255,255,.06);padding:1px 6px;border-radius:3px">' + fonteLabel + '</span>' +
+      (r.br ? '<span style="color:var(--texto-dim);font-size:10px">BR-' + r.br + '/' + (r.uf || '') + '</span>' : '') +
+      '</div>';
+  }
+  if (filtradas.length > 100) {
+    html += '<div style="padding:8px 10px; color:var(--texto-dim); font-size:11px; text-align:center">' +
+      '... e mais ' + (filtradas.length - 100) + ' rodovias. Refine a busca.</div>';
+  }
+  container.innerHTML = html;
+}
+
+/** Carregar uma rodovia a partir do caminho (Electron) */
+async function carregarRodoviaSNV(caminho, nome) {
+  atualizarStatus('Carregando ' + nome + '...');
+  const res = await window.api.importarSNV({ caminho });
+  if (res && res.ok && res.rodovia) {
+    carregarSNV(res.rodovia, res.nomeArquivo || nome);
+    document.getElementById('snvLista').style.display = 'none';
+    toast('Rodovia carregada: ' + nome, 'sucesso');
+  } else {
+    toast('Erro ao carregar: ' + (res?.motivo || 'desconhecido'), 'erro');
+  }
+}
+
+/* =============================================================
+ *  PREENCHER TABELA DO SNV (características físicas)
+ * ============================================================= */
+function preencherDoSNV() {
+  if (!ESTADO.rodovia) {
+    toast('Importe uma rodovia primeiro.', 'erro');
+    return;
+  }
+  const chave = ESTADO.tabelaAtual;
+  if (chave !== 'caracteristicasFisicas') {
+    toast('Preenchimento automático disponível apenas para Características Físicas.', 'erro');
+    return;
+  }
+
+  const rod = ESTADO.rodovia;
+  if (!ESTADO.dados[chave]) ESTADO.dados[chave] = [];
+
+  for (const seg of rod.segments) {
+    const reg = {};
+    const esq = ESQUEMAS[chave];
+    for (const col of esq.colunas) reg[col.campo] = '';
+    reg.rodovia = 'BR-' + (rod.br || '');
+    reg.uf = rod.uf || '';
+    reg.kmInicio = seg.ki;
+    reg.kmFim = seg.kf;
+    reg.extensao = (seg.kf - seg.ki).toFixed(3);
+    ESTADO.dados[chave].push(reg);
+  }
+
+  renderizarTabelaBody(ESQUEMAS[chave], ESTADO.dados[chave]);
+  atualizarContagem(chave);
+  toast(rod.segments.length + ' segmentos preenchidos do SNV.', 'sucesso');
+}
+
+/* =============================================================
+ *  QUANTITATIVOS
+ * ============================================================= */
+function recalcularQuantitativos() {
+  const sinais = ESTADO.sinaisColocados;
+  const grupos = {};
+
+  for (const s of sinais) {
+    const chave = s.tipo + ':' + s.codigo;
+    if (!grupos[chave]) {
+      grupos[chave] = { codigo: s.codigo, nome: s.nome, tipo: s.tipo, categoria: s.categoria, qtd: 0, unidade: 'un' };
+    }
+    grupos[chave].qtd++;
+  }
+
+  const lista = Object.values(grupos).sort((a, b) => {
+    if (a.tipo !== b.tipo) return a.tipo.localeCompare(b.tipo);
+    return a.codigo.localeCompare(b.codigo);
+  });
+
+  /* Cards de resumo */
+  let nVert = 0, nHoriz = 0, nDisp = 0;
+  for (const s of sinais) {
+    if (s.tipo === 'vertical') nVert++;
+    else if (s.tipo === 'horizontal') nHoriz++;
+    else nDisp++;
+  }
+
+  document.getElementById('quantiResumo').innerHTML =
+    '<div class="quanti-card vertical"><div class="valor">' + nVert + '</div><div class="rotulo">Sinais Verticais</div></div>' +
+    '<div class="quanti-card horizontal"><div class="valor">' + nHoriz + '</div><div class="rotulo">Sinaliz. Horizontal</div></div>' +
+    '<div class="quanti-card dispositivos"><div class="valor">' + nDisp + '</div><div class="rotulo">Dispositivos</div></div>' +
+    '<div class="quanti-card total"><div class="valor">' + sinais.length + '</div><div class="rotulo">Total de Elementos</div></div>';
+
+  /* Tabela detalhada */
+  const tbody = document.getElementById('quantiBody');
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--texto-dim); padding:30px">' +
+      'Nenhum elemento colocado. Use a Planta para posicionar sinais na rodovia.</td></tr>';
+  } else {
+    let html = '';
+    const tiposNomes = { vertical: 'Vertical', horizontal: 'Horizontal', dispositivo: 'Dispositivo' };
+    for (let i = 0; i < lista.length; i++) {
+      const g = lista[i];
+      html += '<tr>' +
+        '<td style="color:var(--texto-dim); text-align:center">' + (i + 1) + '</td>' +
+        '<td><strong>' + escapeHTML(g.codigo) + '</strong></td>' +
+        '<td>' + escapeHTML(g.nome) + '</td>' +
+        '<td>' + (tiposNomes[g.tipo] || g.tipo) + '</td>' +
+        '<td style="text-align:right; font-weight:600; font-variant-numeric:tabular-nums">' + g.qtd + '</td>' +
+        '<td>' + g.unidade + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = html;
+  }
+
+  document.getElementById('quantiTotal').textContent = sinais.length + ' elementos | ' + lista.length + ' tipos';
+  toast('Quantitativos recalculados.', 'sucesso');
+}
+
+function exportarQuantCSV() {
+  const sinais = ESTADO.sinaisColocados;
+  if (sinais.length === 0) { toast('Nenhum elemento para exportar.', 'erro'); return; }
+
+  let csv = 'Código;Descrição;Tipo;KM;Lado;Complemento\n';
+  for (const s of sinais) {
+    csv += s.codigo + ';' + s.nome + ';' + s.tipo + ';' + s.km.toFixed(1) + ';' + s.lado + ';' + (s.complemento || '') + '\n';
+  }
+
+  baixarTexto(csv, 'quantitativos.csv', 'text/csv');
+  toast('CSV exportado!', 'sucesso');
+}
+
+/* =============================================================
+ *  MEMORIAL DESCRITIVO
+ * ============================================================= */
+function gerarMemorial() {
+  const p = ESTADO.projeto || {};
+  const sinais = ESTADO.sinaisColocados;
+  const rod = ESTADO.rodovia;
+
+  let texto = '';
+  texto += 'MEMORIAL DESCRITIVO\n';
+  texto += 'PROJETO DE SINALIZAÇÃO RODOVIÁRIA — BR-LEGAL 2\n';
+  texto += '═══════════════════════════════════════════════\n\n';
+
+  texto += '1. IDENTIFICAÇÃO\n';
+  texto += '────────────────\n';
+  texto += 'Projeto: ' + (p.nome || '(não informado)') + '\n';
+  texto += 'Rodovia: ' + (p.br || '—') + '\n';
+  texto += 'UF: ' + (p.uf || '—') + '\n';
+  texto += 'Trecho: KM ' + (p.kmInicio || '—') + ' ao KM ' + (p.kmFim || '—') + '\n';
+  texto += 'Lote: ' + (p.lote || '—') + '\n';
+  texto += 'Contratada: ' + (p.contratada || '—') + '\n';
+  texto += 'Contrato DNIT: ' + (p.contrato || '—') + '\n';
+  texto += 'Responsável Técnico: ' + (p.rt || '—') + '\n';
+  if (rod) {
+    texto += 'Extensão total: ' + ESTADO.kmTotal.toFixed(1) + ' km\n';
+    texto += 'Segmentos SNV: ' + rod.segments.length + '\n';
+  }
+  texto += '\n';
+
+  texto += '2. OBJETIVO\n';
+  texto += '───────────\n';
+  texto += 'O presente memorial descritivo tem por objetivo apresentar o projeto de\n';
+  texto += 'sinalização rodoviária do trecho acima identificado, no âmbito do Programa\n';
+  texto += 'BR-Legal 2 do DNIT (Departamento Nacional de Infraestrutura de Transportes),\n';
+  texto += 'contemplando a sinalização vertical, horizontal e os dispositivos de segurança,\n';
+  texto += 'em conformidade com o Manual de Sinalização Rodoviária do DNIT (IPR) e as\n';
+  texto += 'resoluções do CONTRAN.\n\n';
+
+  texto += '3. NORMAS E REFERÊNCIAS\n';
+  texto += '───────────────────────\n';
+  texto += '• Manual de Sinalização Rodoviária — DNIT/IPR\n';
+  texto += '• Resolução CONTRAN nº 160/2004 e atualizações\n';
+  texto += '• Manual Brasileiro de Sinalização de Trânsito (MBST) — Volumes I a V\n';
+  texto += '• Edital e Termo de Referência do BR-Legal 2\n';
+  texto += '• Norma DNIT 100/2009 — Sinalização Vertical\n';
+  texto += '• Norma DNIT 101/2009 — Sinalização Horizontal\n\n';
+
+  texto += '4. SINALIZAÇÃO PROPOSTA\n';
+  texto += '───────────────────────\n\n';
+
+  if (sinais.length === 0) {
+    texto += '(Nenhum elemento de sinalização posicionado no projeto.)\n\n';
+  } else {
+    /* Contar por tipo */
+    let nV = 0, nH = 0, nD = 0;
+    for (const s of sinais) {
+      if (s.tipo === 'vertical') nV++;
+      else if (s.tipo === 'horizontal') nH++;
+      else nD++;
+    }
+
+    texto += 'Total de elementos: ' + sinais.length + '\n\n';
+
+    if (nV > 0) {
+      texto += '4.1. Sinalização Vertical (' + nV + ' sinais)\n';
+      texto += '─────────────────────────────────────\n';
+      const verticais = sinais.filter(s => s.tipo === 'vertical').sort((a, b) => a.km - b.km);
+      for (const s of verticais) {
+        const ladoNome = s.lado === 'E' ? 'Esquerdo' : (s.lado === 'S' ? 'Suspenso' : 'Direito');
+        texto += '  • ' + s.codigo + ' (' + s.nome + ') — KM ' + formatarKM(s.km) + ', Lado ' + ladoNome;
+        if (s.complemento) texto += ' [' + s.complemento + ']';
+        texto += '\n';
+      }
+      texto += '\n';
+    }
+
+    if (nH > 0) {
+      texto += '4.2. Sinalização Horizontal (' + nH + ' marcações)\n';
+      texto += '──────────────────────────────────────────\n';
+      const horizontais = sinais.filter(s => s.tipo === 'horizontal').sort((a, b) => a.km - b.km);
+      for (const s of horizontais) {
+        texto += '  • ' + s.codigo + ' (' + s.nome + ') — KM ' + formatarKM(s.km);
+        if (s.complemento) texto += ' [' + s.complemento + ']';
+        texto += '\n';
+      }
+      texto += '\n';
+    }
+
+    if (nD > 0) {
+      texto += '4.3. Dispositivos de Segurança (' + nD + ' dispositivos)\n';
+      texto += '──────────────────────────────────────────────\n';
+      const dispositivos = sinais.filter(s => s.tipo === 'dispositivo').sort((a, b) => a.km - b.km);
+      for (const s of dispositivos) {
+        texto += '  • ' + s.codigo + ' (' + s.nome + ') — KM ' + formatarKM(s.km);
+        if (s.complemento) texto += ' [' + s.complemento + ']';
+        texto += '\n';
+      }
+      texto += '\n';
+    }
+  }
+
+  /* 5. Quantitativo resumido */
+  if (sinais.length > 0) {
+    texto += '5. RESUMO QUANTITATIVO\n';
+    texto += '──────────────────────\n';
+    /* Agrupar por código */
+    const agrupado = {};
+    for (const s of sinais) {
+      if (!agrupado[s.codigo]) agrupado[s.codigo] = { nome: s.nome, tipo: s.tipo, qtde: 0 };
+      agrupado[s.codigo].qtde++;
+    }
+    const codigos = Object.keys(agrupado).sort();
+    texto += String('Código').padEnd(12) + String('Descrição').padEnd(40) + String('Qtde').padStart(6) + '\n';
+    texto += '─'.repeat(58) + '\n';
+    for (const cod of codigos) {
+      const item = agrupado[cod];
+      texto += cod.padEnd(12) + item.nome.substring(0, 38).padEnd(40) + String(item.qtde).padStart(6) + '\n';
+    }
+    texto += '─'.repeat(58) + '\n';
+    texto += 'TOTAL'.padEnd(52) + String(sinais.length).padStart(6) + '\n\n';
+  }
+
+  texto += (sinais.length > 0 ? '6' : '5') + '. METODOLOGIA\n';
+  texto += '──────────────\n';
+  texto += 'A elaboração do projeto seguiu as seguintes etapas:\n';
+  texto += '  a) Levantamento das características físicas e operacionais do trecho\n';
+  texto += '     a partir dos dados do Sistema Nacional de Viação (SNV/DNIT);\n';
+  texto += '  b) Análise das condições existentes de sinalização;\n';
+  texto += '  c) Definição da sinalização vertical de regulamentação, advertência,\n';
+  texto += '     indicação e serviços auxiliares conforme MBST;\n';
+  texto += '  d) Definição da sinalização horizontal (demarcações, faixas, setas\n';
+  texto += '     e legendas) conforme MBST Volume IV;\n';
+  texto += '  e) Especificação dos dispositivos de segurança;\n';
+  texto += '  f) Elaboração das plantas de sinalização;\n';
+  texto += '  g) Elaboração dos quantitativos e orçamento.\n\n';
+
+  const nSec = sinais.length > 0 ? '7' : '6';
+  texto += nSec + '. CONSIDERAÇÕES FINAIS\n';
+  texto += '───────────────────────\n';
+  texto += 'O projeto foi elaborado em conformidade com as normas vigentes do DNIT e\n';
+  texto += 'CONTRAN, buscando garantir a segurança viária dos usuários da rodovia.\n';
+  texto += 'Todos os elementos de sinalização foram posicionados considerando as\n';
+  texto += 'características geométricas do trecho, as condições operacionais e os\n';
+  texto += 'critérios de visibilidade estabelecidos nos manuais de referência.\n\n';
+  texto += 'Os materiais e dispositivos especificados atendem às normas DNIT e ABNT\n';
+  texto += 'aplicáveis, devendo a implantação ser acompanhada por profissional\n';
+  texto += 'habilitado.\n\n';
+
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  texto += '────────────────────────────────────────\n';
+  texto += (p.uf || '') + ', ' + dataHoje + '\n\n';
+  texto += (p.rt || 'Responsável Técnico') + '\n';
+  texto += (p.contratada || 'Empresa') + '\n';
+
+  document.getElementById('memorialTexto').value = texto;
+  toast('Memorial gerado!', 'sucesso');
+}
+
+function copiarMemorial() {
+  const texto = document.getElementById('memorialTexto').value;
+  if (!texto) { toast('Gere o memorial primeiro.', 'erro'); return; }
+  navigator.clipboard.writeText(texto).then(() => {
+    toast('Memorial copiado para a área de transferência!', 'sucesso');
+  }).catch(() => {
+    /* Fallback: selecionar todo o texto */
+    const ta = document.getElementById('memorialTexto');
+    ta.select();
+    document.execCommand('copy');
+    toast('Memorial copiado!', 'sucesso');
+  });
+}
+
+function exportarMemorialTXT() {
+  const texto = document.getElementById('memorialTexto').value;
+  if (!texto) { toast('Gere o memorial primeiro.', 'erro'); return; }
+  const p = ESTADO.projeto || {};
+  const nome = 'memorial-' + (p.br || 'projeto').replace(/\s+/g, '-') + '.txt';
+  baixarTexto(texto, nome, 'text/plain');
+  toast('Memorial salvo como ' + nome, 'sucesso');
+}
+
+/* =============================================================
+ *  EXPORTAÇÃO
+ * ============================================================= */
+function exportarPDF() {
+  /* Electron: usa printToPDF */
+  if (window.api && window.api.exportarPDF) {
+    acaoExportarPDFElectron();
+    return;
+  }
+  /* Standalone: usa window.print() como fallback */
+  toast('Use Ctrl+P ou o menu Imprimir do navegador para gerar PDF.', 'sucesso');
+  window.print();
+}
+
+function exportarCSV() {
+  const dados = ESTADO.dados;
+  const chaves = Object.keys(dados);
+  if (chaves.length === 0) { toast('Nenhuma planilha preenchida.', 'erro'); return; }
+
+  let csvTotal = '';
+  for (const chave of chaves) {
+    const esq = ESQUEMAS[chave];
+    if (!esq || !dados[chave] || dados[chave].length === 0) continue;
+
+    csvTotal += '### ' + esq.titulo + ' ###\n';
+    /* Cabeçalho */
+    csvTotal += esq.colunas.map(c => c.nome).join(';') + '\n';
+    /* Dados */
+    for (const reg of dados[chave]) {
+      csvTotal += esq.colunas.map(c => reg[c.campo] || '').join(';') + '\n';
+    }
+    csvTotal += '\n';
+  }
+
+  baixarTexto(csvTotal, 'volume-ii-planilhas.csv', 'text/csv');
+  toast('Planilhas exportadas em CSV!', 'sucesso');
+}
+
+function exportarDXF() {
+  if (ESTADO.pontos.length < 2) { toast('Importe uma rodovia primeiro.', 'erro'); return; }
+
+  /*
+   * DXF R12 com estrutura completa: HEADER, TABLES (layers, linetypes), ENTITIES.
+   * Layers separadas por tipo de elemento conforme convenção DNIT:
+   *  - EIXO (eixo da rodovia)
+   *  - FAIXA_DIREITA / FAIXA_ESQUERDA (bordos de pista)
+   *  - ACOSTAMENTO (acostamento)
+   *  - KM_MARCOS (marcadores de quilometragem)
+   *  - SINALIZACAO_VERTICAL (sinais R, A, I, E, S)
+   *  - SINALIZACAO_HORIZONTAL (LFO, LMS, faixas, setas)
+   *  - DISPOSITIVOS_SEGURANCA (defensas, delineadores, tachas)
+   *  - TEXTOS (rótulos de sinais e KM)
+   */
+
+  /* Larguras padrão da pista para offset */
+  const largPista = 7.2;
+  const largAcost = 2.5;
+
+  let dxf = '';
+
+  /* ===== HEADER ===== */
+  dxf += '0\nSECTION\n2\nHEADER\n';
+  dxf += '9\n$ACADVER\n1\nAC1009\n'; /* DXF R12 */
+  dxf += '9\n$INSUNITS\n70\n6\n'; /* metros */
+  /* Extents — limites do desenho */
+  const xs = ESTADO.pontos.map(p => p.x);
+  const ys = ESTADO.pontos.map(p => -p.y);
+  const xmin = Math.min(...xs) - 50;
+  const xmax = Math.max(...xs) + 50;
+  const ymin = Math.min(...ys) - 50;
+  const ymax = Math.max(...ys) + 50;
+  dxf += '9\n$EXTMIN\n10\n' + xmin.toFixed(3) + '\n20\n' + ymin.toFixed(3) + '\n30\n0.0\n';
+  dxf += '9\n$EXTMAX\n10\n' + xmax.toFixed(3) + '\n20\n' + ymax.toFixed(3) + '\n30\n0.0\n';
+  dxf += '0\nENDSEC\n';
+
+  /* ===== TABLES ===== */
+  dxf += '0\nSECTION\n2\nTABLES\n';
+
+  /* Linetypes */
+  dxf += '0\nTABLE\n2\nLTYPE\n70\n3\n';
+  dxf += '0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0\n';
+  dxf += '0\nLTYPE\n2\nDASHED\n70\n0\n3\nDashed\n72\n65\n73\n2\n40\n6.0\n49\n3.0\n49\n-3.0\n';
+  dxf += '0\nLTYPE\n2\nDASHDOT\n70\n0\n3\nDash dot\n72\n65\n73\n4\n40\n12.0\n49\n6.0\n49\n-3.0\n49\n1.0\n49\n-3.0\n';
+  dxf += '0\nENDTAB\n';
+
+  /* Layers — cor ACI: 7=branco, 1=vermelho, 2=amarelo, 3=verde, 4=ciano, 5=azul, 6=magenta */
+  const layers = [
+    ['EIXO', 2, 'DASHDOT'],
+    ['FAIXA_DIREITA', 7, 'CONTINUOUS'],
+    ['FAIXA_ESQUERDA', 7, 'CONTINUOUS'],
+    ['ACOSTAMENTO', 8, 'DASHED'],
+    ['KM_MARCOS', 3, 'CONTINUOUS'],
+    ['SINALIZACAO_VERTICAL', 1, 'CONTINUOUS'],
+    ['SINALIZACAO_HORIZONTAL', 2, 'CONTINUOUS'],
+    ['DISPOSITIVOS_SEGURANCA', 6, 'CONTINUOUS'],
+    ['TEXTOS', 7, 'CONTINUOUS'],
+  ];
+  dxf += '0\nTABLE\n2\nLAYER\n70\n' + layers.length + '\n';
+  for (const [nome, cor, lt] of layers) {
+    dxf += '0\nLAYER\n2\n' + nome + '\n70\n0\n62\n' + cor + '\n6\n' + lt + '\n';
+  }
+  dxf += '0\nENDTAB\n';
+  dxf += '0\nENDSEC\n';
+
+  /* ===== ENTITIES ===== */
+  dxf += '0\nSECTION\n2\nENTITIES\n';
+
+  /* Eixo da rodovia */
+  dxf += '0\nPOLYLINE\n8\nEIXO\n66\n1\n70\n0\n';
+  for (const p of ESTADO.pontos) {
+    dxf += '0\nVERTEX\n8\nEIXO\n10\n' + p.x.toFixed(3) + '\n20\n' + (-p.y).toFixed(3) + '\n30\n0\n';
+  }
+  dxf += '0\nSEQEND\n';
+
+  /* Bordos de pista (offset lateral do eixo) */
+  const gerarOffset = (pontos, distancia) => {
+    const resultado = [];
+    for (let i = 0; i < pontos.length; i++) {
+      const p = pontos[i];
+      let ang;
+      if (i === 0) ang = Math.atan2(pontos[1].y - p.y, pontos[1].x - p.x);
+      else if (i === pontos.length - 1) ang = Math.atan2(p.y - pontos[i - 1].y, p.x - pontos[i - 1].x);
+      else ang = Math.atan2(pontos[i + 1].y - pontos[i - 1].y, pontos[i + 1].x - pontos[i - 1].x);
+      const normal = ang + Math.PI / 2;
+      resultado.push({
+        x: p.x + Math.cos(normal) * distancia,
+        y: p.y + Math.sin(normal) * distancia,
+      });
+    }
+    return resultado;
+  };
+
+  /* Amostragem a cada ~5 pontos para reduzir tamanho do DXF */
+  const step = Math.max(1, Math.floor(ESTADO.pontos.length / 500));
+  const ptsSampled = ESTADO.pontos.filter((_, i) => i % step === 0 || i === ESTADO.pontos.length - 1);
+
+  const bordoD = gerarOffset(ptsSampled, largPista / 2);
+  const bordoE = gerarOffset(ptsSampled, -largPista / 2);
+  const acostD = gerarOffset(ptsSampled, largPista / 2 + largAcost);
+  const acostE = gerarOffset(ptsSampled, -(largPista / 2 + largAcost));
+
+  const polyline = (pts, layer) => {
+    let s = '0\nPOLYLINE\n8\n' + layer + '\n66\n1\n70\n0\n';
+    for (const p of pts) s += '0\nVERTEX\n8\n' + layer + '\n10\n' + p.x.toFixed(3) + '\n20\n' + (-p.y).toFixed(3) + '\n30\n0\n';
+    return s + '0\nSEQEND\n';
+  };
+
+  dxf += polyline(bordoD, 'FAIXA_DIREITA');
+  dxf += polyline(bordoE, 'FAIXA_ESQUERDA');
+  dxf += polyline(acostD, 'ACOSTAMENTO');
+  dxf += polyline(acostE, 'ACOSTAMENTO');
+
+  /* Marcadores de KM */
+  const kmMax = ESTADO.kmTotal;
+  for (let km = Math.ceil(ESTADO.pontos[0]?.km || 0); km <= kmMax; km++) {
+    const pos = interpolarPosicao(km);
+    if (!pos) continue;
+    const normal = pos.ang + Math.PI / 2;
+    /* Traço perpendicular de 6m */
+    const x1 = pos.x + Math.cos(normal) * 8;
+    const y1 = -pos.y - Math.sin(normal) * 8;
+    const x2 = pos.x - Math.cos(normal) * 8;
+    const y2 = -pos.y + Math.sin(normal) * 8;
+    dxf += '0\nLINE\n8\nKM_MARCOS\n10\n' + x1.toFixed(3) + '\n20\n' + y1.toFixed(3) + '\n30\n0\n' +
+      '11\n' + x2.toFixed(3) + '\n21\n' + y2.toFixed(3) + '\n31\n0\n';
+    dxf += '0\nTEXT\n8\nKM_MARCOS\n10\n' + (pos.x + Math.cos(normal) * 12).toFixed(3) +
+      '\n20\n' + (-pos.y - Math.sin(normal) * 12).toFixed(3) + '\n30\n0\n40\n2.0\n1\nKM ' + km + '\n';
+  }
+
+  /* Sinais colocados */
+  for (const s of ESTADO.sinaisColocados) {
+    const pos = interpolarPosicao(s.km);
+    if (!pos) continue;
+    const normal = pos.ang + Math.PI / 2;
+    const offMetros = s.lado === 'E' ? -(largPista / 2 + largAcost + 3) : (s.lado === 'S' ? 0 : (largPista / 2 + largAcost + 3));
+    const wx = pos.x + Math.cos(normal) * offMetros;
+    const wy = -pos.y - Math.sin(normal) * offMetros;
+
+    let layer = 'SINALIZACAO_VERTICAL';
+    if (s.tipo === 'horizontal') layer = 'SINALIZACAO_HORIZONTAL';
+    else if (s.tipo === 'dispositivo') layer = 'DISPOSITIVOS_SEGURANCA';
+
+    /* Ponto + linha conectora */
+    dxf += '0\nPOINT\n8\n' + layer + '\n10\n' + wx.toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n';
+    dxf += '0\nLINE\n8\n' + layer + '\n10\n' + pos.x.toFixed(3) + '\n20\n' + (-pos.y).toFixed(3) + '\n30\n0\n' +
+      '11\n' + wx.toFixed(3) + '\n21\n' + wy.toFixed(3) + '\n31\n0\n';
+
+    /* Círculo representando o sinal */
+    if (s.tipo === 'vertical') {
+      dxf += '0\nCIRCLE\n8\n' + layer + '\n10\n' + wx.toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n40\n0.6\n';
+    }
+
+    /* Texto do código */
+    dxf += '0\nTEXT\n8\nTEXTOS\n10\n' + (wx + 1.5).toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n40\n1.2\n1\n' + s.codigo + '\n';
+    dxf += '0\nTEXT\n8\nTEXTOS\n10\n' + (wx + 1.5).toFixed(3) + '\n20\n' + (wy - 1.8).toFixed(3) + '\n30\n0\n40\n0.8\n1\nKM ' + formatarKM(s.km) + '\n';
+  }
+
+  dxf += '0\nENDSEC\n0\nEOF\n';
+
+  const p = ESTADO.projeto || {};
+  const nome = 'planta-' + (p.br || 'projeto').replace(/\s+/g, '-') + '.dxf';
+  baixarTexto(dxf, nome, 'application/dxf');
+  toast('DXF exportado: ' + nome + ' (' + layers.length + ' camadas)', 'sucesso');
+}
+
+function exportarJSON() {
+  const dados = {
+    versao: '0.2.0',
+    projeto: ESTADO.projeto,
+    rodovia: ESTADO.rodovia,
+    sinaisColocados: ESTADO.sinaisColocados,
+    dados: ESTADO.dados,
+  };
+  const json = JSON.stringify(dados, null, 2);
+  const p = ESTADO.projeto || {};
+  const nome = (p.nome || p.br || 'projeto').replace(/\s+/g, '-') + '.brlegal2.json';
+  baixarTexto(json, nome, 'application/json');
+  toast('Projeto exportado: ' + nome, 'sucesso');
+}
+
+/* =============================================================
+ *  NAVEGAÇÃO E TELAS
+ * ============================================================= */
+function mostrarTela(id) {
+  ESTADO.telaAtual = id;
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('visivel'));
+  const el = document.getElementById('tela-' + id);
+  if (el) el.classList.add('visivel');
+
+  /* Atualizar item ativo na sidebar */
+  document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('ativo'));
+  const item = document.querySelector('.tree-item[data-tela="' + id + '"]');
+  if (item) item.classList.add('ativo');
+
+  /* Inicializar planta se necessário */
+  if (id === 'planta' && !plantaCtx) {
+    setTimeout(inicializarPlanta, 50);
+  } else if (id === 'planta') {
+    setTimeout(desenharPlanta, 50);
+  }
+
+  /* Recalcular quantitativos ao abrir */
+  if (id === 'quantitativos') recalcularQuantitativos();
+
+  /* Carregar conteúdo do Volume I Memorial ao abrir */
+  if (id === 'vol1-memorial') vol1Carregar();
+}
+
+function navegar(el) {
+  const tela = el.dataset.tela;
+  if (!tela) return;
+
+  /* Se é uma planilha do Volume II (chave do ESQUEMAS) */
+  if (ESQUEMAS[tela]) {
+    abrirTabela(tela);
+    return;
+  }
+
+  mostrarTela(tela);
+}
+
+function toggleGrupo(el) {
+  el.classList.toggle('aberto');
+}
+
+/* =============================================================
+ *  TABELA — Volume II
+ * ============================================================= */
+function abrirTabela(chave) {
+  const esq = ESQUEMAS[chave];
+  if (!esq) return;
+
+  ESTADO.tabelaAtual = chave;
+  ESTADO.linhaSelecionada = -1;
+
+  if (!ESTADO.dados[chave]) ESTADO.dados[chave] = [];
+
+  document.getElementById('tabelaTitulo').textContent = esq.titulo;
+  document.getElementById('tabelaSubtitulo').textContent =
+    'Volume II — Planilha ' + esq.id + ' | ' + ESTADO.dados[chave].length + ' registros';
+  document.getElementById('tabelaBusca').value = '';
+
+  renderizarTabelaHead(esq);
+  renderizarTabelaBody(esq, ESTADO.dados[chave]);
+  atualizarContagem(chave);
+
+  mostrarTela('tabela');
+}
+
+function renderizarTabelaHead(esq) {
+  const thead = document.getElementById('tabelaHead');
+  let html = '<tr><th style="width:36px">#</th>';
+  for (const col of esq.colunas) {
+    html += '<th style="min-width:' + col.largura + 'px">' + col.nome + '</th>';
+  }
+  html += '</tr>';
+  thead.innerHTML = html;
+}
+
+function renderizarTabelaBody(esq, dados) {
+  const tbody = document.getElementById('tabelaBody');
+  if (dados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="' + (esq.colunas.length + 1) + '" style="text-align:center;color:var(--texto-dim);padding:30px">' +
+      'Nenhum registro. Clique em "+ Adicionar" para inserir.</td></tr>';
+    return;
+  }
+  let html = '';
+  for (let i = 0; i < dados.length; i++) {
+    const reg = dados[i];
+    html += '<tr onclick="selecionarLinha(' + i + ')" class="' + (i === ESTADO.linhaSelecionada ? 'selecionada' : '') + '">';
+    html += '<td style="color:var(--texto-dim);text-align:center">' + (i + 1) + '</td>';
+    for (const col of esq.colunas) {
+      const val = reg[col.campo] ?? '';
+      if (col.tipo === 'lista') {
+        html += '<td><select data-i="' + i + '" data-campo="' + col.campo + '" onchange="editarCelula(this)">';
+        html += '<option value=""></option>';
+        for (const op of (col.opcoes || [])) {
+          html += '<option' + (val === op ? ' selected' : '') + '>' + op + '</option>';
+        }
+        html += '</select></td>';
+      } else {
+        const cls = (col.tipo === 'numero') ? ' celula-numero' : (col.tipo === 'km') ? ' celula-km' : '';
+        const tipo = (col.tipo === 'numero' || col.tipo === 'km') ? 'number' : 'text';
+        /* Atributos de validação HTML5 a partir do esquema */
+        let attrs = '';
+        if (col.min !== undefined) attrs += ' min="' + col.min + '"';
+        if (col.max !== undefined) attrs += ' max="' + col.max + '"';
+        if (col.decimais !== undefined) attrs += ' step="' + Math.pow(10, -col.decimais) + '"';
+        else if (col.tipo === 'km') attrs += ' step="0.1"';
+        html += '<td class="' + cls + '"><input type="' + tipo + '" value="' + escapeHTML(String(val)) +
+                '" data-i="' + i + '" data-campo="' + col.campo + '" onchange="editarCelula(this)"' +
+                attrs + '></td>';
+      }
+    }
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function editarCelula(el) {
+  const i = parseInt(el.dataset.i);
+  const campo = el.dataset.campo;
+  const chave = ESTADO.tabelaAtual;
+  if (!ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+
+  /* Validação com base no esquema (min, max, decimais) */
+  const esq = ESQUEMAS[chave];
+  if (esq) {
+    const col = esq.colunas.find(c => c.campo === campo);
+    if (col && (col.tipo === 'numero' || col.tipo === 'km') && el.value !== '') {
+      let val = parseFloat(el.value);
+      let erro = '';
+      if (isNaN(val)) {
+        erro = 'Valor inválido — use um número.';
+      } else {
+        if (col.min !== undefined && val < col.min) {
+          erro = 'Valor mínimo permitido: ' + col.min;
+          val = col.min;
+        }
+        if (col.max !== undefined && val > col.max) {
+          erro = 'Valor máximo permitido: ' + col.max;
+          val = col.max;
+        }
+        /* Arredondar para as casas decimais do esquema */
+        if (col.decimais !== undefined) {
+          val = parseFloat(val.toFixed(col.decimais));
+        }
+      }
+      if (erro) {
+        toast(col.nome + ': ' + erro, 'erro');
+        el.value = val;
+      }
+      ESTADO.dados[chave][i][campo] = isNaN(val) ? '' : val;
+      /* Feedback visual de erro */
+      el.style.outline = erro ? '2px solid var(--vermelho, #E53E3E)' : '';
+      setTimeout(() => { el.style.outline = ''; }, 2000);
+      atualizarContagem(chave);
+      return;
+    }
+  }
+
+  ESTADO.dados[chave][i][campo] = el.value;
+  atualizarContagem(chave);
+}
+
+function selecionarLinha(i) {
+  ESTADO.linhaSelecionada = i;
+  document.querySelectorAll('.tabela-dados tbody tr').forEach((tr, idx) => {
+    tr.classList.toggle('selecionada', idx === i);
+  });
+  atualizarPropriedadesLinha(i);
+}
+
+function adicionarLinha() {
+  const chave = ESTADO.tabelaAtual;
+  const esq = ESQUEMAS[chave];
+  if (!esq) return;
+  if (!ESTADO.dados[chave]) ESTADO.dados[chave] = [];
+
+  const reg = {};
+  for (const col of esq.colunas) reg[col.campo] = '';
+  if (ESTADO.projeto) {
+    if (reg.rodovia !== undefined) reg.rodovia = ESTADO.projeto.br || '';
+    if (reg.uf !== undefined) reg.uf = ESTADO.projeto.uf || '';
+  }
+  ESTADO.dados[chave].push(reg);
+  renderizarTabelaBody(esq, ESTADO.dados[chave]);
+  atualizarContagem(chave);
+  const wrap = document.querySelector('.tabela-wrap');
+  if (wrap) setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 50);
+}
+
+function removerLinhaSelecionada() {
+  const chave = ESTADO.tabelaAtual;
+  const i = ESTADO.linhaSelecionada;
+  if (i < 0 || !ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+  ESTADO.dados[chave].splice(i, 1);
+  ESTADO.linhaSelecionada = -1;
+  renderizarTabelaBody(ESQUEMAS[chave], ESTADO.dados[chave]);
+  atualizarContagem(chave);
+}
+
+function filtrarTabela() {
+  const busca = document.getElementById('tabelaBusca').value.toLowerCase();
+  document.querySelectorAll('.tabela-dados tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(busca) ? '' : 'none';
+  });
+}
+
+function atualizarContagem(chave) {
+  const n = ESTADO.dados[chave] ? ESTADO.dados[chave].length : 0;
+  const el = document.getElementById('tabelaContagem');
+  if (el) el.textContent = n + ' registro' + (n !== 1 ? 's' : '');
+  const sub = document.getElementById('tabelaSubtitulo');
+  if (sub && ESQUEMAS[chave]) sub.textContent = 'Volume II — Planilha ' + ESQUEMAS[chave].id + ' | ' + n + ' registros';
+}
+
+/* =============================================================
+ *  PROPRIEDADES (painel direito)
+ * ============================================================= */
+function atualizarPropriedadesLinha(i) {
+  const chave = ESTADO.tabelaAtual;
+  const esq = ESQUEMAS[chave];
+  if (!esq || !ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+  const reg = ESTADO.dados[chave][i];
+  const container = document.getElementById('propConteudo');
+  let html = '<div class="prop-info" style="color:var(--amarelo)">Registro #' + (i+1) + '</div>';
+  for (const col of esq.colunas) {
+    const val = reg[col.campo] || '—';
+    html += '<div class="prop-campo"><label>' + col.nome + '</label>' +
+            '<div style="font-size:12px;padding:3px 0">' + escapeHTML(String(val)) + '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+/* =============================================================
+ *  CATÁLOGO (painel direito)
+ * ============================================================= */
+function renderizarCatalogo(filtro) {
+  const container = document.getElementById('catalogoLista');
+  let itens;
+
+  if (filtro === 'horizontal') {
+    itens = (typeof CATALOGO_HORIZONTAL !== 'undefined') ? CATALOGO_HORIZONTAL.map(h => ({ codigo: h.codigo, nome: h.nome, categoria: 'horizontal' })) : [];
+  } else if (filtro === 'dispositivos') {
+    itens = (typeof CATALOGO_DISPOSITIVOS !== 'undefined') ? CATALOGO_DISPOSITIVOS.map(d => ({ codigo: d.codigo, nome: d.nome, categoria: 'dispositivos' })) : [];
+  } else {
+    itens = obterCatalogoResumo();
+    if (filtro) itens = itens.filter(s => s.categoria === filtro);
+  }
+
+  let html = '';
+  for (const s of itens) {
+    let badge = 'badge-i';
+    if (s.categoria === 'regulamentacao') badge = 'badge-r';
+    else if (s.categoria === 'advertencia') badge = 'badge-a';
+    else if (s.categoria === 'servicos') badge = 'badge-s';
+    else if (s.categoria === 'horizontal') badge = 'badge-a';
+    else if (s.categoria === 'dispositivos') badge = 'badge-s';
+    html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-bottom:1px solid var(--borda);font-size:11px;cursor:pointer" ' +
+            'onclick="catalogoClique(\'' + escapeHTML(s.codigo) + '\')" title="Clique para ver detalhes">' +
+            '<span class="badge ' + badge + '">' + escapeHTML(s.codigo) + '</span>' +
+            '<span style="color:var(--texto-sec)">' + escapeHTML(s.nome) + '</span></div>';
+  }
+  container.innerHTML = html || '<div style="padding:10px;color:var(--texto-dim);font-size:11px">Nenhum item encontrado.</div>';
+}
+
+function filtrarCatalogo() {
+  const filtro = document.getElementById('catalogoFiltro').value;
+  renderizarCatalogo(filtro || null);
+}
+
+function catalogoClique(codigo) {
+  /* Mostrar detalhes no painel de propriedades */
+  let info = null;
+  if (typeof CATALOGO_SINAIS !== 'undefined') info = CATALOGO_SINAIS.find(s => s.codigo === codigo);
+  if (!info && typeof CATALOGO_HORIZONTAL !== 'undefined') info = CATALOGO_HORIZONTAL.find(s => s.codigo === codigo);
+  if (!info && typeof CATALOGO_DISPOSITIVOS !== 'undefined') info = CATALOGO_DISPOSITIVOS.find(s => s.codigo === codigo);
+  if (!info) return;
+
+  const container = document.getElementById('propConteudo');
+  let html = '<div class="prop-info" style="color:var(--amarelo);font-size:13px;font-weight:600">' +
+    escapeHTML(info.codigo) + ' — ' + escapeHTML(info.nome) + '</div>';
+  if (info.descricao) html += '<div class="prop-campo"><label>Descrição</label><div style="font-size:11px;line-height:1.5">' + escapeHTML(info.descricao) + '</div></div>';
+  if (info.categoria) html += '<div class="prop-campo"><label>Categoria</label><div style="font-size:12px">' + info.categoria + '</div></div>';
+  if (info.forma) html += '<div class="prop-campo"><label>Forma</label><div style="font-size:12px">' + info.forma + '</div></div>';
+  if (info.dimensoes) {
+    html += '<div class="prop-campo"><label>Dimensões</label><div style="font-size:11px">';
+    if (typeof info.dimensoes === 'object') {
+      for (const [classe, dims] of Object.entries(info.dimensoes)) {
+        html += '<div>' + classe + ': ' + JSON.stringify(dims) + '</div>';
+      }
+    } else {
+      html += info.dimensoes;
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+/* =============================================================
+ *  AÇÕES DO PROJETO
+ * ============================================================= */
+async function acaoNovoProjeto() {
+  ESTADO.projeto = {
+    nome: '', lote: '', br: '', uf: '', kmInicio: '', kmFim: '',
+    contratada: '', contrato: '', dataInicio: '', rt: '',
+  };
+  document.getElementById('projNome').value = '';
+  document.getElementById('projLote').value = '';
+  document.getElementById('projBR').value = '';
+  document.getElementById('projUF').value = '';
+  document.getElementById('projKmIni').value = '';
+  document.getElementById('projKmFim').value = '';
+  document.getElementById('projContratada').value = '';
+  document.getElementById('projContrato').value = '';
+  document.getElementById('projDataIni').value = '';
+  document.getElementById('projRT').value = '';
+
+  ESTADO.dados = {};
+  ESTADO.sinaisColocados = [];
+  ESTADO.rodovia = null;
+  ESTADO.pontos = [];
+
+  mostrarTela('dados');
+  atualizarStatus('Novo projeto — preencha os dados e salve.');
+}
+
+async function acaoAbrirProjeto() {
+  /* Electron: usa API do preload — recebe dados completos do main process */
+  if (window.api && window.api.abrirProjeto) {
+    const res = await window.api.abrirProjeto();
+    if (res && res.ok) {
+      carregarProjetoJSON(res);
+      const nome = res.meta?.nome || res.meta?.br || res.caminho || 'Projeto';
+      atualizarStatus('Projeto aberto: ' + nome);
+      toast('Projeto carregado: ' + nome, 'sucesso');
+    } else if (res && res.motivo && res.motivo !== 'cancelado') {
+      toast('Erro ao abrir: ' + res.motivo, 'erro');
+    }
+    return;
+  }
+
+  /* Standalone: file input */
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,.brlegal2.json';
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const dados = JSON.parse(e.target.result);
+        carregarProjetoJSON(dados);
+        atualizarStatus('Projeto aberto: ' + file.name);
+      } catch (err) {
+        toast('Erro ao abrir projeto: ' + err.message, 'erro');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function carregarProjetoJSON(dados) {
+  if (dados.meta) {
+    ESTADO.projeto = dados.meta;
+    preencherDadosProjeto(dados.meta);
+  } else if (dados.projeto) {
+    ESTADO.projeto = dados.projeto;
+    preencherDadosProjeto(dados.projeto);
+  }
+  if (dados.dados) ESTADO.dados = dados.dados;
+  if (dados.sinaisColocados) {
+    ESTADO.sinaisColocados = dados.sinaisColocados;
+    ESTADO.nextId = Math.max(...dados.sinaisColocados.map(s => s.id || 0), 0) + 1;
+  }
+  if (dados.rodovia) {
+    carregarSNV(dados.rodovia, 'projeto');
+  }
+
+  mostrarTela('dados');
+  atualizarContadorSinais();
+}
+
+async function acaoSalvar() {
+  if (!ESTADO.projeto) {
+    atualizarStatus('Nenhum projeto aberto para salvar.');
+    return;
+  }
+  salvarDadosProjeto();
+}
+
+function salvarDadosProjeto() {
+  ESTADO.projeto = {
+    nome: document.getElementById('projNome').value,
+    lote: document.getElementById('projLote').value,
+    br: document.getElementById('projBR').value,
+    uf: document.getElementById('projUF').value,
+    kmInicio: document.getElementById('projKmIni').value,
+    kmFim: document.getElementById('projKmFim').value,
+    contratada: document.getElementById('projContratada').value,
+    contrato: document.getElementById('projContrato').value,
+    dataInicio: document.getElementById('projDataIni').value,
+    rt: document.getElementById('projRT').value,
+  };
+
+  const sub = ESTADO.projeto.br
+    ? ESTADO.projeto.br + ' — ' + (ESTADO.projeto.uf || '') + ' | Lote ' + (ESTADO.projeto.lote || '?')
+    : 'Projeto de Sinalização Rodoviária';
+  document.getElementById('headerSubtitulo').textContent = sub;
+
+  document.getElementById('statusProjeto').style.display = 'flex';
+  document.getElementById('statusNomeProjeto').textContent =
+    ESTADO.projeto.nome || ESTADO.projeto.br || '(sem nome)';
+
+  atualizarStatus('Dados do projeto salvos.');
+  toast('Projeto salvo!', 'sucesso');
+
+  /* Registrar nos recentes */
+  salvarProjetoRecente();
+  renderizarRecentes();
+
+  /* Electron: salva via IPC */
+  if (window.api && window.api.salvarProjeto) {
+    window.api.salvarProjeto({
+      meta: ESTADO.projeto,
+      dados: ESTADO.dados,
+      sinaisColocados: ESTADO.sinaisColocados,
+      rodovia: ESTADO.rodovia,
+    });
+  }
+}
+
+function preencherDadosProjeto(meta) {
+  document.getElementById('projNome').value = meta.nome || '';
+  document.getElementById('projLote').value = meta.lote || '';
+  document.getElementById('projBR').value = meta.br || '';
+  document.getElementById('projUF').value = meta.uf || '';
+  document.getElementById('projKmIni').value = meta.kmInicio || '';
+  document.getElementById('projKmFim').value = meta.kmFim || '';
+  document.getElementById('projContratada').value = meta.contratada || '';
+  document.getElementById('projContrato').value = meta.contrato || '';
+  document.getElementById('projDataIni').value = meta.dataInicio || '';
+  document.getElementById('projRT').value = meta.rt || '';
+}
+
+/* =============================================================
+ *  UTILITÁRIOS
+ * ============================================================= */
+function escapeHTML(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function atualizarStatus(texto) {
+  document.getElementById('statusTexto').textContent = texto;
+}
+
+function formatarKM(km) {
+  const inteiro = Math.floor(km);
+  const frac = Math.round((km - inteiro) * 10);
+  return String(inteiro).padStart(3, '0') + '+' + frac + '00';
+}
+
+function toast(msg, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast visivel' + (tipo ? ' ' + tipo : '');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('visivel'), 3000);
+}
+
+function baixarTexto(conteudo, nomeArquivo, mimeType) {
+  /* Electron: usa diálogo nativo para salvar */
+  if (window.api && window.api.exportarArquivo) {
+    const ext = nomeArquivo.split('.').pop() || 'txt';
+    const filtros = [{ name: ext.toUpperCase(), extensions: [ext] }];
+    window.api.exportarArquivo({
+      titulo: 'Salvar — ' + nomeArquivo,
+      nomeDefault: nomeArquivo,
+      filtros,
+      conteudo,
+    }).then(res => {
+      if (res && res.ok) toast('Arquivo salvo: ' + res.caminho, 'sucesso');
+    });
+    return;
+  }
+  /* Standalone: download via blob */
+  const blob = new Blob([conteudo], { type: mimeType + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeArquivo;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+/* =============================================================
+ *  DESFAZER / REFAZER
+ *  Salva snapshots da lista de sinais colocados. Limitado a 50 passos.
+ * ============================================================= */
+function salvarSnapshot() {
+  ESTADO._undoStack.push(JSON.stringify(ESTADO.sinaisColocados));
+  if (ESTADO._undoStack.length > 50) ESTADO._undoStack.shift();
+  ESTADO._redoStack = []; /* limpa redo ao fazer nova ação */
+}
+
+function desfazer() {
+  if (ESTADO._undoStack.length === 0) { toast('Nada para desfazer.', 'erro'); return; }
+  ESTADO._redoStack.push(JSON.stringify(ESTADO.sinaisColocados));
+  const snapshot = ESTADO._undoStack.pop();
+  ESTADO.sinaisColocados = JSON.parse(snapshot);
+  ESTADO.nextId = Math.max(...ESTADO.sinaisColocados.map(s => s.id || 0), 0) + 1;
+  ESTADO.sinalSelecionado = -1;
+  if (ESTADO.telaAtual === 'planta') desenharPlanta();
+  atualizarContadorSinais();
+  toast('Desfeito.', 'sucesso');
+}
+
+function refazer() {
+  if (ESTADO._redoStack.length === 0) { toast('Nada para refazer.', 'erro'); return; }
+  ESTADO._undoStack.push(JSON.stringify(ESTADO.sinaisColocados));
+  const snapshot = ESTADO._redoStack.pop();
+  ESTADO.sinaisColocados = JSON.parse(snapshot);
+  ESTADO.nextId = Math.max(...ESTADO.sinaisColocados.map(s => s.id || 0), 0) + 1;
+  ESTADO.sinalSelecionado = -1;
+  if (ESTADO.telaAtual === 'planta') desenharPlanta();
+  atualizarContadorSinais();
+  toast('Refeito.', 'sucesso');
+}
+
+/* =============================================================
+ *  VOLUME I — Memorial de Estudos Preliminares
+ * ============================================================= */
+const VOL1_SECOES = {
+  introducao: '1. INTRODUÇÃO\n\nO presente memorial de estudos preliminares tem por objetivo apresentar as ' +
+    'análises e levantamentos realizados para o projeto de sinalização rodoviária da rodovia {BR}/{UF}, ' +
+    'conforme as diretrizes do Programa BR-LEGAL 2 do DNIT.\n\n',
+  objetivo: '2. OBJETIVO\n\nO objetivo deste projeto é a elaboração do projeto executivo de sinalização ' +
+    'vertical, horizontal e dispositivos de segurança do trecho compreendido entre o KM {KI} e o KM {KF} ' +
+    'da rodovia {BR}/{UF}, visando a melhoria das condições de segurança viária.\n\n',
+  diagnostico: '3. DIAGNÓSTICO DA SITUAÇÃO ATUAL\n\n3.1 Características Físicas\n' +
+    'A rodovia apresenta pista {PISTA} com {FAIXAS} faixas de rolamento.\n\n' +
+    '3.2 Sinalização Existente\nFoi realizado levantamento da sinalização existente, ' +
+    'verificando-se o estado de conservação e a adequação aos padrões do CONTRAN.\n\n' +
+    '3.3 Dados de Tráfego\nOs volumes de tráfego foram obtidos a partir dos postos de contagem do DNIT.\n\n',
+  criterios: '4. CRITÉRIOS DE PROJETO\n\nO projeto foi elaborado com base nas seguintes referências normativas:\n' +
+    '- Manual de Sinalização Rodoviária do DNIT (3ª edição)\n' +
+    '- Código de Trânsito Brasileiro (Lei 9.503/1997)\n' +
+    '- Resoluções do CONTRAN aplicáveis\n' +
+    '- Manual de Projeto Geométrico de Rodovias Rurais (DNER, 1999)\n' +
+    '- Instruções de Projeto e Procedimentos do Programa BR-LEGAL 2\n\n',
+  conclusao: '5. CONCLUSÃO\n\nCom base nos estudos e levantamentos realizados, o projeto de sinalização ' +
+    'proposto atende às normas vigentes e visa garantir a segurança e a fluidez do tráfego no trecho.\n\n',
+};
+
+function vol1InserirSecao(chave) {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea) return;
+  let texto = VOL1_SECOES[chave] || '';
+  /* Substituir variáveis do projeto */
+  const p = ESTADO.projeto || {};
+  const r = ESTADO.rodovia || {};
+  texto = texto
+    .replace(/\{BR\}/g, p.br || r.br || 'XXX')
+    .replace(/\{UF\}/g, p.uf || r.uf || 'XX')
+    .replace(/\{KI\}/g, p.kmInicio || '0')
+    .replace(/\{KF\}/g, p.kmFim || '0')
+    .replace(/\{PISTA\}/g, p.pista || 'simples')
+    .replace(/\{FAIXAS\}/g, p.faixas || '2');
+  /* Inserir na posição do cursor ou ao final */
+  const pos = textarea.selectionStart;
+  const antes = textarea.value.substring(0, pos);
+  const depois = textarea.value.substring(pos);
+  textarea.value = antes + texto + depois;
+  textarea.selectionStart = textarea.selectionEnd = pos + texto.length;
+  textarea.focus();
+  vol1Salvar();
+}
+
+function vol1Salvar() {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea) return;
+  if (!ESTADO.dados) ESTADO.dados = {};
+  ESTADO.dados._vol1Memorial = textarea.value;
+}
+
+function vol1Carregar() {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea) return;
+  textarea.value = (ESTADO.dados && ESTADO.dados._vol1Memorial) || '';
+}
+
+async function vol1ExportarPDF() {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea || !textarea.value.trim()) {
+    toast('O memorial está vazio.', 'erro');
+    return;
+  }
+  /* Se Electron, usar exportar PDF via IPC */
+  if (window.api && window.api.exportarPDF) {
+    const html = '<html><head><meta charset="utf-8"><style>' +
+      'body{font-family:Calibri,sans-serif;font-size:12pt;line-height:1.6;margin:2cm;white-space:pre-wrap}' +
+      '</style></head><body>' + escapeHTML(textarea.value) + '</body></html>';
+    const res = await window.api.exportarPDF({ html });
+    if (res && res.ok) toast('PDF exportado: ' + res.caminho, 'sucesso');
+    else if (res && res.motivo !== 'cancelado') toast('Erro: ' + res.motivo, 'erro');
+  } else {
+    /* Fallback: baixar como TXT */
+    const p = ESTADO.projeto || {};
+    const nome = (p.nome || 'memorial').replace(/\s+/g, '-') + '-vol1.txt';
+    baixarTexto(textarea.value, nome, 'text/plain');
+  }
+}
+
+/* =============================================================
+ *  PROJETOS RECENTES — persistência via localStorage
+ * ============================================================= */
+const RECENTES_KEY = 'brlegal2-recentes';
+const MAX_RECENTES = 10;
+
+function salvarProjetoRecente() {
+  const p = ESTADO.projeto;
+  if (!p || !p.nome) return;
+  const recentes = carregarRecentes();
+  /* Remover duplicata (mesmo nome) */
+  const idx = recentes.findIndex(r => r.nome === p.nome);
+  if (idx >= 0) recentes.splice(idx, 1);
+  /* Inserir no início */
+  recentes.unshift({
+    nome: p.nome,
+    br: p.br || '',
+    uf: p.uf || '',
+    lote: p.lote || '',
+    data: new Date().toISOString(),
+  });
+  /* Limitar */
+  while (recentes.length > MAX_RECENTES) recentes.pop();
+  try { localStorage.setItem(RECENTES_KEY, JSON.stringify(recentes)); } catch (e) { /* ok */ }
+}
+
+function carregarRecentes() {
+  try {
+    const json = localStorage.getItem(RECENTES_KEY);
+    return json ? JSON.parse(json) : [];
+  } catch (e) { return []; }
+}
+
+function renderizarRecentes() {
+  const container = document.getElementById('listaRecentes');
+  if (!container) return;
+  const recentes = carregarRecentes();
+
+  if (recentes.length === 0) {
+    container.innerHTML = '<h3>Projetos Recentes</h3>' +
+      '<div class="recente-item" style="color:var(--texto-dim); cursor:default">Nenhum projeto recente.</div>';
+    return;
+  }
+
+  let html = '<h3>Projetos Recentes</h3>';
+  for (const r of recentes) {
+    const dt = r.data ? new Date(r.data) : null;
+    const dataStr = dt ? dt.toLocaleDateString('pt-BR') : '';
+    html += '<div class="recente-item" style="padding:8px 12px; border:1px solid var(--borda); ' +
+      'border-radius:var(--radius); margin-bottom:6px; cursor:pointer; display:flex; ' +
+      'align-items:center; gap:10px; transition:background .12s" ' +
+      'onmouseenter="this.style.background=\'var(--bg-card-hover)\'" ' +
+      'onmouseleave="this.style.background=\'transparent\'" ' +
+      'onclick="restaurarRecente(\'' + escapeHTML(r.nome.replace(/'/g, "\\'")) + '\')">' +
+      '<span style="font-size:18px">&#128194;</span>' +
+      '<div style="flex:1">' +
+      '<div style="font-weight:600; font-size:13px">' + escapeHTML(r.nome) + '</div>' +
+      '<div style="font-size:11px; color:var(--texto-dim)">' +
+      (r.br ? 'BR-' + r.br + '/' + r.uf : '') +
+      (r.lote ? ' • Lote ' + r.lote : '') +
+      '</div></div>' +
+      '<span style="font-size:11px; color:var(--texto-dim)">' + dataStr + '</span>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function restaurarRecente(nome) {
+  /* No Electron, abrir projeto salvo; sem Electron, apenas preenche o nome */
+  if (window.api && window.api.abrirProjeto) {
+    toast('Use Arquivo → Abrir para carregar o projeto.', 'sucesso');
+  } else {
+    document.getElementById('projNome').value = nome;
+    mostrarTela('dados');
+    toast('Preencha os dados do projeto "' + nome + '".', 'sucesso');
+  }
+}
+
+/* =============================================================
+ *  TECLADO — atalhos globais
+ * ============================================================= */
+document.addEventListener('keydown', (e) => {
+  /* Ctrl+Z: desfazer */
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    desfazer();
+    return;
+  }
+  /* Ctrl+Y ou Ctrl+Shift+Z: refazer */
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault();
+    refazer();
+    return;
+  }
+  /* Ctrl+S: salvar */
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    acaoSalvar();
+    return;
+  }
+  /* Delete: remover sinal selecionado na planta */
+  if ((e.key === 'Delete' || e.key === 'Backspace') && ESTADO.telaAtual === 'planta' && ESTADO.sinalSelecionado >= 0) {
+    e.preventDefault();
+    removerSinal(ESTADO.sinalSelecionado);
+  }
+  /* Escape: fechar modal */
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay:not(.oculto)').forEach(m => m.classList.add('oculto'));
+  }
+  /* Atalhos de ferramenta: V, H, D, S, M — só quando o foco não está em input */
+  if (ESTADO.telaAtual === 'planta' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    if (e.key === 'v' || e.key === 'V') { selecionarFerramenta('vertical'); e.preventDefault(); }
+    if (e.key === 'h' || e.key === 'H') { selecionarFerramenta('horizontal'); e.preventDefault(); }
+    if (e.key === 'd' || e.key === 'D') { selecionarFerramenta('dispositivo'); e.preventDefault(); }
+    if (e.key === 's' || e.key === 'S') { selecionarFerramenta('selecao'); e.preventDefault(); }
+    if (e.key === 'm' || e.key === 'M') { selecionarFerramenta('mover'); e.preventDefault(); }
+    if (e.key === 'r' || e.key === 'R') { selecionarFerramenta('medir'); e.preventDefault(); }
+  }
+});
+
+/* =============================================================
+ *  INTEGRAÇÃO ELECTRON — ações do menu nativo
+ * ============================================================= */
+function inicializarElectron() {
+  if (!window.api || !window.api.onEvento) return;
+
+  window.api.onEvento('menu-acao', (acao) => {
+    switch (acao) {
+      case 'novoProjeto':     acaoNovoProjeto(); break;
+      case 'abrirProjeto':    acaoAbrirProjeto(); break;
+      case 'salvar':          acaoSalvar(); break;
+      case 'salvarComo':      acaoSalvarComo(); break;
+      case 'importarSNV':     acaoImportarSNVElectron(); break;
+      case 'exportarJSON':    exportarJSON(); break;
+      case 'exportarCSV':     exportarCSV(); break;
+      case 'exportarDXF':     exportarDXF(); break;
+      case 'exportarPDF':     acaoExportarPDFElectron(); break;
+      case 'irPlanta':        mostrarTela('planta'); break;
+      case 'irQuantitativos': mostrarTela('quantitativos'); break;
+      case 'irMemorial':      mostrarTela('memorial'); break;
+      case 'desfazer':        desfazer(); break;
+      case 'refazer':         refazer(); break;
+    }
+  });
+
+  window.api.onEvento('projeto-salvo', (caminho) => {
+    toast('Projeto salvo: ' + caminho, 'sucesso');
+  });
+}
+
+/** Importar SNV via diálogo nativo do Electron */
+async function acaoImportarSNVElectron() {
+  if (!window.api) return;
+  const res = await window.api.importarSNV({});
+  if (res && res.ok && res.rodovia) {
+    carregarSNV(res.rodovia, res.nomeArquivo || 'SNV');
+    toast('Rodovia importada: ' + (res.nomeArquivo || ''), 'sucesso');
+  } else if (res && res.motivo && res.motivo !== 'cancelado') {
+    toast('Erro na importação: ' + res.motivo, 'erro');
+  }
+}
+
+/** Salvar como via Electron */
+async function acaoSalvarComo() {
+  if (!ESTADO.projeto) {
+    toast('Nenhum projeto aberto para salvar.', 'erro');
+    return;
+  }
+  salvarDadosProjeto(); /* atualiza ESTADO.projeto */
+  if (window.api && window.api.salvarProjetoComo) {
+    const res = await window.api.salvarProjetoComo({
+      meta: ESTADO.projeto,
+      dados: ESTADO.dados,
+      sinaisColocados: ESTADO.sinaisColocados,
+      rodovia: ESTADO.rodovia,
+    });
+    if (res && res.ok) {
+      toast('Projeto salvo em: ' + res.caminho, 'sucesso');
+    }
+  } else {
+    /* Fallback standalone — usa exportarJSON */
+    exportarJSON();
+  }
+}
+
+/** Exportar PDF via Electron (printToPDF) */
+async function acaoExportarPDFElectron() {
+  if (!window.api || !window.api.exportarPDF) {
+    toast('Exportação PDF disponível apenas no Electron.', 'erro');
+    return;
+  }
+  const p = ESTADO.projeto || {};
+  const res = await window.api.exportarPDF({
+    nome: (p.nome || p.br || 'BR-Legal-2').replace(/\s+/g, '-'),
+    paisagem: true,
+    tamanho: 'A3',
+  });
+  if (res && res.ok) {
+    toast('PDF exportado: ' + res.caminho, 'sucesso');
+  } else if (res && res.motivo && res.motivo !== 'cancelado') {
+    toast('Erro ao exportar PDF: ' + res.motivo, 'erro');
+  }
+}
+
+/* =============================================================
+ *  BOOT — inicialização
+ * ============================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  /* Preencher UFs no select */
+  const selUF = document.getElementById('projUF');
+  for (const uf of LISTA_UFS) {
+    const opt = document.createElement('option');
+    opt.value = uf;
+    opt.textContent = uf;
+    selUF.appendChild(opt);
+  }
+
+  /* Preencher árvore do Volume II a partir dos esquemas */
+  const treeVol2 = document.getElementById('treeVolII');
+  const chaves = Object.keys(ESQUEMAS);
+  for (const chave of chaves) {
+    const esq = ESQUEMAS[chave];
+    const div = document.createElement('div');
+    div.className = 'tree-item nivel-2';
+    div.dataset.tela = chave;
+    div.onclick = function() { navegar(this); };
+    div.innerHTML = '<span class="icone">&#128203;</span> ' + esq.id + '. ' + esq.titulo;
+    treeVol2.appendChild(div);
+  }
+
+  /* Catálogo inicial */
+  renderizarCatalogo(null);
+
+  /* Integração Electron */
+  inicializarElectron();
+
+  /* Mostrar botão de banco SNV quando no Electron */
+  if (window.api && window.api.listarSNV) {
+    const btn = document.getElementById('btnListarSNV');
+    if (btn) btn.style.display = '';
+  }
+
+  /* Projetos recentes */
+  renderizarRecentes();
+
+  /* Status */
+  atualizarStatus('Pronto — crie ou abra um projeto para começar.');
+});
+</script>
+
+</body>
+</html>
