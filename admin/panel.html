@@ -723,7 +723,10 @@ async function saveNickname(el){
     await api('/api/admin/devices/'+encodeURIComponent(did)+'/nickname', {
       method:'PATCH', body:JSON.stringify({nickname:nick})
     });
-  } catch(e){ toast('Erro ao salvar nome: '+e.message,'error'); }
+    /* Feedback visual: borda verde por 1s confirmando que salvou */
+    el.style.borderColor = 'var(--green)';
+    setTimeout(()=>{ el.style.borderColor = ''; }, 1200);
+  } catch(e){ toast('Erro ao salvar nome: '+e.message,'error'); el.style.borderColor='var(--red)'; }
 }
 
 $('#dev-filter-plat').onchange = renderDevices;
