@@ -1015,8 +1015,9 @@ button {
     <div class="tela" id="tela-importar-snv">
       <h2 style="color:var(--amarelo); margin-bottom:4px">Importar Rodovia</h2>
       <p style="font-size:12px; color:var(--texto-sec); margin-bottom:20px">
-        Carregue a geometria da rodovia a partir de um arquivo. Formatos aceitos:
-        <strong>JSON</strong> (SNV/DNIT), <strong>KMZ/KML</strong> (Google Earth) e <strong>CSV</strong> (planilha com coordenadas).
+        Carregue a geometria da rodovia ou dados de OAEs. Formatos aceitos:
+        <strong>JSON</strong> (SNV/DNIT), <strong>KMZ/KML</strong> (Google Earth),
+        <strong>CSV</strong> (coordenadas ou cadastro de OAEs/pontes).
       </p>
       <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px">
         <div class="export-card" onclick="document.getElementById('inputSNV').click()" style="min-width:200px">
@@ -2509,12 +2510,18 @@ function importarArquivoSNV(input) {
     };
     reader.readAsText(file);
   } else if (nome.endsWith('.csv')) {
-    /* CSV com colunas de coordenadas */
+    /* CSV — pode ser coordenadas de rodovia OU tabela de OAEs */
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const json = parsarCSV(e.target.result, file.name);
-        carregarSNV(json, file.name);
+        const resultado = parsarCSV(e.target.result, file.name);
+        if (resultado._tipo === 'oae') {
+          /* CSV de OAEs → importar na planilha cadastroOAE */
+          importarOAEsCSV(resultado);
+        } else {
+          /* CSV de coordenadas → importar como geometria */
+          carregarSNV(resultado, file.name);
+        }
       } catch (err) {
         toast('Erro ao ler CSV: ' + err.message, 'erro');
         atualizarStatus('Erro na importação.');
@@ -2577,7 +2584,7 @@ async function parsarKMZ(arrayBuffer, nomeArquivo) {
       } else if (compressao === 8) {
         /* Deflate — usar DecompressionStream nativo */
         try {
-          const ds = new DecompressionStream('raw');
+          const ds = new DecompressionStream('deflate-raw');
           const writer = ds.writable.getWriter();
           writer.write(dadosComp);
           writer.close();
@@ -2609,31 +2616,91 @@ async function parsarKMZ(arrayBuffer, nomeArquivo) {
 
 /**
  * Extrai coordenadas de um arquivo KML (Google Earth).
- * Procura tags <coordinates> dentro de <Placemark>/<LineString>.
+ * Suporta dois modos:
+ *   1) KMLs com LineString/MultiGeometry → geometria contínua
+ *   2) KMLs com Placemarks de Point nomeados "Km NNN,NN" → pontos com KM real
  * Retorna no formato SNV: {segments: [{ki, kf, c: [[lon,lat],...]}]}
+ *
+ * Usa getElementsByTagName (ignora namespace) em vez de querySelectorAll
+ * porque KML usa namespace padrão que querySelectorAll não resolve.
  */
 function parsarKML(textoKML, nomeArquivo) {
   const parser = new DOMParser();
   const xml = parser.parseFromString(textoKML, 'text/xml');
 
   /* Verificar erro de parsing */
-  const erroXML = xml.querySelector('parsererror');
-  if (erroXML) throw new Error('KML inválido — erro de XML.');
+  if (xml.getElementsByTagName('parsererror').length > 0) {
+    throw new Error('KML inválido — erro de XML.');
+  }
 
-  /* Coletar todas as coordenadas de LineString e LinearRing */
-  const coordsTags = xml.querySelectorAll('coordinates');
-  if (coordsTags.length === 0) throw new Error('KML sem coordenadas — verifique o arquivo.');
+  /* ---- Estratégia 1: extrair pontos com KM do nome dos Placemarks ---- */
+  const pontosKM = [];
+  const placemarks = xml.getElementsByTagName('Placemark');
 
+  for (const pm of placemarks) {
+    const nomes = pm.getElementsByTagName('name');
+    const nome = nomes.length > 0 ? nomes[0].textContent.trim() : '';
+
+    /* Aceita "Km 244,72", "KM 300.5", "km244,72" etc. */
+    const matchKM = nome.match(/km\s*(\d+[.,]\d+|\d+)/i);
+    if (!matchKM) continue;
+
+    const pts = pm.getElementsByTagName('Point');
+    if (pts.length === 0) continue;
+
+    const coordTag = pts[0].getElementsByTagName('coordinates');
+    if (coordTag.length === 0) continue;
+
+    const partes = coordTag[0].textContent.trim().split(',');
+    const lon = parseFloat(partes[0]);
+    const lat = parseFloat(partes[1]);
+    if (isNaN(lon) || isNaN(lat)) continue;
+
+    const km = parseFloat(matchKM[1].replace(',', '.'));
+    pontosKM.push({ km, lon, lat });
+  }
+
+  /* Se achou pontos com KM no nome, usar eles (melhor precisão) */
+  if (pontosKM.length >= 2) {
+    /* Ordenar por KM */
+    pontosKM.sort((a, b) => a.km - b.km);
+
+    const coords = pontosKM.map(p => [p.lon, p.lat]);
+    const kmInicio = pontosKM[0].km;
+    const kmFim = pontosKM[pontosKM.length - 1].km;
+
+    const segmentos = [{ ki: kmInicio, kf: kmFim, c: coords }];
+
+    /* Extrair BR/UF */
+    const docNomes = xml.getElementsByTagName('name');
+    const nomeDoc = docNomes.length > 0 ? docNomes[0].textContent.trim() : '';
+    const matchBR = nomeDoc.match(/BR[- _]?(\d{3})/i) || nomeArquivo.match(/BR[- _]?(\d{3})/i);
+    const matchUF = nomeDoc.match(/\b([A-Z]{2})\b/) || nomeArquivo.match(/\b([A-Z]{2})\b/);
+
+    return {
+      br: matchBR ? matchBR[1] : '',
+      uf: matchUF ? matchUF[1] : '',
+      snv: 'kml',
+      updated: 'importado de ' + nomeArquivo,
+      km: kmFim - kmInicio,
+      segments: segmentos,
+    };
+  }
+
+  /* ---- Estratégia 2: extrair LineStrings (geometria contínua) ---- */
+  const lineStrings = xml.getElementsByTagName('LineString');
   const segmentos = [];
   let kmAcumulado = 0;
 
-  for (const tag of coordsTags) {
-    const texto = tag.textContent.trim();
+  for (const ls of lineStrings) {
+    const coordTags = ls.getElementsByTagName('coordinates');
+    if (coordTags.length === 0) continue;
+
+    const texto = coordTags[0].textContent.trim();
     if (!texto) continue;
 
-    /* Formato KML: "lon,lat,alt lon,lat,alt ..." separado por espaço/newline */
     const pares = texto.split(/\s+/).filter(s => s.includes(','));
-    if (pares.length < 2) continue; /* Precisa de pelo menos 2 pontos para uma linha */
+    if (pares.length < 2) continue;
 
     const coords = [];
     for (const par of pares) {
@@ -2645,28 +2712,47 @@ function parsarKML(textoKML, nomeArquivo) {
 
     if (coords.length < 2) continue;
 
-    /* Calcular extensão do segmento em km */
     let distSeg = 0;
     for (let i = 1; i < coords.length; i++) {
       distSeg += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]);
     }
     const kmSeg = distSeg / 1000;
 
-    segmentos.push({
-      ki: kmAcumulado,
-      kf: kmAcumulado + kmSeg,
-      c: coords,
-    });
+    segmentos.push({ ki: kmAcumulado, kf: kmAcumulado + kmSeg, c: coords });
     kmAcumulado += kmSeg;
   }
 
-  if (segmentos.length === 0) throw new Error('KML sem linhas válidas (apenas pontos?).');
+  /* ---- Estratégia 3: pontos sem KM no nome (coordenadas soltas) ---- */
+  if (segmentos.length === 0) {
+    const todosCoords = xml.getElementsByTagName('coordinates');
+    const coords = [];
 
-  /* Tentar extrair nome da rodovia do KML */
-  const nomeTag = xml.querySelector('Document > name, Folder > name, Placemark > name');
-  const nomeKML = nomeTag ? nomeTag.textContent.trim() : '';
-  const matchBR = nomeKML.match(/BR[- ]?(\d{3})/i) || nomeArquivo.match(/BR[- ]?(\d{3})/i);
-  const matchUF = nomeKML.match(/\b([A-Z]{2})\b/) || nomeArquivo.match(/([A-Z]{2})/);
+    for (const tag of todosCoords) {
+      const texto = tag.textContent.trim();
+      const pares = texto.split(/\s+/).filter(s => s.includes(','));
+      for (const par of pares) {
+        const partes = par.split(',');
+        const lon = parseFloat(partes[0]);
+        const lat = parseFloat(partes[1]);
+        if (!isNaN(lon) && !isNaN(lat)) coords.push([lon, lat]);
+      }
+    }
+
+    if (coords.length < 2) throw new Error('KML sem coordenadas válidas — verifique o arquivo.');
+
+    let distTotal = 0;
+    for (let i = 1; i < coords.length; i++) {
+      distTotal += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]);
+    }
+    kmAcumulado = distTotal / 1000;
+    segmentos.push({ ki: 0, kf: kmAcumulado, c: coords });
+  }
+
+  /* Extrair nome da rodovia do KML */
+  const docNomes = xml.getElementsByTagName('name');
+  const nomeDoc = docNomes.length > 0 ? docNomes[0].textContent.trim() : '';
+  const matchBR = nomeDoc.match(/BR[- _]?(\d{3})/i) || nomeArquivo.match(/BR[- _]?(\d{3})/i);
+  const matchUF = nomeDoc.match(/\b([A-Z]{2})\b/) || nomeArquivo.match(/\b([A-Z]{2})\b/);
 
   return {
     br: matchBR ? matchBR[1] : '',
@@ -2679,11 +2765,19 @@ function parsarKML(textoKML, nomeArquivo) {
 }
 
 /**
- * Importa rodovia de um arquivo CSV.
- * Detecta automaticamente separador (;,\t) e colunas de lat/lon/km.
- * Aceita colunas: latitude/lat/y, longitude/lon/lng/x, km/estaca/estaqueamento
+ * Importa dados de um arquivo CSV.
+ * Detecta automaticamente o tipo:
+ *   A) CSV de coordenadas (lat/lon) → retorna formato SNV p/ geometria
+ *   B) CSV de OAEs/pontes (Rodovia, Km, Nome, Extensão...) → retorna
+ *      registros para a planilha cadastroOAE do Volume II
+ *
+ * Aceita separadores: ; , \t (auto-detectado).
+ * Trata decimais brasileiros (vírgula → ponto) e encoding com BOM.
  */
 function parsarCSV(textoCSV, nomeArquivo) {
+  /* Remover BOM UTF-8 se presente */
+  if (textoCSV.charCodeAt(0) === 0xFEFF) textoCSV = textoCSV.slice(1);
+
   /* Detectar separador */
   const primeiraLinha = textoCSV.split('\n')[0];
   let sep = ',';
@@ -2693,26 +2787,47 @@ function parsarCSV(textoCSV, nomeArquivo) {
   const linhas = textoCSV.trim().split('\n').map(l => l.trim()).filter(l => l);
   if (linhas.length < 2) throw new Error('CSV vazio ou com apenas cabeçalho.');
 
-  /* Parsear cabeçalho — normalizar nomes */
-  const header = linhas[0].split(sep).map(h => h.trim().toLowerCase()
-    .replace(/[""]/g, '').replace(/\s+/g, '')
+  /* Parsear cabeçalho — normalizar nomes (minúsculo, sem acentos, sem aspas) */
+  const headerRaw = linhas[0].split(sep).map(h => h.trim().replace(/[""]/g, ''));
+  const header = headerRaw.map(h => h.toLowerCase()
+    .replace(/\s+/g, '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '') /* remover acentos */
   );
 
-  /* Detectar colunas */
+  /* ---- Detectar tipo de CSV ---- */
+
+  /* Colunas de coordenadas */
   const iLat = header.findIndex(h => /^(lat|latitude|y)$/.test(h));
   const iLon = header.findIndex(h => /^(lon|lng|longitude|long|x)$/.test(h));
-  const iKM = header.findIndex(h => /^(km|quilometro|quilometragem|estaca|estaqueamento|pk)$/.test(h));
 
+  /* Colunas de OAE/ponte — formato DNIT */
+  const iRodovia = header.findIndex(h => /^(rodovia|br|highway)$/.test(h));
+  const iUF = header.findIndex(h => /^(uf|estado|state)$/.test(h));
+  const iKM = header.findIndex(h => /^(km|quilometro|quilometragem|estaca|estaqueamento|pk)$/.test(h));
+  const iNome = header.findIndex(h => /^(nomedaoae|nome|name|identificacao|descricao|denominacao)$/.test(h));
+  const iExt = header.findIndex(h => /^(extensao|extensao\(m\)|comprimento|length|ext)$/.test(h));
+  const iLarg = header.findIndex(h => /^(largura|largura\(m\)|width|larg)$/.test(h));
+  const iMunicipio = header.findIndex(h => /^(municipio|cidade|city|localidade)$/.test(h));
+  const iNumero = header.findIndex(h => /^(n|no|numero|n°|nº|num|seq|item)$/.test(h));
+
+  /* Se tem Rodovia + KM + (Nome ou Extensão) → é tabela de OAEs */
+  const ehOAE = iKM >= 0 && (iNome >= 0 || iExt >= 0) && iLat < 0 && iLon < 0;
+
+  if (ehOAE) {
+    return _parsarCSVComoOAE(linhas, sep, header, headerRaw, nomeArquivo,
+      { iRodovia, iUF, iKM, iNome, iExt, iLarg, iMunicipio, iNumero });
+  }
+
+  /* ---- Modo coordenadas ---- */
   if (iLat < 0 || iLon < 0) {
     throw new Error(
-      'CSV precisa de colunas de latitude e longitude.\n' +
-      'Colunas encontradas: ' + header.join(', ') + '\n' +
-      'Nomes aceitos: lat/latitude/y e lon/longitude/lng/x'
+      'CSV não reconhecido.\n' +
+      'Para geometria: precisa de colunas lat/longitude e lon/longitude.\n' +
+      'Para OAEs: precisa de colunas Km + Nome ou Extensão.\n' +
+      'Colunas encontradas: ' + headerRaw.join(', ')
     );
   }
 
-  /* Parsear dados */
   const coords = [];
   const kms = [];
   let erros = 0;
@@ -2722,8 +2837,6 @@ function parsarCSV(textoCSV, nomeArquivo) {
     const lat = parseFloat(cols[iLat]?.replace(',', '.'));
     const lon = parseFloat(cols[iLon]?.replace(',', '.'));
     if (isNaN(lat) || isNaN(lon)) { erros++; continue; }
-
-    /* Validar coordenadas razoáveis */
     if (Math.abs(lat) > 90 || Math.abs(lon) > 180) { erros++; continue; }
 
     coords.push([lon, lat]);
@@ -2736,24 +2849,16 @@ function parsarCSV(textoCSV, nomeArquivo) {
 
   if (coords.length < 2) {
     throw new Error('CSV precisa de pelo menos 2 pontos válidos. ' +
-      (erros > 0 ? erros + ' linhas ignoradas por coordenadas inválidas.' : ''));
+      (erros > 0 ? erros + ' linhas ignoradas.' : ''));
   }
+  if (erros > 0) toast(erros + ' linhas ignoradas por coordenadas inválidas.', 'erro');
 
-  if (erros > 0) {
-    toast(erros + ' linhas ignoradas por coordenadas inválidas.', 'erro');
-  }
-
-  /* Calcular KMs se não vieram no CSV */
-  let kmInicio = 0;
-  let kmFim = 0;
-
+  let kmInicio = 0, kmFim = 0;
   if (iKM >= 0 && kms.filter(k => k !== null).length > 1) {
-    /* Usar KMs do arquivo */
     const kmsValidos = kms.filter(k => k !== null);
     kmInicio = Math.min(...kmsValidos);
     kmFim = Math.max(...kmsValidos);
   } else {
-    /* Calcular distância acumulada */
     let dist = 0;
     for (let i = 1; i < coords.length; i++) {
       dist += haversine(coords[i-1][0], coords[i-1][1], coords[i][0], coords[i][1]);
@@ -2761,9 +2866,8 @@ function parsarCSV(textoCSV, nomeArquivo) {
     kmFim = dist / 1000;
   }
 
-  /* Tentar extrair BR/UF do nome do arquivo */
-  const matchBR = nomeArquivo.match(/BR[- ]?(\d{3})/i);
-  const matchUF = nomeArquivo.match(/([A-Z]{2})/);
+  const matchBR = nomeArquivo.match(/BR[- _]?(\d{3})/i);
+  const matchUF = nomeArquivo.match(/\b([A-Z]{2})\b/);
 
   return {
     br: matchBR ? matchBR[1] : '',
@@ -2771,12 +2875,90 @@ function parsarCSV(textoCSV, nomeArquivo) {
     snv: 'csv',
     updated: 'importado de ' + nomeArquivo,
     km: kmFim - kmInicio,
-    segments: [{
-      ki: kmInicio,
-      kf: kmFim,
-      c: coords,
-    }],
+    segments: [{ ki: kmInicio, kf: kmFim, c: coords }],
   };
+}
+
+/**
+ * Parser interno: CSV de OAEs (pontes, viadutos, bueiros).
+ * Detecta tipo de OAE pelo nome ("Ponte sobre...", "Viaduto km...", "Pontilhão...").
+ * Retorna objeto com _tipo:'oae' e array de registros prontos para cadastroOAE.
+ */
+function _parsarCSVComoOAE(linhas, sep, header, headerRaw, nomeArquivo, idx) {
+  const registros = [];
+
+  for (let i = 1; i < linhas.length; i++) {
+    const cols = linhas[i].split(sep).map(c => c.trim().replace(/[""]/g, ''));
+    if (cols.length < 2) continue;
+
+    const nome = idx.iNome >= 0 ? cols[idx.iNome] : '';
+    const rodovia = idx.iRodovia >= 0 ? cols[idx.iRodovia] : '';
+    const uf = idx.iUF >= 0 ? cols[idx.iUF] : '';
+    const km = idx.iKM >= 0 ? parseFloat(cols[idx.iKM]?.replace(',', '.')) : NaN;
+    const extensao = idx.iExt >= 0 ? parseFloat(cols[idx.iExt]?.replace(',', '.')) : NaN;
+    const largura = idx.iLarg >= 0 ? parseFloat(cols[idx.iLarg]?.replace(',', '.')) : NaN;
+    const municipio = idx.iMunicipio >= 0 ? cols[idx.iMunicipio] : '';
+
+    /* Detectar tipo de OAE pelo nome */
+    let tipoOAE = '';
+    const nomeLower = nome.toLowerCase();
+    if (/^pont(e|ilh[aã]o)/.test(nomeLower)) tipoOAE = 'Ponte';
+    else if (/^viaduto/.test(nomeLower)) tipoOAE = 'Viaduto';
+    else if (/^passarela/.test(nomeLower)) tipoOAE = 'Passarela';
+    else if (/^t[uú]nel/.test(nomeLower)) tipoOAE = 'Túnel';
+    else if (/^bueiro/.test(nomeLower)) tipoOAE = 'Bueiro';
+    else if (/^galeria/.test(nomeLower)) tipoOAE = 'Galeria';
+    else if (/^passagem\s*inf/i.test(nomeLower)) tipoOAE = 'Passagem inferior';
+    else if (/^passagem\s*sup/i.test(nomeLower)) tipoOAE = 'Passagem superior';
+    else if (nome) tipoOAE = 'Ponte'; /* default se tem nome */
+
+    registros.push({
+      rodovia: rodovia,
+      uf: uf,
+      km: isNaN(km) ? '' : km,
+      tipoOAE: tipoOAE,
+      nome: nome,
+      extensao: isNaN(extensao) ? '' : extensao,
+      largura: isNaN(largura) ? '' : largura,
+      pistasSobre: '',
+      cargaMax: '',
+      alturaLivre: '',
+      conservacao: '',
+      sinalizacao: '',
+      foto: '',
+      observacoes: municipio ? ('Município: ' + municipio) : '',
+    });
+  }
+
+  if (registros.length === 0) throw new Error('CSV sem registros válidos.');
+
+  return {
+    _tipo: 'oae',
+    registros: registros,
+    nomeArquivo: nomeArquivo,
+  };
+}
+
+/**
+ * Importa registros de OAEs do CSV na planilha cadastroOAE.
+ * Abre a tabela automaticamente para o usuário ver os dados importados.
+ */
+function importarOAEsCSV(resultado) {
+  const chave = 'cadastroOAE';
+  if (!ESTADO.dados[chave]) ESTADO.dados[chave] = [];
+
+  const antes = ESTADO.dados[chave].length;
+  for (const reg of resultado.registros) {
+    ESTADO.dados[chave].push(reg);
+  }
+  const depois = ESTADO.dados[chave].length;
+
+  toast(resultado.registros.length + ' OAEs importadas de ' + resultado.nomeArquivo, 'sucesso');
+  atualizarStatus(resultado.registros.length + ' OAEs importadas com sucesso.');
+
+  /* Abrir a tabela de OAEs para mostrar os dados importados */
+  abrirTabela(chave);
+  mostrarTela('tabela');
 }
 
 function carregarSNV(json, nomeArquivo) {
