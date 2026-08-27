@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KM Check — Admin</title>
-<link rel="icon" type="image/svg+xml" href="https://wagnerxm.github.io/kmcheck/admin/favicon.svg">
-<link rel="apple-touch-icon" href="https://wagnerxm.github.io/kmcheck/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/app/admin/favicon.svg">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
 <style>
 /* ── Reset & Tokens ── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -528,8 +528,8 @@ const D2R = Math.PI/180, R_EARTH = 6371000;
 let _snvBases = []; /* arrays planas {br, uf, lat[], lon[], km[]} — mesma estrutura do app */
 let _snvLoading = false, _snvReady = false;
 
-/* Base dos JSONs de rodovia — hospedados no GitHub Pages, não no VPS */
-const SNV_CDN = 'https://wagnerxm.github.io/kmcheck/data/rodovias/';
+/* Base dos JSONs de rodovia — servidos pelo próprio VPS */
+const SNV_CDN = '/app/data/rodovias/';
 
 /* Carrega todos os JSONs de rodovia e monta arrays planas */
 async function loadSnvGeometry(){
