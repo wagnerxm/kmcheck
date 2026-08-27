@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BR-Legal 2 — Projeto de Sinalização</title>
+<style>
+/* =============================================================
+ *  VARIÁVEIS DE TEMA
+ *  Paleta escura com visual técnico/rodoviário
+ * ============================================================= */
+:root {
+  /* Fundos */
+  --bg-app:       #1A1F2B;
+  --bg-sidebar:   #141820;
+  --bg-card:      #222836;
+  --bg-card-hover:#2A3040;
+  --bg-input:     #1E2432;
+  --bg-header:    #161B26;
+
+  /* Bordas */
+  --borda:        #2D3548;
+  --borda-foco:   #E8B818;
+
+  /* Acentos */
+  --amarelo:      #E8B818;   /* demarcação viária */
+  --amarelo-dim:  #A68510;
+  --vermelho:     #E53E3E;   /* regulamentação */
+  --verde:        #38A169;   /* indicação */
+  --azul:         #3182CE;   /* serviços */
+  --azul-claro:   #63B3ED;
+  --laranja:      #DD6B20;
+
+  /* Texto */
+  --texto:        #E2E8F0;
+  --texto-sec:    #A0AEC0;
+  --texto-dim:    #718096;
+
+  /* Tipografia */
+  --fonte:        'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono:         'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+  /* Layout */
+  --sidebar-w:    240px;
+  --propanel-w:   260px;
+  --bottom-h:     44px;
+  --header-h:     42px;
+  --radius:       6px;
+}
+
+/* =============================================================
+ *  RESET + BASE
+ * ============================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--fonte);
+  font-size: 13px;
+  color: var(--texto);
+  background: var(--bg-app);
+  user-select: none;
+  -webkit-user-select: none;
+}
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--texto-dim); }
+
+input, select, textarea, button { font-family: inherit; font-size: inherit; color: inherit; }
+input, select, textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--borda-foco); }
+
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--texto);
+}
+
+/* =============================================================
+ *  LAYOUT — grade principal de 4 painéis
+ * ============================================================= */
+#app {
+  display: grid;
+  height: 100vh;
+  grid-template-columns: var(--sidebar-w) 1fr var(--propanel-w);
+  grid-template-rows: var(--header-h) 1fr var(--bottom-h);
+  grid-template-areas:
+    "header  header  header"
+    "sidebar centro  props"
+    "rodape  rodape  rodape";
+}
+
+/* --- Cabeçalho ------------------------------------------------ */
+#header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--borda);
+  -webkit-app-region: drag;   /* arrastar janela pelo cabeçalho */
+}
+#header .titulo {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .3px;
+  color: var(--amarelo);
+  white-space: nowrap;
+}
+#header .subtitulo {
+  font-size: 12px;
+  color: var(--texto-sec);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#header .acoes {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+.btn-header {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--texto-sec);
+  transition: background .15s, color .15s;
+}
+.btn-header:hover { background: var(--bg-card); color: var(--texto); }
+.btn-header.destaque {
+  background: var(--amarelo);
+  color: #000;
+  font-weight: 600;
+}
+.btn-header.destaque:hover { background: #d4a716; }
+
+/* --- Barra lateral (árvore do projeto) ------------------------ */
+#sidebar {
+  grid-area: sidebar;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--borda);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-titulo {
+  padding: 10px 14px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--texto-dim);
+  font-weight: 700;
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 18px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--texto-sec);
+  transition: background .12s, color .12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-item:hover { background: var(--bg-card); color: var(--texto); }
+.tree-item.ativo { background: var(--bg-card); color: var(--amarelo); font-weight: 600; }
+.tree-item .icone { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+.tree-item.nivel-2 { padding-left: 34px; }
+.tree-item.nivel-3 { padding-left: 50px; font-size: 11px; }
+.tree-grupo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto);
+  transition: background .12s;
+}
+.tree-grupo:hover { background: var(--bg-card); }
+.tree-grupo .seta {
+  font-size: 10px;
+  transition: transform .15s;
+  width: 14px;
+  text-align: center;
+}
+.tree-grupo.aberto .seta { transform: rotate(90deg); }
+.tree-filhos { display: none; }
+.tree-grupo.aberto + .tree-filhos { display: block; }
+
+/* --- Área central --------------------------------------------- */
+#centro {
+  grid-area: centro;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+/* --- Painel de propriedades ----------------------------------- */
+#propanel {
+  grid-area: props;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--borda);
+  overflow-y: auto;
+  padding: 12px;
+}
+.prop-titulo {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-dim);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.prop-campo {
+  margin-bottom: 10px;
+}
+.prop-campo label {
+  display: block;
+  font-size: 11px;
+  color: var(--texto-sec);
+  margin-bottom: 3px;
+}
+.prop-campo input, .prop-campo select {
+  width: 100%;
+}
+.prop-info {
+  font-size: 11px;
+  color: var(--texto-dim);
+  line-height: 1.5;
+  padding: 8px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+
+/* --- Rodapé / Status ------------------------------------------ */
+#rodape {
+  grid-area: rodape;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  background: var(--bg-header);
+  border-top: 1px solid var(--borda);
+  font-size: 11px;
+  color: var(--texto-dim);
+}
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--verde);
+}
+
+/* =============================================================
+ *  TELA INICIAL (boas-vindas)
+ * ============================================================= */
+.tela-inicial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 24px;
+  text-align: center;
+}
+.tela-inicial .logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tela-inicial .logo-texto {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.tela-inicial .logo-texto span { color: var(--amarelo); }
+.tela-inicial .logo-sub {
+  font-size: 14px;
+  color: var(--texto-sec);
+  max-width: 420px;
+  line-height: 1.5;
+}
+.tela-inicial .acoes-iniciais {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+.btn-primario, .btn-secundario {
+  padding: 12px 28px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background .15s, transform .1s;
+}
+.btn-primario {
+  background: var(--amarelo);
+  color: #000;
+}
+.btn-primario:hover { background: #d4a716; transform: translateY(-1px); }
+.btn-secundario {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+}
+.btn-secundario:hover { background: var(--bg-card-hover); transform: translateY(-1px); }
+
+.tela-inicial .recentes {
+  margin-top: 20px;
+  text-align: left;
+  width: 360px;
+}
+.tela-inicial .recentes h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-dim);
+  margin-bottom: 8px;
+}
+.recente-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .12s;
+  font-size: 12px;
+  color: var(--texto-sec);
+}
+.recente-item:hover { background: var(--bg-card); color: var(--texto); }
+.recente-item .icone { font-size: 16px; }
+
+/* =============================================================
+ *  TELA: DADOS DO PROJETO
+ * ============================================================= */
+.tela-dados {
+  max-width: 700px;
+}
+.tela-dados h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--amarelo);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.form-grid .col-full { grid-column: 1 / -1; }
+.form-campo label {
+  display: block;
+  font-size: 11px;
+  color: var(--texto-sec);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.form-campo input, .form-campo select {
+  width: 100%;
+}
+.form-acoes {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* =============================================================
+ *  TELA: TABELA (Volume II)
+ * ============================================================= */
+.tela-tabela h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.tela-tabela .subtitulo-tabela {
+  font-size: 12px;
+  color: var(--texto-sec);
+  margin-bottom: 12px;
+}
+.toolbar-tabela {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.toolbar-tabela input[type="search"] {
+  width: 200px;
+}
+.btn-toolbar {
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  transition: background .12s;
+}
+.btn-toolbar:hover { background: var(--bg-card-hover); }
+.btn-toolbar.verde { background: var(--verde); color: #fff; border-color: var(--verde); }
+.btn-toolbar.verde:hover { background: #2e8b57; }
+
+.tabela-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 200px);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+}
+.tabela-dados {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.tabela-dados th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-header);
+  padding: 7px 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--texto-sec);
+  border-bottom: 2px solid var(--borda);
+  white-space: nowrap;
+  z-index: 2;
+}
+.tabela-dados td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+}
+.tabela-dados tr:hover td { background: var(--bg-card); }
+.tabela-dados tr.selecionada td { background: rgba(232, 184, 24, .1); }
+.tabela-dados td input, .tabela-dados td select {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px 4px;
+  width: 100%;
+  min-width: 60px;
+  border-radius: 3px;
+}
+.tabela-dados td input:focus, .tabela-dados td select:focus {
+  background: var(--bg-input);
+  border-color: var(--borda-foco);
+}
+.celula-numero { text-align: right; }
+.celula-km { text-align: center; font-variant-numeric: tabular-nums; }
+
+/* =============================================================
+ *  TELA: PLANTA (Plan View) — placeholder canvas
+ * ============================================================= */
+.tela-planta {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.tela-planta h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.toolbar-planta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.canvas-wrap {
+  flex: 1;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  background: #0F1219;
+}
+.canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.canvas-info {
+  position: absolute;
+  bottom: 8px; right: 12px;
+  font-size: 11px;
+  color: var(--texto-dim);
+  pointer-events: none;
+}
+
+/* =============================================================
+ *  COMPONENTES GERAIS
+ * ============================================================= */
+.separador {
+  height: 1px;
+  background: var(--borda);
+  margin: 10px 0;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.badge-r { background: rgba(229,62,62,.2); color: var(--vermelho); }
+.badge-a { background: rgba(232,184,24,.2); color: var(--amarelo); }
+.badge-i { background: rgba(56,161,105,.2); color: var(--verde); }
+.badge-s { background: rgba(49,130,206,.2); color: var(--azul); }
+
+.vazio-msg {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--texto-dim);
+  font-size: 13px;
+}
+.vazio-msg .icone-grande { font-size: 40px; margin-bottom: 12px; display: block; }
+
+/* Esconder todas as telas; a ativa recebe display via JS */
+.tela { display: none; }
+.tela.visivel { display: block; }
+.tela-inicial.visivel, .tela-planta.visivel { display: flex; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ========== CABEÇALHO ========== -->
+  <header id="header">
+    <div class="titulo">BR-Legal 2</div>
+    <div class="subtitulo" id="headerSubtitulo">Projeto de Sinalização Rodoviária</div>
+    <div class="acoes">
+      <button class="btn-header" onclick="mostrarTela('inicio')" title="Início">Início</button>
+      <button class="btn-header" onclick="acaoSalvar()" title="Salvar projeto">Salvar</button>
+      <button class="btn-header destaque" onclick="acaoNovoProjeto()" title="Novo projeto">+ Novo</button>
+    </div>
+  </header>
+
+  <!-- ========== BARRA LATERAL ========== -->
+  <nav id="sidebar">
+    <div class="sidebar-titulo">Projeto</div>
+
+    <div class="tree-item ativo" data-tela="dados" onclick="navegar(this)">
+      <span class="icone">&#128203;</span> Dados do Projeto
+    </div>
+
+    <div class="separador"></div>
+    <div class="sidebar-titulo">Projeto Básico</div>
+
+    <!-- Volume I -->
+    <div class="tree-grupo aberto" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume I — Apresentação
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2" data-tela="vol1-memorial" onclick="navegar(this)">
+        <span class="icone">&#128196;</span> Memorial de Estudos
+      </div>
+    </div>
+
+    <!-- Volume II -->
+    <div class="tree-grupo aberto" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume II — Cadastro / Necessidades
+    </div>
+    <div class="tree-filhos" id="treeVolII"></div>
+
+    <!-- Volume III -->
+    <div class="tree-grupo" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume III — Pranchas
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2" data-tela="planta" onclick="navegar(this)">
+        <span class="icone">&#128506;</span> Planta (Visão Geral)
+      </div>
+    </div>
+
+    <div class="separador"></div>
+    <div class="sidebar-titulo">Projeto Executivo</div>
+
+    <!-- Volume IV -->
+    <div class="tree-grupo" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume IV — Memorial + PLQ
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2 texto-dim" style="color:var(--texto-dim)">
+        <span class="icone">&#128221;</span> (em desenvolvimento)
+      </div>
+    </div>
+
+    <!-- Volume V -->
+    <div class="tree-grupo" onclick="toggleGrupo(this)">
+      <span class="seta">&#9654;</span> Volume V — Orçamento
+    </div>
+    <div class="tree-filhos">
+      <div class="tree-item nivel-2 texto-dim" style="color:var(--texto-dim)">
+        <span class="icone">&#128178;</span> (em desenvolvimento)
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== ÁREA CENTRAL ========== -->
+  <main id="centro">
+
+    <!-- Tela Inicial -->
+    <div class="tela tela-inicial visivel" id="tela-inicio">
+      <div class="logo-area">
+        <div class="logo-texto"><span>BR-Legal</span> 2</div>
+        <div class="logo-sub">
+          Sistema de elaboração de projetos de sinalização rodoviária para
+          rodovias federais, conforme padrões DNIT/IPR.
+        </div>
+      </div>
+      <div class="acoes-iniciais">
+        <button class="btn-primario" onclick="acaoNovoProjeto()">Novo Projeto</button>
+        <button class="btn-secundario" onclick="acaoAbrirProjeto()">Abrir Projeto</button>
+      </div>
+      <div class="recentes" id="listaRecentes">
+        <h3>Projetos Recentes</h3>
+        <div class="recente-item" style="color:var(--texto-dim); cursor:default;">
+          Nenhum projeto recente.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tela Dados do Projeto -->
+    <div class="tela tela-dados" id="tela-dados">
+      <h2>Dados do Projeto</h2>
+      <div class="form-grid">
+        <div class="form-campo col-full">
+          <label>Nome do Projeto</label>
+          <input type="text" id="projNome" placeholder="Ex.: Projeto BR-LEGAL 2 — Lote 06">
+        </div>
+        <div class="form-campo">
+          <label>Lote</label>
+          <input type="text" id="projLote" placeholder="Ex.: 06">
+        </div>
+        <div class="form-campo">
+          <label>UF</label>
+          <select id="projUF">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-campo">
+          <label>Rodovia (BR)</label>
+          <input type="text" id="projBR" placeholder="Ex.: BR-116">
+        </div>
+        <div class="form-campo">
+          <label>Trecho</label>
+          <input type="text" id="projTrecho" placeholder="Ex.: Divisa MG/RJ — Além Paraíba">
+        </div>
+        <div class="form-campo">
+          <label>KM Início</label>
+          <input type="number" id="projKmIni" step="0.1" placeholder="000,0">
+        </div>
+        <div class="form-campo">
+          <label>KM Fim</label>
+          <input type="number" id="projKmFim" step="0.1" placeholder="000,0">
+        </div>
+        <div class="form-campo col-full">
+          <label>Contratada / Empresa</label>
+          <input type="text" id="projContratada" placeholder="Nome da empresa responsável">
+        </div>
+        <div class="form-campo col-full">
+          <label>Contrato DNIT</label>
+          <input type="text" id="projContrato" placeholder="Ex.: TED xxx/2024">
+        </div>
+        <div class="form-campo">
+          <label>Data de Início</label>
+          <input type="date" id="projDataIni">
+        </div>
+        <div class="form-campo">
+          <label>Responsável Técnico</label>
+          <input type="text" id="projRT" placeholder="Nome do eng. responsável">
+        </div>
+      </div>
+      <div class="form-acoes">
+        <button class="btn-primario" onclick="salvarDadosProjeto()">Salvar Dados</button>
+      </div>
+    </div>
+
+    <!-- Tela Volume I — Memorial (placeholder) -->
+    <div class="tela" id="tela-vol1-memorial">
+      <div class="vazio-msg">
+        <span class="icone-grande">&#128196;</span>
+        Memorial de Estudos Preliminares<br>
+        <small style="color:var(--texto-dim)">Módulo de edição de texto em desenvolvimento.</small>
+      </div>
+    </div>
+
+    <!-- Tela Tabela (genérica para Volume II) -->
+    <div class="tela tela-tabela" id="tela-tabela">
+      <h2 id="tabelaTitulo"></h2>
+      <div class="subtitulo-tabela" id="tabelaSubtitulo"></div>
+      <div class="toolbar-tabela">
+        <input type="search" id="tabelaBusca" placeholder="Buscar..." oninput="filtrarTabela()">
+        <button class="btn-toolbar verde" onclick="adicionarLinha()">+ Adicionar</button>
+        <button class="btn-toolbar" onclick="removerLinhaSelecionada()">Remover</button>
+        <div style="flex:1"></div>
+        <span style="font-size:11px; color:var(--texto-dim)" id="tabelaContagem"></span>
+      </div>
+      <div class="tabela-wrap">
+        <table class="tabela-dados" id="tabelaGrid">
+          <thead id="tabelaHead"></thead>
+          <tbody id="tabelaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tela Planta (Plan View) -->
+    <div class="tela tela-planta" id="tela-planta">
+      <h2>Planta — Visão Geral</h2>
+      <div class="toolbar-planta">
+        <button class="btn-toolbar" onclick="plantaZoom(1.2)" title="Aproximar">+ Zoom</button>
+        <button class="btn-toolbar" onclick="plantaZoom(0.8)" title="Afastar">- Zoom</button>
+        <button class="btn-toolbar" onclick="plantaReset()" title="Resetar vista">Resetar</button>
+        <div style="flex:1"></div>
+        <span style="font-size:11px; color:var(--texto-dim)" id="plantaInfo">Escala: 1:1000</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="plantaCanvas"></canvas>
+        <div class="canvas-info" id="plantaCoords">X: — Y: —</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========== PAINEL DE PROPRIEDADES ========== -->
+  <aside id="propanel">
+    <div class="prop-titulo">Propriedades</div>
+    <div id="propConteudo">
+      <div class="prop-info">
+        Selecione um item na árvore do projeto ou uma linha na tabela
+        para ver suas propriedades aqui.
+      </div>
+    </div>
+    <div class="separador"></div>
+    <div class="prop-titulo">Catálogo Rápido</div>
+    <div style="margin-bottom:8px;">
+      <select id="catalogoFiltro" onchange="filtrarCatalogo()" style="width:100%; font-size:11px;">
+        <option value="">Todas as categorias</option>
+        <option value="regulamentacao">Regulamentação (R)</option>
+        <option value="advertencia">Advertência (A)</option>
+        <option value="indicacao">Indicação (I)</option>
+        <option value="educativa">Educativas (E)</option>
+        <option value="servicos">Serviços (SAT/SIR/SIT/SEA)</option>
+      </select>
+    </div>
+    <div id="catalogoLista" style="max-height:300px; overflow-y:auto;"></div>
+  </aside>
+
+  <!-- ========== RODAPÉ / STATUS ========== -->
+  <footer id="rodape">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      <span id="statusTexto">Pronto</span>
+    </div>
+    <div class="status-item" id="statusProjeto" style="display:none">
+      Projeto: <strong id="statusNomeProjeto"></strong>
+    </div>
+    <div style="flex:1"></div>
+    <div class="status-item">BR-Legal 2 v0.1.0</div>
+  </footer>
+
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT — toda a lógica inline
+     ================================================================ -->
+<script>
+/* =============================================================
+ *  ESTADO GLOBAL
+ * ============================================================= */
+const ESTADO = {
+  projeto: null,       /* dados do projeto corrente (null = nenhum aberto) */
+  telaAtual: 'inicio',
+  tabelaAtual: null,   /* chave do esquema exibido na tabela */
+  linhaSelecionada: -1,
+  dados: {},           /* dados das tabelas: { chaveEsquema: [registros...] } */
+  plantaZoom: 1,
+  plantaOffX: 0,
+  plantaOffY: 0,
+};
+
+/* =============================================================
+ *  CATÁLOGOS — carregados inline (em produção seriam importados)
+ * ============================================================= */
+
+/* Catálogo de sinais verticais — resumo para o painel lateral */
+const CATALOGO_SINAIS_RESUMO = [
+  { codigo:'R-1',  nome:'Parada obrigatória',              categoria:'regulamentacao' },
+  { codigo:'R-2',  nome:'Dê a preferência',                categoria:'regulamentacao' },
+  { codigo:'R-3',  nome:'Sentido proibido',                categoria:'regulamentacao' },
+  { codigo:'R-4a', nome:'Proibido virar à esquerda',       categoria:'regulamentacao' },
+  { codigo:'R-4b', nome:'Proibido virar à direita',        categoria:'regulamentacao' },
+  { codigo:'R-5a', nome:'Proibido retornar à esquerda',    categoria:'regulamentacao' },
+  { codigo:'R-5b', nome:'Proibido retornar à direita',     categoria:'regulamentacao' },
+  { codigo:'R-6a', nome:'Proibido estacionar',             categoria:'regulamentacao' },
+  { codigo:'R-6b', nome:'Estacionamento regulamentado',    categoria:'regulamentacao' },
+  { codigo:'R-6c', nome:'Proibido parar e estacionar',     categoria:'regulamentacao' },
+  { codigo:'R-7',  nome:'Proibido ultrapassar',            categoria:'regulamentacao' },
+  { codigo:'R-8a', nome:'Proib. mudar faixa esq→dir',     categoria:'regulamentacao' },
+  { codigo:'R-8b', nome:'Proib. mudar faixa dir→esq',     categoria:'regulamentacao' },
+  { codigo:'R-9',  nome:'Proib. trânsito bicicletas',      categoria:'regulamentacao' },
+  { codigo:'R-10', nome:'Proib. veículos automotores',     categoria:'regulamentacao' },
+  { codigo:'R-13', nome:'Proib. trânsito caminhões',       categoria:'regulamentacao' },
+  { codigo:'R-14', nome:'Peso bruto total máximo',         categoria:'regulamentacao' },
+  { codigo:'R-15', nome:'Altura máxima permitida',         categoria:'regulamentacao' },
+  { codigo:'R-16', nome:'Largura máxima permitida',        categoria:'regulamentacao' },
+  { codigo:'R-19', nome:'Velocidade máxima permitida',     categoria:'regulamentacao' },
+  { codigo:'R-23', nome:'Conserve-se à direita',           categoria:'regulamentacao' },
+  { codigo:'R-25a',nome:'Vire à esquerda',                 categoria:'regulamentacao' },
+  { codigo:'R-25b',nome:'Vire à direita',                  categoria:'regulamentacao' },
+  { codigo:'R-26', nome:'Siga em frente',                  categoria:'regulamentacao' },
+  { codigo:'R-27', nome:'Veículos pesados à direita',      categoria:'regulamentacao' },
+  { codigo:'R-28', nome:'Duplo sentido de circulação',     categoria:'regulamentacao' },
+  { codigo:'R-33', nome:'Sentido da rotatória',            categoria:'regulamentacao' },
+
+  { codigo:'A-1a', nome:'Curva acentuada à esquerda',      categoria:'advertencia' },
+  { codigo:'A-1b', nome:'Curva acentuada à direita',       categoria:'advertencia' },
+  { codigo:'A-2a', nome:'Curva à esquerda',                categoria:'advertencia' },
+  { codigo:'A-2b', nome:'Curva à direita',                 categoria:'advertencia' },
+  { codigo:'A-3a', nome:'Pista sinuosa à esquerda',        categoria:'advertencia' },
+  { codigo:'A-3b', nome:'Pista sinuosa à direita',         categoria:'advertencia' },
+  { codigo:'A-6',  nome:'Cruzamento de vias',              categoria:'advertencia' },
+  { codigo:'A-11', nome:'Rotatória',                       categoria:'advertencia' },
+  { codigo:'A-12', nome:'Ponte estreita',                  categoria:'advertencia' },
+  { codigo:'A-14', nome:'Via de mão dupla',                categoria:'advertencia' },
+  { codigo:'A-17', nome:'Pista irregular',                 categoria:'advertencia' },
+  { codigo:'A-18', nome:'Saliência ou lombada',            categoria:'advertencia' },
+  { codigo:'A-20a',nome:'Declive acentuado',               categoria:'advertencia' },
+  { codigo:'A-20b',nome:'Aclive acentuado',                categoria:'advertencia' },
+  { codigo:'A-23', nome:'Obras',                           categoria:'advertencia' },
+  { codigo:'A-28', nome:'Pista escorregadia',              categoria:'advertencia' },
+  { codigo:'A-32a',nome:'Trânsito de pedestres',           categoria:'advertencia' },
+  { codigo:'A-32b',nome:'Passagem de pedestres',           categoria:'advertencia' },
+  { codigo:'A-33a',nome:'Área escolar',                    categoria:'advertencia' },
+  { codigo:'A-35', nome:'Animais',                         categoria:'advertencia' },
+  { codigo:'A-43', nome:'Semáforo',                        categoria:'advertencia' },
+
+  { codigo:'I-1',  nome:'Identificação de rodovia',        categoria:'indicacao' },
+  { codigo:'I-3',  nome:'Marco quilométrico',              categoria:'indicacao' },
+  { codigo:'I-4',  nome:'Limite de municípios',            categoria:'indicacao' },
+  { codigo:'I-5',  nome:'Limite de estados',               categoria:'indicacao' },
+  { codigo:'I-6',  nome:'Sentido (localidade)',            categoria:'indicacao' },
+  { codigo:'I-7',  nome:'Distância',                       categoria:'indicacao' },
+  { codigo:'I-12', nome:'Pontes, viadutos e túneis',       categoria:'indicacao' },
+
+  { codigo:'E-1',  nome:'Educativa — condutor',            categoria:'educativa' },
+  { codigo:'E-2',  nome:'Educativa — pedestre',            categoria:'educativa' },
+
+  { codigo:'SAT-03',nome:'Abastecimento',                  categoria:'servicos' },
+  { codigo:'SAT-05',nome:'Alimentação',                    categoria:'servicos' },
+  { codigo:'SAT-07',nome:'Pronto-socorro',                 categoria:'servicos' },
+  { codigo:'SIR-01',nome:'Estacionamento',                 categoria:'servicos' },
+  { codigo:'SIT-01',nome:'Aeroporto',                      categoria:'servicos' },
+];
+
+/* =============================================================
+ *  MODELO DE DADOS — esquemas do Volume II (inline simplificado)
+ *  Em produção, importados de modelo-dados.js via preload.
+ * ============================================================= */
+const UFS = [
+  'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+  'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO',
+];
+const LADOS = ['Esquerdo','Direito','Ambos','Canteiro central'];
+const SENTIDOS = ['Crescente','Decrescente','Ambos'];
+const CONSERVACAO = ['Bom','Regular','Ruim','Péssimo','Inexistente'];
+
+/* Esquemas das planilhas — mesmo formato de modelo-dados.js */
+const ESQUEMAS = {
+  caracteristicasFisicas: {
+    id: 1, titulo: '1 — Características Físicas e Operacionais',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto',  largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista',  opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',   tipo:'km',     largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',      tipo:'km',     largura:80 },
+      { campo:'extensao',   nome:'Extensão (km)', tipo:'numero', largura:90 },
+      { campo:'pista',      nome:'Tipo de Pista', tipo:'lista', opcoes:['Simples','Dupla','Múltipla'], largura:90 },
+      { campo:'faixas',     nome:'Nº Faixas',   tipo:'numero', largura:65 },
+      { campo:'larguraFaixa',nome:'Larg. Faixa (m)', tipo:'numero', largura:80 },
+      { campo:'revestimento',nome:'Revestimento', tipo:'lista', opcoes:['Asfalto','Concreto','Paralelepípedo','Terra','Cascalho'], largura:100 },
+      { campo:'velReg',     nome:'Vel. Reg. (km/h)', tipo:'numero', largura:80 },
+      { campo:'relevo',     nome:'Relevo',      tipo:'lista',  opcoes:['Plano','Ondulado','Montanhoso','Escarpado'], largura:90 },
+      { campo:'observacoes',nome:'Observações',  tipo:'texto',  largura:200 },
+    ],
+  },
+  contagemTrafego: {
+    id: 2, titulo: '2 — Dados de Contagem de Tráfego',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',    tipo:'texto',  largura:100 },
+      { campo:'uf',       nome:'UF',         tipo:'lista',  opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',         tipo:'km',     largura:80 },
+      { campo:'sentido',  nome:'Sentido',    tipo:'lista',  opcoes:SENTIDOS, largura:80 },
+      { campo:'vmd',      nome:'VMD',        tipo:'numero', largura:80 },
+      { campo:'percCom',  nome:'% Comercial', tipo:'numero', largura:80 },
+      { campo:'nivel',    nome:'Nível Serv.', tipo:'lista',  opcoes:['A','B','C','D','E','F'], largura:70 },
+      { campo:'fonte',    nome:'Fonte',      tipo:'texto',  largura:150 },
+      { campo:'observacoes',nome:'Obs.',     tipo:'texto',  largura:200 },
+    ],
+  },
+  cadastroSH1: {
+    id: 3.1, titulo: '3.1 — Cadastro SH — Linhas Longitudinais',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',    tipo:'texto',  largura:100 },
+      { campo:'uf',       nome:'UF',         tipo:'lista',  opcoes:UFS, largura:50 },
+      { campo:'kmInicio', nome:'KM Início',  tipo:'km',     largura:80 },
+      { campo:'kmFim',    nome:'KM Fim',     tipo:'km',     largura:80 },
+      { campo:'sentido',  nome:'Sentido',    tipo:'lista',  opcoes:SENTIDOS, largura:80 },
+      { campo:'lado',     nome:'Lado',       tipo:'lista',  opcoes:LADOS, largura:80 },
+      { campo:'codigoSH', nome:'Código SH',  tipo:'texto',  largura:80 },
+      { campo:'cor',      nome:'Cor',        tipo:'lista',  opcoes:['Amarela','Branca'], largura:70 },
+      { campo:'tipo',     nome:'Tipo',       tipo:'lista',  opcoes:['Contínua','Seccionada','Dupla contínua','Cont./Secc.'], largura:110 },
+      { campo:'conservacao',nome:'Estado',   tipo:'lista',  opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',     tipo:'texto',  largura:200 },
+    ],
+  },
+  cadastroSH2: {
+    id: 3.2, titulo: '3.2 — Cadastro SH — Linhas Transversais',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',   tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',        tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',        tipo:'km',    largura:80 },
+      { campo:'sentido',  nome:'Sentido',   tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'codigoSH', nome:'Código SH', tipo:'texto', largura:80 },
+      { campo:'tipoFaixa',nome:'Tipo',      tipo:'lista', opcoes:['LRE','LDA','FTP-1','FTP-2','MFR'], largura:80 },
+      { campo:'conservacao',nome:'Estado',  tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',    tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroSH3: {
+    id: 3.3, titulo: '3.3 — Cadastro SH — Marcações e Símbolos',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',   tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',        tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',        tipo:'km',    largura:80 },
+      { campo:'sentido',  nome:'Sentido',   tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'faixa',    nome:'Faixa',     tipo:'numero', largura:60 },
+      { campo:'codigoSH', nome:'Código SH', tipo:'texto', largura:80 },
+      { campo:'tipo',     nome:'Tipo',      tipo:'lista', opcoes:['Seta','Legenda','Símbolo','Marcação de área'], largura:100 },
+      { campo:'conservacao',nome:'Estado',  tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',    tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroSH4: {
+    id: 3.4, titulo: '3.4 — Cadastro SH — Tachas e Tachões',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',    tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',         tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',  tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',     tipo:'km',    largura:80 },
+      { campo:'lado',       nome:'Lado',       tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'dispositivo',nome:'Dispositivo', tipo:'lista', opcoes:['Tacha mono AM','Tacha mono BR','Tacha bidi AM','Tacha bidi BR','Tacha VM','Tachão'], largura:130 },
+      { campo:'quantidade', nome:'Qtd.',       tipo:'numero', largura:60 },
+      { campo:'conservacao',nome:'Estado',     tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',       tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroSV1: {
+    id: 4.1, titulo: '4.1 — Cadastro SV — Placas',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',         nome:'KM',          tipo:'km',    largura:80 },
+      { campo:'sentido',    nome:'Sentido',     tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'lado',       nome:'Lado',        tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'codigoPlaca',nome:'Código',      tipo:'texto', largura:80 },
+      { campo:'nomePlaca',  nome:'Nome',        tipo:'texto', largura:150 },
+      { campo:'categoria',  nome:'Categoria',   tipo:'lista', opcoes:['Regulamentação','Advertência','Indicação','Educativa','Serviços'], largura:110 },
+      { campo:'dimensao',   nome:'Dimensão (m)', tipo:'texto', largura:80 },
+      { campo:'conservacao',nome:'Estado',       tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',        tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroSV2: {
+    id: 4.2, titulo: '4.2 — Cadastro SV — Suportes',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',      tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',           tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',         nome:'KM',           tipo:'km',    largura:80 },
+      { campo:'sentido',    nome:'Sentido',      tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'lado',       nome:'Lado',         tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'tipoSuporte',nome:'Tipo Suporte', tipo:'lista', opcoes:['Poste simples','Poste duplo','Braço projetado','Pórtico','Semi-pórtico','Bandeira'], largura:110 },
+      { campo:'material',   nome:'Material',     tipo:'lista', opcoes:['Aço galvanizado','Aço pintado','Madeira','Concreto','Alumínio'], largura:100 },
+      { campo:'conservacao',nome:'Estado',        tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',         tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroDispositivos: {
+    id: 5, titulo: '5 — Cadastro Dispositivos de Segurança',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',   tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',      tipo:'km',    largura:80 },
+      { campo:'lado',       nome:'Lado',        tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'dispositivo',nome:'Dispositivo', tipo:'texto', largura:160 },
+      { campo:'extensao',   nome:'Extensão (m)', tipo:'numero', largura:90 },
+      { campo:'quantidade', nome:'Qtd.',        tipo:'numero', largura:60 },
+      { campo:'conservacao',nome:'Estado',       tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',        tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroFaixaDominio: {
+    id: 6, titulo: '6 — Cadastro Faixa de Domínio',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',   tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',      tipo:'km',    largura:80 },
+      { campo:'lado',       nome:'Lado',        tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'largura',    nome:'Largura (m)',  tipo:'numero', largura:80 },
+      { campo:'ocupacao',   nome:'Ocupação',    tipo:'lista', opcoes:['Livre','Cerca','Muro','Construção','Vegetação','Acesso irregular'], largura:110 },
+      { campo:'conservacao',nome:'Estado',       tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',        tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroOAE: {
+    id: 7, titulo: '7 — Cadastro de OAEs e OACs',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',  tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',       tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',       tipo:'km',    largura:80 },
+      { campo:'tipoOAE',  nome:'Tipo',     tipo:'lista', opcoes:['Ponte','Viaduto','Passarela','Túnel','Bueiro','Galeria','Pass. inferior','Pass. superior'], largura:110 },
+      { campo:'nome',     nome:'Nome',     tipo:'texto', largura:160 },
+      { campo:'extensao', nome:'Extensão (m)', tipo:'numero', largura:90 },
+      { campo:'largura',  nome:'Largura (m)', tipo:'numero', largura:80 },
+      { campo:'conservacao',nome:'Estado',  tipo:'lista', opcoes:CONSERVACAO, largura:80 },
+      { campo:'observacoes',nome:'Obs.',   tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroCurvas: {
+    id: 8, titulo: '8 — Cadastro de Curvas',
+    colunas: [
+      { campo:'rodovia',     nome:'Rodovia',    tipo:'texto', largura:100 },
+      { campo:'uf',          nome:'UF',         tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',    nome:'KM Início',  tipo:'km',    largura:80 },
+      { campo:'kmFim',       nome:'KM Fim',     tipo:'km',    largura:80 },
+      { campo:'sentidoCurva',nome:'Sentido',    tipo:'lista', opcoes:['Esquerda','Direita'], largura:80 },
+      { campo:'raio',        nome:'Raio (m)',    tipo:'numero', largura:80 },
+      { campo:'velMax',      nome:'Vel. Máx.',  tipo:'numero', largura:70 },
+      { campo:'classificacao',nome:'Classif.',  tipo:'lista', opcoes:['Simples','Acentuada','Em S','Em S acentuada'], largura:100 },
+      { campo:'observacoes', nome:'Obs.',       tipo:'texto', largura:200 },
+    ],
+  },
+  cadastroIntersecoes: {
+    id: 9, titulo: '9 — Cadastro de Interseções',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',          tipo:'km',    largura:80 },
+      { campo:'tipo',     nome:'Tipo',        tipo:'lista', opcoes:['Cruzamento','T','Y','Rotatória','Trevo','Diamante','Outro'], largura:90 },
+      { campo:'viaCruzada',nome:'Via Cruzada', tipo:'texto', largura:140 },
+      { campo:'semaforo',  nome:'Semáforo',   tipo:'lista', opcoes:['Sim','Não'], largura:70 },
+      { campo:'observacoes',nome:'Obs.',      tipo:'texto', largura:200 },
+    ],
+  },
+  trechosNeblina: {
+    id: 10, titulo: '10 — Trechos com Neblina',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',    tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',         tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',  tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',     tipo:'km',    largura:80 },
+      { campo:'frequencia', nome:'Frequência', tipo:'lista', opcoes:['Rara','Eventual','Frequente','Muito frequente'], largura:100 },
+      { campo:'periodo',    nome:'Período',    tipo:'lista', opcoes:['Manhã','Tarde','Noite','Madrugada','Variável'], largura:90 },
+      { campo:'observacoes',nome:'Obs.',       tipo:'texto', largura:200 },
+    ],
+  },
+  intervencoes: {
+    id: 11, titulo: '11 — Intervenções Programadas',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',   tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',      tipo:'km',    largura:80 },
+      { campo:'tipo',       nome:'Tipo',        tipo:'lista', opcoes:['Restauração','Duplicação','Implantação','Manutenção','Pavimentação','Obra de arte','Outro'], largura:120 },
+      { campo:'descricao',  nome:'Descrição',   tipo:'texto', largura:200 },
+      { campo:'situacao',   nome:'Situação',    tipo:'lista', opcoes:['Planejada','Em execução','Concluída','Suspensa'], largura:100 },
+      { campo:'observacoes',nome:'Obs.',        tipo:'texto', largura:200 },
+    ],
+  },
+  retrorrefletancias: {
+    id: 12, titulo: '12 — Retrorrefletâncias',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',         nome:'KM',          tipo:'km',    largura:80 },
+      { campo:'tipoSinal',  nome:'Tipo Sinal.', tipo:'lista', opcoes:['Horizontal','Vertical'], largura:90 },
+      { campo:'elemento',   nome:'Elemento',    tipo:'texto', largura:150 },
+      { campo:'cor',        nome:'Cor',         tipo:'lista', opcoes:['Branca','Amarela','Vermelha','Verde','Azul'], largura:70 },
+      { campo:'valorMedido',nome:'Valor',       tipo:'numero', largura:70 },
+      { campo:'conforme',   nome:'Conforme',    tipo:'lista', opcoes:['Sim','Não'], largura:70 },
+      { campo:'observacoes',nome:'Obs.',        tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesSH1: {
+    id: 13.1, titulo: '13.1 — Necessidades SH — Longitudinais',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',   tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',        tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio', nome:'KM Início', tipo:'km',    largura:80 },
+      { campo:'kmFim',    nome:'KM Fim',    tipo:'km',    largura:80 },
+      { campo:'sentido',  nome:'Sentido',   tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'lado',     nome:'Lado',      tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'codigoSH', nome:'Código SH', tipo:'texto', largura:80 },
+      { campo:'acao',     nome:'Ação',      tipo:'lista', opcoes:['Implantar','Repintar','Substituir','Remover','Manter'], largura:90 },
+      { campo:'justificativa',nome:'Justif.', tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesSH2: {
+    id: 13.2, titulo: '13.2 — Necessidades SH — Transversais',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',   tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',        tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',        tipo:'km',    largura:80 },
+      { campo:'sentido',  nome:'Sentido',   tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'codigoSH', nome:'Código SH', tipo:'texto', largura:80 },
+      { campo:'acao',     nome:'Ação',      tipo:'lista', opcoes:['Implantar','Repintar','Substituir','Remover','Manter'], largura:90 },
+      { campo:'justificativa',nome:'Justif.', tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesSH3: {
+    id: 13.3, titulo: '13.3 — Necessidades SH — Marcações/Símbolos',
+    colunas: [
+      { campo:'rodovia',  nome:'Rodovia',   tipo:'texto', largura:100 },
+      { campo:'uf',       nome:'UF',        tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',       nome:'KM',        tipo:'km',    largura:80 },
+      { campo:'sentido',  nome:'Sentido',   tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'codigoSH', nome:'Código SH', tipo:'texto', largura:80 },
+      { campo:'acao',     nome:'Ação',      tipo:'lista', opcoes:['Implantar','Repintar','Substituir','Remover','Manter'], largura:90 },
+      { campo:'justificativa',nome:'Justif.', tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesSH4: {
+    id: 13.4, titulo: '13.4 — Necessidades SH — Tachas/Tachões',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',    tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',         tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',  tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',     tipo:'km',    largura:80 },
+      { campo:'lado',       nome:'Lado',       tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'acao',       nome:'Ação',       tipo:'lista', opcoes:['Implantar','Substituir','Remover','Manter'], largura:90 },
+      { campo:'dispositivo',nome:'Dispositivo', tipo:'lista', opcoes:['Tacha mono AM','Tacha mono BR','Tacha bidi AM','Tacha bidi BR','Tacha VM','Tachão'], largura:130 },
+      { campo:'quantidade', nome:'Qtd.',       tipo:'numero', largura:60 },
+      { campo:'justificativa',nome:'Justif.',  tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesSV1: {
+    id: 14.1, titulo: '14.1 — Necessidades SV — Placas',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',    tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',         tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',         nome:'KM',         tipo:'km',    largura:80 },
+      { campo:'sentido',    nome:'Sentido',    tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'lado',       nome:'Lado',       tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'acao',       nome:'Ação',       tipo:'lista', opcoes:['Implantar','Substituir','Remover','Reposicionar','Manter'], largura:90 },
+      { campo:'codigoPlaca',nome:'Código',     tipo:'texto', largura:80 },
+      { campo:'nomePlaca',  nome:'Nome',       tipo:'texto', largura:150 },
+      { campo:'categoria',  nome:'Categoria',  tipo:'lista', opcoes:['Regulamentação','Advertência','Indicação','Educativa','Serviços'], largura:110 },
+      { campo:'justificativa',nome:'Justif.',  tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesSV2: {
+    id: 14.2, titulo: '14.2 — Necessidades SV — Suportes',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',      tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',           tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'km',         nome:'KM',           tipo:'km',    largura:80 },
+      { campo:'sentido',    nome:'Sentido',      tipo:'lista', opcoes:SENTIDOS, largura:80 },
+      { campo:'lado',       nome:'Lado',         tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'acao',       nome:'Ação',         tipo:'lista', opcoes:['Implantar','Substituir','Remover','Manter'], largura:90 },
+      { campo:'tipoSuporte',nome:'Tipo Suporte', tipo:'lista', opcoes:['Poste simples','Poste duplo','Braço projetado','Pórtico','Semi-pórtico','Bandeira'], largura:110 },
+      { campo:'justificativa',nome:'Justif.',    tipo:'texto', largura:200 },
+    ],
+  },
+  necessidadesDisp: {
+    id: 15, titulo: '15 — Necessidades Dispositivos de Segurança',
+    colunas: [
+      { campo:'rodovia',    nome:'Rodovia',     tipo:'texto', largura:100 },
+      { campo:'uf',         nome:'UF',          tipo:'lista', opcoes:UFS, largura:50 },
+      { campo:'kmInicio',   nome:'KM Início',   tipo:'km',    largura:80 },
+      { campo:'kmFim',      nome:'KM Fim',      tipo:'km',    largura:80 },
+      { campo:'lado',       nome:'Lado',        tipo:'lista', opcoes:LADOS, largura:80 },
+      { campo:'acao',       nome:'Ação',        tipo:'lista', opcoes:['Implantar','Substituir','Remover','Reparar','Manter'], largura:90 },
+      { campo:'dispositivo',nome:'Dispositivo', tipo:'texto', largura:160 },
+      { campo:'quantidade', nome:'Qtd.',        tipo:'numero', largura:60 },
+      { campo:'justificativa',nome:'Justif.',   tipo:'texto', largura:200 },
+    ],
+  },
+};
+
+/* =============================================================
+ *  INICIALIZAÇÃO
+ * ============================================================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+  montarArvoreVolII();
+  popularSelectUF();
+  renderizarCatalogo();
+  inicializarPlanta();
+});
+
+/** Monta os itens da árvore do Volume II a partir dos esquemas */
+function montarArvoreVolII() {
+  const container = document.getElementById('treeVolII');
+  const chaves = Object.keys(ESQUEMAS);
+  chaves.sort((a, b) => ESQUEMAS[a].id - ESQUEMAS[b].id);
+  for (const chave of chaves) {
+    const esq = ESQUEMAS[chave];
+    const div = document.createElement('div');
+    div.className = 'tree-item nivel-2';
+    div.dataset.tela = 'tabela';
+    div.dataset.esquema = chave;
+    div.onclick = function() { navegar(this); };
+    /* Ícone conforme grupo */
+    let icone = '&#128203;';
+    if (esq.titulo.includes('Necessidade')) icone = '&#128221;';
+    else if (esq.titulo.includes('Retrorref')) icone = '&#128161;';
+    div.innerHTML = '<span class="icone">' + icone + '</span> ' + esq.titulo;
+    container.appendChild(div);
+  }
+}
+
+/** Popular select de UF na tela de dados */
+function popularSelectUF() {
+  const sel = document.getElementById('projUF');
+  UFS.forEach(uf => {
+    const opt = document.createElement('option');
+    opt.value = uf; opt.textContent = uf;
+    sel.appendChild(opt);
+  });
+}
+
+/* =============================================================
+ *  NAVEGAÇÃO
+ * ============================================================= */
+
+function mostrarTela(id) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('visivel'));
+  const tela = document.getElementById('tela-' + id);
+  if (tela) tela.classList.add('visivel');
+  ESTADO.telaAtual = id;
+}
+
+function navegar(el) {
+  /* Desmarcar item ativo anterior */
+  document.querySelectorAll('.tree-item.ativo').forEach(i => i.classList.remove('ativo'));
+  el.classList.add('ativo');
+
+  const tela = el.dataset.tela;
+  if (tela === 'tabela' && el.dataset.esquema) {
+    abrirTabela(el.dataset.esquema);
+  } else {
+    mostrarTela(tela);
+  }
+}
+
+function toggleGrupo(el) {
+  el.classList.toggle('aberto');
+}
+
+/* =============================================================
+ *  TABELA (Volume II)
+ * ============================================================= */
+
+function abrirTabela(chave) {
+  ESTADO.tabelaAtual = chave;
+  ESTADO.linhaSelecionada = -1;
+  const esq = ESQUEMAS[chave];
+  if (!esq) return;
+
+  /* Garantir que o array de dados exista */
+  if (!ESTADO.dados[chave]) ESTADO.dados[chave] = [];
+
+  document.getElementById('tabelaTitulo').textContent = esq.titulo;
+  document.getElementById('tabelaSubtitulo').textContent =
+    'Volume II — Planilha ' + esq.id + ' | ' + ESTADO.dados[chave].length + ' registros';
+
+  renderizarTabelaHead(esq);
+  renderizarTabelaBody(esq, ESTADO.dados[chave]);
+  atualizarContagem(chave);
+  mostrarTela('tabela');
+}
+
+function renderizarTabelaHead(esq) {
+  const thead = document.getElementById('tabelaHead');
+  let html = '<tr><th style="width:36px">#</th>';
+  for (const col of esq.colunas) {
+    html += '<th style="min-width:' + col.largura + 'px">' + col.nome + '</th>';
+  }
+  html += '</tr>';
+  thead.innerHTML = html;
+}
+
+function renderizarTabelaBody(esq, dados) {
+  const tbody = document.getElementById('tabelaBody');
+  if (dados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="' + (esq.colunas.length + 1) + '" style="text-align:center;color:var(--texto-dim);padding:30px">' +
+      'Nenhum registro. Clique em "+ Adicionar" para inserir.</td></tr>';
+    return;
+  }
+  let html = '';
+  for (let i = 0; i < dados.length; i++) {
+    const reg = dados[i];
+    html += '<tr onclick="selecionarLinha(' + i + ')" class="' + (i === ESTADO.linhaSelecionada ? 'selecionada' : '') + '">';
+    html += '<td style="color:var(--texto-dim);text-align:center">' + (i + 1) + '</td>';
+    for (const col of esq.colunas) {
+      const val = reg[col.campo] ?? '';
+      if (col.tipo === 'lista') {
+        html += '<td><select data-i="' + i + '" data-campo="' + col.campo + '" onchange="editarCelula(this)">';
+        html += '<option value=""></option>';
+        for (const op of (col.opcoes || [])) {
+          html += '<option' + (val === op ? ' selected' : '') + '>' + op + '</option>';
+        }
+        html += '</select></td>';
+      } else {
+        const cls = (col.tipo === 'numero') ? ' celula-numero' : (col.tipo === 'km') ? ' celula-km' : '';
+        const tipo = (col.tipo === 'numero' || col.tipo === 'km') ? 'number' : 'text';
+        html += '<td class="' + cls + '"><input type="' + tipo + '" value="' + escapeHTML(String(val)) +
+                '" data-i="' + i + '" data-campo="' + col.campo + '" onchange="editarCelula(this)"' +
+                (col.tipo === 'km' ? ' step="0.1"' : '') + '></td>';
+      }
+    }
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function editarCelula(el) {
+  const i = parseInt(el.dataset.i);
+  const campo = el.dataset.campo;
+  const chave = ESTADO.tabelaAtual;
+  if (!ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+  ESTADO.dados[chave][i][campo] = el.value;
+  atualizarContagem(chave);
+}
+
+function selecionarLinha(i) {
+  ESTADO.linhaSelecionada = i;
+  document.querySelectorAll('.tabela-dados tbody tr').forEach((tr, idx) => {
+    tr.classList.toggle('selecionada', idx === i);
+  });
+  atualizarPropriedadesLinha(i);
+}
+
+function adicionarLinha() {
+  const chave = ESTADO.tabelaAtual;
+  const esq = ESQUEMAS[chave];
+  if (!esq) return;
+  if (!ESTADO.dados[chave]) ESTADO.dados[chave] = [];
+
+  /* Cria registro vazio — preenche rodovia e UF do projeto se houver */
+  const reg = {};
+  for (const col of esq.colunas) {
+    reg[col.campo] = '';
+  }
+  if (ESTADO.projeto) {
+    if (reg.rodovia !== undefined) reg.rodovia = ESTADO.projeto.br || '';
+    if (reg.uf !== undefined) reg.uf = ESTADO.projeto.uf || '';
+  }
+  ESTADO.dados[chave].push(reg);
+  renderizarTabelaBody(esq, ESTADO.dados[chave]);
+  atualizarContagem(chave);
+  /* Rolar até o fim */
+  const wrap = document.querySelector('.tabela-wrap');
+  if (wrap) setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 50);
+}
+
+function removerLinhaSelecionada() {
+  const chave = ESTADO.tabelaAtual;
+  const i = ESTADO.linhaSelecionada;
+  if (i < 0 || !ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+  ESTADO.dados[chave].splice(i, 1);
+  ESTADO.linhaSelecionada = -1;
+  const esq = ESQUEMAS[chave];
+  renderizarTabelaBody(esq, ESTADO.dados[chave]);
+  atualizarContagem(chave);
+}
+
+function filtrarTabela() {
+  const busca = document.getElementById('tabelaBusca').value.toLowerCase();
+  const linhas = document.querySelectorAll('.tabela-dados tbody tr');
+  linhas.forEach(tr => {
+    const texto = tr.textContent.toLowerCase();
+    tr.style.display = texto.includes(busca) ? '' : 'none';
+  });
+}
+
+function atualizarContagem(chave) {
+  const n = ESTADO.dados[chave] ? ESTADO.dados[chave].length : 0;
+  const el = document.getElementById('tabelaContagem');
+  if (el) el.textContent = n + ' registro' + (n !== 1 ? 's' : '');
+  const sub = document.getElementById('tabelaSubtitulo');
+  if (sub) sub.textContent = 'Volume II — Planilha ' + ESQUEMAS[chave].id + ' | ' + n + ' registros';
+}
+
+/* =============================================================
+ *  PROPRIEDADES (painel direito)
+ * ============================================================= */
+
+function atualizarPropriedadesLinha(i) {
+  const chave = ESTADO.tabelaAtual;
+  const esq = ESQUEMAS[chave];
+  if (!esq || !ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+  const reg = ESTADO.dados[chave][i];
+  const container = document.getElementById('propConteudo');
+  let html = '<div class="prop-info" style="color:var(--amarelo)">Registro #' + (i+1) + '</div>';
+  for (const col of esq.colunas) {
+    const val = reg[col.campo] || '—';
+    html += '<div class="prop-campo"><label>' + col.nome + '</label>' +
+            '<div style="font-size:12px;padding:3px 0">' + escapeHTML(String(val)) + '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+/* =============================================================
+ *  CATÁLOGO RÁPIDO (painel direito)
+ * ============================================================= */
+
+function renderizarCatalogo(filtro) {
+  const container = document.getElementById('catalogoLista');
+  let itens = CATALOGO_SINAIS_RESUMO;
+  if (filtro) itens = itens.filter(s => s.categoria === filtro);
+
+  let html = '';
+  for (const s of itens) {
+    let badge = 'badge-i';
+    if (s.categoria === 'regulamentacao') badge = 'badge-r';
+    else if (s.categoria === 'advertencia') badge = 'badge-a';
+    else if (s.categoria === 'servicos') badge = 'badge-s';
+    html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-bottom:1px solid var(--borda);font-size:11px">' +
+            '<span class="badge ' + badge + '">' + s.codigo + '</span>' +
+            '<span style="color:var(--texto-sec)">' + s.nome + '</span></div>';
+  }
+  container.innerHTML = html || '<div style="padding:10px;color:var(--texto-dim);font-size:11px">Nenhum sinal encontrado.</div>';
+}
+
+function filtrarCatalogo() {
+  const filtro = document.getElementById('catalogoFiltro').value;
+  renderizarCatalogo(filtro || null);
+}
+
+/* =============================================================
+ *  PLANTA (Plan View) — canvas placeholder
+ * ============================================================= */
+
+let plantaCtx = null;
+let plantaW = 0, plantaH = 0;
+
+function inicializarPlanta() {
+  const canvas = document.getElementById('plantaCanvas');
+  if (!canvas) return;
+  plantaCtx = canvas.getContext('2d');
+
+  const observer = new ResizeObserver(() => redimensionarPlanta());
+  observer.observe(canvas.parentElement);
+
+  /* Mostrar coordenadas ao mover o mouse */
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / ESTADO.plantaZoom - ESTADO.plantaOffX).toFixed(1);
+    const y = ((e.clientY - rect.top) / ESTADO.plantaZoom - ESTADO.plantaOffY).toFixed(1);
+    document.getElementById('plantaCoords').textContent = 'X: ' + x + '  Y: ' + y;
+  });
+}
+
+function redimensionarPlanta() {
+  const canvas = document.getElementById('plantaCanvas');
+  const parent = canvas.parentElement;
+  plantaW = parent.clientWidth;
+  plantaH = parent.clientHeight;
+  canvas.width = plantaW;
+  canvas.height = plantaH;
+  desenharPlanta();
+}
+
+function desenharPlanta() {
+  const ctx = plantaCtx;
+  if (!ctx) return;
+  ctx.clearRect(0, 0, plantaW, plantaH);
+
+  ctx.save();
+  ctx.scale(ESTADO.plantaZoom, ESTADO.plantaZoom);
+  ctx.translate(ESTADO.plantaOffX, ESTADO.plantaOffY);
+
+  /* Fundo */
+  ctx.fillStyle = '#0F1219';
+  ctx.fillRect(-5000, -5000, 10000, 10000);
+
+  /* Grade */
+  ctx.strokeStyle = '#1E2432';
+  ctx.lineWidth = 0.5;
+  for (let x = -2000; x < 3000; x += 50) {
+    ctx.beginPath(); ctx.moveTo(x, -2000); ctx.lineTo(x, 3000); ctx.stroke();
+  }
+  for (let y = -2000; y < 3000; y += 50) {
+    ctx.beginPath(); ctx.moveTo(-2000, y); ctx.lineTo(3000, y); ctx.stroke();
+  }
+
+  /* Eixo da rodovia (linha central amarela) */
+  const cy = plantaH / (2 * ESTADO.plantaZoom);
+  ctx.strokeStyle = '#E8B818';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([15, 10]);
+  ctx.beginPath();
+  ctx.moveTo(-500, cy);
+  ctx.lineTo(plantaW / ESTADO.plantaZoom + 500, cy);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* Bordas da pista (linhas brancas) */
+  const faixaW = 35; /* pixels por faixa */
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-500, cy - faixaW * 2);
+  ctx.lineTo(plantaW / ESTADO.plantaZoom + 500, cy - faixaW * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-500, cy + faixaW * 2);
+  ctx.lineTo(plantaW / ESTADO.plantaZoom + 500, cy + faixaW * 2);
+  ctx.stroke();
+
+  /* Linhas divisórias de faixa (brancas tracejadas) */
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([10, 15]);
+  for (const off of [-faixaW, faixaW]) {
+    ctx.beginPath();
+    ctx.moveTo(-500, cy + off);
+    ctx.lineTo(plantaW / ESTADO.plantaZoom + 500, cy + off);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  /* Texto de referência */
+  ctx.fillStyle = '#718096';
+  ctx.font = '12px sans-serif';
+  ctx.fillText('KM 0+000', 20, cy - faixaW * 2 - 12);
+  ctx.fillText('Sentido Crescente →', 20, cy - faixaW * 2 - 28);
+
+  /* Acostamento hachurado (simplificado) */
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < plantaW / ESTADO.plantaZoom + 500; x += 8) {
+    ctx.beginPath();
+    ctx.moveTo(x, cy - faixaW * 2 - 20);
+    ctx.lineTo(x + 5, cy - faixaW * 2 - 5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, cy + faixaW * 2 + 5);
+    ctx.lineTo(x + 5, cy + faixaW * 2 + 20);
+    ctx.stroke();
+  }
+
+  /* Exemplo: placa R-19 no KM 0+050 */
+  const placaX = 200;
+  const placaY = cy - faixaW * 2 - 50;
+  ctx.fillStyle = '#E53E3E';
+  ctx.beginPath();
+  ctx.arc(placaX, placaY, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 7px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('R', placaX, placaY + 3);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#A0AEC0';
+  ctx.font = '9px sans-serif';
+  ctx.fillText('R-19 (60 km/h)', placaX + 14, placaY + 3);
+
+  /* Exemplo: faixa de pedestres */
+  const ftpX = 500;
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  for (let i = 0; i < 8; i++) {
+    ctx.fillRect(ftpX, cy - faixaW * 2 + i * 10, 4, 6);
+    ctx.fillRect(ftpX, cy + faixaW * 2 - (i+1) * 10, 4, 6);
+  }
+  ctx.fillStyle = '#A0AEC0';
+  ctx.font = '9px sans-serif';
+  ctx.fillText('FTP-1', ftpX + 10, cy - faixaW * 2 - 6);
+
+  ctx.restore();
+
+  /* Escala */
+  document.getElementById('plantaInfo').textContent =
+    'Escala: 1:' + Math.round(1000 / ESTADO.plantaZoom);
+}
+
+function plantaZoom(fator) {
+  ESTADO.plantaZoom = Math.max(0.2, Math.min(5, ESTADO.plantaZoom * fator));
+  desenharPlanta();
+}
+
+function plantaReset() {
+  ESTADO.plantaZoom = 1;
+  ESTADO.plantaOffX = 0;
+  ESTADO.plantaOffY = 0;
+  desenharPlanta();
+}
+
+/* =============================================================
+ *  AÇÕES DO PROJETO
+ * ============================================================= */
+
+async function acaoNovoProjeto() {
+  /* Preencher formulário e abrir tela de dados */
+  ESTADO.projeto = {
+    nome: '',
+    lote: '',
+    br: '',
+    uf: '',
+    kmInicio: '',
+    kmFim: '',
+    contratada: '',
+    contrato: '',
+    dataInicio: '',
+    rt: '',
+  };
+  document.getElementById('projNome').value = '';
+  document.getElementById('projLote').value = '';
+  document.getElementById('projBR').value = '';
+  document.getElementById('projUF').value = '';
+  document.getElementById('projKmIni').value = '';
+  document.getElementById('projKmFim').value = '';
+  document.getElementById('projContratada').value = '';
+  document.getElementById('projContrato').value = '';
+  document.getElementById('projDataIni').value = '';
+  document.getElementById('projRT').value = '';
+
+  /* Limpar dados das tabelas */
+  ESTADO.dados = {};
+
+  mostrarTela('dados');
+  atualizarStatus('Novo projeto — preencha os dados e salve.');
+}
+
+async function acaoAbrirProjeto() {
+  /* Tenta usar a API do Electron (se disponível), senão mostra aviso */
+  if (window.api && window.api.abrirProjeto) {
+    const res = await window.api.abrirProjeto();
+    if (res.ok) {
+      ESTADO.projeto = res.meta;
+      preencherDadosProjeto(res.meta);
+      atualizarStatus('Projeto aberto: ' + (res.meta.nome || res.caminho));
+      mostrarTela('dados');
+    }
+  } else {
+    atualizarStatus('Função "Abrir Projeto" disponível apenas no Electron.');
+  }
+}
+
+async function acaoSalvar() {
+  if (!ESTADO.projeto) {
+    atualizarStatus('Nenhum projeto aberto para salvar.');
+    return;
+  }
+  salvarDadosProjeto();
+}
+
+function salvarDadosProjeto() {
+  ESTADO.projeto = {
+    nome: document.getElementById('projNome').value,
+    lote: document.getElementById('projLote').value,
+    br: document.getElementById('projBR').value,
+    uf: document.getElementById('projUF').value,
+    kmInicio: document.getElementById('projKmIni').value,
+    kmFim: document.getElementById('projKmFim').value,
+    contratada: document.getElementById('projContratada').value,
+    contrato: document.getElementById('projContrato').value,
+    dataInicio: document.getElementById('projDataIni').value,
+    rt: document.getElementById('projRT').value,
+  };
+
+  /* Atualiza cabeçalho */
+  const sub = ESTADO.projeto.br
+    ? ESTADO.projeto.br + ' — ' + (ESTADO.projeto.uf || '') + ' | Lote ' + (ESTADO.projeto.lote || '?')
+    : 'Projeto de Sinalização Rodoviária';
+  document.getElementById('headerSubtitulo').textContent = sub;
+
+  /* Status */
+  document.getElementById('statusProjeto').style.display = 'flex';
+  document.getElementById('statusNomeProjeto').textContent =
+    ESTADO.projeto.nome || ESTADO.projeto.br || '(sem nome)';
+
+  atualizarStatus('Dados do projeto salvos.');
+
+  /* Se estiver no Electron, salva via IPC */
+  if (window.api && window.api.salvarProjeto) {
+    window.api.salvarProjeto({ meta: ESTADO.projeto });
+  }
+}
+
+function preencherDadosProjeto(meta) {
+  document.getElementById('projNome').value = meta.nome || '';
+  document.getElementById('projLote').value = meta.lote || '';
+  document.getElementById('projBR').value = meta.br || '';
+  document.getElementById('projUF').value = meta.uf || '';
+  document.getElementById('projKmIni').value = meta.kmInicio || '';
+  document.getElementById('projKmFim').value = meta.kmFim || '';
+  document.getElementById('projContratada').value = meta.contratada || '';
+  document.getElementById('projContrato').value = meta.contrato || '';
+  document.getElementById('projDataIni').value = meta.dataInicio || '';
+  document.getElementById('projRT').value = meta.rt || '';
+}
+
+/* =============================================================
+ *  UTILITÁRIOS
+ * ============================================================= */
+
+function escapeHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function atualizarStatus(texto) {
+  document.getElementById('statusTexto').textContent = texto;
+}
+</script>
+
+</body>
+</html>

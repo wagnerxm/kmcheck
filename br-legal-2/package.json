@@ -1,0 +1,15 @@
+{
+  "name": "br-legal-2",
+  "version": "0.1.0",
+  "description": "Projeto de Sinalização Rodoviária — BR-Legal 2 (DNIT)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "author": "wagnerxm",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
