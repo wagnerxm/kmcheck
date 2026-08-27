@@ -941,13 +941,31 @@ button {
           <div class="titulo">Exemplo Embutido</div>
           <div class="desc">Carregar rodovia de demonstração<br>para testar o sistema</div>
         </div>
+        <div class="export-card" onclick="listarRodoviasSNV()" id="btnListarSNV" style="min-width:200px; display:none">
+          <span class="icone">&#128269;</span>
+          <div class="titulo">Banco KM Check</div>
+          <div class="desc">Navegar rodovias do banco<br>de dados local (364 BRs)</div>
+        </div>
       </div>
       <input type="file" id="inputSNV" accept=".json" onchange="importarArquivoSNV(this)" style="display:none">
+
+      <!-- Lista de rodovias do banco (Electron) -->
+      <div id="snvLista" style="display:none; margin-bottom:20px">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px">
+          <h3 style="font-size:14px; color:var(--azul-claro); margin:0">Rodovias Disponíveis</h3>
+          <input type="text" id="snvBusca" placeholder="Filtrar... (ex.: BR-116, MG)" oninput="filtrarListaSNV()"
+                 style="flex:1; max-width:300px; font-size:12px">
+          <span id="snvContador" style="font-size:11px; color:var(--texto-dim)"></span>
+        </div>
+        <div id="snvListaItens" style="max-height:300px; overflow-y:auto; border:1px solid var(--borda); border-radius:var(--radius); background:var(--bg-card)"></div>
+      </div>
+
       <div id="snvInfo" style="display:none">
         <h3 style="font-size:14px; margin-bottom:10px; color:var(--verde)">&#9989; Rodovia Carregada</h3>
         <div id="snvDetalhes" class="prop-info" style="font-size:12px; line-height:1.8"></div>
-        <div style="margin-top:14px">
+        <div style="margin-top:14px; display:flex; gap:10px">
           <button class="btn-primario" onclick="mostrarTela('planta')">Abrir Planta &#8594;</button>
+          <button class="btn-toolbar" onclick="document.getElementById('snvInfo').style.display='none'">Importar outra</button>
         </div>
       </div>
     </div>
@@ -1084,6 +1102,16 @@ button {
           <span class="icone">&#128190;</span>
           <div class="titulo">JSON — Dados</div>
           <div class="desc">Todos os dados do projeto em formato JSON (backup)</div>
+        </div>
+        <div class="export-card" onclick="exportarQuantCSV()">
+          <span class="icone">&#128202;</span>
+          <div class="titulo">CSV — Quantitativos</div>
+          <div class="desc">Tabela de quantitativos de sinalização em CSV</div>
+        </div>
+        <div class="export-card" onclick="exportarMemorialTXT()">
+          <span class="icone">&#128221;</span>
+          <div class="titulo">TXT — Memorial</div>
+          <div class="desc">Memorial descritivo em formato texto</div>
         </div>
       </div>
     </div>
@@ -2219,6 +2247,79 @@ function carregarSNVExemplo() {
   mostrarTela('planta');
 }
 
+/** Listar rodovias disponíveis no banco local (Electron via IPC) */
+async function listarRodoviasSNV() {
+  if (!window.api || !window.api.listarSNV) {
+    toast('Funcionalidade disponível apenas no Electron.', 'erro');
+    return;
+  }
+  atualizarStatus('Carregando lista de rodovias...');
+  const res = await window.api.listarSNV();
+  if (!res || !res.ok) {
+    toast('Não foi possível listar as rodovias.', 'erro');
+    return;
+  }
+
+  ESTADO._snvLista = res.arquivos || [];
+  document.getElementById('snvLista').style.display = 'block';
+  filtrarListaSNV();
+  atualizarStatus(res.arquivos.length + ' rodovias encontradas no banco.');
+}
+
+/** Filtrar a lista de rodovias exibida */
+function filtrarListaSNV() {
+  const lista = ESTADO._snvLista || [];
+  const busca = (document.getElementById('snvBusca')?.value || '').toUpperCase().trim();
+  const container = document.getElementById('snvListaItens');
+  if (!container) return;
+
+  const filtradas = busca
+    ? lista.filter(r => r.nome.toUpperCase().includes(busca))
+    : lista;
+
+  document.getElementById('snvContador').textContent = filtradas.length + ' de ' + lista.length;
+
+  if (filtradas.length === 0) {
+    container.innerHTML = '<div style="padding:14px; color:var(--texto-dim); font-size:12px">Nenhuma rodovia encontrada.</div>';
+    return;
+  }
+
+  /* Limitar a 100 para performance */
+  const exibir = filtradas.slice(0, 100);
+  let html = '';
+  for (const r of exibir) {
+    const fonteCor = r.fonte === 'projeto' ? 'var(--verde)' : 'var(--azul-claro)';
+    const fonteLabel = r.fonte === 'projeto' ? 'PROJETO' : 'KMCHECK';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--borda);' +
+      'cursor:pointer;font-size:12px;transition:background .12s" ' +
+      'onmouseenter="this.style.background=\'var(--bg-card-hover)\'" ' +
+      'onmouseleave="this.style.background=\'transparent\'" ' +
+      'onclick="carregarRodoviaSNV(\'' + escapeHTML(r.caminho.replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\',\'' + escapeHTML(r.nome) + '\')">' +
+      '<span style="font-weight:600;color:var(--amarelo);min-width:100px">' + escapeHTML(r.nome) + '</span>' +
+      '<span style="font-size:10px;color:' + fonteCor + ';background:rgba(255,255,255,.06);padding:1px 6px;border-radius:3px">' + fonteLabel + '</span>' +
+      (r.br ? '<span style="color:var(--texto-dim);font-size:10px">BR-' + r.br + '/' + (r.uf || '') + '</span>' : '') +
+      '</div>';
+  }
+  if (filtradas.length > 100) {
+    html += '<div style="padding:8px 10px; color:var(--texto-dim); font-size:11px; text-align:center">' +
+      '... e mais ' + (filtradas.length - 100) + ' rodovias. Refine a busca.</div>';
+  }
+  container.innerHTML = html;
+}
+
+/** Carregar uma rodovia a partir do caminho (Electron) */
+async function carregarRodoviaSNV(caminho, nome) {
+  atualizarStatus('Carregando ' + nome + '...');
+  const res = await window.api.importarSNV({ caminho });
+  if (res && res.ok && res.rodovia) {
+    carregarSNV(res.rodovia, res.nomeArquivo || nome);
+    document.getElementById('snvLista').style.display = 'none';
+    toast('Rodovia carregada: ' + nome, 'sucesso');
+  } else {
+    toast('Erro ao carregar: ' + (res?.motivo || 'desconhecido'), 'erro');
+  }
+}
+
 /* =============================================================
  *  PREENCHER TABELA DO SNV (características físicas)
  * ============================================================= */
@@ -3135,6 +3236,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Integração Electron */
   inicializarElectron();
+
+  /* Mostrar botão de banco SNV quando no Electron */
+  if (window.api && window.api.listarSNV) {
+    const btn = document.getElementById('btnListarSNV');
+    if (btn) btn.style.display = '';
+  }
 
   /* Status */
   atualizarStatus('Pronto — crie ou abra um projeto para começar.');
