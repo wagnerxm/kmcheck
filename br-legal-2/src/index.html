@@ -858,10 +858,58 @@ button {
         </div>
       </div>
       <div class="acoes-iniciais">
-        <button class="btn-primario" onclick="acaoNovoProjeto()">Novo Projeto</button>
-        <button class="btn-secundario" onclick="acaoAbrirProjeto()">Abrir Projeto</button>
+        <button class="btn-primario" onclick="acaoNovoProjeto()">&#10133; Novo Projeto</button>
+        <button class="btn-secundario" onclick="acaoAbrirProjeto()">&#128194; Abrir Projeto</button>
       </div>
-      <div class="recentes" id="listaRecentes">
+
+      <!-- Ações rápidas -->
+      <div style="margin-top:30px; max-width:700px">
+        <h3 style="font-size:13px; color:var(--texto-sec); margin-bottom:12px; letter-spacing:.5px; text-transform:uppercase">Ações Rápidas</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:10px">
+          <div class="export-card" onclick="mostrarTela('importar-snv')" style="padding:14px; text-align:left">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:20px">&#128738;</span>
+              <div>
+                <div style="font-weight:600; font-size:12px">Importar Rodovia</div>
+                <div style="font-size:10px; color:var(--texto-dim); margin-top:2px">Carregar dados SNV/DNIT</div>
+              </div>
+            </div>
+          </div>
+          <div class="export-card" onclick="mostrarTela('planta')" style="padding:14px; text-align:left">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:20px">&#128506;</span>
+              <div>
+                <div style="font-weight:600; font-size:12px">Planta de Sinalização</div>
+                <div style="font-size:10px; color:var(--texto-dim); margin-top:2px">Canvas interativo (F5)</div>
+              </div>
+            </div>
+          </div>
+          <div class="export-card" onclick="mostrarTela('exportar')" style="padding:14px; text-align:left">
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="font-size:20px">&#128228;</span>
+              <div>
+                <div style="font-weight:600; font-size:12px">Exportar</div>
+                <div style="font-size:10px; color:var(--texto-dim); margin-top:2px">PDF, DXF, CSV, JSON</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info do sistema -->
+      <div style="margin-top:30px; max-width:700px; padding:14px; background:var(--bg-card); border:1px solid var(--borda); border-radius:var(--radius)">
+        <h3 style="font-size:13px; color:var(--texto-sec); margin-bottom:8px">&#9432; Fluxo de Trabalho</h3>
+        <div style="font-size:11px; color:var(--texto-dim); line-height:1.8">
+          <strong style="color:var(--amarelo)">1.</strong> Criar projeto e preencher dados (rodovia, lote, trecho)<br>
+          <strong style="color:var(--amarelo)">2.</strong> Importar geometria da rodovia (SNV/DNIT)<br>
+          <strong style="color:var(--amarelo)">3.</strong> Abrir planta e posicionar sinais verticais, horizontais e dispositivos<br>
+          <strong style="color:var(--amarelo)">4.</strong> Preencher planilhas do Volume II (inventário, interseções, OAEs...)<br>
+          <strong style="color:var(--amarelo)">5.</strong> Gerar quantitativos e memorial descritivo<br>
+          <strong style="color:var(--amarelo)">6.</strong> Exportar: DXF (pranchas), CSV (planilhas), PDF (relatórios), JSON (backup)
+        </div>
+      </div>
+
+      <div class="recentes" id="listaRecentes" style="margin-top:20px; max-width:700px">
         <h3>Projetos Recentes</h3>
         <div class="recente-item" style="color:var(--texto-dim); cursor:default;">
           Nenhum projeto recente.
@@ -1264,6 +1312,10 @@ const ESTADO = {
   sinaisColocados: [],
   nextId: 1,
   sinalSelecionado: -1,
+
+  /* Desfazer/Refazer — pilha de snapshots dos sinaisColocados */
+  _undoStack: [],
+  _redoStack: [],
 
   /* Camadas visíveis */
   camadas: {
@@ -2057,6 +2109,7 @@ function confirmarColocarSinal() {
     complemento: complemento,
   };
 
+  salvarSnapshot();
   ESTADO.sinaisColocados.push(sinal);
   fecharModal('modalSinal');
   desenharPlanta();
@@ -2083,6 +2136,7 @@ function mostrarPropriedadesSinal(idx) {
 }
 
 function removerSinal(idx) {
+  salvarSnapshot();
   ESTADO.sinaisColocados.splice(idx, 1);
   ESTADO.sinalSelecionado = -1;
   desenharPlanta();
@@ -3278,9 +3332,61 @@ function baixarTexto(conteudo, nomeArquivo, mimeType) {
 }
 
 /* =============================================================
+ *  DESFAZER / REFAZER
+ *  Salva snapshots da lista de sinais colocados. Limitado a 50 passos.
+ * ============================================================= */
+function salvarSnapshot() {
+  ESTADO._undoStack.push(JSON.stringify(ESTADO.sinaisColocados));
+  if (ESTADO._undoStack.length > 50) ESTADO._undoStack.shift();
+  ESTADO._redoStack = []; /* limpa redo ao fazer nova ação */
+}
+
+function desfazer() {
+  if (ESTADO._undoStack.length === 0) { toast('Nada para desfazer.', 'erro'); return; }
+  ESTADO._redoStack.push(JSON.stringify(ESTADO.sinaisColocados));
+  const snapshot = ESTADO._undoStack.pop();
+  ESTADO.sinaisColocados = JSON.parse(snapshot);
+  ESTADO.nextId = Math.max(...ESTADO.sinaisColocados.map(s => s.id || 0), 0) + 1;
+  ESTADO.sinalSelecionado = -1;
+  if (ESTADO.telaAtual === 'planta') desenharPlanta();
+  atualizarContadorSinais();
+  toast('Desfeito.', 'sucesso');
+}
+
+function refazer() {
+  if (ESTADO._redoStack.length === 0) { toast('Nada para refazer.', 'erro'); return; }
+  ESTADO._undoStack.push(JSON.stringify(ESTADO.sinaisColocados));
+  const snapshot = ESTADO._redoStack.pop();
+  ESTADO.sinaisColocados = JSON.parse(snapshot);
+  ESTADO.nextId = Math.max(...ESTADO.sinaisColocados.map(s => s.id || 0), 0) + 1;
+  ESTADO.sinalSelecionado = -1;
+  if (ESTADO.telaAtual === 'planta') desenharPlanta();
+  atualizarContadorSinais();
+  toast('Refeito.', 'sucesso');
+}
+
+/* =============================================================
  *  TECLADO — atalhos globais
  * ============================================================= */
 document.addEventListener('keydown', (e) => {
+  /* Ctrl+Z: desfazer */
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    desfazer();
+    return;
+  }
+  /* Ctrl+Y ou Ctrl+Shift+Z: refazer */
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault();
+    refazer();
+    return;
+  }
+  /* Ctrl+S: salvar */
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    acaoSalvar();
+    return;
+  }
   /* Delete: remover sinal selecionado na planta */
   if ((e.key === 'Delete' || e.key === 'Backspace') && ESTADO.telaAtual === 'planta' && ESTADO.sinalSelecionado >= 0) {
     e.preventDefault();
@@ -3290,8 +3396,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay:not(.oculto)').forEach(m => m.classList.add('oculto'));
   }
-  /* Atalhos de ferramenta: V, H, D, S, M */
-  if (ESTADO.telaAtual === 'planta' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+  /* Atalhos de ferramenta: V, H, D, S, M — só quando o foco não está em input */
+  if (ESTADO.telaAtual === 'planta' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
     if (e.key === 'v' || e.key === 'V') { selecionarFerramenta('vertical'); e.preventDefault(); }
     if (e.key === 'h' || e.key === 'H') { selecionarFerramenta('horizontal'); e.preventDefault(); }
     if (e.key === 'd' || e.key === 'D') { selecionarFerramenta('dispositivo'); e.preventDefault(); }
