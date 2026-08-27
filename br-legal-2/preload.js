@@ -14,22 +14,40 @@ contextBridge.exposeInMainWorld('api', {
   /** Cria um novo projeto BR-Legal 2 no caminho escolhido pelo usuário. */
   criarProjeto: (dados) => ipcRenderer.invoke('createProject', dados),
 
-  /** Abre um projeto existente (.brlegal2 ou pasta). */
+  /** Abre um projeto existente (.brlegal2.json ou pasta). */
   abrirProjeto: () => ipcRenderer.invoke('openProject'),
 
-  /** Salva o projeto corrente (mesmo caminho ou "Salvar como"). */
+  /** Salva o projeto corrente (mesmo caminho). */
   salvarProjeto: (dados) => ipcRenderer.invoke('saveProject', dados),
+
+  /** Salva o projeto em um novo local ("Salvar como"). */
+  salvarProjetoComo: (dados) => ipcRenderer.invoke('saveProjectAs', dados),
+
+  /** Retorna o caminho do projeto corrente. */
+  obterCaminhoProjeto: () => ipcRenderer.invoke('getProjectPath'),
 
   /* ===== Importação / Exportação ===== */
 
-  /** Importa dados do SNV/DNIT para alimentar o projeto. */
+  /** Importa dados do SNV/DNIT (arquivo JSON de rodovia). */
   importarSNV: (opcoes) => ipcRenderer.invoke('importSNV', opcoes),
 
-  /** Exporta volume(s) em PDF. */
+  /** Lista rodovias SNV disponíveis (no projeto e no KM Check). */
+  listarSNV: () => ipcRenderer.invoke('listSNVFiles'),
+
+  /** Exporta relatório em PDF (usa printToPDF do Electron). */
   exportarPDF: (opcoes) => ipcRenderer.invoke('exportPDF', opcoes),
 
-  /** Exporta planilhas do Volume II em XLSX. */
+  /** Exporta planilhas do Volume II em CSV (futuro XLSX). */
   exportarXLSX: (opcoes) => ipcRenderer.invoke('exportXLSX', opcoes),
+
+  /** Exporta um texto genérico para arquivo (DXF, JSON, CSV, TXT). */
+  exportarArquivo: (opcoes) => ipcRenderer.invoke('exportFile', opcoes),
+
+  /** Lê um arquivo do disco. */
+  lerArquivo: (opcoes) => ipcRenderer.invoke('readFile', opcoes),
+
+  /** Abre uma pasta no explorador de arquivos do SO. */
+  abrirPasta: (caminho) => ipcRenderer.invoke('openFolder', caminho),
 
   /* ===== Diálogos ===== */
 
@@ -49,6 +67,7 @@ contextBridge.exposeInMainWorld('api', {
       'projeto-salvo',
       'erro',
       'progresso',
+      'menu-acao',
     ];
     if (canaisPermitidos.includes(canal)) {
       ipcRenderer.on(canal, (_evento, ...args) => callback(...args));

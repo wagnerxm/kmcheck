@@ -2831,12 +2831,16 @@ async function acaoNovoProjeto() {
 }
 
 async function acaoAbrirProjeto() {
-  /* Electron: usa API do preload */
+  /* Electron: usa API do preload — recebe dados completos do main process */
   if (window.api && window.api.abrirProjeto) {
     const res = await window.api.abrirProjeto();
     if (res && res.ok) {
       carregarProjetoJSON(res);
-      atualizarStatus('Projeto aberto: ' + (res.meta.nome || res.caminho));
+      const nome = res.meta?.nome || res.meta?.br || res.caminho || 'Projeto';
+      atualizarStatus('Projeto aberto: ' + nome);
+      toast('Projeto carregado: ' + nome, 'sucesso');
+    } else if (res && res.motivo && res.motivo !== 'cancelado') {
+      toast('Erro ao abrir: ' + res.motivo, 'erro');
     }
     return;
   }
@@ -2968,6 +2972,21 @@ function toast(msg, tipo) {
 }
 
 function baixarTexto(conteudo, nomeArquivo, mimeType) {
+  /* Electron: usa diálogo nativo para salvar */
+  if (window.api && window.api.exportarArquivo) {
+    const ext = nomeArquivo.split('.').pop() || 'txt';
+    const filtros = [{ name: ext.toUpperCase(), extensions: [ext] }];
+    window.api.exportarArquivo({
+      titulo: 'Salvar — ' + nomeArquivo,
+      nomeDefault: nomeArquivo,
+      filtros,
+      conteudo,
+    }).then(res => {
+      if (res && res.ok) toast('Arquivo salvo: ' + res.caminho, 'sucesso');
+    });
+    return;
+  }
+  /* Standalone: download via blob */
   const blob = new Blob([conteudo], { type: mimeType + ';charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -3002,6 +3021,90 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =============================================================
+ *  INTEGRAÇÃO ELECTRON — ações do menu nativo
+ * ============================================================= */
+function inicializarElectron() {
+  if (!window.api || !window.api.onEvento) return;
+
+  window.api.onEvento('menu-acao', (acao) => {
+    switch (acao) {
+      case 'novoProjeto':     acaoNovoProjeto(); break;
+      case 'abrirProjeto':    acaoAbrirProjeto(); break;
+      case 'salvar':          acaoSalvar(); break;
+      case 'salvarComo':      acaoSalvarComo(); break;
+      case 'importarSNV':     acaoImportarSNVElectron(); break;
+      case 'exportarJSON':    exportarJSON(); break;
+      case 'exportarCSV':     exportarCSV(); break;
+      case 'exportarDXF':     exportarDXF(); break;
+      case 'exportarPDF':     acaoExportarPDFElectron(); break;
+      case 'irPlanta':        mostrarTela('planta'); break;
+      case 'irQuantitativos': mostrarTela('quantitativos'); break;
+      case 'irMemorial':      mostrarTela('memorial'); break;
+      case 'desfazer':        desfazer(); break;
+      case 'refazer':         refazer(); break;
+    }
+  });
+
+  window.api.onEvento('projeto-salvo', (caminho) => {
+    toast('Projeto salvo: ' + caminho, 'sucesso');
+  });
+}
+
+/** Importar SNV via diálogo nativo do Electron */
+async function acaoImportarSNVElectron() {
+  if (!window.api) return;
+  const res = await window.api.importarSNV({});
+  if (res && res.ok && res.rodovia) {
+    carregarSNV(res.rodovia, res.nomeArquivo || 'SNV');
+    toast('Rodovia importada: ' + (res.nomeArquivo || ''), 'sucesso');
+  } else if (res && res.motivo && res.motivo !== 'cancelado') {
+    toast('Erro na importação: ' + res.motivo, 'erro');
+  }
+}
+
+/** Salvar como via Electron */
+async function acaoSalvarComo() {
+  if (!ESTADO.projeto) {
+    toast('Nenhum projeto aberto para salvar.', 'erro');
+    return;
+  }
+  salvarDadosProjeto(); /* atualiza ESTADO.projeto */
+  if (window.api && window.api.salvarProjetoComo) {
+    const res = await window.api.salvarProjetoComo({
+      meta: ESTADO.projeto,
+      dados: ESTADO.dados,
+      sinaisColocados: ESTADO.sinaisColocados,
+      rodovia: ESTADO.rodovia,
+    });
+    if (res && res.ok) {
+      toast('Projeto salvo em: ' + res.caminho, 'sucesso');
+    }
+  } else {
+    /* Fallback standalone — usa exportarJSON */
+    exportarJSON();
+  }
+}
+
+/** Exportar PDF via Electron (printToPDF) */
+async function acaoExportarPDFElectron() {
+  if (!window.api || !window.api.exportarPDF) {
+    toast('Exportação PDF disponível apenas no Electron.', 'erro');
+    return;
+  }
+  const p = ESTADO.projeto || {};
+  const res = await window.api.exportarPDF({
+    nome: (p.nome || p.br || 'BR-Legal-2').replace(/\s+/g, '-'),
+    paisagem: true,
+    tamanho: 'A3',
+  });
+  if (res && res.ok) {
+    toast('PDF exportado: ' + res.caminho, 'sucesso');
+  } else if (res && res.motivo && res.motivo !== 'cancelado') {
+    toast('Erro ao exportar PDF: ' + res.motivo, 'erro');
+  }
+}
+
+/* =============================================================
  *  BOOT — inicialização
  * ============================================================= */
 document.addEventListener('DOMContentLoaded', () => {
@@ -3029,6 +3132,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Catálogo inicial */
   renderizarCatalogo(null);
+
+  /* Integração Electron */
+  inicializarElectron();
 
   /* Status */
   atualizarStatus('Pronto — crie ou abra um projeto para começar.');
