@@ -1060,11 +1060,25 @@ button {
 
     <!-- Tela Volume I — Memorial de Estudos -->
     <div class="tela" id="tela-vol1-memorial">
-      <div class="vazio-msg">
-        <span class="icone-grande">&#128196;</span>
-        Memorial de Estudos Preliminares<br>
-        <small style="color:var(--texto-dim)">Módulo de edição de texto em desenvolvimento.</small>
+      <h2>Volume I — Memorial de Estudos Preliminares</h2>
+      <div style="font-size:12px; color:var(--texto-dim); margin-bottom:12px">
+        Descreva os estudos preliminares, justificativas técnicas, condições da rodovia e critérios de projeto.
+        O conteúdo é salvo automaticamente no projeto.
       </div>
+      <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap">
+        <button class="btn-toolbar" onclick="vol1InserirSecao('introducao')">+ Introdução</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('objetivo')">+ Objetivo</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('diagnostico')">+ Diagnóstico</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('criterios')">+ Critérios</button>
+        <button class="btn-toolbar" onclick="vol1InserirSecao('conclusao')">+ Conclusão</button>
+        <div style="flex:1"></div>
+        <button class="btn-toolbar verde" onclick="vol1ExportarPDF()">Exportar PDF</button>
+      </div>
+      <textarea id="vol1Texto" style="width:100%; min-height:500px; padding:16px; font-size:13px;
+        line-height:1.8; font-family:inherit; background:var(--bg-card); color:var(--texto);
+        border:1px solid var(--borda); border-radius:var(--radius); resize:vertical"
+        placeholder="Digite aqui o memorial de estudos preliminares...&#10;&#10;Use os botões acima para inserir seções modelo."
+        oninput="vol1Salvar()"></textarea>
     </div>
 
     <!-- Tela Tabela (genérica para Volume II) -->
@@ -1300,6 +1314,36 @@ button {
   </div>
 </div>
 
+<!-- Modal: Camadas -->
+<div class="modal-overlay oculto" id="modalCamadas">
+  <div class="modal-dialog" style="min-width:320px; max-width:380px">
+    <h3>Camadas Visíveis</h3>
+    <div style="display:flex; flex-direction:column; gap:10px">
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camGrade" onchange="atualizarCamada('grade', this.checked)"> Grade de referência
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camKM" onchange="atualizarCamada('kmMarkers', this.checked)"> Marcadores de KM
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camVertical" onchange="atualizarCamada('vertical', this.checked)"> Sinalização vertical
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camHorizontal" onchange="atualizarCamada('horizontal', this.checked)"> Sinalização horizontal
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camDispositivos" onchange="atualizarCamada('dispositivos', this.checked)"> Dispositivos de segurança
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer">
+        <input type="checkbox" id="camAcostamento" onchange="atualizarCamada('acostamento', this.checked)"> Acostamento
+      </label>
+    </div>
+    <div class="modal-acoes" style="margin-top:16px">
+      <button class="btn-modal cancelar" onclick="fecharModal('modalCamadas')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1366,6 +1410,11 @@ const ESTADO = {
     dispositivos: true,
     acostamento: true,
   },
+
+  /* Ferramenta medir — pontos de medição */
+  _medirPontoA: null, /* {x, y} em coordenadas mundo */
+  _medirPontoB: null,
+  _medirPreview: null, /* ponto dinâmico sob o mouse */
 };
 
 /* =============================================================
@@ -1577,6 +1626,12 @@ function inicializarPlanta() {
         'X: ' + wx.toFixed(0) + ' Y: ' + (-wy).toFixed(0);
     }
 
+    /* Preview da medição — linha elástica enquanto move o mouse */
+    if (ESTADO.ferramenta === 'medir' && ESTADO._medirPontoA && !ESTADO._medirPontoB) {
+      ESTADO._medirPreview = { x: wx, y: wy };
+      desenharPlanta();
+    }
+
     /* Arrastar (pan) */
     if (ESTADO.arrastando) {
       ESTADO.viewX = ESTADO.viewIniX - (e.offsetX - ESTADO.arrastarIniX) / ESTADO.viewZoom;
@@ -1610,6 +1665,27 @@ function inicializarPlanta() {
         return;
       }
       abrirModalSinal(snap);
+      return;
+    }
+
+    if (ESTADO.ferramenta === 'medir') {
+      /* Ferramenta medir: primeiro clique = ponto A, segundo = ponto B */
+      if (!ESTADO._medirPontoA) {
+        ESTADO._medirPontoA = { x: wx, y: wy };
+        ESTADO._medirPontoB = null;
+        toast('Ponto A definido. Clique no ponto B para medir.', 'sucesso');
+      } else {
+        ESTADO._medirPontoB = { x: wx, y: wy };
+        const dx = ESTADO._medirPontoB.x - ESTADO._medirPontoA.x;
+        const dy = ESTADO._medirPontoB.y - ESTADO._medirPontoA.y;
+        const dist = Math.hypot(dx, dy);
+        const texto = dist >= 1000
+          ? (dist / 1000).toFixed(2) + ' km'
+          : dist.toFixed(1) + ' m';
+        toast('Distância: ' + texto, 'sucesso');
+        ESTADO._medirPreview = null;
+      }
+      desenharPlanta();
       return;
     }
 
@@ -1712,6 +1788,9 @@ function desenharPlanta() {
 
   /* Sinais colocados */
   desenharSinaisColocados(ctx);
+
+  /* Linha de medição (ferramenta medir) */
+  desenharMedicao(ctx);
 
   ctx.restore();
 
@@ -2099,9 +2178,94 @@ function desenharBussola(ctx) {
 }
 
 /* =============================================================
+ *  DESENHO DA MEDIÇÃO (ferramenta medir)
+ * ============================================================= */
+function desenharMedicao(ctx) {
+  const pA = ESTADO._medirPontoA;
+  if (!pA) return;
+
+  /* Ponto B pode ser definitivo ou preview (mouse move) */
+  const pB = ESTADO._medirPontoB || ESTADO._medirPreview;
+  if (!pB) {
+    /* Só ponto A — desenhar marcador */
+    const [sx, sy] = mundoParaTela(pA.x, pA.y);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00FFAA';
+    ctx.fill();
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  const [sx1, sy1] = mundoParaTela(pA.x, pA.y);
+  const [sx2, sy2] = mundoParaTela(pB.x, pB.y);
+  const definitivo = !!ESTADO._medirPontoB;
+
+  ctx.save();
+
+  /* Linha tracejada entre os pontos */
+  ctx.beginPath();
+  ctx.moveTo(sx1, sy1);
+  ctx.lineTo(sx2, sy2);
+  ctx.strokeStyle = definitivo ? '#00FFAA' : 'rgba(0,255,170,0.6)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* Marcadores nos pontos */
+  for (const [px, py] of [[sx1, sy1], [sx2, sy2]]) {
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00FFAA';
+    ctx.fill();
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  /* Texto da distância no meio da linha */
+  const dx = pB.x - pA.x;
+  const dy = pB.y - pA.y;
+  const dist = Math.hypot(dx, dy);
+  const texto = dist >= 1000
+    ? (dist / 1000).toFixed(2) + ' km'
+    : dist.toFixed(1) + ' m';
+
+  const mx = (sx1 + sx2) / 2;
+  const my = (sy1 + sy2) / 2;
+  const font = getComputedStyle(document.body).fontFamily;
+
+  /* Fundo semi-transparente para legibilidade */
+  ctx.font = 'bold 12px ' + font;
+  const tw = ctx.measureText(texto).width;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(mx - tw / 2 - 6, my - 18, tw + 12, 22);
+  ctx.fillStyle = '#00FFAA';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(texto, mx, my - 7);
+
+  ctx.restore();
+}
+
+/* Limpar medição ao trocar de ferramenta */
+function limparMedicao() {
+  ESTADO._medirPontoA = null;
+  ESTADO._medirPontoB = null;
+  ESTADO._medirPreview = null;
+}
+
+/* =============================================================
  *  FERRAMENTAS E SINAIS
  * ============================================================= */
 function selecionarFerramenta(ferramenta) {
+  /* Limpar medição ao trocar de ferramenta */
+  if (ESTADO.ferramenta === 'medir' && ferramenta !== 'medir') limparMedicao();
   ESTADO.ferramenta = ferramenta;
   document.querySelectorAll('.tool-btn').forEach(btn => {
     btn.classList.toggle('ativo', btn.dataset.tool === ferramenta);
@@ -2288,9 +2452,24 @@ function plantaFitRodovia() {
 }
 
 function toggleCamadas() {
-  /* Toggle simples — alterna acostamento e grade */
-  ESTADO.camadas.grade = !ESTADO.camadas.grade;
-  ESTADO.camadas.acostamento = !ESTADO.camadas.acostamento;
+  /* Abrir diálogo de camadas com checkboxes sincronizados */
+  const mapa = {
+    camGrade: 'grade',
+    camKM: 'kmMarkers',
+    camVertical: 'vertical',
+    camHorizontal: 'horizontal',
+    camDispositivos: 'dispositivos',
+    camAcostamento: 'acostamento',
+  };
+  for (const [id, chave] of Object.entries(mapa)) {
+    const el = document.getElementById(id);
+    if (el) el.checked = ESTADO.camadas[chave];
+  }
+  document.getElementById('modalCamadas').classList.remove('oculto');
+}
+
+function atualizarCamada(chave, valor) {
+  ESTADO.camadas[chave] = valor;
   desenharPlanta();
 }
 
@@ -2999,6 +3178,9 @@ function mostrarTela(id) {
 
   /* Recalcular quantitativos ao abrir */
   if (id === 'quantitativos') recalcularQuantitativos();
+
+  /* Carregar conteúdo do Volume I Memorial ao abrir */
+  if (id === 'vol1-memorial') vol1Carregar();
 }
 
 function navegar(el) {
@@ -3076,9 +3258,15 @@ function renderizarTabelaBody(esq, dados) {
       } else {
         const cls = (col.tipo === 'numero') ? ' celula-numero' : (col.tipo === 'km') ? ' celula-km' : '';
         const tipo = (col.tipo === 'numero' || col.tipo === 'km') ? 'number' : 'text';
+        /* Atributos de validação HTML5 a partir do esquema */
+        let attrs = '';
+        if (col.min !== undefined) attrs += ' min="' + col.min + '"';
+        if (col.max !== undefined) attrs += ' max="' + col.max + '"';
+        if (col.decimais !== undefined) attrs += ' step="' + Math.pow(10, -col.decimais) + '"';
+        else if (col.tipo === 'km') attrs += ' step="0.1"';
         html += '<td class="' + cls + '"><input type="' + tipo + '" value="' + escapeHTML(String(val)) +
                 '" data-i="' + i + '" data-campo="' + col.campo + '" onchange="editarCelula(this)"' +
-                (col.tipo === 'km' ? ' step="0.1"' : '') + '></td>';
+                attrs + '></td>';
       }
     }
     html += '</tr>';
@@ -3091,6 +3279,43 @@ function editarCelula(el) {
   const campo = el.dataset.campo;
   const chave = ESTADO.tabelaAtual;
   if (!ESTADO.dados[chave] || !ESTADO.dados[chave][i]) return;
+
+  /* Validação com base no esquema (min, max, decimais) */
+  const esq = ESQUEMAS[chave];
+  if (esq) {
+    const col = esq.colunas.find(c => c.campo === campo);
+    if (col && (col.tipo === 'numero' || col.tipo === 'km') && el.value !== '') {
+      let val = parseFloat(el.value);
+      let erro = '';
+      if (isNaN(val)) {
+        erro = 'Valor inválido — use um número.';
+      } else {
+        if (col.min !== undefined && val < col.min) {
+          erro = 'Valor mínimo permitido: ' + col.min;
+          val = col.min;
+        }
+        if (col.max !== undefined && val > col.max) {
+          erro = 'Valor máximo permitido: ' + col.max;
+          val = col.max;
+        }
+        /* Arredondar para as casas decimais do esquema */
+        if (col.decimais !== undefined) {
+          val = parseFloat(val.toFixed(col.decimais));
+        }
+      }
+      if (erro) {
+        toast(col.nome + ': ' + erro, 'erro');
+        el.value = val;
+      }
+      ESTADO.dados[chave][i][campo] = isNaN(val) ? '' : val;
+      /* Feedback visual de erro */
+      el.style.outline = erro ? '2px solid var(--vermelho, #E53E3E)' : '';
+      setTimeout(() => { el.style.outline = ''; }, 2000);
+      atualizarContagem(chave);
+      return;
+    }
+  }
+
   ESTADO.dados[chave][i][campo] = el.value;
   atualizarContagem(chave);
 }
@@ -3350,6 +3575,10 @@ function salvarDadosProjeto() {
   atualizarStatus('Dados do projeto salvos.');
   toast('Projeto salvo!', 'sucesso');
 
+  /* Registrar nos recentes */
+  salvarProjetoRecente();
+  renderizarRecentes();
+
   /* Electron: salva via IPC */
   if (window.api && window.api.salvarProjeto) {
     window.api.salvarProjeto({
@@ -3460,6 +3689,168 @@ function refazer() {
 }
 
 /* =============================================================
+ *  VOLUME I — Memorial de Estudos Preliminares
+ * ============================================================= */
+const VOL1_SECOES = {
+  introducao: '1. INTRODUÇÃO\n\nO presente memorial de estudos preliminares tem por objetivo apresentar as ' +
+    'análises e levantamentos realizados para o projeto de sinalização rodoviária da rodovia {BR}/{UF}, ' +
+    'conforme as diretrizes do Programa BR-LEGAL 2 do DNIT.\n\n',
+  objetivo: '2. OBJETIVO\n\nO objetivo deste projeto é a elaboração do projeto executivo de sinalização ' +
+    'vertical, horizontal e dispositivos de segurança do trecho compreendido entre o KM {KI} e o KM {KF} ' +
+    'da rodovia {BR}/{UF}, visando a melhoria das condições de segurança viária.\n\n',
+  diagnostico: '3. DIAGNÓSTICO DA SITUAÇÃO ATUAL\n\n3.1 Características Físicas\n' +
+    'A rodovia apresenta pista {PISTA} com {FAIXAS} faixas de rolamento.\n\n' +
+    '3.2 Sinalização Existente\nFoi realizado levantamento da sinalização existente, ' +
+    'verificando-se o estado de conservação e a adequação aos padrões do CONTRAN.\n\n' +
+    '3.3 Dados de Tráfego\nOs volumes de tráfego foram obtidos a partir dos postos de contagem do DNIT.\n\n',
+  criterios: '4. CRITÉRIOS DE PROJETO\n\nO projeto foi elaborado com base nas seguintes referências normativas:\n' +
+    '- Manual de Sinalização Rodoviária do DNIT (3ª edição)\n' +
+    '- Código de Trânsito Brasileiro (Lei 9.503/1997)\n' +
+    '- Resoluções do CONTRAN aplicáveis\n' +
+    '- Manual de Projeto Geométrico de Rodovias Rurais (DNER, 1999)\n' +
+    '- Instruções de Projeto e Procedimentos do Programa BR-LEGAL 2\n\n',
+  conclusao: '5. CONCLUSÃO\n\nCom base nos estudos e levantamentos realizados, o projeto de sinalização ' +
+    'proposto atende às normas vigentes e visa garantir a segurança e a fluidez do tráfego no trecho.\n\n',
+};
+
+function vol1InserirSecao(chave) {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea) return;
+  let texto = VOL1_SECOES[chave] || '';
+  /* Substituir variáveis do projeto */
+  const p = ESTADO.projeto || {};
+  const r = ESTADO.rodovia || {};
+  texto = texto
+    .replace(/\{BR\}/g, p.br || r.br || 'XXX')
+    .replace(/\{UF\}/g, p.uf || r.uf || 'XX')
+    .replace(/\{KI\}/g, p.kmInicio || '0')
+    .replace(/\{KF\}/g, p.kmFim || '0')
+    .replace(/\{PISTA\}/g, p.pista || 'simples')
+    .replace(/\{FAIXAS\}/g, p.faixas || '2');
+  /* Inserir na posição do cursor ou ao final */
+  const pos = textarea.selectionStart;
+  const antes = textarea.value.substring(0, pos);
+  const depois = textarea.value.substring(pos);
+  textarea.value = antes + texto + depois;
+  textarea.selectionStart = textarea.selectionEnd = pos + texto.length;
+  textarea.focus();
+  vol1Salvar();
+}
+
+function vol1Salvar() {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea) return;
+  if (!ESTADO.dados) ESTADO.dados = {};
+  ESTADO.dados._vol1Memorial = textarea.value;
+}
+
+function vol1Carregar() {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea) return;
+  textarea.value = (ESTADO.dados && ESTADO.dados._vol1Memorial) || '';
+}
+
+async function vol1ExportarPDF() {
+  const textarea = document.getElementById('vol1Texto');
+  if (!textarea || !textarea.value.trim()) {
+    toast('O memorial está vazio.', 'erro');
+    return;
+  }
+  /* Se Electron, usar exportar PDF via IPC */
+  if (window.api && window.api.exportarPDF) {
+    const html = '<html><head><meta charset="utf-8"><style>' +
+      'body{font-family:Calibri,sans-serif;font-size:12pt;line-height:1.6;margin:2cm;white-space:pre-wrap}' +
+      '</style></head><body>' + escapeHTML(textarea.value) + '</body></html>';
+    const res = await window.api.exportarPDF({ html });
+    if (res && res.ok) toast('PDF exportado: ' + res.caminho, 'sucesso');
+    else if (res && res.motivo !== 'cancelado') toast('Erro: ' + res.motivo, 'erro');
+  } else {
+    /* Fallback: baixar como TXT */
+    const p = ESTADO.projeto || {};
+    const nome = (p.nome || 'memorial').replace(/\s+/g, '-') + '-vol1.txt';
+    baixarTexto(textarea.value, nome, 'text/plain');
+  }
+}
+
+/* =============================================================
+ *  PROJETOS RECENTES — persistência via localStorage
+ * ============================================================= */
+const RECENTES_KEY = 'brlegal2-recentes';
+const MAX_RECENTES = 10;
+
+function salvarProjetoRecente() {
+  const p = ESTADO.projeto;
+  if (!p || !p.nome) return;
+  const recentes = carregarRecentes();
+  /* Remover duplicata (mesmo nome) */
+  const idx = recentes.findIndex(r => r.nome === p.nome);
+  if (idx >= 0) recentes.splice(idx, 1);
+  /* Inserir no início */
+  recentes.unshift({
+    nome: p.nome,
+    br: p.br || '',
+    uf: p.uf || '',
+    lote: p.lote || '',
+    data: new Date().toISOString(),
+  });
+  /* Limitar */
+  while (recentes.length > MAX_RECENTES) recentes.pop();
+  try { localStorage.setItem(RECENTES_KEY, JSON.stringify(recentes)); } catch (e) { /* ok */ }
+}
+
+function carregarRecentes() {
+  try {
+    const json = localStorage.getItem(RECENTES_KEY);
+    return json ? JSON.parse(json) : [];
+  } catch (e) { return []; }
+}
+
+function renderizarRecentes() {
+  const container = document.getElementById('listaRecentes');
+  if (!container) return;
+  const recentes = carregarRecentes();
+
+  if (recentes.length === 0) {
+    container.innerHTML = '<h3>Projetos Recentes</h3>' +
+      '<div class="recente-item" style="color:var(--texto-dim); cursor:default">Nenhum projeto recente.</div>';
+    return;
+  }
+
+  let html = '<h3>Projetos Recentes</h3>';
+  for (const r of recentes) {
+    const dt = r.data ? new Date(r.data) : null;
+    const dataStr = dt ? dt.toLocaleDateString('pt-BR') : '';
+    html += '<div class="recente-item" style="padding:8px 12px; border:1px solid var(--borda); ' +
+      'border-radius:var(--radius); margin-bottom:6px; cursor:pointer; display:flex; ' +
+      'align-items:center; gap:10px; transition:background .12s" ' +
+      'onmouseenter="this.style.background=\'var(--bg-card-hover)\'" ' +
+      'onmouseleave="this.style.background=\'transparent\'" ' +
+      'onclick="restaurarRecente(\'' + escapeHTML(r.nome.replace(/'/g, "\\'")) + '\')">' +
+      '<span style="font-size:18px">&#128194;</span>' +
+      '<div style="flex:1">' +
+      '<div style="font-weight:600; font-size:13px">' + escapeHTML(r.nome) + '</div>' +
+      '<div style="font-size:11px; color:var(--texto-dim)">' +
+      (r.br ? 'BR-' + r.br + '/' + r.uf : '') +
+      (r.lote ? ' • Lote ' + r.lote : '') +
+      '</div></div>' +
+      '<span style="font-size:11px; color:var(--texto-dim)">' + dataStr + '</span>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function restaurarRecente(nome) {
+  /* No Electron, abrir projeto salvo; sem Electron, apenas preenche o nome */
+  if (window.api && window.api.abrirProjeto) {
+    toast('Use Arquivo → Abrir para carregar o projeto.', 'sucesso');
+  } else {
+    document.getElementById('projNome').value = nome;
+    mostrarTela('dados');
+    toast('Preencha os dados do projeto "' + nome + '".', 'sucesso');
+  }
+}
+
+/* =============================================================
  *  TECLADO — atalhos globais
  * ============================================================= */
 document.addEventListener('keydown', (e) => {
@@ -3497,6 +3888,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'd' || e.key === 'D') { selecionarFerramenta('dispositivo'); e.preventDefault(); }
     if (e.key === 's' || e.key === 'S') { selecionarFerramenta('selecao'); e.preventDefault(); }
     if (e.key === 'm' || e.key === 'M') { selecionarFerramenta('mover'); e.preventDefault(); }
+    if (e.key === 'r' || e.key === 'R') { selecionarFerramenta('medir'); e.preventDefault(); }
   }
 });
 
@@ -3621,6 +4013,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btnListarSNV');
     if (btn) btn.style.display = '';
   }
+
+  /* Projetos recentes */
+  renderizarRecentes();
 
   /* Status */
   atualizarStatus('Pronto — crie ou abra um projeto para começar.');
