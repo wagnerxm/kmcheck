@@ -757,6 +757,46 @@ button {
 .tela { display: none; }
 .tela.visivel { display: block; }
 .tela-inicial.visivel, .tela-planta.visivel { display: flex; }
+
+/* =============================================================
+ *  IMPRESSÃO — folha A3 paisagem para pranchas de sinalização
+ * ============================================================= */
+@media print {
+  @page { size: A3 landscape; margin: 10mm; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  #header, #sidebar, #propanel, #rodape, .toast, .modal-overlay,
+  .toolbar-planta, .btn-toolbar, .btn-header, .acoes, .form-acoes,
+  .export-card, .acoes-iniciais { display: none !important; }
+  #app {
+    display: block !important;
+    height: auto;
+  }
+  #centro {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .tela { display: none !important; }
+  .tela.visivel { display: block !important; page-break-after: always; }
+  .tela-planta.visivel {
+    display: block !important;
+    flex-direction: column;
+  }
+  #plantaCanvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 80vh;
+  }
+  .tabela-dados { border-collapse: collapse; width: 100%; }
+  .tabela-dados th, .tabela-dados td {
+    border: 1px solid #ccc; padding: 4px 6px; font-size: 9pt;
+  }
+  .tabela-dados th { background: #f0f0f0; }
+  .memorial-texto {
+    border: none; padding: 0; font-size: 11pt;
+    min-height: auto; background: #fff; color: #000;
+    white-space: pre-wrap;
+  }
+}
 </style>
 </head>
 <body>
@@ -1675,8 +1715,9 @@ function desenharPlanta() {
 
   ctx.restore();
 
-  /* Escala */
+  /* Escala e bússola */
   desenharBarraEscala(ctx);
+  desenharBussola(ctx);
   document.getElementById('plantaEscala').textContent =
     'Zoom: ' + ESTADO.viewZoom.toFixed(2) + ' px/m';
 }
@@ -2001,6 +2042,59 @@ function desenharBarraEscala(ctx) {
   ctx.textAlign = 'center';
   const label = metros >= 1000 ? (metros / 1000) + ' km' : metros + ' m';
   ctx.fillText(label, x + barraPx / 2, y - 8);
+  ctx.restore();
+}
+
+function desenharBussola(ctx) {
+  /* Rosa dos ventos no canto superior direito — norte sempre para cima */
+  const cx = plantaW - 40;
+  const cy = 40;
+  const r = 18;
+
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+
+  /* Flecha norte (preta com ponta branca) */
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.lineTo(cx + 5, cy + 2);
+  ctx.lineTo(cx, cy - 4);
+  ctx.closePath();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.lineTo(cx - 5, cy + 2);
+  ctx.lineTo(cx, cy - 4);
+  ctx.closePath();
+  ctx.fillStyle = '#A0AEC0';
+  ctx.fill();
+
+  /* Flecha sul */
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r);
+  ctx.lineTo(cx + 4, cy + 2);
+  ctx.lineTo(cx, cy + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#4A5568';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r);
+  ctx.lineTo(cx - 4, cy + 2);
+  ctx.lineTo(cx, cy + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#2D3748';
+  ctx.fill();
+
+  /* Letra N */
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('N', cx, cy - r - 4);
+
   ctx.restore();
 }
 
