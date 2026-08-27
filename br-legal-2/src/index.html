@@ -2528,15 +2528,56 @@ function gerarMemorial() {
     }
   }
 
-  texto += '5. CONSIDERAÇÕES FINAIS\n';
+  /* 5. Quantitativo resumido */
+  if (sinais.length > 0) {
+    texto += '5. RESUMO QUANTITATIVO\n';
+    texto += '──────────────────────\n';
+    /* Agrupar por código */
+    const agrupado = {};
+    for (const s of sinais) {
+      if (!agrupado[s.codigo]) agrupado[s.codigo] = { nome: s.nome, tipo: s.tipo, qtde: 0 };
+      agrupado[s.codigo].qtde++;
+    }
+    const codigos = Object.keys(agrupado).sort();
+    texto += String('Código').padEnd(12) + String('Descrição').padEnd(40) + String('Qtde').padStart(6) + '\n';
+    texto += '─'.repeat(58) + '\n';
+    for (const cod of codigos) {
+      const item = agrupado[cod];
+      texto += cod.padEnd(12) + item.nome.substring(0, 38).padEnd(40) + String(item.qtde).padStart(6) + '\n';
+    }
+    texto += '─'.repeat(58) + '\n';
+    texto += 'TOTAL'.padEnd(52) + String(sinais.length).padStart(6) + '\n\n';
+  }
+
+  texto += (sinais.length > 0 ? '6' : '5') + '. METODOLOGIA\n';
+  texto += '──────────────\n';
+  texto += 'A elaboração do projeto seguiu as seguintes etapas:\n';
+  texto += '  a) Levantamento das características físicas e operacionais do trecho\n';
+  texto += '     a partir dos dados do Sistema Nacional de Viação (SNV/DNIT);\n';
+  texto += '  b) Análise das condições existentes de sinalização;\n';
+  texto += '  c) Definição da sinalização vertical de regulamentação, advertência,\n';
+  texto += '     indicação e serviços auxiliares conforme MBST;\n';
+  texto += '  d) Definição da sinalização horizontal (demarcações, faixas, setas\n';
+  texto += '     e legendas) conforme MBST Volume IV;\n';
+  texto += '  e) Especificação dos dispositivos de segurança;\n';
+  texto += '  f) Elaboração das plantas de sinalização;\n';
+  texto += '  g) Elaboração dos quantitativos e orçamento.\n\n';
+
+  const nSec = sinais.length > 0 ? '7' : '6';
+  texto += nSec + '. CONSIDERAÇÕES FINAIS\n';
   texto += '───────────────────────\n';
   texto += 'O projeto foi elaborado em conformidade com as normas vigentes do DNIT e\n';
   texto += 'CONTRAN, buscando garantir a segurança viária dos usuários da rodovia.\n';
   texto += 'Todos os elementos de sinalização foram posicionados considerando as\n';
   texto += 'características geométricas do trecho, as condições operacionais e os\n';
   texto += 'critérios de visibilidade estabelecidos nos manuais de referência.\n\n';
+  texto += 'Os materiais e dispositivos especificados atendem às normas DNIT e ABNT\n';
+  texto += 'aplicáveis, devendo a implantação ser acompanhada por profissional\n';
+  texto += 'habilitado.\n\n';
 
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
   texto += '────────────────────────────────────────\n';
+  texto += (p.uf || '') + ', ' + dataHoje + '\n\n';
   texto += (p.rt || 'Responsável Técnico') + '\n';
   texto += (p.contratada || 'Empresa') + '\n';
 
@@ -2571,8 +2612,14 @@ function exportarMemorialTXT() {
  *  EXPORTAÇÃO
  * ============================================================= */
 function exportarPDF() {
-  toast('Exportação PDF: funcionalidade em desenvolvimento (requer módulo de renderização).', 'erro');
-  atualizarStatus('Exportação PDF em desenvolvimento.');
+  /* Electron: usa printToPDF */
+  if (window.api && window.api.exportarPDF) {
+    acaoExportarPDFElectron();
+    return;
+  }
+  /* Standalone: usa window.print() como fallback */
+  toast('Use Ctrl+P ou o menu Imprimir do navegador para gerar PDF.', 'sucesso');
+  window.print();
 }
 
 function exportarCSV() {
@@ -2602,28 +2649,160 @@ function exportarCSV() {
 function exportarDXF() {
   if (ESTADO.pontos.length < 2) { toast('Importe uma rodovia primeiro.', 'erro'); return; }
 
-  /* Gerar DXF simplificado com a rodovia e os sinais */
-  let dxf = '0\nSECTION\n2\nHEADER\n0\nENDSEC\n';
+  /*
+   * DXF R12 com estrutura completa: HEADER, TABLES (layers, linetypes), ENTITIES.
+   * Layers separadas por tipo de elemento conforme convenção DNIT:
+   *  - EIXO (eixo da rodovia)
+   *  - FAIXA_DIREITA / FAIXA_ESQUERDA (bordos de pista)
+   *  - ACOSTAMENTO (acostamento)
+   *  - KM_MARCOS (marcadores de quilometragem)
+   *  - SINALIZACAO_VERTICAL (sinais R, A, I, E, S)
+   *  - SINALIZACAO_HORIZONTAL (LFO, LMS, faixas, setas)
+   *  - DISPOSITIVOS_SEGURANCA (defensas, delineadores, tachas)
+   *  - TEXTOS (rótulos de sinais e KM)
+   */
+
+  /* Larguras padrão da pista para offset */
+  const largPista = 7.2;
+  const largAcost = 2.5;
+
+  let dxf = '';
+
+  /* ===== HEADER ===== */
+  dxf += '0\nSECTION\n2\nHEADER\n';
+  dxf += '9\n$ACADVER\n1\nAC1009\n'; /* DXF R12 */
+  dxf += '9\n$INSUNITS\n70\n6\n'; /* metros */
+  /* Extents — limites do desenho */
+  const xs = ESTADO.pontos.map(p => p.x);
+  const ys = ESTADO.pontos.map(p => -p.y);
+  const xmin = Math.min(...xs) - 50;
+  const xmax = Math.max(...xs) + 50;
+  const ymin = Math.min(...ys) - 50;
+  const ymax = Math.max(...ys) + 50;
+  dxf += '9\n$EXTMIN\n10\n' + xmin.toFixed(3) + '\n20\n' + ymin.toFixed(3) + '\n30\n0.0\n';
+  dxf += '9\n$EXTMAX\n10\n' + xmax.toFixed(3) + '\n20\n' + ymax.toFixed(3) + '\n30\n0.0\n';
+  dxf += '0\nENDSEC\n';
+
+  /* ===== TABLES ===== */
+  dxf += '0\nSECTION\n2\nTABLES\n';
+
+  /* Linetypes */
+  dxf += '0\nTABLE\n2\nLTYPE\n70\n3\n';
+  dxf += '0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0\n';
+  dxf += '0\nLTYPE\n2\nDASHED\n70\n0\n3\nDashed\n72\n65\n73\n2\n40\n6.0\n49\n3.0\n49\n-3.0\n';
+  dxf += '0\nLTYPE\n2\nDASHDOT\n70\n0\n3\nDash dot\n72\n65\n73\n4\n40\n12.0\n49\n6.0\n49\n-3.0\n49\n1.0\n49\n-3.0\n';
+  dxf += '0\nENDTAB\n';
+
+  /* Layers — cor ACI: 7=branco, 1=vermelho, 2=amarelo, 3=verde, 4=ciano, 5=azul, 6=magenta */
+  const layers = [
+    ['EIXO', 2, 'DASHDOT'],
+    ['FAIXA_DIREITA', 7, 'CONTINUOUS'],
+    ['FAIXA_ESQUERDA', 7, 'CONTINUOUS'],
+    ['ACOSTAMENTO', 8, 'DASHED'],
+    ['KM_MARCOS', 3, 'CONTINUOUS'],
+    ['SINALIZACAO_VERTICAL', 1, 'CONTINUOUS'],
+    ['SINALIZACAO_HORIZONTAL', 2, 'CONTINUOUS'],
+    ['DISPOSITIVOS_SEGURANCA', 6, 'CONTINUOUS'],
+    ['TEXTOS', 7, 'CONTINUOUS'],
+  ];
+  dxf += '0\nTABLE\n2\nLAYER\n70\n' + layers.length + '\n';
+  for (const [nome, cor, lt] of layers) {
+    dxf += '0\nLAYER\n2\n' + nome + '\n70\n0\n62\n' + cor + '\n6\n' + lt + '\n';
+  }
+  dxf += '0\nENDTAB\n';
+  dxf += '0\nENDSEC\n';
+
+  /* ===== ENTITIES ===== */
   dxf += '0\nSECTION\n2\nENTITIES\n';
 
-  /* Polilinha da rodovia */
-  dxf += '0\nPOLYLINE\n8\nRODOVIA\n66\n1\n70\n0\n';
+  /* Eixo da rodovia */
+  dxf += '0\nPOLYLINE\n8\nEIXO\n66\n1\n70\n0\n';
   for (const p of ESTADO.pontos) {
-    dxf += '0\nVERTEX\n8\nRODOVIA\n10\n' + p.x.toFixed(3) + '\n20\n' + (-p.y).toFixed(3) + '\n30\n0\n';
+    dxf += '0\nVERTEX\n8\nEIXO\n10\n' + p.x.toFixed(3) + '\n20\n' + (-p.y).toFixed(3) + '\n30\n0\n';
   }
   dxf += '0\nSEQEND\n';
 
-  /* Sinais como pontos com atributos */
+  /* Bordos de pista (offset lateral do eixo) */
+  const gerarOffset = (pontos, distancia) => {
+    const resultado = [];
+    for (let i = 0; i < pontos.length; i++) {
+      const p = pontos[i];
+      let ang;
+      if (i === 0) ang = Math.atan2(pontos[1].y - p.y, pontos[1].x - p.x);
+      else if (i === pontos.length - 1) ang = Math.atan2(p.y - pontos[i - 1].y, p.x - pontos[i - 1].x);
+      else ang = Math.atan2(pontos[i + 1].y - pontos[i - 1].y, pontos[i + 1].x - pontos[i - 1].x);
+      const normal = ang + Math.PI / 2;
+      resultado.push({
+        x: p.x + Math.cos(normal) * distancia,
+        y: p.y + Math.sin(normal) * distancia,
+      });
+    }
+    return resultado;
+  };
+
+  /* Amostragem a cada ~5 pontos para reduzir tamanho do DXF */
+  const step = Math.max(1, Math.floor(ESTADO.pontos.length / 500));
+  const ptsSampled = ESTADO.pontos.filter((_, i) => i % step === 0 || i === ESTADO.pontos.length - 1);
+
+  const bordoD = gerarOffset(ptsSampled, largPista / 2);
+  const bordoE = gerarOffset(ptsSampled, -largPista / 2);
+  const acostD = gerarOffset(ptsSampled, largPista / 2 + largAcost);
+  const acostE = gerarOffset(ptsSampled, -(largPista / 2 + largAcost));
+
+  const polyline = (pts, layer) => {
+    let s = '0\nPOLYLINE\n8\n' + layer + '\n66\n1\n70\n0\n';
+    for (const p of pts) s += '0\nVERTEX\n8\n' + layer + '\n10\n' + p.x.toFixed(3) + '\n20\n' + (-p.y).toFixed(3) + '\n30\n0\n';
+    return s + '0\nSEQEND\n';
+  };
+
+  dxf += polyline(bordoD, 'FAIXA_DIREITA');
+  dxf += polyline(bordoE, 'FAIXA_ESQUERDA');
+  dxf += polyline(acostD, 'ACOSTAMENTO');
+  dxf += polyline(acostE, 'ACOSTAMENTO');
+
+  /* Marcadores de KM */
+  const kmMax = ESTADO.kmTotal;
+  for (let km = Math.ceil(ESTADO.pontos[0]?.km || 0); km <= kmMax; km++) {
+    const pos = interpolarPosicao(km);
+    if (!pos) continue;
+    const normal = pos.ang + Math.PI / 2;
+    /* Traço perpendicular de 6m */
+    const x1 = pos.x + Math.cos(normal) * 8;
+    const y1 = -pos.y - Math.sin(normal) * 8;
+    const x2 = pos.x - Math.cos(normal) * 8;
+    const y2 = -pos.y + Math.sin(normal) * 8;
+    dxf += '0\nLINE\n8\nKM_MARCOS\n10\n' + x1.toFixed(3) + '\n20\n' + y1.toFixed(3) + '\n30\n0\n' +
+      '11\n' + x2.toFixed(3) + '\n21\n' + y2.toFixed(3) + '\n31\n0\n';
+    dxf += '0\nTEXT\n8\nKM_MARCOS\n10\n' + (pos.x + Math.cos(normal) * 12).toFixed(3) +
+      '\n20\n' + (-pos.y - Math.sin(normal) * 12).toFixed(3) + '\n30\n0\n40\n2.0\n1\nKM ' + km + '\n';
+  }
+
+  /* Sinais colocados */
   for (const s of ESTADO.sinaisColocados) {
     const pos = interpolarPosicao(s.km);
     if (!pos) continue;
     const normal = pos.ang + Math.PI / 2;
-    const offMetros = s.lado === 'E' ? -12 : (s.lado === 'S' ? 0 : 12);
+    const offMetros = s.lado === 'E' ? -(largPista / 2 + largAcost + 3) : (s.lado === 'S' ? 0 : (largPista / 2 + largAcost + 3));
     const wx = pos.x + Math.cos(normal) * offMetros;
     const wy = -pos.y - Math.sin(normal) * offMetros;
-    const layer = 'SINALIZACAO_' + s.tipo.toUpperCase();
+
+    let layer = 'SINALIZACAO_VERTICAL';
+    if (s.tipo === 'horizontal') layer = 'SINALIZACAO_HORIZONTAL';
+    else if (s.tipo === 'dispositivo') layer = 'DISPOSITIVOS_SEGURANCA';
+
+    /* Ponto + linha conectora */
     dxf += '0\nPOINT\n8\n' + layer + '\n10\n' + wx.toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n';
-    dxf += '0\nTEXT\n8\n' + layer + '\n10\n' + (wx + 2).toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n40\n1.5\n1\n' + s.codigo + '\n';
+    dxf += '0\nLINE\n8\n' + layer + '\n10\n' + pos.x.toFixed(3) + '\n20\n' + (-pos.y).toFixed(3) + '\n30\n0\n' +
+      '11\n' + wx.toFixed(3) + '\n21\n' + wy.toFixed(3) + '\n31\n0\n';
+
+    /* Círculo representando o sinal */
+    if (s.tipo === 'vertical') {
+      dxf += '0\nCIRCLE\n8\n' + layer + '\n10\n' + wx.toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n40\n0.6\n';
+    }
+
+    /* Texto do código */
+    dxf += '0\nTEXT\n8\nTEXTOS\n10\n' + (wx + 1.5).toFixed(3) + '\n20\n' + wy.toFixed(3) + '\n30\n0\n40\n1.2\n1\n' + s.codigo + '\n';
+    dxf += '0\nTEXT\n8\nTEXTOS\n10\n' + (wx + 1.5).toFixed(3) + '\n20\n' + (wy - 1.8).toFixed(3) + '\n30\n0\n40\n0.8\n1\nKM ' + formatarKM(s.km) + '\n';
   }
 
   dxf += '0\nENDSEC\n0\nEOF\n';
@@ -2631,7 +2810,7 @@ function exportarDXF() {
   const p = ESTADO.projeto || {};
   const nome = 'planta-' + (p.br || 'projeto').replace(/\s+/g, '-') + '.dxf';
   baixarTexto(dxf, nome, 'application/dxf');
-  toast('DXF exportado: ' + nome, 'sucesso');
+  toast('DXF exportado: ' + nome + ' (' + layers.length + ' camadas)', 'sucesso');
 }
 
 function exportarJSON() {
