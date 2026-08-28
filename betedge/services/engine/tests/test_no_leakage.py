@@ -24,14 +24,20 @@ class _DummyModel(BaseModel):
     def __init__(self) -> None:
         self.n_samples_seen: int = 0
 
-    def train(self, training_data: list[dict], cutoff_date: datetime) -> dict:
-        # Reforça em código a regra que toda subclasse real deve seguir:
-        # nenhum registro de treino pode ser posterior ao cutoff_date.
-        for record in training_data:
-            if record["played_at"] > cutoff_date:
-                raise ValueError(
-                    f"Registro com played_at={record['played_at']} viola cutoff_date={cutoff_date}."
-                )
+    def train(self, training_data: list[dict], cutoff_date: datetime, strict: bool = False) -> dict:
+        # Comportamento padrão (strict=False): filtra silenciosamente os
+        # registros futuros, como faria um modelo real recebendo um dataset
+        # não pré-filtrado pelo pipeline upstream — nunca usa o que é
+        # posterior a cutoff_date, mas também não trata isso como erro fatal.
+        # Comportamento estrito (strict=True): recusa o treino por completo
+        # ao detectar QUALQUER registro futuro — útil como checagem de
+        # sanidade quando se espera que o chamador já tenha filtrado.
+        if strict:
+            for record in training_data:
+                if record["played_at"] > cutoff_date:
+                    raise ValueError(
+                        f"Registro com played_at={record['played_at']} viola cutoff_date={cutoff_date}."
+                    )
         usable = [r for r in training_data if r["played_at"] <= cutoff_date]
         self.n_samples_seen = len(usable)
         return {"n_samples": len(usable)}
@@ -102,10 +108,26 @@ class TestTrainingRespectsCutoffDate:
         assert report["n_samples"] == 5
         assert model.n_samples_seen == 5
 
-    def test_train_raises_when_caller_passes_future_data_directly(self):
-        # Mesmo que o "pipeline" externo esqueça de filtrar, o modelo deve
-        # recusar dados futuros em vez de silenciosamente ignorá-los — melhor
-        # falhar ruidosamente do que mascarar um bug de pipeline upstream.
+    def test_train_never_lets_future_data_influence_n_samples_seen(self):
+        # Mesmo sem o modo estrito, o registro futuro nunca deve ser contado
+        # como usado — a filtragem silenciosa ainda respeita o cutoff à risca.
+        model = _DummyModel()
+        base_date = datetime(2026, 1, 1)
+        training_data = [
+            {"played_at": base_date, "home_goals": 1, "away_goals": 0},
+            {"played_at": base_date + timedelta(days=100), "home_goals": 2, "away_goals": 1},
+        ]
+        cutoff = base_date  # o segundo registro é 100 dias no futuro em relação ao corte
+
+        report = model.train(training_data, cutoff_date=cutoff)
+        assert report["n_samples"] == 1
+        assert model.n_samples_seen == 1
+
+    def test_train_strict_mode_raises_when_caller_passes_future_data_directly(self):
+        # No modo estrito, o modelo recusa o treino por completo em vez de
+        # silenciosamente ignorar o registro futuro — útil como checagem de
+        # sanidade quando se espera que o pipeline upstream já tenha filtrado
+        # e qualquer dado futuro presente indica um bug ali, não aqui.
         model = _DummyModel()
         base_date = datetime(2026, 1, 1)
         training_data = [
@@ -115,7 +137,7 @@ class TestTrainingRespectsCutoffDate:
         cutoff = base_date  # o segundo registro é 100 dias no futuro em relação ao corte
 
         with pytest.raises(ValueError, match="viola cutoff_date"):
-            model.train(training_data, cutoff_date=cutoff)
+            model.train(training_data, cutoff_date=cutoff, strict=True)
 
     def test_train_with_no_future_data_does_not_raise(self):
         model = _DummyModel()

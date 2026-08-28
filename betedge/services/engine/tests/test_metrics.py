@@ -81,9 +81,15 @@ class TestBrierSkillScore:
 
 class TestBrierDecomposition:
     def test_decomposition_reconstructs_brier_score(self):
-        predictions = [0.1, 0.3, 0.5, 0.7, 0.9, 0.2, 0.6, 0.8]
-        outcomes = [0, 0, 1, 1, 1, 0, 1, 0]
-        reliability, resolution, uncertainty = brier_decomposition(predictions, outcomes, n_bins=5)
+        # A identidade BS = reliability - resolution + uncertainty é exata
+        # quando todas as predições dentro de um mesmo bin são idênticas
+        # (o caso de forecasts já discretizados) — por isso usamos aqui dois
+        # grupos de predições constantes (0.1 e 0.6) em vez de valores
+        # arbitrários espalhados por um mesmo bin, o que introduziria um
+        # termo de variância intra-bin não capturado pela decomposição de Murphy.
+        predictions = [0.1, 0.1, 0.1, 0.1, 0.6, 0.6, 0.6, 0.6]
+        outcomes = [0, 0, 1, 0, 1, 1, 0, 1]
+        reliability, resolution, uncertainty = brier_decomposition(predictions, outcomes, n_bins=10)
         reconstructed = reliability - resolution + uncertainty
         assert reconstructed == pytest.approx(brier_score(predictions, outcomes), abs=1e-9)
 

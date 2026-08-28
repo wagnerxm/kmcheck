@@ -1,162 +1,81 @@
 /**
- * Entry point dos workers Node.js do BetEdge.
+ * Ponto de entrada dos workers Node do BetEdge.
  *
- * Inicializa todas as filas e workers BullMQ. Cada worker roda em seu
- * próprio "processor" dentro do mesmo processo Node — para scale-out
- * horizontal, basta rodar mais instâncias do mesmo container.
- *
- * O boot faz:
- * 1. Validar configuração (falha rápido se faltar env var).
- * 2. Verificar conectividade (Redis, Supabase, SportsGameOdds).
- * 3. Inicializar workers.
- * 4. Agendar o primeiro ciclo de coleta de odds.
- * 5. Registrar handlers de shutdown graceful.
+ * Responsável por: instanciar os provedores de odds configurados, subir os
+ * Workers do BullMQ (um por fila) e agendar os jobs recorrentes de polling.
+ * Roda como processo de longa duração (um container dedicado), separado do
+ * Motor Estatístico (Python/FastAPI) e dos workers Python (Celery).
  */
+import { config } from "./config.js";
+import { sharedConnection } from "./lib/connection.js";
+import { createAlertsEvaluateWorker } from "./queues/alerts-evaluate.js";
+import { createNotificationsDispatchWorker } from "./queues/notifications-dispatch.js";
+import { createOddsPollWorker, scheduleOddsPolling } from "./queues/odds-poll.js";
+import { SportsGameOddsProvider } from "./providers/SportsGameOddsProvider.js";
+import type { OddsProvider } from "./providers/OddsProvider.js";
 
-import { config } from './lib/config.js';
-import { logger } from './lib/logger.js';
-import { getRedis } from './lib/redis.js';
-import { getSupabase } from './lib/supabase.js';
-import { SportsGameOddsProvider } from './providers/sportsgameodds.js';
-import {
-  createOddsQueue,
-  createOddsWorker,
-  QUEUE_NAME,
-  type OddsJobData,
-} from './queues/odds-snapshot.js';
+// Esportes/ligas cobertos no lançamento — expandir conforme o roadmap de
+// coberturas do BetEdge avança para além do futebol.
+const TRACKED_SPORTS = ["soccer_brazil_campeonato", "soccer_epl", "soccer_uefa_champs_league"];
 
-async function main() {
-  logger.info('═══════════════════════════════════════════════════');
-  logger.info('  BetEdge Workers — Inicializando...');
-  logger.info('═══════════════════════════════════════════════════');
-  logger.info({ env: config.nodeEnv }, 'Ambiente');
+function buildProviders(): Record<string, OddsProvider> {
+  const providers: Record<string, OddsProvider> = {};
 
-  // ─────────────────────────────────────────────────────────────
-  // 1. Verificar conectividade
-  // ─────────────────────────────────────────────────────────────
-
-  // Redis
-  try {
-    const redis = getRedis();
-    await redis.ping();
-    logger.info('✓ Redis conectado');
-  } catch (err) {
-    logger.fatal({ error: (err as Error).message }, '✗ Falha ao conectar no Redis');
-    process.exit(1);
-  }
-
-  // Supabase
-  try {
-    const db = getSupabase();
-    const { data, error } = await db.from('sports').select('id').limit(1);
-    if (error) throw new Error(error.message);
-    logger.info('✓ Supabase conectado');
-  } catch (err) {
-    logger.fatal({ error: (err as Error).message }, '✗ Falha ao conectar no Supabase');
-    process.exit(1);
-  }
-
-  // SportsGameOdds API (health check não-fatal — pode estar indisponível temporariamente)
-  try {
-    const provider = new SportsGameOddsProvider();
-    const health = await provider.healthCheck();
-    if (health.ok) {
-      logger.info('✓ SportsGameOdds API operacional');
-    } else {
-      logger.warn({ message: health.message }, '⚠ SportsGameOdds API indisponível (worker tentará novamente)');
-    }
-  } catch (err) {
-    logger.warn({ error: (err as Error).message }, '⚠ Health check SportsGameOdds falhou (não-fatal)');
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // 2. Inicializar workers
-  // ─────────────────────────────────────────────────────────────
-
-  const oddsQueue = createOddsQueue();
-  const oddsWorker = createOddsWorker();
-
-  logger.info(
-    { queue: QUEUE_NAME, concurrency: config.workers.concurrency },
-    '✓ Worker de odds inicializado',
-  );
-
-  // ─────────────────────────────────────────────────────────────
-  // 3. Agendar primeiro ciclo de coleta
-  // ─────────────────────────────────────────────────────────────
-
-  // Verificar se já existe um job de coleta agendado (evitar duplicatas no restart)
-  const existingJobs = await oddsQueue.getDelayed();
-  const hasScheduled = existingJobs.some(
-    (j) => j.data.type === 'collect-all' || j.data.type === 'schedule-next',
-  );
-
-  if (!hasScheduled) {
-    // Primeiro ciclo: coletar imediatamente
-    const batchId = crypto.randomUUID();
-    await oddsQueue.add(
-      'collect-all',
-      { batchId, type: 'collect-all' } satisfies OddsJobData,
-      { jobId: `collect-all-boot-${batchId}` },
-    );
-
-    // Agendar o scheduler para o próximo ciclo
-    await oddsQueue.add(
-      'schedule-next',
-      { batchId: crypto.randomUUID(), type: 'schedule-next' } satisfies OddsJobData,
-      {
-        delay: config.polling.intervalSeconds * 1000,
-        jobId: `schedule-next-boot-${Date.now()}`,
-      },
-    );
-
-    logger.info(
-      { intervalSeconds: config.polling.intervalSeconds },
-      '✓ Primeiro ciclo de coleta enfileirado (execução imediata)',
-    );
+  if (config.sportsGameOddsApiKey) {
+    providers.sportsgameodds = new SportsGameOddsProvider({ apiKey: config.sportsGameOddsApiKey });
   } else {
-    logger.info('Ciclo de coleta já agendado — pulando re-agendamento');
+    console.warn("SPORTS_GAME_ODDS_API_KEY ausente — provedor SportsGameOdds não será ativado.");
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 4. Shutdown graceful
-  // ─────────────────────────────────────────────────────────────
+  // TheOddsApiProvider fica disponível na arquitetura mas não é ativado por
+  // padrão nesta fase (ver `src/providers/TheOddsApiProvider.ts`).
 
-  const shutdown = async (signal: string) => {
-    logger.info({ signal }, 'Sinal de encerramento recebido — desligando workers...');
+  return providers;
+}
 
-    // Parar de aceitar novos jobs e esperar os atuais terminarem (timeout de 30s)
-    await Promise.allSettled([
-      oddsWorker.close(),
-      oddsQueue.close(),
-    ]);
+async function main(): Promise<void> {
+  console.log("Iniciando workers Node do BetEdge...");
 
-    const redis = getRedis();
-    redis.disconnect();
+  const providers = buildProviders();
 
-    logger.info('Workers encerrados com sucesso');
+  const oddsPollWorker = createOddsPollWorker(providers);
+  const alertsEvaluateWorker = createAlertsEvaluateWorker();
+  const notificationsDispatchWorker = createNotificationsDispatchWorker();
+
+  const workers = [oddsPollWorker, alertsEvaluateWorker, notificationsDispatchWorker];
+
+  for (const worker of workers) {
+    worker.on("failed", (job, error) => {
+      console.error(`[${worker.name}] job ${job?.id} falhou:`, error);
+    });
+    worker.on("error", (error) => {
+      console.error(`[${worker.name}] erro no worker:`, error);
+    });
+  }
+
+  // Agenda o polling recorrente para cada combinação provedor/esporte
+  // rastreada. Idempotente: `jobId` fixo evita duplicar o agendamento em
+  // reinícios do processo.
+  for (const providerName of Object.keys(providers)) {
+    for (const sportKey of TRACKED_SPORTS) {
+      await scheduleOddsPolling({ providerName, sportKey }, config.oddsPollIntervalMs);
+    }
+  }
+
+  console.log(`Workers no ar. Filas ativas: ${workers.map((w) => w.name).join(", ")}.`);
+
+  const shutdown = async (signal: string): Promise<void> => {
+    console.log(`Recebido ${signal}, encerrando workers com segurança...`);
+    await Promise.all(workers.map((w) => w.close()));
+    await sharedConnection.quit();
     process.exit(0);
   };
 
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-
-  // Capturar erros não tratados
-  process.on('uncaughtException', (err) => {
-    logger.fatal({ error: err.message, stack: err.stack }, 'Erro não capturado — encerrando');
-    process.exit(1);
-  });
-
-  process.on('unhandledRejection', (reason) => {
-    logger.error({ reason }, 'Promise rejeitada sem handler');
-  });
-
-  logger.info('═══════════════════════════════════════════════════');
-  logger.info('  BetEdge Workers — Prontos e aguardando jobs ✓');
-  logger.info('═══════════════════════════════════════════════════');
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
 }
 
-main().catch((err) => {
-  logger.fatal({ error: (err as Error).message }, 'Falha fatal na inicialização');
+main().catch((error) => {
+  console.error("Falha fatal ao iniciar os workers Node:", error);
   process.exit(1);
 });

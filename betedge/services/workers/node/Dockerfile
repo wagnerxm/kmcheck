@@ -1,43 +1,23 @@
-# =============================================================================
-# Dockerfile — Workers Node.js (BullMQ)
-#
-# Multi-stage build:
-# 1. Instala dependências com pnpm (cache eficiente).
-# 2. Compila TypeScript.
-# 3. Imagem final enxuta com apenas o runtime.
-# =============================================================================
+# Dockerfile dos workers Node.js do BetEdge (polling de odds, avaliação de
+# alertas, disparo de notificações). Roda via `tsx` diretamente (sem etapa
+# de build para .js — TypeScript é executado em runtime), mantendo o mesmo
+# código-fonte usado em desenvolvimento (`npm run dev`).
 
-# --- Stage 1: Dependências ---
-FROM node:20-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod=false
+FROM node:20-slim AS base
 
-# --- Stage 2: Build ---
-FROM node:20-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN pnpm run build
-
-# --- Stage 3: Runtime ---
-FROM node:20-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
-# Apenas dependências de produção
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod
+# Copia apenas os manifestos primeiro para aproveitar o cache de camadas do
+# Docker — reinstalar dependências só quando package*.json mudar.
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev=false --no-audit --no-fund
 
-# Copiar artefatos compilados
-COPY --from=builder /app/dist ./dist
+COPY tsconfig.json ./
+COPY src ./src
 
-# Healthcheck via processo Node (sem HTTP neste serviço)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD node -e "process.exit(0)"
+RUN useradd --create-home --shell /bin/bash betedge && chown -R betedge:betedge /app
+USER betedge
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/index.js"]
+CMD ["npx", "tsx", "src/index.ts"]

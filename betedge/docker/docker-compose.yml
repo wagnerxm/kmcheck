@@ -1,0 +1,168 @@
+# =============================================================================
+# docker-compose.yml — BetEdge, stack "produção-like"
+#
+# Sobe todos os serviços de backend a partir de imagens buildadas (sem
+# bind-mount de código, sem hot-reload): Postgres, Redis, Motor Estatístico
+# (FastAPI), workers Node (BullMQ) e workers Python (Celery). Usado para
+# validar o build final localmente e como referência de deploy em container
+# fora da Vercel (apps/web não entra aqui — roda na Vercel via
+# `services/engine`/`services/workers/*` acessados por rede/env vars, nunca
+# neste compose).
+#
+# Para o dia a dia de desenvolvimento (hot-reload, apps/web e o engine
+# rodando fora de container), use `docker-compose.dev.yml` em vez deste —
+# ele sobe só Postgres + Redis. Ver ARCHITECTURE.md §12.1.
+#
+# Uso:
+#   cd betedge/docker
+#   cp ../.env.example ../.env   # preencha os valores reais
+#   docker compose up --build
+# =============================================================================
+
+name: betedge
+
+networks:
+  betedge-network:
+    driver: bridge
+
+volumes:
+  betedge-postgres-data:
+  betedge-redis-data:
+
+services:
+  # ---------------------------------------------------------------------------
+  # Postgres — espelha o Supabase localmente. As migrations reais rodam via
+  # Supabase CLI (`supabase db push` / `supabase migration up`) contra este
+  # banco em dev, ou contra o projeto Supabase gerenciado em produção; este
+  # serviço por si só não aplica `supabase/migrations` automaticamente.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: betedge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-betedge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-betedge}
+      POSTGRES_DB: ${POSTGRES_DB:-betedge}
+      # pt-BR/UTF8 por padrão para casar com formatação de datas/moeda usada
+      # no restante da plataforma.
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - betedge-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-betedge} -d $${POSTGRES_DB:-betedge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - betedge-network
+
+  # ---------------------------------------------------------------------------
+  # Redis — cache de predições/odds (engine), broker+backend do Celery
+  # (worker-python) e filas do BullMQ (worker-node), todos no mesmo processo
+  # com namespaces/filas separados por nome (ver celery_app.py / lib/redis.ts).
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: betedge-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - betedge-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - betedge-network
+
+  # ---------------------------------------------------------------------------
+  # Motor Estatístico (FastAPI) — predições, value engine, backtests.
+  # Consumido exclusivamente pelo BFF (apps/web) via ENGINE_API_KEY.
+  # ---------------------------------------------------------------------------
+  engine:
+    build:
+      context: ../services/engine
+      dockerfile: Dockerfile
+    container_name: betedge-engine
+    restart: unless-stopped
+    environment:
+      ENV: ${ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://betedge:betedge@postgres:5432/betedge}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ENGINE_API_KEY: ${ENGINE_API_KEY:-changeme-dev-key}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      MODEL_STORAGE_PATH: /app/models_storage
+    ports:
+      - "${ENGINE_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - betedge-network
+
+  # ---------------------------------------------------------------------------
+  # Workers Node (BullMQ) — polling de odds nos provedores externos, disparo
+  # de notificações/alertas, jobs leves e de I/O intensivo. Fala com o
+  # Supabase (dados/auth) via service role key, não com este `postgres`
+  # diretamente — a dependência de `postgres` abaixo garante apenas que o
+  # banco local (usado por outros serviços da stack) já esteja de pé antes
+  # deste worker iniciar, mantendo a ordem de subida da stack previsível.
+  # ---------------------------------------------------------------------------
+  worker-node:
+    build:
+      context: ../services/workers/node
+      dockerfile: Dockerfile
+    container_name: betedge-worker-node
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-https://your-project.supabase.co}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-changeme-service-role-key}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://betedge:betedge@postgres:5432/betedge}
+      SPORTSGAMEODDS_API_KEY: ${SPORTSGAMEODDS_API_KEY:-changeme-api-key}
+      SPORTSGAMEODDS_BASE_URL: ${SPORTSGAMEODDS_BASE_URL:-https://api.sportsgameodds.com/v2}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-3}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - betedge-network
+
+  # ---------------------------------------------------------------------------
+  # Workers Python (Celery) — treino de modelo agendado, backtest em lote,
+  # recomputação de features históricas/CLV. CPU intensivo; nunca fala com o
+  # usuário final nem expõe HTTP público.
+  # ---------------------------------------------------------------------------
+  worker-python:
+    build:
+      context: ../services/workers/python
+      dockerfile: Dockerfile
+    container_name: betedge-worker-python
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://betedge:betedge@postgres:5432/betedge}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+      MODEL_ARTIFACT_STORAGE_URL: ${MODEL_ARTIFACT_STORAGE_URL:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - betedge-network

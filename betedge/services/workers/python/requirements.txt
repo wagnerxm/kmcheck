@@ -1,0 +1,11 @@
+# Worker Python (Celery) do BetEdge — executa tasks de longa duração
+# (treino de modelo, backtest, computação de features em lote) fora do
+# request-response do Motor Estatístico (FastAPI).
+
+celery==5.4.0
+redis==5.2.1
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+pandas==2.2.3
+numpy==2.2.1
+scikit-learn==1.6.0

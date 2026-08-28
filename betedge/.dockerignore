@@ -1,0 +1,65 @@
+# =============================================================================
+# .dockerignore (raiz do monorepo betedge/)
+#
+# Cada serviço builda com contexto próprio (ex.: services/engine,
+# services/workers/node, services/workers/python) — este arquivo cobre
+# padrões comuns a qualquer build feito a partir de betedge/, evitando copiar
+# node_modules, artefatos de build, segredos e histórico do monorepo inteiro
+# para dentro da imagem.
+# =============================================================================
+
+# --- Controle de versão ---
+.git/
+.gitignore
+
+# --- Node / pnpm / Turborepo ---
+node_modules/
+**/node_modules/
+.pnpm-store/
+.turbo/
+**/.turbo/
+.next/
+**/.next/
+out/
+dist/
+**/dist/
+build/
+**/build/
+*.tsbuildinfo
+
+# --- Python ---
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- Variáveis de ambiente e segredos (nunca vão para dentro da imagem) ---
+.env
+.env.*
+!.env.example
+
+# --- Docker ---
+docker/
+Dockerfile
+docker-compose*.yml
+
+# --- Editor / SO ---
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# --- Testes / cobertura ---
+coverage/
+**/coverage/
+htmlcov/
+
+# --- Documentação (não necessária dentro da imagem de runtime) ---
+*.md
