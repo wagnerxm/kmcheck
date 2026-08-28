@@ -250,12 +250,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;flex-direction:column;
   bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
 #camwrap.on{display:flex}
-/* loading spinner central enquanto getUserMedia inicializa */
-#camloading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;
-  width:44px;height:44px;border:3px solid rgba(255,255,255,.15);border-top-color:#fff;
-  border-radius:50%;animation:camspin .7s linear infinite;pointer-events:none}
-#camloading.hide{display:none}
-@keyframes camspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @keyframes camOut{from{opacity:1}to{opacity:0}}
 /* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
    mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
@@ -869,7 +863,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="camstage">
-    <div id="camloading" class="hide"></div>
     <div id="camrot">
       <video id="camvideo" autoplay playsinline muted></video>
     </div>
@@ -2333,10 +2326,21 @@ function camConstraints(){
     videoStabilizationMode:{ideal:'cinematic-video'}
   }, audio:false};
 }
+/* ── Pré-aquecimento da câmera ──
+   Dispara getUserMedia no touchstart do botão, ANTES do click disparar.
+   Ganha ~200-400ms de vantagem: quando openCam() roda, o stream já pode
+   estar pronto ou quase. Se o touchstart não acontecer (desktop), openCam
+   chama getUserMedia normalmente. */
+let _preStream=null;
+document.getElementById('nav-cam').addEventListener('touchstart',()=>{
+  if(!_preStream) _preStream=navigator.mediaDevices.getUserMedia(camConstraints()).catch(()=>null);
+},{passive:true});
+
 async function openCam(){
-  /* ── UI aparece IMEDIATAMENTE — sem tela preta perceptível ──
-     Mostra o wrapper da câmera com spinner enquanto getUserMedia inicializa
-     o hardware. O vídeo preenche quando estiver pronto, transição suave. */
+  /* ── Câmera abre INSTANTÂNEA ──
+     1. Pede permissão do sensor de movimento (iOS, 1x só) — rápido
+     2. Mostra a UI da câmera imediatamente (fundo preto = natural, igual iPhone)
+     3. Conecta o stream pré-aquecido (ou solicita agora) — vídeo preenche suave */
 
   /* Sensor de movimento PRIMEIRO — precisa do gesto do toque ainda válido.
      No iOS, requestPermission() só funciona durante um gesto do usuário.
@@ -2354,28 +2358,26 @@ async function openCam(){
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
 
-  /* ── Mostra a UI da câmera ANTES do getUserMedia ──
-     O usuário vê a interface completa (botões, ratio, legenda) sobre fundo preto
-     com um spinner central. Quando o stream chegar, o vídeo aparece no lugar. */
+  /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
   document.querySelector('main').style.display='none';
   document.documentElement.style.backgroundColor='#000';
   document.body.style.backgroundColor='#000';
   document.getElementById('meta-theme').content='#000';
-  const loader=document.getElementById('camloading');
-  loader.classList.remove('hide');
   camwrap.classList.add('on');
   camGeom=null;
   paintRatioSel();
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
 
   try{
-    S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
+    /* usa o stream pré-aquecido do touchstart, ou solicita agora */
+    const pre=_preStream; _preStream=null;
+    S.stream=await (pre||navigator.mediaDevices.getUserMedia(camConstraints()));
+    /* se o pré-aquecido falhou (null), tenta de novo */
+    if(!S.stream) S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
-    /* spinner some assim que o vídeo tem o primeiro frame */
-    loader.classList.add('hide');
     /* ── Enumera câmeras para fingerprint de modelo ── */
     try{
       const devs=await navigator.mediaDevices.enumerateDevices();
@@ -2399,7 +2401,6 @@ async function openCam(){
     video.addEventListener('resize', layoutOverlays);
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
-    loader.classList.add('hide');
     camwrap.classList.remove('on');
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
@@ -2425,8 +2426,7 @@ async function openCam(){
   }
 }
 function closeCam(instant){
-  /* garante que o spinner de loading some ao fechar */
-  document.getElementById('camloading').classList.add('hide');
+  _preStream=null; /* descarta pré-aquecimento pendente ao fechar */
   if(!instant){
     camwrap.style.animation='camOut .15s ease-in forwards';
     camwrap.addEventListener('animationend',function(){
