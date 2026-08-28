@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Variáveis de tema e utilitários globais do BetEdge.
+ * O app é dark-only por enquanto (plataforma de análise quantitativa),
+ * mas as variáveis ficam centralizadas aqui para facilitar um tema claro
+ * futuro sem tocar nos componentes.
+ */
+@layer base {
+  :root {
+    --background: 2 6 23; /* slate-950 */
+    --surface: 15 23 42; /* slate-900 */
+    --card: 30 41 59; /* slate-800 */
+    --card-border: 51 65 85; /* slate-700 */
+    --foreground: 248 250 252; /* slate-50 */
+    --foreground-muted: 203 213 225; /* slate-300 */
+    --foreground-subtle: 100 116 139; /* slate-500 */
+    --primary: 16 185 129; /* emerald-500 */
+    --danger: 239 68 68; /* red-500 */
+    --warning: 245 158 11; /* amber-500 */
+  }
+
+  * {
+    @apply border-card-border/50;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(16, 185, 129, 0.04), transparent);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+
+  /* Scrollbar discreta, condizente com o tema dark. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-card-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-foreground-subtle;
+  }
+}
+
+@layer utilities {
+  /* Efeito de vidro (glass morphism) usado nos cartões e na sidebar. */
+  .glass {
+    @apply bg-card/50 backdrop-blur-xl border border-card-border/50;
+  }
+
+  .glass-strong {
+    @apply bg-background-surface/80 backdrop-blur-2xl border border-card-border/60;
+  }
+
+  /* Fundo "shimmer" para skeletons de carregamento. */
+  .skeleton {
+    @apply bg-card-border/40 rounded-md relative overflow-hidden;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(148, 163, 184, 0.12),
+      transparent
+    );
+    background-size: 1000px 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.8s infinite;
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-600;
+  }
+}
