@@ -9,7 +9,7 @@
  */
 import { Queue, Worker, type Job } from "bullmq";
 
-import { sharedConnection } from "../lib/connection.js";
+import { getBullConnection } from "../lib/redis.js";
 import { notificationsDispatchQueue } from "./notifications-dispatch.js";
 
 export const ALERTS_EVALUATE_QUEUE_NAME = "alerts-evaluate";
@@ -30,7 +30,7 @@ export interface AlertsEvaluateJobResult {
 export const alertsEvaluateQueue = new Queue<AlertsEvaluateJobData, AlertsEvaluateJobResult>(
   ALERTS_EVALUATE_QUEUE_NAME,
   {
-    connection: sharedConnection,
+    ...getBullConnection(),
     defaultJobOptions: {
       attempts: 2,
       removeOnComplete: { count: 500 },
@@ -66,6 +66,6 @@ export function createAlertsEvaluateWorker(): Worker<AlertsEvaluateJobData, Aler
   return new Worker<AlertsEvaluateJobData, AlertsEvaluateJobResult>(
     ALERTS_EVALUATE_QUEUE_NAME,
     processAlertsEvaluateJob,
-    { connection: sharedConnection, concurrency: 10 },
+    { ...getBullConnection(), concurrency: 10 },
   );
 }

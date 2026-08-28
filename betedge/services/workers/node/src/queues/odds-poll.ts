@@ -2,14 +2,20 @@
  * Fila de polling de odds — busca periodicamente as odds correntes de cada
  * provedor configurado (`OddsProvider`), normaliza e persiste.
  *
- * Este arquivo é um scaffold: a estrutura da fila/worker do BullMQ e o
- * formato do job estão definidos; a lógica de negócio real (chamar o
- * provedor, normalizar mercados/entidades, gravar no Supabase, disparar a
- * avaliação de alertas) entra na Fase 1.
+ * Nota de arquitetura: o worker já possui um pipeline de coleta de odds em
+ * produção (`src/queues/odds-snapshot.ts`, usando `src/providers/sportsgameodds.ts`
+ * + `src/normalize/entity-resolver.ts`, com detecção de mudança, agendamento
+ * adaptativo e inserts em lote). Esta fila formaliza a mesma responsabilidade
+ * sob os nomes previstos na especificação da Fase 0 (`OddsProvider`,
+ * `SportsGameOddsProvider`, `TheOddsApiProvider`, `map-entities`/`map-markets`),
+ * mas **não é registrada em `src/index.ts`** para não rodar dois pipelines
+ * de coleta simultâneos contra o mesmo provedor (duplicaria consumo de rate
+ * limit e poderia gravar dados conflitantes). Ativar esta fila no lugar de
+ * `odds-snapshot.ts` é uma decisão de migração explícita, não automática.
  */
 import { Queue, Worker, type Job } from "bullmq";
 
-import { sharedConnection } from "../lib/connection.js";
+import { getBullConnection } from "../lib/redis.js";
 import type { OddsProvider } from "../providers/OddsProvider.js";
 
 export const ODDS_POLL_QUEUE_NAME = "odds-poll";
@@ -29,25 +35,28 @@ export interface OddsPollJobResult {
   requestsUsed: number;
 }
 
-export const oddsPollQueue = new Queue<OddsPollJobData, OddsPollJobResult>(ODDS_POLL_QUEUE_NAME, {
-  connection: sharedConnection,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: "exponential", delay: 5_000 },
-    removeOnComplete: { count: 500 },
-    removeOnFail: { count: 1_000 },
-  },
-});
+export function createOddsPollQueue(): Queue<OddsPollJobData, OddsPollJobResult> {
+  return new Queue<OddsPollJobData, OddsPollJobResult>(ODDS_POLL_QUEUE_NAME, {
+    ...getBullConnection(),
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: "exponential", delay: 5_000 },
+      removeOnComplete: { count: 500 },
+      removeOnFail: { count: 1_000 },
+    },
+  });
+}
 
 /**
  * Enfileira um job recorrente de polling para um provedor/esporte, via o
  * scheduler de repetição do BullMQ (equivalente a um cron gerenciado pela fila).
  */
 export async function scheduleOddsPolling(
+  queue: Queue<OddsPollJobData, OddsPollJobResult>,
   data: OddsPollJobData,
   everyMs: number,
 ): Promise<void> {
-  await oddsPollQueue.add(`${data.providerName}:${data.sportKey}`, data, {
+  await queue.add(`${data.providerName}:${data.sportKey}`, data, {
     repeat: { every: everyMs },
     jobId: `odds-poll:${data.providerName}:${data.sportKey}`,
   });
@@ -85,6 +94,6 @@ export function createOddsPollWorker(providers: Record<string, OddsProvider>): W
   return new Worker<OddsPollJobData, OddsPollJobResult>(
     ODDS_POLL_QUEUE_NAME,
     (job) => processOddsPollJob(job, providers),
-    { connection: sharedConnection, concurrency: 5 },
+    { ...getBullConnection(), concurrency: 5 },
   );
 }

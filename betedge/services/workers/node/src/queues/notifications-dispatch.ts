@@ -7,7 +7,7 @@
  */
 import { Queue, Worker, type Job } from "bullmq";
 
-import { sharedConnection } from "../lib/connection.js";
+import { getBullConnection } from "../lib/redis.js";
 
 export const NOTIFICATIONS_DISPATCH_QUEUE_NAME = "notifications-dispatch";
 
@@ -32,7 +32,7 @@ export interface NotificationsDispatchJobResult {
 export const notificationsDispatchQueue = new Queue<NotificationsDispatchJobData, NotificationsDispatchJobResult>(
   NOTIFICATIONS_DISPATCH_QUEUE_NAME,
   {
-    connection: sharedConnection,
+    ...getBullConnection(),
     defaultJobOptions: {
       attempts: 5,
       backoff: { type: "exponential", delay: 2_000 },
@@ -70,6 +70,6 @@ export function createNotificationsDispatchWorker(): Worker<
   return new Worker<NotificationsDispatchJobData, NotificationsDispatchJobResult>(
     NOTIFICATIONS_DISPATCH_QUEUE_NAME,
     processNotificationJob,
-    { connection: sharedConnection, concurrency: 20 },
+    { ...getBullConnection(), concurrency: 20 },
   );
 }
