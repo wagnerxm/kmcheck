@@ -69,6 +69,13 @@ interface BookmakerInfo {
   overround1x2: number | null;
 }
 
+/** Probabilidades justas (sem vig) calculadas pelos 3 métodos. */
+interface FairProb {
+  multiplicative: number;
+  power: number;
+  shin: number;
+}
+
 interface OddsCell {
   bookmakerId: string;
   decimalOdds: number;
@@ -77,6 +84,7 @@ interface OddsCell {
   changeCount: number;
   lastUpdatedAt: string;
   isBest: boolean;
+  fairProb: FairProb | null;
 }
 
 interface OutcomeRow {
@@ -96,7 +104,14 @@ interface MarketBlock {
   hasLine: boolean;
   key: string;
   outcomes: OutcomeRow[];
+  overrounds: Record<string, number>;
 }
+
+/** Métodos de remoção de vig suportados. */
+type VigMethod = "multiplicative" | "power" | "shin";
+
+/** Formato de exibição das odds/probabilidades. */
+type OddsDisplayFormat = "decimal" | "implied" | "fair";
 
 interface ComparisonData {
   event: EventSummary & {
@@ -178,7 +193,8 @@ export function OddsComparisonClient() {
   const [loadingComparison, setLoadingComparison] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showOddsFormat, setShowOddsFormat] = useState<"decimal" | "implied">("decimal");
+  const [showOddsFormat, setShowOddsFormat] = useState<OddsDisplayFormat>("decimal");
+  const [vigMethod, setVigMethod] = useState<VigMethod>("multiplicative");
   const [isEventListOpen, setIsEventListOpen] = useState(true);
 
   // ─── Buscar lista de jogos ──────────────────────────────────────────
@@ -356,13 +372,13 @@ export function OddsComparisonClient() {
           {/* Cabeçalho do evento */}
           <EventHeader event={comparison.event} />
 
-          {/* Barra de casas de apostas com overround */}
+          {/* Barra de controles: formato, método de vig, atualizar */}
           <BookmakerBar
             bookmakers={comparison.bookmakers}
             showOddsFormat={showOddsFormat}
-            onToggleFormat={() =>
-              setShowOddsFormat((f) => (f === "decimal" ? "implied" : "decimal"))
-            }
+            vigMethod={vigMethod}
+            onChangeFormat={setShowOddsFormat}
+            onChangeVigMethod={setVigMethod}
             onRefresh={() => loadComparison(selectedEventId!)}
           />
 
@@ -382,6 +398,7 @@ export function OddsComparisonClient() {
                 market={market}
                 bookmakers={comparison.bookmakers}
                 showOddsFormat={showOddsFormat}
+                vigMethod={vigMethod}
               />
             ))
           )}
@@ -523,35 +540,115 @@ function EventHeader({ event }: { event: ComparisonData["event"] }) {
   );
 }
 
-/** Barra de casas de apostas com status SPA e overround. */
+/** Rótulos amigáveis dos formatos de exibição. */
+const FORMAT_LABELS: Record<OddsDisplayFormat, string> = {
+  decimal: "Odds Decimais",
+  implied: "Prob. Implícita",
+  fair: "Prob. Justa (s/ vig)",
+};
+
+/** Rótulos amigáveis dos métodos de remoção de vig. */
+const VIG_METHOD_LABELS: Record<VigMethod, string> = {
+  multiplicative: "Multiplicativo",
+  power: "Potência",
+  shin: "Shin",
+};
+
+/** Descrições curtas dos métodos de remoção de vig. */
+const VIG_METHOD_DESCRIPTIONS: Record<VigMethod, string> = {
+  multiplicative: "Distribui a margem proporcionalmente — mais simples, sem correção de viés",
+  power: "Lei de potência — corrige viés favorito/azarão",
+  shin: "Modelo Shin (1992) — modela insider trading, melhor para azarões",
+};
+
+/** Barra de casas de apostas com status SPA, controles de formato e método de vig. */
 function BookmakerBar({
   bookmakers,
   showOddsFormat,
-  onToggleFormat,
+  vigMethod,
+  onChangeFormat,
+  onChangeVigMethod,
   onRefresh,
 }: {
   bookmakers: BookmakerInfo[];
-  showOddsFormat: "decimal" | "implied";
-  onToggleFormat: () => void;
+  showOddsFormat: OddsDisplayFormat;
+  vigMethod: VigMethod;
+  onChangeFormat: (fmt: OddsDisplayFormat) => void;
+  onChangeVigMethod: (m: VigMethod) => void;
   onRefresh: () => void;
 }) {
+  const [vigMethodOpen, setVigMethodOpen] = useState(false);
+
   return (
     <Card>
       <CardContent className="py-4">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium text-foreground-muted">
               Casas de apostas ({bookmakers.length})
             </h3>
             <SpaLegend />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onToggleFormat}
-              className="rounded-lg border border-card-border/50 px-3 py-1.5 text-xs font-medium text-foreground-muted transition-colors hover:bg-card/60 hover:text-foreground"
-            >
-              {showOddsFormat === "decimal" ? "Odds Decimais" : "Prob. Implícita"}
-            </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Seletor de formato — 3 botões inline */}
+            <div className="flex rounded-lg border border-card-border/50 p-0.5">
+              {(["decimal", "implied", "fair"] as OddsDisplayFormat[]).map((fmt) => (
+                <button
+                  key={fmt}
+                  onClick={() => onChangeFormat(fmt)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    showOddsFormat === fmt
+                      ? "bg-primary/15 text-primary-400"
+                      : "text-foreground-muted hover:text-foreground",
+                  )}
+                >
+                  {FORMAT_LABELS[fmt]}
+                </button>
+              ))}
+            </div>
+
+            {/* Seletor de método de vig — dropdown (visível só quando formato "fair") */}
+            {showOddsFormat === "fair" && (
+              <div className="relative">
+                <button
+                  onClick={() => setVigMethodOpen(!vigMethodOpen)}
+                  className="flex items-center gap-1.5 rounded-lg border border-card-border/50 px-2.5 py-1.5 text-[11px] font-medium text-foreground-muted transition-colors hover:text-foreground"
+                >
+                  <span>Método: {VIG_METHOD_LABELS[vigMethod]}</span>
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", vigMethodOpen && "rotate-180")} />
+                </button>
+
+                {vigMethodOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setVigMethodOpen(false)} />
+                    <div className="absolute right-0 top-8 z-50 w-72 rounded-xl border border-card-border/50 bg-background-surface p-1.5 shadow-glass">
+                      {(["multiplicative", "power", "shin"] as VigMethod[]).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            onChangeVigMethod(m);
+                            setVigMethodOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors",
+                            vigMethod === m
+                              ? "bg-primary/10 text-primary-400"
+                              : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
+                          )}
+                        >
+                          <span className="text-xs font-semibold">{VIG_METHOD_LABELS[m]}</span>
+                          <span className="text-[10px] text-foreground-subtle">{VIG_METHOD_DESCRIPTIONS[m]}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Botão atualizar */}
             <button
               onClick={onRefresh}
               title="Atualizar odds"
@@ -639,26 +736,48 @@ function SpaLegend() {
   );
 }
 
-/** Tabela de um mercado com todas as odds por casa. */
+/** Tabela de um mercado com todas as odds por casa e overround por casa. */
 function MarketTable({
   market,
   bookmakers,
   showOddsFormat,
+  vigMethod,
 }: {
   market: MarketBlock;
   bookmakers: BookmakerInfo[];
-  showOddsFormat: "decimal" | "implied";
+  showOddsFormat: OddsDisplayFormat;
+  vigMethod: VigMethod;
 }) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <CardTitle className="text-base font-semibold text-foreground">
             {market.name}
           </CardTitle>
           <Badge variant="outline" className="text-[10px]">
             {market.category.replace("_", " ")}
           </Badge>
+          {/* Média de overround deste mercado */}
+          {Object.keys(market.overrounds).length > 0 && (() => {
+            const vals = Object.values(market.overrounds);
+            const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+            return (
+              <span
+                className={cn(
+                  "text-[10px] font-mono",
+                  avg <= 0.04
+                    ? "text-primary-400"
+                    : avg <= 0.08
+                      ? "text-foreground-subtle"
+                      : "text-warning",
+                )}
+                title={`Margem média deste mercado: ${fmtOverround(avg)}`}
+              >
+                Margem média: {fmtOverround(avg)}
+              </span>
+            );
+          })()}
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -669,21 +788,41 @@ function MarketTable({
                 <th className="sticky left-0 z-10 bg-background-surface/90 backdrop-blur-sm px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-foreground-subtle">
                   Resultado
                 </th>
-                {bookmakers.map((bk) => (
-                  <th
-                    key={bk.id}
-                    className="min-w-[90px] px-3 py-2.5 text-center text-xs font-medium text-foreground-muted"
-                  >
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="truncate">{bk.name}</span>
-                      {bk.spaAuthorized ? (
-                        <ShieldCheck className="h-3 w-3 text-primary-400" />
-                      ) : (
-                        <ShieldAlert className="h-3 w-3 text-warning" />
-                      )}
-                    </div>
-                  </th>
-                ))}
+                {bookmakers.map((bk) => {
+                  const or = market.overrounds[bk.id];
+                  return (
+                    <th
+                      key={bk.id}
+                      className="min-w-[90px] px-3 py-2.5 text-center text-xs font-medium text-foreground-muted"
+                    >
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="truncate">{bk.name}</span>
+                        <div className="flex items-center gap-1">
+                          {bk.spaAuthorized ? (
+                            <ShieldCheck className="h-3 w-3 text-primary-400" />
+                          ) : (
+                            <ShieldAlert className="h-3 w-3 text-warning" />
+                          )}
+                          {or != null && (
+                            <span
+                              className={cn(
+                                "text-[9px] font-mono",
+                                or <= 0.04
+                                  ? "text-primary-400"
+                                  : or <= 0.08
+                                    ? "text-foreground-subtle"
+                                    : "text-warning",
+                              )}
+                              title={`Margem neste mercado: ${fmtOverround(or)}`}
+                            >
+                              {fmtOverround(or)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </th>
+                  );
+                })}
                 <th className="min-w-[70px] px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-primary-400">
                   Melhor
                 </th>
@@ -717,6 +856,7 @@ function MarketTable({
                           <OddsValue
                             cell={cell}
                             showOddsFormat={showOddsFormat}
+                            vigMethod={vigMethod}
                           />
                         ) : (
                           <span className="text-foreground-subtle">—</span>
@@ -729,9 +869,11 @@ function MarketTable({
                   <td className="px-3 py-3 text-center">
                     <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 font-mono text-sm font-bold text-primary-400">
                       <CheckCircle2 className="h-3 w-3" />
-                      {showOddsFormat === "decimal"
-                        ? fmtOdds(outcome.bestOdds)
-                        : fmtPercent(1 / outcome.bestOdds)}
+                      {showOddsFormat === "fair"
+                        ? fmtPercent(1 / outcome.bestOdds)
+                        : showOddsFormat === "implied"
+                          ? fmtPercent(1 / outcome.bestOdds)
+                          : fmtOdds(outcome.bestOdds)}
                     </span>
                   </td>
                 </tr>
@@ -744,18 +886,27 @@ function MarketTable({
   );
 }
 
-/** Célula individual de odd com indicador de movimento. */
+/** Célula individual de odd com indicador de movimento e exibição de prob. justa. */
 function OddsValue({
   cell,
   showOddsFormat,
+  vigMethod,
 }: {
   cell: OddsCell;
-  showOddsFormat: "decimal" | "implied";
+  showOddsFormat: OddsDisplayFormat;
+  vigMethod: VigMethod;
 }) {
-  const displayValue =
-    showOddsFormat === "decimal"
-      ? fmtOdds(cell.decimalOdds)
-      : fmtPercent(cell.impliedProbability);
+  // Valor exibido depende do formato selecionado
+  let displayValue: string;
+  if (showOddsFormat === "fair") {
+    // Probabilidade justa (sem vig) pelo método selecionado
+    const fp = cell.fairProb?.[vigMethod];
+    displayValue = fp != null ? fmtPercent(fp) : "—";
+  } else if (showOddsFormat === "implied") {
+    displayValue = fmtPercent(cell.impliedProbability);
+  } else {
+    displayValue = fmtOdds(cell.decimalOdds);
+  }
 
   // Indicador de movimento em relação à odd anterior
   let movement: "up" | "down" | "same" | null = null;
@@ -765,8 +916,26 @@ function OddsValue({
     else movement = "same";
   }
 
+  // Tooltip com detalhes completos
+  const tooltipLines: string[] = [
+    `Odd: ${fmtOdds(cell.decimalOdds)}`,
+    `Prob. Implícita: ${fmtPercent(cell.impliedProbability)}`,
+  ];
+  if (cell.fairProb) {
+    tooltipLines.push(
+      `Prob. Justa (Mult.): ${fmtPercent(cell.fairProb.multiplicative)}`,
+      `Prob. Justa (Potência): ${fmtPercent(cell.fairProb.power)}`,
+      `Prob. Justa (Shin): ${fmtPercent(cell.fairProb.shin)}`,
+    );
+  }
+  if (cell.previousOdds != null) {
+    tooltipLines.push(`Odd anterior: ${fmtOdds(cell.previousOdds)}`);
+  }
+  tooltipLines.push(`Alterações: ${cell.changeCount}`);
+
   return (
     <div
+      title={tooltipLines.join("\n")}
       className={cn(
         "relative inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-sm transition-colors",
         cell.isBest

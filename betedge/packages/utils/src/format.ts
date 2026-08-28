@@ -31,6 +31,25 @@ export function formatOdds(decimalOdds: number): string {
 }
 
 /**
+ * Formata overround (margem da casa) como percentual com sinal,
+ * ex.: 0.053 → "+5,3%", -0.01 → "-1,0%".
+ */
+export function formatOverround(overround: number, decimals = 1): string {
+  const formatted = formatPercentage(Math.abs(overround), decimals);
+  return overround >= 0 ? `+${formatted}` : `-${formatted}`;
+}
+
+/**
+ * Classifica o nível de margem de uma casa para coloração na UI.
+ * Verde (≤4%), neutro (≤8%), amarelo/aviso (>8%).
+ */
+export function overroundSeverity(overround: number): "low" | "medium" | "high" {
+  if (overround <= 0.04) return "low";
+  if (overround <= 0.08) return "medium";
+  return "high";
+}
+
+/**
  * Formata a nota consolidada de EdgeScore para exibição compacta,
  * ex.: "82/100 · alto".
  */
