@@ -2396,9 +2396,16 @@ async function openCam(){
     toast('Câmera negada ou indisponível.');
     return;
   }
-  /* no Android e outros, ativa o sensor direto (não precisa de permissão) */
-  if(!tiltGranted && !(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function')){
+  /* Ativa (ou reativa) o sensor de inclinação.
+     1ª abertura: pede permissão (Android não precisa; iOS já pediu no início desta função).
+     Flip de câmera: closeCam removeu o listener, mas tiltGranted já é true — só reanexa.
+     Sem isso, trocar para selfie matava o tilt e a legenda parava de girar. */
+  if(!tiltGranted){
     await enableTiltSensor();
+  } else {
+    window.removeEventListener('devicemotion', onDeviceMotion);
+    window.addEventListener('devicemotion', onDeviceMotion);
+    refreshTilt();
   }
 }
 function closeCam(instant){
