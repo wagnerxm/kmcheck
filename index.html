@@ -2326,21 +2326,11 @@ function camConstraints(){
     videoStabilizationMode:{ideal:'cinematic-video'}
   }, audio:false};
 }
-/* ── Pré-aquecimento da câmera ──
-   Dispara getUserMedia no touchstart do botão, ANTES do click disparar.
-   Ganha ~200-400ms de vantagem: quando openCam() roda, o stream já pode
-   estar pronto ou quase. Se o touchstart não acontecer (desktop), openCam
-   chama getUserMedia normalmente. */
-let _preStream=null;
-document.getElementById('nav-cam').addEventListener('touchstart',()=>{
-  if(!_preStream) _preStream=navigator.mediaDevices.getUserMedia(camConstraints()).catch(()=>null);
-},{passive:true});
-
 async function openCam(){
   /* ── Câmera abre INSTANTÂNEA ──
-     1. Pede permissão do sensor de movimento (iOS, 1x só) — rápido
-     2. Mostra a UI da câmera imediatamente (fundo preto = natural, igual iPhone)
-     3. Conecta o stream pré-aquecido (ou solicita agora) — vídeo preenche suave */
+     Mostra a UI (botões, ratio, legenda) sobre fundo preto ANTES de pedir o stream.
+     O fundo preto é natural — igual câmera nativa do iPhone/Android.
+     O vídeo preenche suavemente quando o hardware responder. */
 
   /* Sensor de movimento PRIMEIRO — precisa do gesto do toque ainda válido.
      No iOS, requestPermission() só funciona durante um gesto do usuário.
@@ -2371,11 +2361,7 @@ async function openCam(){
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
 
   try{
-    /* usa o stream pré-aquecido do touchstart, ou solicita agora */
-    const pre=_preStream; _preStream=null;
-    S.stream=await (pre||navigator.mediaDevices.getUserMedia(camConstraints()));
-    /* se o pré-aquecido falhou (null), tenta de novo */
-    if(!S.stream) S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
+    S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
     /* ── Enumera câmeras para fingerprint de modelo ── */
@@ -2426,7 +2412,6 @@ async function openCam(){
   }
 }
 function closeCam(instant){
-  _preStream=null; /* descarta pré-aquecimento pendente ao fechar */
   if(!instant){
     camwrap.style.animation='camOut .15s ease-in forwards';
     camwrap.addEventListener('animationend',function(){
