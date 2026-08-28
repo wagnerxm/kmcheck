@@ -4,3 +4,5 @@ node_modules/
 install-guide.html
 render-jpg.mjs
 .claude/worktrees/
+__pycache__/
+*.egg-info/
