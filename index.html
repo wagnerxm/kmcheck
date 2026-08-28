@@ -249,8 +249,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #scr-cam{position:relative}
 #camwrap{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:50;display:none;flex-direction:column;
   bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
-#camwrap.on{display:flex;animation:camIn .2s ease-out}
-@keyframes camIn{from{opacity:0}to{opacity:1}}
+#camwrap.on{display:flex}
+/* loading spinner central enquanto getUserMedia inicializa */
+#camloading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;
+  width:44px;height:44px;border:3px solid rgba(255,255,255,.15);border-top-color:#fff;
+  border-radius:50%;animation:camspin .7s linear infinite;pointer-events:none}
+#camloading.hide{display:none}
+@keyframes camspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @keyframes camOut{from{opacity:1}to{opacity:0}}
 /* barra superior FINA (estilo iPhone): fundo preto quase sólido, só o botão Voltar, altura
    mínima pra sobrar o máximo de tela pro preview. Respeita o notch com o safe-area no topo. */
@@ -864,6 +869,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="camstage">
+    <div id="camloading" class="hide"></div>
     <div id="camrot">
       <video id="camvideo" autoplay playsinline muted></video>
     </div>
@@ -2328,12 +2334,13 @@ function camConstraints(){
   }, audio:false};
 }
 async function openCam(){
-  /* Câmera abre limpa: tela preta enquanto o iOS pede permissão,
-     UI da câmera só aparece DEPOIS do vídeo estar rodando. */
-  /* ── Sensor de movimento PRIMEIRO — precisa do gesto do toque ainda válido ──
+  /* ── UI aparece IMEDIATAMENTE — sem tela preta perceptível ──
+     Mostra o wrapper da câmera com spinner enquanto getUserMedia inicializa
+     o hardware. O vídeo preenche quando estiver pronto, transição suave. */
+
+  /* Sensor de movimento PRIMEIRO — precisa do gesto do toque ainda válido.
      No iOS, requestPermission() só funciona durante um gesto do usuário.
-     Chamar depois do getUserMedia (async) faz o gesto expirar e falhar.
-     É um prompt nativo rápido — não causa delay perceptível. */
+     Chamar depois do getUserMedia (async) faz o gesto expirar e falhar. */
   if(!tiltGranted && typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
     try{
       const r=await DeviceMotionEvent.requestPermission();
@@ -2346,18 +2353,29 @@ async function openCam(){
   }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
+
+  /* ── Mostra a UI da câmera ANTES do getUserMedia ──
+     O usuário vê a interface completa (botões, ratio, legenda) sobre fundo preto
+     com um spinner central. Quando o stream chegar, o vídeo aparece no lugar. */
   document.querySelector('nav').style.display='none';
   document.querySelector('header.top').style.display='none';
   document.querySelector('main').style.display='none';
-  /* fundo preto imediato — tela preta limpa enquanto iOS pede permissão de câmera */
   document.documentElement.style.backgroundColor='#000';
   document.body.style.backgroundColor='#000';
   document.getElementById('meta-theme').content='#000';
+  const loader=document.getElementById('camloading');
+  loader.classList.remove('hide');
+  camwrap.classList.add('on');
+  camGeom=null;
+  paintRatioSel();
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
+
   try{
     S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
+    /* spinner some assim que o vídeo tem o primeiro frame */
+    loader.classList.add('hide');
     /* ── Enumera câmeras para fingerprint de modelo ── */
     try{
       const devs=await navigator.mediaDevices.enumerateDevices();
@@ -2372,10 +2390,6 @@ async function openCam(){
     document.documentElement.style.backgroundColor='#141414';
     document.body.style.backgroundColor='#141414';
     document.getElementById('meta-theme').content='#141414';
-    /* UI da câmera só aparece AGORA — vídeo já está rodando, sem bugs visuais */
-    camwrap.classList.add('on');
-    camGeom=null;
-    paintRatioSel();
     enableScreenLock();
     initFlashSupport();
     initZoom();
@@ -2385,6 +2399,8 @@ async function openCam(){
     video.addEventListener('resize', layoutOverlays);
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
+    loader.classList.add('hide');
+    camwrap.classList.remove('on');
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
     document.querySelector('main').style.display='';
@@ -2409,6 +2425,8 @@ async function openCam(){
   }
 }
 function closeCam(instant){
+  /* garante que o spinner de loading some ao fechar */
+  document.getElementById('camloading').classList.add('hide');
   if(!instant){
     camwrap.style.animation='camOut .15s ease-in forwards';
     camwrap.addEventListener('animationend',function(){
@@ -3075,10 +3093,16 @@ function buildCaptureMeta(info, imgW, imgH){
 /* Salva a foto no dispositivo E na galeria interna do app.
    PRECISA ser chamado DENTRO do toque do obturador (por isso a foto é gerada de forma síncrona,
    com toDataURL) — senão o iOS bloqueia o menu por falta de gesto do usuário.
-   Prioridade: navigator.share (funciona em PWA iOS e Android) → <a download> (fallback desktop).
-   A versão anterior usava <a download> direto no Android, que parou de funcionar em PWA standalone
-   (Chrome 120+): o link era ignorado sem feedback nenhum. Agora usa share API primeiro. */
-function _downloadFallback(blob, name){
+
+   Estratégia por plataforma:
+   • Android: <a download> → salva direto na pasta Downloads/Galeria sem interação do usuário.
+     Se falhar (raro), cai pro navigator.share como fallback.
+   • iOS (PWA): navigator.share → abre o menu de compartilhar (único jeito que funciona no Safari
+     standalone, <a download> é ignorado no iOS PWA).
+   • Desktop: <a download> → abre diálogo de salvar do navegador. */
+function _downloadDirect(blob, name){
+  /* Salva via <a download> — funciona no Android (Chrome PWA) e desktop.
+     Cria um link invisível, clica programaticamente, e limpa depois. */
   try{
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -3087,7 +3111,7 @@ function _downloadFallback(blob, name){
     setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} URL.revokeObjectURL(url) }, 5000);
     toast('📸 Foto salva');
   }catch(e){
-    console.error('[KMCheck] download fallback falhou:', e);
+    console.error('[KMCheck] download direto falhou:', e);
     toast('⚠ Não foi possível salvar a foto.');
   }
 }
@@ -3101,26 +3125,24 @@ function saveAndShare(blob){
   /* 1) salva na galeria interna do app (IndexedDB) — com log de erro real */
   savePhotoToGallery(blob, name).catch(e=>{
     console.error('[KMCheck] IndexedDB falhou:', e);
-    /* se o banco estiver cheio ou corrompido, avisa — antes era silêncio total */
     toast('⚠ Foto não ficou na galeria do app');
   });
-  /* 2) salva/compartilha no dispositivo — usa share API sempre que disponível
-     (funciona em PWA standalone tanto no iOS quanto no Android moderno) */
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({files:[file]}).then(()=>{
-      toast('📸 Foto salva');
-    }).catch(e=>{
-      /* AbortError = usuário fechou o menu de compartilhar sem escolher — normal */
-      if(e.name==='AbortError'){
-        toast('📸 Foto registrada');
-      } else {
-        console.error('[KMCheck] share falhou, tentando download:', e);
-        _downloadFallback(blob, name);
-      }
-    });
+  /* 2) salva no dispositivo — Android vai direto, iOS usa share */
+  if(_isIOS){
+    /* iOS PWA: <a download> não funciona em standalone — navigator.share é o único caminho */
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file]}).then(()=>{
+        toast('📸 Foto salva');
+      }).catch(e=>{
+        if(e.name==='AbortError') toast('📸 Foto registrada');
+        else { console.error('[KMCheck] share iOS falhou:', e); toast('⚠ Não foi possível salvar.'); }
+      });
+    } else {
+      _downloadDirect(blob, name);
+    }
   } else {
-    /* desktop ou navegador sem share API — cai para download direto */
-    _downloadFallback(blob, name);
+    /* Android / Desktop: download direto — salva automaticamente sem perguntar nada */
+    _downloadDirect(blob, name);
   }
 }
 
