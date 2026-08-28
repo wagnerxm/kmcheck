@@ -2463,6 +2463,9 @@ document.getElementById('shutter').onclick=()=>{
   // a piscada da tela + o som de obturador cobrem a sensação de disparo no iPhone.
   if(navigator.vibrate) try{ navigator.vibrate([40,25,40]) }catch(e){}
   if(CFG.soundalert) playShutterSound();
+  /* try/catch global: se QUALQUER etapa da captura falhar (canvas, legenda, EXIF), o
+     usuário vê um aviso em vez de silêncio total — antes o erro era engolido sem toast. */
+  try{
   const vw=video.videoWidth, vh=video.videoHeight;
   const [rw,rh]=CFG.format.split(':').map(Number);
   /* frames COMPENSADOS (paisagem com página retrato — iOS standalone, bloqueio desativado):
@@ -2511,6 +2514,10 @@ document.getElementById('shutter').onclick=()=>{
     toast('⚠ Foto sem dados EXIF — verifique as permissões.');
   }
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
+  }catch(err){
+    console.error('[KMCheck] captura falhou:', err);
+    toast('⚠ Erro ao capturar foto — tente novamente.');
+  }
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -3058,11 +3065,25 @@ function buildCaptureMeta(info, imgW, imgH){
   let desc=''; try{ const {L}=legendLines(info||{}); desc=toAscii((L||[]).join(' | ')); }catch(e){}
   return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0};
 }
-/* Sai direto para o menu de salvar NATIVO do celular, SEM diálogo próprio e sem avisos: no
-   iPhone aparece "Salvar Imagem" (grava no álbum de Fotos); no Android o menu oferece salvar/
-   compartilhar. Precisa ser chamado DENTRO do toque do obturador (por isso a foto é gerada de
-   forma síncrona, com toDataURL) — senão o iOS bloqueia o menu por falta de gesto do usuário.
-   Sem suporte a compartilhar arquivo (desktop/alguns navegadores), cai para download. */
+/* Salva a foto no dispositivo E na galeria interna do app.
+   PRECISA ser chamado DENTRO do toque do obturador (por isso a foto é gerada de forma síncrona,
+   com toDataURL) — senão o iOS bloqueia o menu por falta de gesto do usuário.
+   Prioridade: navigator.share (funciona em PWA iOS e Android) → <a download> (fallback desktop).
+   A versão anterior usava <a download> direto no Android, que parou de funcionar em PWA standalone
+   (Chrome 120+): o link era ignorado sem feedback nenhum. Agora usa share API primeiro. */
+function _downloadFallback(blob, name){
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=name; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} URL.revokeObjectURL(url) }, 5000);
+    toast('📸 Foto salva');
+  }catch(e){
+    console.error('[KMCheck] download fallback falhou:', e);
+    toast('⚠ Não foi possível salvar a foto.');
+  }
+}
 function saveAndShare(blob){
   const info=S.lastInfo||{}, t=new Date();
   const {L}=legendLines(info);
@@ -3070,19 +3091,29 @@ function saveAndShare(blob){
   const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
   const name=`${base} ${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
-  savePhotoToGallery(blob, name).catch(()=>{});
-  if(_isAndroid){
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=name; a.style.display='none';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
-    return;
-  } else if(navigator.canShare && navigator.canShare({files:[file]})){
-    navigator.share({files:[file]}).catch(()=>{});
+  /* 1) salva na galeria interna do app (IndexedDB) — com log de erro real */
+  savePhotoToGallery(blob, name).catch(e=>{
+    console.error('[KMCheck] IndexedDB falhou:', e);
+    /* se o banco estiver cheio ou corrompido, avisa — antes era silêncio total */
+    toast('⚠ Foto não ficou na galeria do app');
+  });
+  /* 2) salva/compartilha no dispositivo — usa share API sempre que disponível
+     (funciona em PWA standalone tanto no iOS quanto no Android moderno) */
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    navigator.share({files:[file]}).then(()=>{
+      toast('📸 Foto salva');
+    }).catch(e=>{
+      /* AbortError = usuário fechou o menu de compartilhar sem escolher — normal */
+      if(e.name==='AbortError'){
+        toast('📸 Foto registrada');
+      } else {
+        console.error('[KMCheck] share falhou, tentando download:', e);
+        _downloadFallback(blob, name);
+      }
+    });
   } else {
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    /* desktop ou navegador sem share API — cai para download direto */
+    _downloadFallback(blob, name);
   }
 }
 
