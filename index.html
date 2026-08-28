@@ -3080,24 +3080,45 @@ function buildCaptureMeta(info, imgW, imgH){
    com toDataURL) — senão o iOS bloqueia o menu por falta de gesto do usuário.
 
    Estratégia por plataforma:
-   • Android: <a download> → salva direto na pasta Downloads/Galeria sem interação do usuário.
-     Se falhar (raro), cai pro navigator.share como fallback.
-   • iOS (PWA): navigator.share → abre o menu de compartilhar (único jeito que funciona no Safari
-     standalone, <a download> é ignorado no iOS PWA).
-   • Desktop: <a download> → abre diálogo de salvar do navegador. */
+   • Android PWA standalone: download via Service Worker — coloca o blob no cache com
+     Content-Disposition: attachment e navega um iframe oculto. O SW serve e o Chrome baixa
+     automaticamente, sem nenhum diálogo. <a download> não funciona em PWA standalone no
+     Chrome Android (é ignorado silenciosamente desde Chrome ~120).
+   • Android browser / Desktop: <a download> clássico — funciona normalmente.
+   • iOS (PWA): navigator.share — único caminho que funciona no Safari standalone. */
+const _isPWAStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+async function _downloadViaSW(blob, name){
+  /* Salva via Service Worker: coloca no cache 'kmcheck-dl' com header de download,
+     navega iframe oculto pra essa URL. O SW intercepta, serve com attachment, e Chrome baixa.
+     Funciona em PWA standalone onde <a download> falha. */
+  try{
+    if(!navigator.serviceWorker||!navigator.serviceWorker.controller) return false;
+    const dlUrl=new URL('__dl/'+encodeURIComponent(name), location.href).href;
+    const cache=await caches.open('kmcheck-dl');
+    await cache.put(dlUrl, new Response(blob,{
+      headers:{'Content-Type':'image/jpeg','Content-Disposition':'attachment; filename="'+name+'"'}
+    }));
+    const iframe=document.createElement('iframe');
+    iframe.style.display='none';
+    iframe.src=dlUrl;
+    document.body.appendChild(iframe);
+    setTimeout(()=>{ try{ document.body.removeChild(iframe) }catch(e){} }, 5000);
+    return true;
+  }catch(e){
+    console.error('[KMCheck] download via SW falhou:', e);
+    return false;
+  }
+}
 function _downloadDirect(blob, name){
-  /* Salva via <a download> — funciona no Android (Chrome PWA) e desktop.
-     Cria um link invisível, clica programaticamente, e limpa depois. */
+  /* Salva via <a download> — funciona no navegador normal e desktop. */
   try{
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url; a.download=name; a.style.display='none';
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} URL.revokeObjectURL(url) }, 5000);
-    toast('📸 Foto salva');
   }catch(e){
     console.error('[KMCheck] download direto falhou:', e);
-    toast('⚠ Não foi possível salvar a foto.');
   }
 }
 function saveAndShare(blob){
@@ -3107,14 +3128,14 @@ function saveAndShare(blob){
   const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
   const name=`${base} ${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
-  /* 1) salva na galeria interna do app (IndexedDB) — com log de erro real */
+  /* 1) salva na galeria interna do app (IndexedDB) */
   savePhotoToGallery(blob, name).catch(e=>{
     console.error('[KMCheck] IndexedDB falhou:', e);
     toast('⚠ Foto não ficou na galeria do app');
   });
-  /* 2) salva no dispositivo — Android vai direto, iOS usa share */
+  /* 2) salva no dispositivo */
   if(_isIOS){
-    /* iOS PWA: <a download> não funciona em standalone — navigator.share é o único caminho */
+    /* iOS: navigator.share é o único caminho em PWA standalone */
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share({files:[file]}).then(()=>{
         toast('📸 Foto salva');
@@ -3124,10 +3145,24 @@ function saveAndShare(blob){
       });
     } else {
       _downloadDirect(blob, name);
+      toast('📸 Foto salva');
     }
+  } else if(_isAndroid && _isPWAStandalone){
+    /* Android PWA standalone: <a download> não funciona — usa download via SW */
+    _downloadViaSW(blob, name).then(ok=>{
+      if(ok) toast('📸 Foto salva');
+      else {
+        /* fallback: navigator.share se SW falhar */
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          navigator.share({files:[file]}).catch(()=>{});
+        }
+        toast('📸 Foto registrada');
+      }
+    });
   } else {
-    /* Android / Desktop: download direto — salva automaticamente sem perguntar nada */
+    /* Android browser / Desktop: <a download> funciona normalmente */
     _downloadDirect(blob, name);
+    toast('📸 Foto salva');
   }
 }
 
