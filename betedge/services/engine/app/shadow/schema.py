@@ -263,6 +263,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_shadow_unique_selection
 """
 
 
+async def _execute_ddl_statements(db: AsyncSession, ddl_block: str) -> None:
+    """Executa um bloco DDL dividindo por ';' e rodando cada statement isoladamente.
+
+    asyncpg não permite múltiplos comandos em uma única prepared statement.
+    Cada CREATE INDEX / CREATE TABLE é enviado individualmente.
+    """
+    for stmt in ddl_block.split(";"):
+        stmt = stmt.strip()
+        if stmt:
+            await db.execute(text(stmt))
+
+
 async def ensure_shadow_tables(db: AsyncSession) -> None:
     """Cria as tabelas shadow_pipeline_runs e shadow_predictions caso ainda não existam.
 
@@ -271,11 +283,14 @@ async def ensure_shadow_tables(db: AsyncSession) -> None:
     é criada primeiro pois shadow_predictions referencia pipeline_run_id
     logicamente (sem FK explícita, para não travar a inserção de previsões
     caso o registro do run falhe por qualquer motivo).
+
+    Cada statement DDL é executado individualmente porque o asyncpg não
+    suporta múltiplos comandos em um único prepared statement.
     """
     await db.execute(text(_SHADOW_PIPELINE_RUNS_DDL))
-    await db.execute(text(_SHADOW_PIPELINE_RUNS_INDEXES_DDL))
+    await _execute_ddl_statements(db, _SHADOW_PIPELINE_RUNS_INDEXES_DDL)
     await db.execute(text(_SHADOW_TABLE_DDL))
-    await db.execute(text(_SHADOW_INDEXES_DDL))
+    await _execute_ddl_statements(db, _SHADOW_INDEXES_DDL)
     await db.commit()
     logger.info("shadow_predictions e shadow_pipeline_runs: tabelas e índices garantidos.")
 

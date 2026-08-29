@@ -140,7 +140,7 @@ async def _create_pipeline_run(
             :run_id, :pipeline_ver, :model_ver,
             :features_ver, :ensemble_ver, :score_ver,
             :fp_ver, :sel_ver,
-            :config::jsonb
+            CAST(:config AS jsonb)
         )
     """), {
         "run_id": run_id,
@@ -183,8 +183,8 @@ async def _finish_pipeline_run(
             events_processed = :events,
             predictions_created = :preds,
             selections_made = :sels,
-            errors = :errors::jsonb,
-            warnings = :warnings::jsonb,
+            errors = CAST(:errors AS jsonb),
+            warnings = CAST(:warnings AS jsonb),
             duration_seconds = :duration,
             markets_processed = :mkts,
             odds_sources_count = :odds_src,
@@ -752,10 +752,8 @@ async def run_shadow_cycle(
                             }
                             is_selected = False
                             logger.warning(
-                                "dry_run_would_select",
-                                event_id=event_id,
-                                outcome=outcome_code,
-                                edge=round(edge, 4),
+                                "dry_run_would_select: event=%s outcome=%s edge=%.4f",
+                                event_id, outcome_code, edge,
                             )
 
                         # Inserir (idempotente — ON CONFLICT DO NOTHING)
@@ -786,17 +784,17 @@ async def run_shadow_cycle(
                                 :model_prob,
                                 :edge, :ev, :prediq_score, :kelly,
                                 :model_version, :features_version,
-                                :snapshot::jsonb, :overround,
+                                CAST(:snapshot AS jsonb), :overround,
                                 :home_team, :away_team,
                                 :pipeline_run_id, :prediction_run_id,
                                 :as_of, :snapshot_seq,
                                 :is_selected, :sel_strategy,
-                                :sel_reason::jsonb, :selected_at, :sel_version,
+                                CAST(:sel_reason AS jsonb), :selected_at, :sel_version,
                                 :fp_method, :fp_version,
                                 :ensemble_ver, :score_ver, :pipeline_ver,
-                                :score_comp::jsonb,
+                                CAST(:score_comp AS jsonb),
                                 :kelly_full, :kelly_capped, :kelly_ver,
-                                :individual_probs::jsonb, :ensemble_var,
+                                CAST(:individual_probs AS jsonb), :ensemble_var,
                                 :ensemble_prob
                             )
                             ON CONFLICT (prediction_run_id, event_id, market, outcome)
