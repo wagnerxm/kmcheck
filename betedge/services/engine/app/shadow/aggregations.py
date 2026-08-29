@@ -5,8 +5,8 @@ Métricas computadas em SQL sempre que possível; ECE e curva de equidade
 calculados em Python após fetch.
 
 Dimensões de agrupamento:
-    - league, market, model, period (semanal), country, outcome,
-      bookmaker, ensemble_version
+    - league, market, model, period (semanal), week (ISO YYYY-WNN),
+      country, outcome, bookmaker, ensemble_version
     - odds_range, edge_range, ev_range, prediq_range, score_range
       (faixas discretizadas)
 
@@ -147,6 +147,8 @@ _DIRECT_GROUP_COLUMNS = {
     "market": "sp.market",
     "model": "sp.model_version",
     "period": "date_trunc('week', sp.generated_at)",
+    # Semana ISO (YYYY-WNN) — granularidade mais legível que period (que retorna timestamp truncado)
+    "week": "TO_CHAR(sp.generated_at, 'IYYY-\"W\"IW')",
     "country": "sp.league",  # TODO: extrair país da liga quando disponível
     "outcome": "sp.outcome",
     "bookmaker": "sp.bookmaker",
@@ -157,9 +159,10 @@ _DIRECT_GROUP_COLUMNS = {
 def _resolve_group_expression(group_by: str) -> str:
     """Retorna a expressão SQL para agrupamento.
 
-    Suporta tanto colunas diretas (league, market, model, period, country,
-    outcome, bookmaker, ensemble_version) quanto faixas discretizadas
-    (odds_range, edge_range, ev_range, prediq_range, score_range).
+    Suporta tanto colunas diretas (league, market, model, period, week,
+    country, outcome, bookmaker, ensemble_version) quanto faixas
+    discretizadas (odds_range, edge_range, ev_range, prediq_range,
+    score_range).
     """
     if group_by in _DIRECT_GROUP_COLUMNS:
         return _DIRECT_GROUP_COLUMNS[group_by]
@@ -198,9 +201,9 @@ async def aggregate_shadow_metrics(
     Args:
         db: Sessão async SQLAlchemy.
         group_by: Dimensão de agrupamento. Valores aceitos:
-            league, market, model, period, country, outcome, bookmaker,
-            ensemble_version, odds_range, edge_range, ev_range,
-            prediq_range, score_range.
+            league, market, model, period, week, country, outcome,
+            bookmaker, ensemble_version, odds_range, edge_range,
+            ev_range, prediq_range, score_range.
         filters: Filtros opcionais (league, market, sport, status, min_date, max_date).
 
     Returns:

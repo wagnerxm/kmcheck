@@ -291,7 +291,7 @@ async def list_predictions_endpoint(
 async def get_metrics_endpoint(
     db: DbSession,
     group_by: str = Query(
-        description="Dimensão de agrupamento: league, market, model, period, "
+        description="Dimensão de agrupamento: league, market, model, period, week, "
                      "odds_range, edge_range, ev_range, prediq_range.",
     ),
     league: str | None = Query(default=None),
@@ -304,7 +304,7 @@ async def get_metrics_endpoint(
     ece, clv_mean, roi_theoretical, max_drawdown.
     """
     valid_groups = [
-        "league", "market", "model", "period",
+        "league", "market", "model", "period", "week",
         "odds_range", "edge_range", "ev_range", "prediq_range",
     ]
     if group_by not in valid_groups:

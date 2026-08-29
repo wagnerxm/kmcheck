@@ -308,3 +308,41 @@ Rotina sugerida para quem acompanha o Shadow Mode no dia a dia:
 3. Checar `GET /api/shadow/graduation` — evolução em direção aos critérios da seção 6
 4. Revisar `shadow_pipeline_runs` das últimas 24h em busca de `status='failed'`
 5. Se algum alerta da lista acima estiver ativo, seguir o troubleshooting correspondente na seção 12
+
+## 14. Scheduler Shadow
+
+### 14.1 Jobs Configurados
+
+| Job | Frequência | Timeout | Retries | Descrição |
+|-----|-----------|---------|---------|-----------|
+| shadow_daily_cycle | Diário 09:00 UTC | 600s | 2 | Ciclo completo de previsões |
+| shadow_closing_odds | A cada 15 min | 120s | 1 | Captura closing odds |
+| shadow_grading | A cada 30 min | 180s | 1 | Grading de previsões |
+| shadow_metrics | A cada 1h | 300s | 1 | Recálculo de métricas |
+| shadow_leakage_check | A cada 6h | 120s | 0 | Verificação de data leakage |
+| shadow_daily_report | Diário 23:30 UTC | 180s | 1 | Geração do relatório diário |
+
+### 14.2 Lock Distribuído
+
+Cada job usa um lock Redis (`shadow:lock:{job_id}`) com TTL igual ao timeout do job.
+Se o lock já está ativo, o job é pulado (não enfileirado).
+
+### 14.3 Execução Manual
+
+```bash
+# Disparar um job manualmente
+curl -X POST "http://localhost:8000/api/shadow/scheduler/run-job?job_id=shadow_daily_cycle" \
+  -H "X-Engine-Api-Key: $ENGINE_API_KEY"
+
+# Ver status do scheduler
+curl http://localhost:8000/api/shadow/scheduler/status \
+  -H "X-Engine-Api-Key: $ENGINE_API_KEY"
+```
+
+### 14.4 Dry Run Mode
+
+Quando `SHADOW_DRY_RUN=true`:
+- Pipeline executa completamente
+- Previsões são geradas e persistidas
+- Seleções NÃO são marcadas (is_shadow_selection = FALSE para todas)
+- Útil para teste inicial sem impactar métricas de seleção

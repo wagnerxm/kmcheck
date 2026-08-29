@@ -57,6 +57,10 @@ disparo manual via `POST /api/shadow/run`.
 | `events_processed` | `INT` | `DEFAULT 0` | Quantidade de eventos esportivos processados (candidatos avaliados) neste run. |
 | `predictions_created` | `INT` | `DEFAULT 0` | Quantidade de linhas inseridas em `shadow_predictions` neste run. |
 | `selections_made` | `INT` | `DEFAULT 0` | Quantidade de previsões marcadas como seleção shadow oficial (`is_shadow_selection = TRUE`) neste run. |
+| `duration_seconds` | `NUMERIC(10,2)` | opcional | Duração total do run em segundos (de `started_at` a `finished_at`). Persistido explicitamente para facilitar queries de monitoramento sem calcular `finished_at - started_at`. |
+| `markets_processed` | `INT` | `DEFAULT 0` | Número de mercados distintos processados neste run (ex.: 1x2, ou, btts para cada evento). Diferente de `events_processed`, que conta eventos. |
+| `odds_sources_count` | `INT` | `DEFAULT 0` | Número de fontes de odds (bookmakers) consultadas neste run. Indicador de cobertura da ingestão. |
+| `skipped_fail_safe` | `INT` | `DEFAULT 0` | Quantidade de previsões que foram recusadas pelos fail-safes (odds inválidas, fair prob inválida, evento muito próximo, etc.) — ver seção 10 do Runbook. |
 | `errors` | `JSONB` | `DEFAULT '[]'` | Lista de erros ocorridos durante o run (um objeto por erro: mensagem, estágio, evento afetado quando aplicável). Run com `errors` não vazio mas que concluiu parcialmente tende a `status = 'partial'`. |
 | `warnings` | `JSONB` | `DEFAULT '[]'` | Lista de avisos não bloqueantes (ex.: evento sem odds suficientes para Shin, fallback para multiplicative). |
 | `data_sources` | `JSONB` | — | Fontes de dados consultadas neste run (ex.: provedor de odds, timestamp da última sincronização de cada fonte) — usado para auditoria de proveniência. |
@@ -121,12 +125,14 @@ ver §5).
 | `closing_source` | `TEXT` | opcional, write-once | Fonte/método da captura (ex.: `odds_table_best` = melhor odd não suspensa na tabela `odds` no momento da captura). |
 | `closing_is_valid` | `BOOLEAN` | opcional, write-once | Se a closing odd é considerada confiável para cálculo de CLV. `FALSE` quando, por exemplo, o mercado estava suspenso ou ilíquido perto do kickoff, tornando a "closing line" pouco representativa. |
 | `closing_reason` | `TEXT` | opcional, write-once | Texto explicando por que `closing_is_valid = FALSE` (motivo da invalidação), quando aplicável. `NULL` quando `closing_is_valid` é `TRUE` ou ainda não avaliado. |
+| `closing_fair_probability` | `NUMERIC(8,6)` | opcional, write-once | Fair probability de fechamento (Shin method) — probabilidade justa implícita na closing odd, calculada pelo mesmo método usado em `fair_market_probability`. Permite comparar a avaliação do mercado no fechamento com a avaliação no momento da entrada. |
 
 ### 3.5. Probabilidades
 
 | Coluna | Tipo | Restrições | Descrição |
 |---|---|---|---|
 | `fair_market_probability` | `NUMERIC(8,6)` | `NOT NULL`, write-never | Probabilidade justa (sem overround/vig) implícita nas odds do mercado no momento da geração, calculada pelo método indicado em `fair_probability_method`. |
+| `entry_fair_probability` | `NUMERIC(8,6)` | opcional, write-never | Fair probability de entrada (= `fair_market_probability`). Campo explícito para facilitar comparação direta com `closing_fair_probability` em queries de CLV, sem ambiguidade de nomenclatura. |
 | `model_probability` | `NUMERIC(8,6)` | `NOT NULL`, write-never | Probabilidade estimada pelo ensemble de modelos estatísticos para este outcome. |
 | `fair_probability_method` | `TEXT` | `NOT NULL`, `DEFAULT 'shin'` | Método usado para remover o overround das odds e obter `fair_market_probability`: `shin` (padrão, ≥ 3 outcomes), `power`, ou `multiplicative` (fallback para mercados com menos de 3 outcomes ou quando Shin não converge). |
 | `fair_probability_version` | `TEXT` | `NOT NULL` | Versão do algoritmo/módulo de fair probability usado. |
@@ -198,6 +204,8 @@ ver §5).
 | `clv` | `NUMERIC(8,6)` | write-once | CLV **legado**, baseado em probabilidade: `model_probability − 1/closing_odds`. Mantido por compatibilidade retroativa com dashboards e relatórios já existentes; ver `clv_probability` para o campo canônico equivalente. `NULL` quando não há `closing_odds` válida. |
 | `graded_at` | `TIMESTAMPTZ` | write-once | Momento em que o grading foi realizado. |
 | `status` | `TEXT` | `NOT NULL`, `DEFAULT 'open'`, `CHECK IN ('open','graded','void')`, write-once (transição única) | Estado da previsão — ver §6. Transiciona de `open` para `graded` (resultado won/lost) ou `void` (mercado não suportado / aposta anulada pela regra do mercado), e nunca retorna a `open`. |
+| `grading_source` | `TEXT` | opcional, write-once | Fonte do resultado usado no grading (ex.: `'events_table'` = placar obtido da tabela `events`). Permite rastrear a proveniência do dado de resultado. |
+| `grading_version` | `TEXT` | opcional, write-once | Versão do algoritmo de grading aplicado (ex.: `'grading-v1.0.0'`). Permite auditar qual lógica de determinação de resultado (won/lost/void) e cálculo de retorno teórico/CLV foi usada. |
 
 ### 3.13. CLV canônico (dual)
 
