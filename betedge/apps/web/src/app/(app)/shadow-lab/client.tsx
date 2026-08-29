@@ -453,6 +453,57 @@ export function ShadowLabClient() {
         </button>
       </div>
 
+      {/* ─── Status badge ─────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 mb-6">
+        <Badge variant="outline" className="px-3 py-1.5 text-sm font-semibold border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
+          <FlaskConical className="w-4 h-4 mr-1.5" />
+          COLETANDO EVIDÊNCIAS
+        </Badge>
+        <span className="text-sm text-muted-foreground">
+          Shadow Mode v1 — validação prospectiva sem dinheiro real
+        </span>
+      </div>
+
+      {/* ─── Graduation progress ──────────────────────────────────── */}
+      {overview && (
+        <Card className="mb-6 border-amber-200 dark:border-amber-800/50">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-semibold">Progresso para Graduação</span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {Object.values(overview.graduationCriteria).filter(c => 'met' in c && c.met).length} / {Object.values(overview.graduationCriteria).length} critérios
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              {[
+                { label: "Eventos", criterion: overview.graduationCriteria.events200, format: (c: GraduationCriterion) => `${c.current}/${c.target}` },
+                { label: "Seleções", criterion: overview.graduationCriteria.bets500, format: (c: GraduationCriterion) => `${c.current}/${c.target}` },
+                { label: "ECE < 0.05", criterion: overview.graduationCriteria.ece3Leagues, format: (c: { leagues: string[]; met: boolean }) => `${c.leagues.length} ligas` },
+                { label: "CLV > 0", criterion: overview.graduationCriteria.clvPositive, format: (c: { value: number | null; met: boolean }) => c.value != null ? `${(c.value * 100).toFixed(2)}%` : "N/A" },
+                { label: "Leakage", criterion: overview.graduationCriteria.noLeakage, format: () => "Verificado" },
+                { label: "Py/TS", criterion: overview.graduationCriteria.pythonTsConvergence, format: () => "Manual" },
+              ].map((item, i) => (
+                <div key={i} className={cn(
+                  "flex flex-col items-center p-2 rounded-md border text-center",
+                  item.criterion.met
+                    ? "border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-950/20"
+                    : "border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50"
+                )}>
+                  {item.criterion.met ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mb-1" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-zinc-400 mb-1" />
+                  )}
+                  <span className="text-xs font-medium">{item.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{item.format(item.criterion as any)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ─── Conteudo da aba ativa ────────────────────────────────── */}
       {tab === "overview" && (
         <OverviewTab

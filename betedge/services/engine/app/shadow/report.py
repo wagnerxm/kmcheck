@@ -18,7 +18,11 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.shadow.engine import MODEL_VERSION, MIN_EDGE_THRESHOLD
+from app.shadow.engine import (
+    MODEL_VERSION, MIN_EDGE_THRESHOLD,
+    PIPELINE_VERSION, ENSEMBLE_VERSION, SCORE_VERSION,
+    FAIR_PROBABILITY_VERSION, KELLY_VERSION, SELECTION_VERSION,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +49,7 @@ async def generate_daily_report(
 
     # ── Header ──────────────────────────────────────────────────────────
     lines.append(f"# Relatório Shadow Mode — {day_start.strftime('%Y-%m-%d')}")
-    lines.append(f"Pipeline: `{MODEL_VERSION}` | Edge threshold: {MIN_EDGE_THRESHOLD * 100:.0f}%")
+    lines.append(f"Pipeline: `{PIPELINE_VERSION}` | Modelo: `{MODEL_VERSION}` | Edge threshold: {MIN_EDGE_THRESHOLD * 100:.0f}%")
     lines.append(f"Gerado em: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
     lines.append("")
 
@@ -107,6 +111,35 @@ async def generate_daily_report(
             lines.append(f"| {r['league']} | {r['cnt']} | {avg_e:.2f}% | {avg_o:.2f} | {avg_s:.1f} |")
     lines.append("")
 
+    # ── 2.5. Shadow Selections ─────────────────────────────────────────
+    lines.append("## 2.5. Shadow Selections")
+
+    sel_result = await db.execute(text("""
+        SELECT
+            COUNT(*)                             AS total,
+            COUNT(DISTINCT event_id)             AS events,
+            COUNT(DISTINCT league)               AS leagues,
+            AVG(edge)                            AS avg_edge,
+            AVG(ev)                              AS avg_ev,
+            AVG(prediq_score)                    AS avg_score
+        FROM shadow_predictions
+        WHERE is_shadow_selection = TRUE
+          AND generated_at >= :start AND generated_at < :end_dt
+    """), {"start": day_start, "end_dt": day_end})
+    sel = sel_result.mappings().first()
+
+    total_sel = int(sel["total"])
+    if total_sel == 0:
+        lines.append("Nenhuma seleção shadow neste dia.")
+    else:
+        lines.append(f"- **Total seleções**: {total_sel}")
+        lines.append(f"- **Eventos**: {sel['events']}")
+        lines.append(f"- **Ligas**: {sel['leagues']}")
+        lines.append(f"- **Edge médio**: {float(sel['avg_edge'] or 0) * 100:.2f}%")
+        lines.append(f"- **EV médio**: {float(sel['avg_ev'] or 0) * 100:.2f}%")
+        lines.append(f"- **PREDIQ Score médio**: {float(sel['avg_score'] or 0):.1f}")
+    lines.append("")
+
     # ── 3. Resultados finalizados ───────────────────────────────────────
     lines.append("## 3. Resultados Finalizados")
 
@@ -117,7 +150,8 @@ async def generate_daily_report(
             COUNT(*) FILTER (WHERE result = 'lost')      AS lost,
             COUNT(*) FILTER (WHERE result = 'void')      AS voided,
             SUM(theoretical_return)                       AS total_return,
-            AVG(clv) FILTER (WHERE clv IS NOT NULL)      AS avg_clv
+            AVG(clv_price) FILTER (WHERE clv_price IS NOT NULL)     AS avg_clv_price,
+            AVG(clv_probability) FILTER (WHERE clv_probability IS NOT NULL) AS avg_clv_prob
         FROM shadow_predictions
         WHERE graded_at >= :start AND graded_at < :end_dt
     """), {"start": day_start, "end_dt": day_end})
@@ -132,13 +166,16 @@ async def generate_daily_report(
         resolved = won + lost
         hr = won / resolved * 100 if resolved > 0 else 0
         total_ret = float(g["total_return"] or 0)
-        avg_clv = float(g["avg_clv"]) if g["avg_clv"] is not None else None
+        avg_clv_price = float(g["avg_clv_price"]) if g["avg_clv_price"] is not None else None
+        avg_clv_prob = float(g["avg_clv_prob"]) if g["avg_clv_prob"] is not None else None
 
         lines.append(f"- **Gradeados**: {graded_total} ({won}W / {lost}L / {int(g['voided'] or 0)}V)")
         lines.append(f"- **Hit rate**: {hr:.1f}%")
         lines.append(f"- **Retorno teórico**: {total_ret:+.2f} unidades")
-        if avg_clv is not None:
-            lines.append(f"- **CLV médio**: {avg_clv * 100:+.3f}%")
+        if avg_clv_price is not None:
+            lines.append(f"- **CLV preço**: {avg_clv_price * 100:+.3f}%")
+        if avg_clv_prob is not None:
+            lines.append(f"- **CLV probabilidade**: {avg_clv_prob * 100:+.3f}%")
     lines.append("")
 
     # ── 4. Métricas acumuladas ──────────────────────────────────────────
@@ -151,7 +188,8 @@ async def generate_daily_report(
             COUNT(*) FILTER (WHERE status = 'graded')         AS graded,
             SUM(theoretical_return)
                 FILTER (WHERE status = 'graded')              AS total_return,
-            AVG(clv) FILTER (WHERE clv IS NOT NULL)           AS clv_mean,
+            AVG(clv_price) FILTER (WHERE clv_price IS NOT NULL)      AS clv_price_mean,
+            AVG(clv_probability) FILTER (WHERE clv_probability IS NOT NULL) AS clv_prob_mean,
             AVG(POWER(model_probability -
                 CASE WHEN result = 'won' THEN 1 ELSE 0 END, 2))
                 FILTER (WHERE result IN ('won', 'lost'))      AS brier
@@ -163,7 +201,8 @@ async def generate_daily_report(
     cum_won = int(cum["won"] or 0)
     cum_graded = int(cum["graded"] or 0)
     cum_return = float(cum["total_return"]) if cum["total_return"] is not None else 0.0
-    cum_clv = float(cum["clv_mean"]) if cum["clv_mean"] is not None else None
+    cum_clv_price = float(cum["clv_price_mean"]) if cum["clv_price_mean"] is not None else None
+    cum_clv_prob = float(cum["clv_prob_mean"]) if cum["clv_prob_mean"] is not None else None
     cum_brier = float(cum["brier"]) if cum["brier"] is not None else None
 
     cum_hr = cum_won / cum_resolved * 100 if cum_resolved > 0 else 0
@@ -174,8 +213,33 @@ async def generate_daily_report(
     lines.append(f"- **ROI teórico**: {cum_roi:+.2f}%")
     if cum_brier is not None:
         lines.append(f"- **Brier Score**: {cum_brier:.6f}")
-    if cum_clv is not None:
-        lines.append(f"- **CLV médio**: {cum_clv * 100:+.4f}%")
+    if cum_clv_price is not None:
+        lines.append(f"- **CLV preço**: {cum_clv_price * 100:+.4f}%")
+    if cum_clv_prob is not None:
+        lines.append(f"- **CLV probabilidade**: {cum_clv_prob * 100:+.4f}%")
+
+    # ROI das seleções shadow (separado das previsões gerais)
+    sel_cumul = await db.execute(text("""
+        SELECT
+            COUNT(*) FILTER (WHERE result IN ('won', 'lost')) AS sel_resolved,
+            COUNT(*) FILTER (WHERE result = 'won')            AS sel_won,
+            COUNT(*) FILTER (WHERE status = 'graded')         AS sel_graded,
+            SUM(theoretical_return) FILTER (WHERE status = 'graded') AS sel_return
+        FROM shadow_predictions
+        WHERE is_shadow_selection = TRUE
+    """))
+    sel_cum = sel_cumul.mappings().first()
+
+    sel_resolved = int(sel_cum["sel_resolved"] or 0)
+    sel_won = int(sel_cum["sel_won"] or 0)
+    sel_graded = int(sel_cum["sel_graded"] or 0)
+    sel_return = float(sel_cum["sel_return"]) if sel_cum["sel_return"] is not None else 0.0
+
+    if sel_graded > 0:
+        sel_roi = sel_return / sel_graded * 100
+        sel_hr = sel_won / sel_resolved * 100 if sel_resolved > 0 else 0
+        lines.append(f"- **ROI seleções**: {sel_roi:+.2f}%")
+        lines.append(f"- **Hit rate seleções**: {sel_hr:.1f}%")
 
     # Log Loss acumulado
     if cum_resolved >= 30:
@@ -264,9 +328,9 @@ async def generate_daily_report(
     # Reutilizar contagens já calculadas
     criteria = [
         ("Eventos >= 200", cum_resolved >= 200, f"{cum_resolved}/200"),
-        ("Apostas >= 500", cum_graded >= 500, f"{cum_graded}/500"),
-        ("CLV positivo", cum_clv is not None and cum_clv > 0,
-         f"{cum_clv * 100:+.4f}%" if cum_clv is not None else "N/A"),
+        ("Seleções >= 500", sel_graded >= 500, f"{sel_graded}/500"),
+        ("CLV preço positivo", cum_clv_price is not None and cum_clv_price > 0,
+         f"{cum_clv_price * 100:+.4f}%" if cum_clv_price is not None else "N/A"),
         ("Sem data leakage", leak_count == 0, f"{leak_count} violações"),
         ("Convergência Py/TS", False, "verificação manual"),
     ]

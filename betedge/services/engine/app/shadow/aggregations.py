@@ -5,8 +5,20 @@ Métricas computadas em SQL sempre que possível; ECE e curva de equidade
 calculados em Python após fetch.
 
 Dimensões de agrupamento:
-    - league, market, model, period (semanal)
-    - odds_range, edge_range, ev_range, prediq_range (faixas discretizadas)
+    - league, market, model, period (semanal), country, outcome,
+      bookmaker, ensemble_version
+    - odds_range, edge_range, ev_range, prediq_range, score_range
+      (faixas discretizadas)
+
+Endurecimento (hardening) v1:
+    - Métricas de staking (hit_rate, roi_theoretical, max_drawdown) usam
+      SOMENTE previsões marcadas como `is_shadow_selection = TRUE` — ou
+      seja, apenas as apostas que o sistema realmente "selecionaria" em
+      produção, e não todo o universo de previsões geradas.
+    - Métricas de calibração (brier_score, log_loss, ece) continuam
+      usando TODAS as previsões gradeadas/resolvidas, selecionadas ou
+      não, pois o objetivo ali é medir a qualidade probabilística do
+      modelo como um todo.
 """
 from __future__ import annotations
 
@@ -19,6 +31,17 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Constantes de graduação (critérios para sair do Shadow Mode)
+# ═══════════════════════════════════════════════════════════════════════════
+
+GRADUATION_MIN_EVENTS = 200
+GRADUATION_MIN_SELECTIONS = 500
+GRADUATION_ECE_THRESHOLD = 0.05
+GRADUATION_MIN_ECE_LEAGUES = 3
+GRADUATION_MIN_LEAGUE_SAMPLES = 30
+GRADUATION_POLICY_VERSION = "graduation-v1.0.0"
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Helpers de filtragem SQL
@@ -65,31 +88,49 @@ def _build_where_clause(filters: dict | None) -> tuple[str, dict]:
 _RANGE_EXPRESSIONS = {
     "odds_range": """
         CASE
-            WHEN best_odds < 1.50 THEN '<1.50'
-            WHEN best_odds < 2.00 THEN '1.50-2.00'
-            WHEN best_odds < 3.00 THEN '2.00-3.00'
+            WHEN best_odds < 1.30 THEN '<1.30'
+            WHEN best_odds < 1.50 THEN '1.30-1.50'
+            WHEN best_odds < 1.80 THEN '1.50-1.80'
+            WHEN best_odds < 2.00 THEN '1.80-2.00'
+            WHEN best_odds < 2.50 THEN '2.00-2.50'
+            WHEN best_odds < 3.00 THEN '2.50-3.00'
             WHEN best_odds < 5.00 THEN '3.00-5.00'
-            ELSE '>5.00'
+            WHEN best_odds < 10.00 THEN '5.00-10.00'
+            ELSE '>10.00'
         END
     """,
     "edge_range": """
         CASE
+            WHEN edge < 0.02 THEN '<2%'
             WHEN edge < 0.03 THEN '2-3%'
             WHEN edge < 0.05 THEN '3-5%'
             WHEN edge < 0.08 THEN '5-8%'
             WHEN edge < 0.12 THEN '8-12%'
-            ELSE '>12%'
+            WHEN edge < 0.20 THEN '12-20%'
+            ELSE '>20%'
         END
     """,
     "ev_range": """
         CASE
-            WHEN ev < 0.02 THEN '<2%'
+            WHEN ev < 0.01 THEN '<1%'
+            WHEN ev < 0.02 THEN '1-2%'
             WHEN ev < 0.05 THEN '2-5%'
             WHEN ev < 0.10 THEN '5-10%'
-            ELSE '>10%'
+            WHEN ev < 0.20 THEN '10-20%'
+            ELSE '>20%'
         END
     """,
     "prediq_range": """
+        CASE
+            WHEN prediq_score < 20  THEN '0-20'
+            WHEN prediq_score < 40  THEN '20-40'
+            WHEN prediq_score < 60  THEN '40-60'
+            WHEN prediq_score < 75  THEN '60-75'
+            WHEN prediq_score < 90  THEN '75-90'
+            ELSE '90-100'
+        END
+    """,
+    "score_range": """
         CASE
             WHEN prediq_score < 30  THEN '0-30'
             WHEN prediq_score < 50  THEN '30-50'
@@ -106,14 +147,19 @@ _DIRECT_GROUP_COLUMNS = {
     "market": "sp.market",
     "model": "sp.model_version",
     "period": "date_trunc('week', sp.generated_at)",
+    "country": "sp.league",  # TODO: extrair país da liga quando disponível
+    "outcome": "sp.outcome",
+    "bookmaker": "sp.bookmaker",
+    "ensemble_version": "sp.ensemble_version",
 }
 
 
 def _resolve_group_expression(group_by: str) -> str:
     """Retorna a expressão SQL para agrupamento.
 
-    Suporta tanto colunas diretas (league, market, model, period) quanto
-    faixas discretizadas (odds_range, edge_range, ev_range, prediq_range).
+    Suporta tanto colunas diretas (league, market, model, period, country,
+    outcome, bookmaker, ensemble_version) quanto faixas discretizadas
+    (odds_range, edge_range, ev_range, prediq_range, score_range).
     """
     if group_by in _DIRECT_GROUP_COLUMNS:
         return _DIRECT_GROUP_COLUMNS[group_by]
@@ -135,17 +181,26 @@ async def aggregate_shadow_metrics(
 ) -> list[dict]:
     """Agrega métricas do shadow mode por dimensão.
 
-    Para cada grupo retorna: key, sample_size, hit_rate, brier_score,
-    log_loss, ece, clv_mean, roi_theoretical, max_drawdown.
+    Para cada grupo retorna: key, sample_size, selection_sample_size,
+    hit_rate, brier_score, log_loss, ece, clv_price_mean,
+    clv_probability_mean, roi_theoretical, max_drawdown.
 
     ECE e max_drawdown são calculados em Python pós-fetch (requerem
     lógica de binning/acumulação que não é prática em SQL puro).
 
+    IMPORTANTE (hardening v1): hit_rate, roi_theoretical e max_drawdown
+    usam SOMENTE previsões com `is_shadow_selection = TRUE` — as
+    métricas de staking devem refletir apenas o que o sistema de fato
+    "selecionaria" em produção, não todo o universo de previsões
+    geradas em shadow. Já brier_score, log_loss e ece (calibração) usam
+    TODAS as previsões resolvidas/gradeadas, selecionadas ou não.
+
     Args:
         db: Sessão async SQLAlchemy.
         group_by: Dimensão de agrupamento. Valores aceitos:
-            league, market, model, period,
-            odds_range, edge_range, ev_range, prediq_range.
+            league, market, model, period, country, outcome, bookmaker,
+            ensemble_version, odds_range, edge_range, ev_range,
+            prediq_range, score_range.
         filters: Filtros opcionais (league, market, sport, status, min_date, max_date).
 
     Returns:
@@ -154,7 +209,8 @@ async def aggregate_shadow_metrics(
     group_expr = _resolve_group_expression(group_by)
     where_clause, params = _build_where_clause(filters)
 
-    # Métricas principais computadas em SQL
+    # Métricas de calibração (TODAS as previsões resolvidas/gradeadas,
+    # independente de is_shadow_selection) computadas em SQL
     query = text(f"""
         SELECT
             {group_expr}::text AS grp_key,
@@ -170,13 +226,9 @@ async def aggregate_shadow_metrics(
                       CASE WHEN sp.result = 'won' THEN 1 ELSE 0 END, 2)
             ) FILTER (WHERE sp.result IN ('won', 'lost'))              AS brier,
 
-            -- CLV
-            AVG(sp.clv)  FILTER (WHERE sp.clv IS NOT NULL)            AS clv_mean,
-
-            -- ROI teórico
-            SUM(sp.theoretical_return)
-                FILTER (WHERE sp.status = 'graded')                    AS total_return,
-            COUNT(*) FILTER (WHERE sp.status = 'graded')               AS graded_count
+            -- CLV dual: preço (odds) e probabilidade, em separado
+            AVG(sp.clv_price)       FILTER (WHERE sp.clv_price IS NOT NULL)       AS clv_price_mean,
+            AVG(sp.clv_probability) FILTER (WHERE sp.clv_probability IS NOT NULL) AS clv_probability_mean
 
         FROM shadow_predictions sp
         WHERE {where_clause}
@@ -190,14 +242,33 @@ async def aggregate_shadow_metrics(
     if not sql_rows:
         return []
 
-    # Para ECE e drawdown, precisamos dos dados brutos por grupo
-    # Fazemos uma segunda query só se houver dados graded suficientes
+    # Métricas de staking (hit_rate, ROI, drawdown): APENAS shadow selections.
+    # Uma previsão gerada em shadow nem sempre é uma "seleção" (pode ter sido
+    # descartada por edge insuficiente, filtro de risco, etc.) — só o que o
+    # sistema selecionaria de fato deve entrar na conta de ROI/hit rate.
+    selection_query = text(f"""
+        SELECT
+            {group_expr}::text AS grp_key,
+            COUNT(*) FILTER (WHERE sp.result IN ('won', 'lost'))       AS sel_resolved,
+            COUNT(*) FILTER (WHERE sp.result = 'won')                  AS sel_won,
+            SUM(sp.theoretical_return)
+                FILTER (WHERE sp.status = 'graded')                    AS sel_total_return,
+            COUNT(*) FILTER (WHERE sp.status = 'graded')               AS sel_graded_count
+        FROM shadow_predictions sp
+        WHERE {where_clause}
+          AND sp.is_shadow_selection = TRUE
+        GROUP BY grp_key
+    """)
+    selection_result = await db.execute(selection_query, params)
+    sel_by_group = {r["grp_key"]: dict(r) for r in selection_result.mappings().all()}
+
+    # Para ECE e log loss, precisamos dos dados brutos por grupo (calibração:
+    # todas as previsões resolvidas, selecionadas ou não)
     raw_query = text(f"""
         SELECT
             {group_expr}::text AS grp_key,
             sp.model_probability,
-            sp.result,
-            sp.theoretical_return
+            sp.result
         FROM shadow_predictions sp
         WHERE {where_clause}
           AND sp.result IN ('won', 'lost')
@@ -206,24 +277,56 @@ async def aggregate_shadow_metrics(
     raw_result = await db.execute(raw_query, params)
     raw_rows = raw_result.mappings().all()
 
-    # Agrupar dados brutos por chave
+    # Para max_drawdown, dados brutos por grupo — SOMENTE shadow selections,
+    # em ordem cronológica de graduação (é uma simulação de bankroll)
+    raw_selection_query = text(f"""
+        SELECT
+            {group_expr}::text AS grp_key,
+            sp.theoretical_return
+        FROM shadow_predictions sp
+        WHERE {where_clause}
+          AND sp.is_shadow_selection = TRUE
+          AND sp.status = 'graded'
+        ORDER BY {group_expr}::text, sp.graded_at ASC
+    """)
+    raw_selection_result = await db.execute(raw_selection_query, params)
+    raw_selection_rows = raw_selection_result.mappings().all()
+
+    # Agrupar dados brutos de calibração por chave
     raw_by_group: dict[str, list[dict]] = {}
     for r in raw_rows:
         key = r["grp_key"]
         raw_by_group.setdefault(key, []).append(dict(r))
 
+    # Agrupar dados brutos de selections (staking) por chave
+    raw_selection_by_group: dict[str, list[dict]] = {}
+    for r in raw_selection_rows:
+        key = r["grp_key"]
+        raw_selection_by_group.setdefault(key, []).append(dict(r))
+
     groups: list[dict] = []
     for row in sql_rows:
         key = row["grp_key"]
         resolved = int(row["resolved"] or 0)
-        won = int(row["won"] or 0)
-        graded_count = int(row["graded_count"] or 0)
-        total_return = float(row["total_return"]) if row["total_return"] is not None else 0.0
-
-        hit_rate = won / resolved if resolved > 0 else None
         brier = float(row["brier"]) if row["brier"] is not None else None
-        clv_mean = float(row["clv_mean"]) if row["clv_mean"] is not None else None
-        roi = total_return / graded_count if graded_count > 0 else None
+        clv_price_mean = float(row["clv_price_mean"]) if row["clv_price_mean"] is not None else None
+        clv_probability_mean = (
+            float(row["clv_probability_mean"]) if row["clv_probability_mean"] is not None else None
+        )
+
+        # Staking (hit_rate, ROI): vêm da query de selections, não da geral
+        sel_row = sel_by_group.get(key)
+        sel_resolved = int(sel_row["sel_resolved"] or 0) if sel_row else 0
+        sel_won = int(sel_row["sel_won"] or 0) if sel_row else 0
+        sel_graded_count = int(sel_row["sel_graded_count"] or 0) if sel_row else 0
+        sel_total_return = (
+            float(sel_row["sel_total_return"])
+            if sel_row and sel_row["sel_total_return"] is not None
+            else 0.0
+        )
+
+        hit_rate = sel_won / sel_resolved if sel_resolved > 0 else None
+        roi = sel_total_return / sel_graded_count if sel_graded_count > 0 else None
 
         # Log Loss (calculado em Python — log não é trivial em SQL para agregação condicional)
         log_loss = None
@@ -241,7 +344,7 @@ async def aggregate_shadow_metrics(
                 ll_sum += -(o * math.log(p) + (1 - o) * math.log(1 - p))
             log_loss = ll_sum / len(group_raw)
 
-        # ECE (10 bins)
+        # ECE (10 bins) — calibração, usa todas as previsões resolvidas
         if len(group_raw) >= 30:
             n_bins = 10
             bins: dict[int, list[tuple[float, int]]] = {i: [] for i in range(n_bins)}
@@ -260,12 +363,13 @@ async def aggregate_shadow_metrics(
                 ece_sum += len(bin_list) * abs(avg_p - avg_o)
             ece = ece_sum / len(group_raw)
 
-        # Max drawdown (flat staking)
-        if len(group_raw) >= 5:
+        # Max drawdown (flat staking) — SOMENTE shadow selections
+        group_sel_raw = raw_selection_by_group.get(key, [])
+        if len(group_sel_raw) >= 5:
             cumulative = 0.0
             peak = 0.0
             max_dd = 0.0
-            for r in group_raw:
+            for r in group_sel_raw:
                 ret = float(r["theoretical_return"]) if r["theoretical_return"] is not None else 0.0
                 cumulative += ret
                 peak = max(peak, cumulative)
@@ -275,11 +379,15 @@ async def aggregate_shadow_metrics(
         groups.append({
             "key": key,
             "sample_size": resolved,
+            "selection_sample_size": sel_resolved,
             "hit_rate": round(hit_rate, 4) if hit_rate is not None else None,
             "brier_score": round(brier, 6) if brier is not None else None,
             "log_loss": round(log_loss, 6) if log_loss is not None else None,
             "ece": round(ece, 6) if ece is not None else None,
-            "clv_mean": round(clv_mean, 6) if clv_mean is not None else None,
+            "clv_price_mean": round(clv_price_mean, 6) if clv_price_mean is not None else None,
+            "clv_probability_mean": (
+                round(clv_probability_mean, 6) if clv_probability_mean is not None else None
+            ),
             "roi_theoretical": round(roi, 6) if roi is not None else None,
             "max_drawdown": round(max_drawdown, 4) if max_drawdown is not None else None,
         })
@@ -301,6 +409,10 @@ async def get_calibration_data(
 
     Para cada bin: centro, probabilidade média predita, frequência observada,
     contagem. Também retorna ECE e MCE globais.
+
+    Usa TODAS as previsões resolvidas (calibração não depende de
+    is_shadow_selection — queremos medir a qualidade probabilística do
+    modelo como um todo, não só das apostas selecionadas).
 
     Args:
         db: Sessão async.
@@ -390,6 +502,11 @@ async def get_equity_curve(
     Percorre previsões gradeadas em ordem cronológica, aplica flat staking
     (stake_fraction do bankroll inicial), e rastreia a curva de equidade.
 
+    IMPORTANTE (hardening v1): usa SOMENTE previsões com
+    `is_shadow_selection = TRUE` — a curva de equidade simula o bankroll
+    de quem seguisse as seleções reais do sistema, não todo o universo
+    de previsões geradas em shadow.
+
     Args:
         db: Sessão async.
         stake_fraction: Fração do bankroll por aposta (default 1%).
@@ -405,7 +522,8 @@ async def get_equity_curve(
             sp.best_odds,
             sp.theoretical_return
         FROM shadow_predictions sp
-        WHERE sp.status = 'graded'
+        WHERE sp.is_shadow_selection = TRUE
+          AND sp.status = 'graded'
           AND sp.result IN ('won', 'lost')
         ORDER BY sp.graded_at ASC
     """))
@@ -464,30 +582,42 @@ async def get_graduation_status(db: AsyncSession) -> dict:
     """Verifica todos os critérios para sair do Shadow Mode.
 
     Critérios:
-        1. events >= 200 para avaliação probabilística confiável
-        2. bets >= 500 para avaliação de ROI
-        3. ECE < 0.05 em pelo menos 3 ligas
+        1. events >= GRADUATION_MIN_EVENTS para avaliação probabilística confiável
+        2. selections gradeadas >= GRADUATION_MIN_SELECTIONS para avaliação de ROI
+           (apenas is_shadow_selection = TRUE — o universo de apostas que o
+           sistema de fato selecionaria, não todas as previsões geradas)
+        3. ECE < GRADUATION_ECE_THRESHOLD em pelo menos GRADUATION_MIN_ECE_LEAGUES ligas
         4. CLV médio positivo (modelo captura valor genuíno)
         5. Sem data leakage (nenhuma previsão modificada após kickoff)
         6. Convergência Python/TS (placeholder — verificação manual)
 
+    Os limiares vêm das constantes no topo do módulo (GRADUATION_MIN_EVENTS,
+    GRADUATION_MIN_SELECTIONS, GRADUATION_ECE_THRESHOLD,
+    GRADUATION_MIN_ECE_LEAGUES, GRADUATION_MIN_LEAGUE_SAMPLES) para que a
+    política de graduação fique centralizada e versionada
+    (GRADUATION_POLICY_VERSION).
+
     Returns:
-        Dict com status de cada critério e flag 'ready'.
+        Dict com status de cada critério, flag 'ready' e a versão da
+        política de graduação aplicada.
     """
     # 1. Contagens gerais
     counts = await db.execute(text("""
         SELECT
             COUNT(*) FILTER (WHERE result IN ('won', 'lost')) AS resolved,
-            COUNT(*) FILTER (WHERE status = 'graded')        AS graded,
-            AVG(clv) FILTER (WHERE clv IS NOT NULL)          AS clv_mean
+            COUNT(*) FILTER (
+                WHERE is_shadow_selection = TRUE AND status = 'graded'
+            )                                                  AS graded_selections,
+            AVG(clv) FILTER (WHERE clv IS NOT NULL)            AS clv_mean
         FROM shadow_predictions
     """))
     c = counts.mappings().first()
     resolved = int(c["resolved"] or 0)
-    graded = int(c["graded"] or 0)
+    graded_selections = int(c["graded_selections"] or 0)
     clv_mean = float(c["clv_mean"]) if c["clv_mean"] is not None else None
 
-    # 2. ECE por liga (para verificar se >= 3 ligas têm ECE < 0.05)
+    # 2. ECE por liga (para verificar se >= GRADUATION_MIN_ECE_LEAGUES ligas
+    # têm ECE < GRADUATION_ECE_THRESHOLD)
     league_ece_count = 0
     league_eces: dict[str, float] = {}
 
@@ -495,8 +625,8 @@ async def get_graduation_status(db: AsyncSession) -> dict:
         SELECT DISTINCT league FROM shadow_predictions
         WHERE result IN ('won', 'lost')
         GROUP BY league
-        HAVING COUNT(*) >= 30
-    """))
+        HAVING COUNT(*) >= :min_samples
+    """), {"min_samples": GRADUATION_MIN_LEAGUE_SAMPLES})
     leagues = [r[0] for r in leagues_result.fetchall()]
 
     for league in leagues:
@@ -507,7 +637,7 @@ async def get_graduation_status(db: AsyncSession) -> dict:
         """), {"league": league})
         preds = rows.mappings().all()
 
-        if len(preds) < 30:
+        if len(preds) < GRADUATION_MIN_LEAGUE_SAMPLES:
             continue
 
         # Calcular ECE
@@ -529,7 +659,7 @@ async def get_graduation_status(db: AsyncSession) -> dict:
 
         ece = ece_sum / len(preds)
         league_eces[league] = round(ece, 6)
-        if ece < 0.05:
+        if ece < GRADUATION_ECE_THRESHOLD:
             league_ece_count += 1
 
     # 3. Data leakage check — previsões com generated_at > kickoff_at
@@ -543,22 +673,25 @@ async def get_graduation_status(db: AsyncSession) -> dict:
     # Montar resultado
     criteria = {
         "events_200": {
-            "met": resolved >= 200,
+            "met": resolved >= GRADUATION_MIN_EVENTS,
             "current": resolved,
-            "required": 200,
-            "description": "Eventos resolvidos >= 200 para avaliação probabilística",
+            "required": GRADUATION_MIN_EVENTS,
+            "description": "Eventos resolvidos >= mínimo para avaliação probabilística",
         },
         "bets_500": {
-            "met": graded >= 500,
-            "current": graded,
-            "required": 500,
-            "description": "Apostas gradeadas >= 500 para avaliação de ROI",
+            "met": graded_selections >= GRADUATION_MIN_SELECTIONS,
+            "current": graded_selections,
+            "required": GRADUATION_MIN_SELECTIONS,
+            "description": (
+                "Shadow selections gradeadas (is_shadow_selection = TRUE) >= "
+                "mínimo para avaliação de ROI"
+            ),
         },
         "ece_3_leagues": {
-            "met": league_ece_count >= 3,
+            "met": league_ece_count >= GRADUATION_MIN_ECE_LEAGUES,
             "current": league_ece_count,
-            "required": 3,
-            "description": "ECE < 0.05 em pelo menos 3 ligas",
+            "required": GRADUATION_MIN_ECE_LEAGUES,
+            "description": f"ECE < {GRADUATION_ECE_THRESHOLD} em pelo menos {GRADUATION_MIN_ECE_LEAGUES} ligas",
             "league_eces": league_eces,
         },
         "clv_positive": {
@@ -590,6 +723,7 @@ async def get_graduation_status(db: AsyncSession) -> dict:
         "criteria": criteria,
         "auto_criteria_met": all_auto_met,
         "ready": all_auto_met and criteria["convergence_check"]["met"],
+        "graduation_policy_version": GRADUATION_POLICY_VERSION,
         "summary": (
             "Todos os critérios automáticos atendidos. Verificar convergência manual."
             if all_auto_met

@@ -89,6 +89,36 @@ function emptyOverview() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// Helper — mapeia view para o endpoint correto do engine
+// ═══════════════════════════════════════════════════════════════════════
+
+function buildEnginePath(view: string, params: URLSearchParams): string {
+  switch (view) {
+    case "overview":
+      return "/api/shadow/overview";
+    case "predictions": {
+      const pp = new URLSearchParams();
+      if (params.get("status")) pp.set("status", params.get("status")!);
+      if (params.get("league")) pp.set("league", params.get("league")!);
+      if (params.get("limit")) pp.set("limit", params.get("limit")!);
+      if (params.get("offset")) pp.set("offset", params.get("offset")!);
+      const qs = pp.toString();
+      return `/api/shadow/predictions${qs ? `?${qs}` : ""}`;
+    }
+    case "metrics": {
+      const gb = params.get("group_by");
+      return `/api/shadow/metrics${gb ? `?group_by=${gb}` : ""}`;
+    }
+    case "calibration":
+      return "/api/shadow/calibration";
+    case "equity-curve":
+      return "/api/shadow/equity-curve";
+    default:
+      return `/api/shadow/${view}`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // Handler GET
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -97,9 +127,8 @@ export async function GET(request: NextRequest) {
   const view = searchParams.get("view") ?? "overview";
 
   // ─── Tentar engine primeiro ─────────────────────────────────────────
-  const engineRes = await tryEngine(
-    `/api/shadow-lab?${searchParams.toString()}`,
-  );
+  const enginePath = buildEnginePath(view, searchParams);
+  const engineRes = await tryEngine(enginePath);
   if (engineRes) {
     const data = await engineRes.json();
     return NextResponse.json(data);
@@ -169,15 +198,16 @@ async function handleOverview(
   const { count: graded } = await supabase
     .from("shadow_predictions")
     .select("*", { count: "exact", head: true })
-    .in("status", ["won", "lost", "void"]);
+    .eq("status", "graded");
 
   // Buscar previsoes resolvidas para calcular metricas
   const { data: resolved } = await supabase
     .from("shadow_predictions")
     .select(
-      "status, model_prob, fair_prob, best_odds, edge, ev, clv, prediq_score, league",
+      "result, model_probability, fair_market_probability, best_odds, edge, ev, clv, prediq_score, league",
     )
-    .in("status", ["won", "lost"]);
+    .eq("status", "graded")
+    .in("result", ["won", "lost"]);
 
   const rows: ShadowRow[] = resolved ?? [];
   const n = rows.length;
@@ -190,7 +220,7 @@ async function handleOverview(
 
   if (n > 0) {
     // hit rate
-    const wins = rows.filter((r) => r.status === "won").length;
+    const wins = rows.filter((r) => r.result === "won").length;
     hitRate = wins / n;
 
     // ROI teorico — soma dos EV / N
@@ -203,8 +233,8 @@ async function handleOverview(
     // Brier Score — media de (prob - outcome)^2
     let brierSum = 0;
     for (const r of rows) {
-      const p = r.model_prob != null ? Number(r.model_prob) : 0;
-      const outcome = r.status === "won" ? 1 : 0;
+      const p = r.model_probability != null ? Number(r.model_probability) : 0;
+      const outcome = r.result === "won" ? 1 : 0;
       brierSum += (p - outcome) ** 2;
     }
     brierScore = brierSum / n;
@@ -213,8 +243,8 @@ async function handleOverview(
     let llSum = 0;
     const eps = 1e-15;
     for (const r of rows) {
-      const p = Math.max(eps, Math.min(1 - eps, Number(r.model_prob ?? 0.5)));
-      const outcome = r.status === "won" ? 1 : 0;
+      const p = Math.max(eps, Math.min(1 - eps, Number(r.model_probability ?? 0.5)));
+      const outcome = r.result === "won" ? 1 : 0;
       llSum += -(outcome * Math.log(p) + (1 - outcome) * Math.log(1 - p));
     }
     logLoss = llSum / n;
@@ -237,10 +267,10 @@ async function handleOverview(
       count: 0,
     }));
     for (const r of rows) {
-      const p = Number(r.model_prob ?? 0.5);
+      const p = Number(r.model_probability ?? 0.5);
       const idx = Math.min(Math.floor(p * 10), 9);
       bins[idx]!.sumPred += p;
-      bins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+      bins[idx]!.sumOutcome += r.result === "won" ? 1 : 0;
       bins[idx]!.count++;
     }
     let eceSum = 0;
@@ -260,7 +290,7 @@ async function handleOverview(
     let worstDd = 0;
     for (const r of rows) {
       const stake = 1; // aposta fixa 1 unidade
-      if (r.status === "won") {
+      if (r.result === "won") {
         bankroll += stake * (Number(r.best_odds ?? 2) - 1);
       } else {
         bankroll -= stake;
@@ -284,6 +314,13 @@ async function handleOverview(
   );
   const eventCount = uniqueEventIds.size;
 
+  // Contar shadow selections graduadas para criterio bets500
+  const { count: gradedSelections } = await supabase
+    .from("shadow_predictions")
+    .select("*", { count: "exact", head: true })
+    .eq("is_shadow_selection", true)
+    .eq("status", "graded");
+
   // ECE por liga — para criterio de 3 ligas com ECE < 0.05
   const leaguesWithGoodEce: string[] = [];
   if (n > 0) {
@@ -304,10 +341,10 @@ async function handleOverview(
         );
       }
       const bins = leagueMap.get(league)!;
-      const p = Number(r.model_prob ?? 0.5);
+      const p = Number(r.model_probability ?? 0.5);
       const idx = Math.min(Math.floor(p * 10), 9);
       bins[idx]!.sumPred += p;
-      bins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+      bins[idx]!.sumOutcome += r.result === "won" ? 1 : 0;
       bins[idx]!.count++;
     }
 
@@ -344,9 +381,9 @@ async function handleOverview(
         met: eventCount >= 200,
       },
       bets500: {
-        current: total ?? 0,
+        current: gradedSelections ?? 0,
         target: 500,
-        met: (total ?? 0) >= 500,
+        met: (gradedSelections ?? 0) >= 500,
       },
       ece3Leagues: {
         leagues: leaguesWithGoodEce,
@@ -384,7 +421,7 @@ async function handlePredictions(
   let query = supabase
     .from("shadow_predictions")
     .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
+    .order("generated_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (statusFilter !== "all") {
@@ -405,16 +442,16 @@ async function handlePredictions(
     market: (r.market as string) ?? "?",
     outcome: (r.outcome as string) ?? "?",
     bestOdds: r.best_odds != null ? Number(r.best_odds) : null,
-    fairProb: r.fair_prob != null ? Number(r.fair_prob) : null,
-    modelProb: r.model_prob != null ? Number(r.model_prob) : null,
+    fairProb: r.fair_market_probability != null ? Number(r.fair_market_probability) : null,
+    modelProb: r.model_probability != null ? Number(r.model_probability) : null,
     edge: r.edge != null ? Number(r.edge) : null,
     ev: r.ev != null ? Number(r.ev) : null,
     prediqScore: r.prediq_score != null ? Number(r.prediq_score) : null,
-    kelly: r.kelly != null ? Number(r.kelly) : null,
+    kelly: r.kelly_fraction != null ? Number(r.kelly_fraction) : null,
     status: (r.status as string) ?? "open",
     result: (r.result as string) ?? null,
-    createdAt: (r.created_at as string) ?? "",
-    settledAt: (r.settled_at as string) ?? null,
+    createdAt: (r.generated_at as string) ?? "",
+    settledAt: (r.graded_at as string) ?? null,
   }));
 
   // Filtro de busca pos-query (time no nome)
@@ -460,9 +497,10 @@ async function handleMetrics(
   const { data: resolved } = await supabase
     .from("shadow_predictions")
     .select(
-      "status, model_prob, fair_prob, best_odds, edge, ev, clv, prediq_score, league, market, outcome, created_at",
+      "result, model_probability, fair_market_probability, best_odds, edge, ev, clv, clv_price, clv_probability, prediq_score, league, market, outcome, generated_at, is_shadow_selection",
     )
-    .in("status", ["won", "lost"]);
+    .not("result", "is", null)
+    .in("result", ["won", "lost"]);
 
   const rows: ShadowRow[] = resolved ?? [];
   if (rows.length === 0) return { rows: [] };
@@ -507,7 +545,7 @@ async function handleMetrics(
         return "70–100";
       }
       case "period": {
-        const d = new Date((r.created_at as string) ?? "");
+        const d = new Date((r.generated_at as string) ?? "");
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       }
       default:
@@ -543,11 +581,11 @@ async function handleMetrics(
       });
     }
     const g = groups.get(key)!;
-    const isWon = r.status === "won";
+    const isWon = r.result === "won";
     if (isWon) g.won++;
     else g.lost++;
 
-    g.probs.push(Number(r.model_prob ?? 0.5));
+    g.probs.push(Number(r.model_probability ?? 0.5));
     g.outcomes.push(isWon ? 1 : 0);
     if (r.ev != null) g.evs.push(Number(r.ev));
     if (r.clv != null) g.clvs.push(Number(r.clv));
@@ -670,8 +708,9 @@ async function handleCalibration(
 
   const { data: resolved } = await supabase
     .from("shadow_predictions")
-    .select("status, model_prob, league")
-    .in("status", ["won", "lost"]);
+    .select("result, model_probability, league")
+    .eq("status", "graded")
+    .in("result", ["won", "lost"]);
 
   const rows: ShadowRow[] = resolved ?? [];
   const n = rows.length;
@@ -692,10 +731,10 @@ async function handleCalibration(
   }));
 
   for (const r of rows) {
-    const p = Number(r.model_prob ?? 0.5);
+    const p = Number(r.model_probability ?? 0.5);
     const idx = Math.min(Math.floor(p * NUM_BINS), NUM_BINS - 1);
     bins[idx]!.sumPred += p;
-    bins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+    bins[idx]!.sumOutcome += r.result === "won" ? 1 : 0;
     bins[idx]!.count++;
   }
 
@@ -740,10 +779,10 @@ async function handleCalibration(
       );
     }
     const lBins = leagueMap.get(league)!;
-    const p = Number(r.model_prob ?? 0.5);
+    const p = Number(r.model_probability ?? 0.5);
     const idx = Math.min(Math.floor(p * NUM_BINS), NUM_BINS - 1);
     lBins[idx]!.sumPred += p;
-    lBins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+    lBins[idx]!.sumOutcome += r.result === "won" ? 1 : 0;
     lBins[idx]!.count++;
   }
 
@@ -788,9 +827,9 @@ async function handleEquityCurve(
   // Buscar previsoes resolvidas, ordenadas cronologicamente
   const { data: resolved } = await supabase
     .from("shadow_predictions")
-    .select("status, best_odds, settled_at, created_at")
-    .in("status", ["won", "lost"])
-    .order("settled_at", { ascending: true, nullsFirst: false });
+    .select("result, best_odds, graded_at, generated_at")
+    .in("result", ["won", "lost"])
+    .order("graded_at", { ascending: true, nullsFirst: false });
 
   const rows: ShadowRow[] = resolved ?? [];
   if (rows.length === 0) return { points: [] };
@@ -802,7 +841,7 @@ async function handleEquityCurve(
 
   for (const r of rows) {
     const stake = 1;
-    if (r.status === "won") {
+    if (r.result === "won") {
       bankroll += stake * (Number(r.best_odds ?? 2) - 1);
     } else {
       bankroll -= stake;
@@ -812,7 +851,7 @@ async function handleEquityCurve(
     const drawdown = peak > 0 ? (peak - bankroll) / peak : 0;
 
     points.push({
-      date: (r.settled_at as string) ?? (r.created_at as string) ?? "",
+      date: (r.graded_at as string) ?? (r.generated_at as string) ?? "",
       bankroll: +bankroll.toFixed(2),
       drawdown: +drawdown.toFixed(4),
     });

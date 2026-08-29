@@ -46,9 +46,13 @@ class ShadowRunRequest(BaseModel):
 
 class ShadowRunResponse(BaseModel):
     """Resposta do ciclo shadow."""
+    pipeline_run_id: str
     events_processed: int
     predictions_created: int
+    selections_made: int
+    skipped_fail_safe: int
     errors: list[str]
+    warnings: list[str]
 
 
 class GradeResponse(BaseModel):
@@ -84,9 +88,13 @@ async def run_shadow_endpoint(
     """
     result = await run_shadow_cycle(db, event_ids=payload.event_ids)
     return ShadowRunResponse(
+        pipeline_run_id=result.pipeline_run_id,
         events_processed=result.events_processed,
         predictions_created=result.predictions_created,
+        selections_made=result.selections_made,
+        skipped_fail_safe=result.skipped_fail_safe,
         errors=result.errors,
+        warnings=result.warnings,
     )
 
 
@@ -190,21 +198,32 @@ async def list_predictions_endpoint(
             sp.sport,
             sp.market,
             sp.outcome,
+            sp.pipeline_run_id,
+            sp.prediction_run_id,
             sp.generated_at,
             sp.kickoff_at,
             sp.bookmaker,
             sp.best_odds,
             sp.closing_odds,
+            sp.closing_bookmaker,
+            sp.closing_is_valid,
             sp.fair_market_probability,
             sp.model_probability,
             sp.edge,
             sp.ev,
             sp.prediq_score,
             sp.kelly_fraction,
+            sp.kelly_full,
+            sp.kelly_capped,
             sp.model_version,
+            sp.pipeline_version,
+            sp.is_shadow_selection,
+            sp.selection_strategy,
             sp.result,
             sp.theoretical_return,
             sp.clv,
+            sp.clv_price,
+            sp.clv_probability,
             sp.graded_at,
             sp.status,
             sp.home_team,
@@ -225,21 +244,32 @@ async def list_predictions_endpoint(
             "sport": r["sport"],
             "market": r["market"],
             "outcome": r["outcome"],
+            "pipeline_run_id": r["pipeline_run_id"],
+            "prediction_run_id": r["prediction_run_id"],
             "generated_at": r["generated_at"].isoformat() if r["generated_at"] else None,
             "kickoff_at": r["kickoff_at"].isoformat() if r["kickoff_at"] else None,
             "bookmaker": r["bookmaker"],
             "best_odds": float(r["best_odds"]) if r["best_odds"] else None,
             "closing_odds": float(r["closing_odds"]) if r["closing_odds"] else None,
+            "closing_bookmaker": r["closing_bookmaker"],
+            "closing_is_valid": r["closing_is_valid"],
             "fair_market_probability": float(r["fair_market_probability"]) if r["fair_market_probability"] else None,
             "model_probability": float(r["model_probability"]) if r["model_probability"] else None,
             "edge": float(r["edge"]) if r["edge"] else None,
             "ev": float(r["ev"]) if r["ev"] else None,
             "prediq_score": float(r["prediq_score"]) if r["prediq_score"] else None,
             "kelly_fraction": float(r["kelly_fraction"]) if r["kelly_fraction"] else None,
+            "kelly_full": float(r["kelly_full"]) if r["kelly_full"] else None,
+            "kelly_capped": float(r["kelly_capped"]) if r["kelly_capped"] else None,
             "model_version": r["model_version"],
+            "pipeline_version": r["pipeline_version"],
+            "is_shadow_selection": r["is_shadow_selection"],
+            "selection_strategy": r["selection_strategy"],
             "result": r["result"],
             "theoretical_return": float(r["theoretical_return"]) if r["theoretical_return"] else None,
             "clv": float(r["clv"]) if r["clv"] else None,
+            "clv_price": float(r["clv_price"]) if r["clv_price"] else None,
+            "clv_probability": float(r["clv_probability"]) if r["clv_probability"] else None,
             "graded_at": r["graded_at"].isoformat() if r["graded_at"] else None,
             "status": r["status"],
             "home_team": r["home_team"],
