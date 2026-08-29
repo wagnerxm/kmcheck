@@ -10,10 +10,12 @@ Endpoints:
     GET  /config  — retorna defaults e limites de configuração.
     GET  /health  — verifica se o motor de backtest está operacional.
 """
+from collections import defaultdict
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 
 from app.backtest.engine import (
     BacktestResult,
@@ -270,95 +272,188 @@ async def run_backtest_endpoint(
                    f"Opções: {', '.join(sorted(vig_methods_validos))}.",
         )
 
-    # Busca eventos do banco de dados.
-    # TODO: implementar query real quando as tabelas de matches e odds
-    # estiverem povoadas. Por ora levanta 422 indicando falta de dados.
-    raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail=(
-            "Integração com banco de dados para buscar eventos será "
-            "implementada quando as tabelas de matches e odds estiverem "
-            "povoadas. O motor de backtest (app.backtest.engine) está "
-            "funcional e pode ser chamado diretamente com MatchEvents."
-        ),
-    )
+    # ── Buscar eventos finalizados com resultado ──────────────────────────
+    # Usa o schema real: events + teams + leagues + odds (snapshot corrente).
+    # Odds de abertura e fechamento são derivadas de odds_history (append-only).
 
-    # --- Código preparado para quando o banco estiver povoado ---
-    # from sqlalchemy import text
-    #
-    # query = text("""
-    #     SELECT
-    #         m.id AS match_id,
-    #         m.home_team,
-    #         m.away_team,
-    #         m.league,
-    #         m.match_datetime,
-    #         m.home_goals,
-    #         m.away_goals,
-    #         o.bookmaker,
-    #         o.market,
-    #         o.outcome,
-    #         o.odds AS opening_odds,
-    #         o.closing_odds
-    #     FROM matches m
-    #     JOIN odds o ON o.match_id = m.id
-    #     WHERE m.match_datetime BETWEEN :start AND :end
-    #       AND m.home_goals IS NOT NULL
-    #       AND o.market = ANY(:markets)
-    #     ORDER BY m.match_datetime
-    # """)
-    # params = {
-    #     "start": payload.start_date,
-    #     "end": payload.end_date,
-    #     "markets": payload.markets,
-    # }
-    # if payload.leagues:
-    #     query = text(str(query) + " AND m.league = ANY(:leagues)")
-    #     params["leagues"] = payload.leagues
-    #
-    # rows = (await db.execute(query, params)).mappings().all()
-    #
-    # if not rows:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-    #         detail="Sem eventos com resultado no período e mercados solicitados.",
-    #     )
-    #
-    # # Converte linhas do banco para MatchEvent.
-    # events = []
-    # for row in rows:
-    #     actual_outcome = _determine_outcome(
-    #         row["home_goals"], row["away_goals"]
-    #     )
-    #     events.append(MatchEvent(
-    #         match_id=str(row["match_id"]),
-    #         home_team=row["home_team"],
-    #         away_team=row["away_team"],
-    #         league=row["league"],
-    #         match_datetime=row["match_datetime"],
-    #         actual_outcome=actual_outcome,
-    #         market=row["market"],
-    #         opening_odds={
-    #             row["outcome"]: row["opening_odds"],
-    #         },
-    #         closing_odds={
-    #             row["outcome"]: row["closing_odds"],
-    #         } if row.get("closing_odds") else None,
-    #     ))
-    #
-    # # Executa o motor de backtest.
-    # result = run_backtest(
-    #     events=events,
-    #     model=model,  # TODO: instanciar modelo selecionado
-    #     initial_train_days=payload.initial_train_days,
-    #     step_days=payload.step_days,
-    #     eval_horizon_days=payload.eval_horizon_days,
-    #     min_edge=payload.min_edge,
-    #     min_ev=payload.min_ev,
-    #     initial_bankroll=payload.initial_bankroll,
-    # )
-    #
-    # return _result_to_response(result, payload)
+    league_filter = ""
+    market_filter = ""
+    params: dict = {
+        "start": payload.start_date,
+        "end": payload.end_date,
+    }
+
+    if payload.leagues:
+        league_filter = "AND l.name = ANY(:leagues)"
+        params["leagues"] = payload.leagues
+
+    if payload.markets:
+        market_filter = "AND m.code = ANY(:markets)"
+        params["markets"] = payload.markets
+
+    # 1. Eventos finalizados no período
+    event_query = text(f"""
+        SELECT
+            e.id AS event_id,
+            ht.name AS home_team,
+            at.name AS away_team,
+            l.name AS league,
+            e.kickoff_at,
+            e.home_score,
+            e.away_score
+        FROM events e
+        JOIN teams ht ON ht.id = e.home_team_id
+        JOIN teams at ON at.id = e.away_team_id
+        JOIN leagues l ON l.id = e.league_id
+        WHERE e.status = 'finished'
+          AND e.home_score IS NOT NULL
+          AND e.away_score IS NOT NULL
+          AND e.kickoff_at BETWEEN :start AND :end
+          {league_filter}
+        ORDER BY e.kickoff_at
+    """)
+
+    try:
+        ev_result = await db.execute(event_query, params)
+        event_rows = ev_result.mappings().all()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao consultar eventos: {exc}",
+        )
+
+    if not event_rows:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Nenhum evento finalizado com resultado no período informado.",
+        )
+
+    event_ids = [str(r["event_id"]) for r in event_rows]
+
+    # 2. Odds (snapshot corrente) dos eventos — agrupadas por evento
+    odds_query = text(f"""
+        SELECT
+            o.event_id,
+            m.code AS market_code,
+            oc.code AS outcome_code,
+            o.decimal_odds
+        FROM odds o
+        JOIN markets m ON m.id = o.market_id
+        JOIN outcomes oc ON oc.id = o.outcome_id
+        WHERE o.event_id = ANY(:event_ids)
+          {market_filter}
+        ORDER BY o.event_id, m.code, oc.code
+    """)
+    params["event_ids"] = event_ids
+
+    try:
+        odds_result = await db.execute(odds_query, params)
+        odds_rows = odds_result.mappings().all()
+    except Exception:
+        odds_rows = []
+
+    # Indexar odds por evento: {event_id: {outcome_code: decimal_odds}}
+    # Para 1x2 (match_result): outcome_code = "home", "draw", "away"
+    odds_by_event: dict[str, dict[str, float]] = defaultdict(dict)
+    for r in odds_rows:
+        eid = str(r["event_id"])
+        odds_by_event[eid][r["outcome_code"]] = float(r["decimal_odds"])
+
+    # 3. Odds de fechamento (última odds registrada antes do kickoff) via odds_history
+    # Usa a última entrada em odds_history antes do kickoff como closing_odds
+    closing_query = text(f"""
+        WITH ranked AS (
+            SELECT
+                oh.event_id,
+                oc.code AS outcome_code,
+                oh.decimal_odds,
+                ROW_NUMBER() OVER (
+                    PARTITION BY oh.event_id, oh.outcome_id
+                    ORDER BY oh.recorded_at DESC
+                ) AS rn
+            FROM odds_history oh
+            JOIN outcomes oc ON oc.id = oh.outcome_id
+            JOIN markets m ON m.id = oh.market_id
+            WHERE oh.event_id = ANY(:event_ids)
+              {market_filter}
+        )
+        SELECT event_id, outcome_code, decimal_odds
+        FROM ranked WHERE rn = 1
+    """)
+
+    closing_by_event: dict[str, dict[str, float]] = defaultdict(dict)
+    try:
+        cl_result = await db.execute(closing_query, params)
+        cl_rows = cl_result.mappings().all()
+        for r in cl_rows:
+            eid = str(r["event_id"])
+            closing_by_event[eid][r["outcome_code"]] = float(r["decimal_odds"])
+    except Exception:
+        pass  # CLV fica indisponível — não bloqueia o backtest.
+
+    # 4. Converter para MatchEvent
+    events: list[MatchEvent] = []
+    for row in event_rows:
+        eid = str(row["event_id"])
+        home_score = int(row["home_score"])
+        away_score = int(row["away_score"])
+
+        # Determinar resultado real para mercado 1x2
+        if home_score > away_score:
+            actual_outcome = "home"
+        elif home_score < away_score:
+            actual_outcome = "away"
+        else:
+            actual_outcome = "draw"
+
+        opening = odds_by_event.get(eid)
+        closing = closing_by_event.get(eid)
+
+        events.append(MatchEvent(
+            match_id=eid,
+            home_team=row["home_team"],
+            away_team=row["away_team"],
+            league=row["league"],
+            match_datetime=row["kickoff_at"],
+            actual_outcome=actual_outcome,
+            market="match_result",
+            opening_odds=opening if opening else None,
+            closing_odds=closing if closing else None,
+            actual_goals_home=home_score,
+            actual_goals_away=away_score,
+        ))
+
+    if not events:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Nenhum evento com odds encontrado no período informado.",
+        )
+
+    # 5. Instanciar modelo — usa Poisson (robusto, menos dados) como padrão
+    from app.models.poisson import PoissonModel
+    model = PoissonModel()
+
+    # 6. Executar o motor de backtest
+    try:
+        result = run_backtest(
+            events=events,
+            model=model,
+            initial_train_days=payload.initial_train_days,
+            step_days=payload.step_days,
+            eval_horizon_days=payload.eval_horizon_days,
+            min_edge=payload.min_edge,
+            min_ev=payload.min_ev,
+            initial_bankroll=payload.initial_bankroll,
+            vig_method=payload.vig_method,
+        )
+    except ValueError as exc:
+        # O motor valida amostra mínima e ordenação temporal.
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+
+    return _result_to_response(result, payload)
 
 
 @router.get(
