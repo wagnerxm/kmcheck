@@ -47,6 +47,10 @@ from app.value.engine import (
     calculate_edge_score,
     implied_probability,
 )
+from app.value.fair_probability import (
+    compute_fair_probs_for_event,
+    compute_market_overround,
+)
 from app.value.kelly import fractional_kelly
 
 logger = logging.getLogger(__name__)
@@ -884,6 +888,11 @@ async def run_pipeline(
             # Buscar odds do evento para MarketConsensus e value engine
             event_odds = await _fetch_event_odds(db, event["event_id"])
 
+            # Calcular fair probabilities UMA VEZ por evento, usando vig
+            # removal centralizado (Shin + fallback multiplicative).
+            # fair_probs_map: {market_code: {outcome_code: fair_probability}}
+            fair_probs_map = compute_fair_probs_for_event(event_odds, method="shin")
+
             # Buscar histórico para GradientBoost
             home_history = await _fetch_team_match_history(
                 db, event["home_team_id"], event["kickoff_at"]
@@ -950,19 +959,36 @@ async def run_pipeline(
                         db, event["event_id"], market_code, outcome_code
                     )
 
-                    # Calcular edge, ev, edge_score
+                    # Calcular edge, ev, edge_score usando fair probability
+                    # centralizada (com remoção de vig via Shin)
                     edge_val = None
                     ev_val = None
                     es_val = None
 
                     if best_odds and best_odds > 1.0:
-                        fair_market_prob = implied_probability(best_odds)
+                        # Fair prob do serviço centralizado (vig removido)
+                        fair_market_prob = (
+                            fair_probs_map
+                            .get(market_code, {})
+                            .get(outcome_code)
+                        )
+                        if fair_market_prob is None or fair_market_prob <= 0:
+                            # Fallback: implied probability bruta (sem vig removal)
+                            fair_market_prob = implied_probability(best_odds)
+
                         edge_val = calculate_edge(pred.probability, fair_market_prob)
                         ev_val = calculate_ev(pred.probability, best_odds)
+
+                        # Overround do mercado para componente M do Edge Score
+                        mkt_overround = compute_market_overround(
+                            event_odds.get(market_code, {})
+                        )
+
                         es_val = calculate_edge_score(
                             edge=edge_val,
                             expected_value=ev_val,
                             model_confidence=pred.confidence or 0.5,
+                            market_overround=mkt_overround if mkt_overround > 0 else None,
                         )
 
                     pred_id = await _persist_prediction(
@@ -985,8 +1011,14 @@ async def run_pipeline(
                             kelly_pct = fractional_kelly(
                                 pred.probability, best_odds, fraction=0.25
                             )
-                            # Buscar probabilidade justa de mercado
-                            fair_prob = implied_probability(best_odds)
+                            # Fair probability centralizada (vig removido)
+                            fair_prob = (
+                                fair_probs_map
+                                .get(market_code, {})
+                                .get(outcome_code)
+                            )
+                            if fair_prob is None or fair_prob <= 0:
+                                fair_prob = implied_probability(best_odds)
                             n_books = len(event_odds.get(market_code, {}))
 
                             opp_id = await _persist_value_opportunity(
@@ -1034,14 +1066,28 @@ async def run_pipeline(
                         ev_val = None
                         es_val = None
                         if best_odds and best_odds > 1.0:
-                            fair_prob = implied_probability(best_odds)
+                            # Fair probability centralizada (vig removido)
+                            fair_prob = (
+                                fair_probs_map
+                                .get(market_code, {})
+                                .get(outcome_code)
+                            )
+                            if fair_prob is None or fair_prob <= 0:
+                                fair_prob = implied_probability(best_odds)
+
                             edge_val = calculate_edge(pred.probability, fair_prob)
                             ev_val = calculate_ev(pred.probability, best_odds)
+
+                            mkt_overround = compute_market_overround(
+                                event_odds.get(market_code, {})
+                            )
+
                             es_val = calculate_edge_score(
                                 edge=edge_val,
                                 expected_value=ev_val,
                                 model_confidence=pred.confidence or 0.5,
                                 ensemble_variance=pred.features_used.get("ensemble_variance") if pred.features_used else None,
+                                market_overround=mkt_overround if mkt_overround > 0 else None,
                             )
 
                         weights_dict = {
@@ -1074,7 +1120,14 @@ async def run_pipeline(
                                 kelly_pct = fractional_kelly(
                                     pred.probability, best_odds, fraction=0.25
                                 )
-                                fair_prob = implied_probability(best_odds)
+                                # Fair probability centralizada (vig removido)
+                                fair_prob = (
+                                    fair_probs_map
+                                    .get(market_code, {})
+                                    .get(outcome_code)
+                                )
+                                if fair_prob is None or fair_prob <= 0:
+                                    fair_prob = implied_probability(best_odds)
                                 n_books = len(event_odds.get(market_code, {}))
 
                                 opp_id = await _persist_value_opportunity(
