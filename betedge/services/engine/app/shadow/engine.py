@@ -126,7 +126,9 @@ def _generate_prediction_run_id(pipeline_run_id: str, event_id: str) -> str:
     return f"{pipeline_run_id}::{event_id[:8]}::{digest}"
 
 
-async def _create_pipeline_run(db: AsyncSession, run_id: str) -> None:
+async def _create_pipeline_run(
+    db: AsyncSession, run_id: str, dry_run: bool = False,
+) -> None:
     """Registra início de uma execução do pipeline."""
     await db.execute(text("""
         INSERT INTO shadow_pipeline_runs (
@@ -157,6 +159,7 @@ async def _create_pipeline_run(db: AsyncSession, run_id: str) -> None:
             "kelly_fraction": KELLY_FRACTION,
             "kelly_cap": KELLY_CAP,
             "fair_probability_method": FAIR_PROBABILITY_METHOD,
+            "dry_run": dry_run,
         }),
     })
     await db.commit()
@@ -520,6 +523,7 @@ def _evaluate_shadow_selection(
 async def run_shadow_cycle(
     db: AsyncSession,
     event_ids: list[str] | None = None,
+    dry_run: bool = False,
 ) -> ShadowCycleResult:
     """Executa o ciclo shadow completo com rastreabilidade e fail-safes.
 
@@ -533,13 +537,15 @@ async def run_shadow_cycle(
            c. Validar odds (fail-safe)
            d. Calcular edge, EV, PREDIQ Score detalhado, Kelly variantes
            e. Persistir snapshot (ON CONFLICT DO NOTHING)
-           f. Avaliar seleção shadow
+           f. Avaliar seleção shadow (desabilitada em dry run)
         5. Validar ausência de data leakage
         6. Registrar fim do pipeline run
 
     Args:
         db: Sessão assíncrona do SQLAlchemy.
         event_ids: IDs específicos. Se None, processa todos os futuros.
+        dry_run: Se True, executa pipeline completo mas não marca seleções
+            (is_shadow_selection=False para todas as previsões).
 
     Returns:
         ShadowCycleResult com métricas da execução.
@@ -556,7 +562,13 @@ async def run_shadow_cycle(
     cycle_result.pipeline_run_id = run_id
 
     await ensure_shadow_tables(db)
-    await _create_pipeline_run(db, run_id)
+    await _create_pipeline_run(db, run_id, dry_run=dry_run)
+
+    if dry_run:
+        logger.warning(
+            "SHADOW DRY RUN ativado — pipeline executará sem persistir seleções oficiais. "
+            "pipeline_run_id=%s", run_id,
+        )
 
     logger.info("Shadow cycle iniciado — run_id=%s", run_id)
 
@@ -730,6 +742,21 @@ async def run_shadow_cycle(
                             fair_prob_valid=fp_valid,
                             kickoff_at=kickoff_at,
                         )
+
+                        # Dry run: calcular mas não marcar como seleção oficial
+                        if dry_run and is_selected:
+                            selection_reason = {
+                                "dry_run": True,
+                                "would_select": True,
+                                "original_reason": selection_reason,
+                            }
+                            is_selected = False
+                            logger.warning(
+                                "dry_run_would_select",
+                                event_id=event_id,
+                                outcome=outcome_code,
+                                edge=round(edge, 4),
+                            )
 
                         # Inserir (idempotente — ON CONFLICT DO NOTHING)
                         insert_result = await db.execute(text("""

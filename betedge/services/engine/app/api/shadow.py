@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
-from app.core.deps import DbSession
+from app.core.deps import DbSession, RedisClient
 from app.shadow.engine import (
     ShadowCycleResult,
     capture_closing_odds,
@@ -400,3 +400,44 @@ async def get_graduation_endpoint(db: DbSession) -> dict:
     Retorna status detalhado de cada critério e flag global 'ready'.
     """
     return await get_graduation_status(db)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Endpoints do scheduler
+# ═══════════════════════════════════════════════════════════════════════════
+
+@router.post(
+    "/scheduler/run-job",
+    summary="Executa um job shadow específico (manual trigger)",
+)
+async def run_scheduler_job_endpoint(
+    job_id: str = Query(description="ID do job: shadow_daily_cycle, shadow_closing_odds, etc."),
+    db: DbSession = ...,
+    redis: RedisClient = ...,
+) -> dict:
+    """Dispara execução manual de um job shadow individual.
+
+    Útil para testes, recovery, e operação manual.
+    Responde com métricas de execução (status, duration, errors).
+    """
+    from app.core.config import settings
+    from app.shadow.scheduler import run_shadow_job
+    from app.core.db import db_session_ctx
+
+    result = await run_shadow_job(
+        job_id=job_id,
+        db_session_factory=db_session_ctx,
+        redis_client=redis,
+        dry_run=settings.SHADOW_DRY_RUN,
+    )
+    return result
+
+
+@router.get(
+    "/scheduler/status",
+    summary="Status do scheduler shadow",
+)
+async def get_scheduler_status_endpoint() -> dict:
+    """Retorna configuração e status dos 6 jobs do shadow scheduler."""
+    from app.shadow.scheduler import get_scheduler_status
+    return get_scheduler_status()

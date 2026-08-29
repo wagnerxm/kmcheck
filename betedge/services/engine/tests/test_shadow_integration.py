@@ -34,9 +34,8 @@ from app.shadow.engine import (
     PIPELINE_VERSION,
 )
 
-# GRADING_VERSION não existe ainda — fallback para quando o agent de
-# schema não rodou. Quando o módulo exportar a constante, este fallback
-# é silenciosamente ignorado.
+# GRADING_VERSION pode não existir se o agent de schema não rodou ainda.
+# Fallback seguro: se a constante não existir no módulo, usa valor padrão.
 try:
     from app.shadow.engine import GRADING_VERSION
 except ImportError:
@@ -159,23 +158,25 @@ class TestCLVDualConsistency:
     def test_clv_probability_positive_means_market_agreed(self):
         """CLV probability positivo = mercado convergiu para a visão do modelo.
 
-        Fórmula: model_prob - 1/closing_odds.
-        Closing odds 1.80 implica 55.6% → modelo com 60% tem CLV > 0.
+        Fórmula: closing_fair_prob - entry_fair_prob.
+        Se fair prob de entrada era 0.50 e de fechamento subiu para 0.55,
+        o mercado concordou com a aposta → CLV positivo.
         """
-        model_prob = 0.60
-        closing_odds = 1.80  # implied prob ~0.556
-        clv = _calculate_clv_probability(model_prob, closing_odds)
+        entry_fair = 0.50
+        closing_fair = 0.55  # mercado caminhou na direção do modelo
+        clv = _calculate_clv_probability(entry_fair, closing_fair)
         assert clv is not None and clv > 0
-        assert clv == pytest.approx(model_prob - 1.0 / closing_odds)
+        assert clv == pytest.approx(0.05)
 
     def test_clv_probability_negative_means_market_diverged(self):
         """CLV probability negativo = mercado divergiu do modelo.
 
-        Closing odds 1.50 implica 66.7% → modelo com 55% tem CLV < 0.
+        Se fair prob de entrada era 0.55 e de fechamento caiu para 0.50,
+        o mercado se moveu contra → CLV negativo.
         """
-        model_prob = 0.55
-        closing_odds = 1.50  # implied prob ~0.667
-        clv = _calculate_clv_probability(model_prob, closing_odds)
+        entry_fair = 0.55
+        closing_fair = 0.50
+        clv = _calculate_clv_probability(entry_fair, closing_fair)
         assert clv is not None and clv < 0
 
     def test_clv_both_none_without_closing(self):
@@ -188,11 +189,11 @@ class TestCLVDualConsistency:
         assert _calculate_clv_price(2.10, 1.0) is None
         assert _calculate_clv_price(2.10, 0.5) is None
 
-    def test_clv_probability_invalid_closing(self):
-        """Closing odds inválidas → CLV prob None."""
-        assert _calculate_clv_probability(0.50, 1.0) is None
-        assert _calculate_clv_probability(0.50, 0.5) is None
-        assert _calculate_clv_probability(0.50, None) is None
+    def test_clv_probability_invalid_values(self):
+        """Fair probs inválidas → CLV None."""
+        assert _calculate_clv_probability(0.0, 0.5) is None
+        assert _calculate_clv_probability(0.5, 0.0) is None
+        assert _calculate_clv_probability(None, 0.5) is None
 
 
 class TestFailSafeChain:

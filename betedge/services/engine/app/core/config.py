@@ -54,6 +54,16 @@ class Settings(BaseSettings):
         description="Diretório onde os modelos treinados (pesos, params) são persistidos.",
     )
 
+    # --- Shadow Mode ---
+    SHADOW_ENABLED: bool = Field(
+        default=True,
+        description="Habilita o Shadow Mode. Quando False, endpoints shadow retornam 503.",
+    )
+    SHADOW_DRY_RUN: bool = Field(
+        default=False,
+        description="Modo dry run: executa pipeline completo mas não persiste seleções oficiais.",
+    )
+
     # --- Celery / workers Python (treino de modelo, backtests) ---
     CELERY_BROKER_URL: str | None = None
     CELERY_RESULT_BACKEND: str | None = None
