@@ -27,6 +27,12 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Trophy,
+  Minus,
+  Activity,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +69,7 @@ interface OutcomeAudit {
   edge: number | null;
   ev: number | null;
   prediqIndex: number | null;
+  gradingStatus: string | null;
 }
 
 interface MarketAudit {
@@ -97,10 +104,39 @@ interface LeagueOption {
   name: string;
 }
 
+interface ModelPerf {
+  modelName: string;
+  modelVersion: string;
+  brierScore: number | null;
+  logLoss: number | null;
+  calibrationError: number | null;
+  clv: number | null;
+  roi: number | null;
+  hitRate: number | null;
+  sampleSize: number;
+  avgEdge: number | null;
+  sharpeRatio: number | null;
+  maxDrawdown: number | null;
+  isWalkForward: boolean;
+  periodStart: string;
+  periodEnd: string;
+}
+
+interface GradingStats {
+  totalActive: number;
+  totalWon: number;
+  totalLost: number;
+  totalVoid: number;
+  totalExpired: number;
+  winRate: number | null;
+}
+
 interface AuditResponse {
   events: EventAudit[];
   summary: AuditSummary;
   leagues: LeagueOption[];
+  modelPerformance: ModelPerf[];
+  gradingStats: GradingStats;
 }
 
 type StatusFilter = "all" | "scheduled" | "finished";
@@ -369,6 +405,14 @@ export function ModelAuditClient() {
           {/* Cards de resumo */}
           <SummaryCards summary={data.summary} />
 
+          {/* Painel de Grading — resultados das oportunidades de valor */}
+          <GradingPanel stats={data.gradingStats} />
+
+          {/* Performance dos modelos (do pipeline real) */}
+          {data.modelPerformance.length > 0 && (
+            <ModelPerformancePanel models={data.modelPerformance} />
+          )}
+
           {/* Tabela ou estado vazio */}
           {data.events.length === 0 ? (
             <EmptyState hasPredictions={data.summary.totalPredictions > 0} />
@@ -489,31 +533,40 @@ function EmptyState({ hasPredictions }: { hasPredictions: boolean }) {
     <Card>
       <CardContent className="py-12">
         <div className="mx-auto max-w-md text-center">
-          <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-warning" />
+          <Database className="mx-auto mb-4 h-10 w-10 text-foreground-subtle" />
           <h3 className="mb-2 text-lg font-semibold text-foreground">
-            Nenhuma previsao registrada
+            Pipeline PREDIQ conectado — aguardando dados
           </h3>
           <p className="mb-6 text-sm text-foreground-muted">
-            O pipeline de previsoes ainda nao esta conectado ao banco de dados.
-            A pagina sera populada automaticamente quando o sistema estiver
-            operacional.
+            O pipeline esta operacional. Os dados aparecerao aqui
+            automaticamente apos a primeira execucao com eventos reais.
           </p>
 
           <div className="mx-auto max-w-xs space-y-3 text-left">
             <PipelineStep
               label="Ingestao de odds"
               status="done"
-              detail="Odds sendo coletadas das casas"
+              detail="Odds sendo coletadas via SportsGameOdds"
             />
             <PipelineStep
-              label="Treinamento de modelos"
-              status="pending"
-              detail="Aguardando dados historicos suficientes"
+              label="Pipeline PREDIQ"
+              status="done"
+              detail="5 modelos + ensemble implementados e testados"
             />
             <PipelineStep
-              label="Geracao de previsoes"
+              label="Value engine"
+              status="done"
+              detail="Edge, EV, Indice PREDIQ e Kelly"
+            />
+            <PipelineStep
+              label="Grading automatico"
+              status="done"
+              detail="fn_outcome_won — resultado derivado, nunca inventado"
+            />
+            <PipelineStep
+              label="Primeiros dados reais"
               status="pending"
-              detail="Depende do treinamento dos modelos"
+              detail="Aguardando execucao do pipeline com eventos futuros"
             />
           </div>
         </div>
@@ -659,7 +712,7 @@ function AuditTable({ events }: { events: EventAudit[] }) {
                 </th>
                 {/* Grupo: Value */}
                 <th
-                  colSpan={3}
+                  colSpan={4}
                   className="border-b border-card-border/30 px-3 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest text-foreground-subtle"
                 >
                   Value
@@ -731,6 +784,9 @@ function AuditTable({ events }: { events: EventAudit[] }) {
                 </th>
                 <th className="min-w-[60px] px-2 py-2 text-right text-xs font-semibold text-foreground-subtle">
                   PREDIQ
+                </th>
+                <th className="min-w-[70px] px-2 py-2 text-center text-xs font-semibold text-foreground-subtle">
+                  Grading
                 </th>
               </tr>
             </thead>
@@ -984,6 +1040,13 @@ function AuditRow({ row }: { row: FlatRow }) {
           <Dash />
         )}
       </td>
+      <td className="px-2 py-2 text-center">
+        {outcome?.gradingStatus ? (
+          <GradingBadge status={outcome.gradingStatus} />
+        ) : (
+          <Dash />
+        )}
+      </td>
     </tr>
   );
 }
@@ -1021,6 +1084,27 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+/** Badge de resultado do grading (won/lost/void/active). */
+function GradingBadge({ status }: { status: string }) {
+  const config: Record<string, { label: string; variant: "secondary" | "danger" | "outline" }> = {
+    active: { label: "Ativa", variant: "outline" },
+    result_won: { label: "✓ Acertou", variant: "secondary" },
+    result_lost: { label: "✗ Errou", variant: "danger" },
+    result_void: { label: "Void", variant: "outline" },
+    expired: { label: "Expirada", variant: "outline" },
+    odds_moved: { label: "Odds mov.", variant: "outline" },
+    removed: { label: "Removida", variant: "outline" },
+  };
+
+  const c = config[status] ?? { label: status, variant: "outline" as const };
+
+  return (
+    <Badge variant={c.variant} className="text-[10px] whitespace-nowrap">
+      {c.label}
+    </Badge>
+  );
+}
+
 /** Badge visual para o Indice PREDIQ (0-100). */
 function PrediqBadge({ value }: { value: number }) {
   const color =
@@ -1044,6 +1128,263 @@ function getEdgeColor(edge: number | null): string {
   if (edge >= 0.05) return "text-primary-400";
   if (edge >= 0.02) return "text-warning";
   return "text-foreground";
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Painel de Grading — resultados de value opportunities
+// ═══════════════════════════════════════════════════════════════════════
+
+function GradingPanel({ stats }: { stats: GradingStats }) {
+  const total = stats.totalWon + stats.totalLost + stats.totalVoid + stats.totalActive + stats.totalExpired;
+  if (total === 0) return null;
+
+  const resolved = stats.totalWon + stats.totalLost;
+
+  const cards = [
+    {
+      label: "Ativas",
+      value: stats.totalActive,
+      icon: Activity,
+      color: "text-primary-400",
+      bgColor: "bg-primary/10",
+    },
+    {
+      label: "Acertadas",
+      value: stats.totalWon,
+      icon: Trophy,
+      color: "text-primary-400",
+      bgColor: "bg-primary/10",
+    },
+    {
+      label: "Erradas",
+      value: stats.totalLost,
+      icon: XCircle,
+      color: "text-danger",
+      bgColor: "bg-danger/10",
+    },
+    {
+      label: "Void/Expiradas",
+      value: stats.totalVoid + stats.totalExpired,
+      icon: Minus,
+      color: "text-foreground-subtle",
+      bgColor: "bg-background-surface",
+    },
+    {
+      label: "Win Rate",
+      value: stats.winRate != null ? fmtPercent(stats.winRate, 1) : "—",
+      icon: Target,
+      color: stats.winRate != null && stats.winRate > 0.5 ? "text-primary-400" : "text-warning",
+      bgColor: stats.winRate != null && stats.winRate > 0.5 ? "bg-primary/10" : "bg-warning/10",
+      subtitle: resolved > 0 ? `${resolved} resolvidas` : undefined,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Target className="h-4 w-4 text-primary-400" />
+          Grading — Resultado das Oportunidades
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {cards.map((c) => {
+            const Icon = c.icon;
+            return (
+              <div key={c.label} className="flex items-center gap-3 rounded-xl border border-card-border/30 p-3">
+                <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", c.bgColor)}>
+                  <Icon className={cn("h-4 w-4", c.color)} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-foreground">
+                    {typeof c.value === "number" ? c.value.toLocaleString("pt-BR") : c.value}
+                  </p>
+                  <p className="truncate text-[10px] text-foreground-subtle">{c.label}</p>
+                  {c.subtitle && (
+                    <p className="text-[9px] text-foreground-subtle">{c.subtitle}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Performance dos modelos (dados reais do pipeline)
+// ═══════════════════════════════════════════════════════════════════════
+
+function ModelPerformancePanel({ models }: { models: ModelPerf[] }) {
+  // Agrupar pela versao mais recente de cada modelo
+  const latestByModel = new Map<string, ModelPerf>();
+  for (const m of models) {
+    const key = `${m.modelName}:${m.modelVersion}`;
+    const existing = latestByModel.get(key);
+    if (!existing || m.periodEnd > existing.periodEnd) {
+      latestByModel.set(key, m);
+    }
+  }
+
+  const perf = [...latestByModel.values()].sort((a, b) => {
+    // Ordenar por Brier (menor = melhor)
+    if (a.brierScore != null && b.brierScore != null) return a.brierScore - b.brierScore;
+    if (a.brierScore != null) return -1;
+    if (b.brierScore != null) return 1;
+    return 0;
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <BarChart3 className="h-4 w-4 text-primary-400" />
+          Performance dos Modelos — Walk-Forward
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-card-border/50 bg-background-surface/40">
+                <th className="px-3 py-2 text-left text-xs font-semibold text-foreground-subtle">
+                  Modelo
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  Brier ↓
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  Log Loss
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  ECE
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  Hit Rate
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  CLV
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  ROI
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  Sharpe
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  Max DD
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-foreground-subtle">
+                  N
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-foreground-subtle">
+                  Periodo
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-card-border/20">
+              {perf.map((m) => (
+                <tr key={`${m.modelName}:${m.modelVersion}`} className="transition-colors hover:bg-card/30">
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className="text-xs font-medium text-foreground">
+                      {m.modelName}
+                    </span>
+                    <span className="ml-1 text-[10px] text-foreground-subtle">
+                      v{m.modelVersion}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.brierScore} format="fixed4" good="low" threshold={0.25} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.logLoss} format="fixed4" />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.calibrationError} format="fixed4" good="low" threshold={0.05} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.hitRate} format="percent" good="high" threshold={0.5} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.clv} format="percent" good="high" threshold={0} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.roi} format="percent" good="high" threshold={0} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.sharpeRatio} format="fixed2" good="high" threshold={0} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <MetricCell value={m.maxDrawdown} format="percent" good="low" threshold={0.2} invert />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <span className={cn(
+                      "font-mono text-xs",
+                      m.sampleSize >= 200 ? "text-foreground" : "text-warning",
+                    )}>
+                      {m.sampleSize.toLocaleString("pt-BR")}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="text-[10px] text-foreground-subtle whitespace-nowrap">
+                      {fmtShortDate(m.periodStart)} — {fmtShortDate(m.periodEnd)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {perf.length === 0 && (
+          <p className="py-8 text-center text-sm text-foreground-subtle">
+            Nenhuma metrica de performance disponivel. Execute o pipeline para gerar dados.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Celula de metrica com coloracao semantica. */
+function MetricCell({
+  value,
+  format,
+  good,
+  threshold,
+  invert,
+}: {
+  value: number | null;
+  format: "fixed2" | "fixed4" | "percent";
+  good?: "low" | "high";
+  threshold?: number;
+  invert?: boolean;
+}) {
+  if (value == null) return <Dash />;
+
+  let formatted: string;
+  if (format === "percent") {
+    formatted = fmtPercent(value, 1);
+  } else if (format === "fixed2") {
+    formatted = value.toFixed(2);
+  } else {
+    formatted = value.toFixed(4);
+  }
+
+  let color = "text-foreground";
+  if (good && threshold != null) {
+    const v = invert ? -value : value;
+    const t = invert ? -threshold : threshold;
+    if (good === "low") {
+      color = v <= t ? "text-primary-400" : v <= t * 1.5 ? "text-warning" : "text-danger";
+    } else {
+      color = v >= t ? "text-primary-400" : "text-danger";
+    }
+  }
+
+  return <span className={cn("font-mono text-xs", color)}>{formatted}</span>;
 }
 
 /** Skeleton de carregamento. */

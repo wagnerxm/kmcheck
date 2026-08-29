@@ -259,23 +259,139 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ─── 5. Buscar value_opportunities para Índice PREDIQ ────────────────
+  // ─── 5. Buscar value_opportunities para Índice PREDIQ e stats de grading ──
 
   const prediqMap = new Map<string, number>();
+  const gradingMap = new Map<string, string>();
   if (eventIds.length > 0) {
     const { data: voData, error: voError } = await supabase
       .from("value_opportunities")
-      .select("event_id, outcome_id, prediq_index")
+      .select("event_id, outcome_id, edge_score, status")
       .in("event_id", eventIds);
 
     if (!voError && voData) {
       for (const row of voData) {
         const r = row as EventRow;
-        if (r.prediq_index != null) {
-          prediqMap.set(`${r.event_id}:${r.outcome_id}`, Number(r.prediq_index));
+        const key = `${r.event_id}:${r.outcome_id}`;
+        if (r.edge_score != null) {
+          prediqMap.set(key, Number(r.edge_score));
+        }
+        if (r.status) {
+          gradingMap.set(key, r.status as string);
         }
       }
     }
+  }
+
+  // ─── 5b. Buscar model_performance para métricas agregadas ───────────
+
+  interface ModelPerf {
+    modelName: string;
+    modelVersion: string;
+    brierScore: number | null;
+    logLoss: number | null;
+    calibrationError: number | null;
+    clv: number | null;
+    roi: number | null;
+    hitRate: number | null;
+    sampleSize: number;
+    avgEdge: number | null;
+    sharpeRatio: number | null;
+    maxDrawdown: number | null;
+    isWalkForward: boolean;
+    periodStart: string;
+    periodEnd: string;
+  }
+
+  let modelPerformance: ModelPerf[] = [];
+  {
+    const { data: perfData, error: perfError } = await supabase
+      .from("model_performance")
+      .select(`
+        brier_score,
+        log_loss,
+        calibration_error,
+        clv,
+        roi,
+        hit_rate,
+        sample_size,
+        avg_edge,
+        sharpe_ratio,
+        max_drawdown,
+        is_walk_forward,
+        period_start,
+        period_end,
+        model_version:model_versions!model_version_id ( model_name, version )
+      `)
+      .eq("is_walk_forward", true)
+      .order("period_end", { ascending: false })
+      .limit(50);
+
+    if (!perfError && perfData) {
+      modelPerformance = (perfData as EventRow[]).map((r) => {
+        const mv = r.model_version as { model_name: string; version: string } | null;
+        return {
+          modelName: mv?.model_name ?? "?",
+          modelVersion: mv?.version ?? "?",
+          brierScore: r.brier_score != null ? Number(r.brier_score) : null,
+          logLoss: r.log_loss != null ? Number(r.log_loss) : null,
+          calibrationError: r.calibration_error != null ? Number(r.calibration_error) : null,
+          clv: r.clv != null ? Number(r.clv) : null,
+          roi: r.roi != null ? Number(r.roi) : null,
+          hitRate: r.hit_rate != null ? Number(r.hit_rate) : null,
+          sampleSize: Number(r.sample_size ?? 0),
+          avgEdge: r.avg_edge != null ? Number(r.avg_edge) : null,
+          sharpeRatio: r.sharpe_ratio != null ? Number(r.sharpe_ratio) : null,
+          maxDrawdown: r.max_drawdown != null ? Number(r.max_drawdown) : null,
+          isWalkForward: Boolean(r.is_walk_forward),
+          periodStart: r.period_start as string,
+          periodEnd: r.period_end as string,
+        };
+      });
+    }
+  }
+
+  // ─── 5c. Contagem global de grading ─────────────────────────────────
+
+  interface GradingStats {
+    totalActive: number;
+    totalWon: number;
+    totalLost: number;
+    totalVoid: number;
+    totalExpired: number;
+    winRate: number | null;
+  }
+
+  const gradingStats: GradingStats = {
+    totalActive: 0,
+    totalWon: 0,
+    totalLost: 0,
+    totalVoid: 0,
+    totalExpired: 0,
+    winRate: null,
+  };
+
+  {
+    // Contagem por status a partir de todas as value_opportunities (não apenas do
+    // subset de eventIds visíveis)
+    for (const gs of ["active", "result_won", "result_lost", "result_void", "expired", "odds_moved"] as const) {
+      const { count } = await supabase
+        .from("value_opportunities")
+        .select("id", { count: "exact", head: true })
+        .eq("status", gs);
+
+      const c = count ?? 0;
+      if (gs === "active") gradingStats.totalActive = c;
+      else if (gs === "result_won") gradingStats.totalWon = c;
+      else if (gs === "result_lost") gradingStats.totalLost = c;
+      else if (gs === "result_void") gradingStats.totalVoid = c;
+      else gradingStats.totalExpired += c;
+    }
+
+    const resolved = gradingStats.totalWon + gradingStats.totalLost;
+    gradingStats.winRate = resolved > 0
+      ? +(gradingStats.totalWon / resolved).toFixed(4)
+      : null;
   }
 
   // ─── 6. Lista de ligas para o dropdown de filtro ─────────────────────
@@ -408,7 +524,7 @@ export async function GET(request: NextRequest) {
         if (usedMV && fairProbsMap.has(mvKey)) {
           fairProb = fairProbsMap.get(mvKey)!;
         } else if (shinFairProbs.length > idx) {
-          fairProb = shinFairProbs[idx];
+          fairProb = shinFairProbs[idx] ?? null;
         }
 
         // Previsões dos modelos
@@ -447,8 +563,10 @@ export async function GET(request: NextRequest) {
           expectedValue = primaryPred.probability * bestOdds - 1;
         }
 
-        // Índice PREDIQ
-        const prediqIndex = prediqMap.get(`${ev.id}:${o.outcomeId}`) ?? null;
+        // Índice PREDIQ (= edge_score na tabela value_opportunities)
+        const voKey = `${ev.id}:${o.outcomeId}`;
+        const prediqIndex = prediqMap.get(voKey) ?? null;
+        const gradingStatus = gradingMap.get(voKey) ?? null;
 
         return {
           outcomeName: o.outcomeName,
@@ -459,6 +577,7 @@ export async function GET(request: NextRequest) {
           edge: edge != null ? +edge.toFixed(6) : null,
           ev: expectedValue != null ? +expectedValue.toFixed(6) : null,
           prediqIndex,
+          gradingStatus,
         };
       });
 
@@ -493,5 +612,11 @@ export async function GET(request: NextRequest) {
         : 0,
   };
 
-  return NextResponse.json({ events: auditEvents, summary, leagues });
+  return NextResponse.json({
+    events: auditEvents,
+    summary,
+    leagues,
+    modelPerformance,
+    gradingStats,
+  });
 }
