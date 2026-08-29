@@ -16,6 +16,7 @@ import {
   FlaskConical,
   LineChart,
   Shield,
+  TestTubes,
   Star,
   Bell,
   Settings,
@@ -67,6 +68,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { label: "Model Lab", href: "/model-lab", icon: FlaskConical },
       { label: "Performance", href: "/performance", icon: LineChart },
       { label: "Model Audit", href: "/model-audit", icon: Shield },
+      { label: "Shadow Lab", href: "/shadow-lab", icon: TestTubes },
     ],
   },
   {
