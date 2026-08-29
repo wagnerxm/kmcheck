@@ -26,7 +26,7 @@ export function PlaceholderPage({ title, description, icon: Icon }: PlaceholderP
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-3 py-20 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <Icon className="h-7 w-7 text-primary-400" />
+            <Icon className="h-7 w-7 text-primary" />
           </div>
           <p className="text-sm font-medium text-foreground">
             Esta funcionalidade está em desenvolvimento

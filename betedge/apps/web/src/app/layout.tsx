@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter, Barlow_Condensed } from "next/font/google";
 import { Providers } from "@/lib/providers";
 import "./globals.css";
 
@@ -9,10 +9,26 @@ const inter = Inter({
   display: "swap",
 });
 
+/** Fonte condensada/bold para títulos com presença esportiva forte. */
+const barlow = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-barlow",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "BetEdge — Inteligência Estatística para Apostas Esportivas",
+  title: "PREDIQ — Inteligência Quantitativa para Esportes",
   description:
     "Plataforma de análise quantitativa de odds esportivas: previsões estatísticas, detecção de valor e comparação de casas de apostas em tempo real.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#09090B",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -21,9 +37,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Dark mode é o padrão da plataforma — um dashboard quantitativo, não um cassino.
     <html lang="pt-BR" className="dark">
-      <body className={`${inter.variable} font-sans min-h-screen`}>
+      <body
+        className={`${inter.variable} ${barlow.variable} font-sans min-h-screen`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

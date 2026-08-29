@@ -2,15 +2,16 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Cartão com efeito de vidro (glass morphism), a base visual de praticamente
- * toda a UI do BetEdge — stats, listas de oportunidades, gráficos, etc.
+ * Cartão premium opaco — base visual de praticamente toda a UI do PREDIQ:
+ * stats, listas de oportunidades, gráficos, etc. Usa a classe utilitária
+ * `.card-premium` definida em globals.css (bg-background-surface + borda sutil).
  */
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        "glass rounded-2xl shadow-glass",
+        "card-premium",
         className,
       )}
       {...props}

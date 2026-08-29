@@ -290,7 +290,7 @@ export function ModelAuditClient() {
                         className={cn(
                           "flex w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                           statusFilter === s
-                            ? "bg-primary/10 text-primary-400"
+                            ? "bg-primary/10 text-primary"
                             : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                         )}
                       >
@@ -334,7 +334,7 @@ export function ModelAuditClient() {
                       className={cn(
                         "flex w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                         !leagueFilter
-                          ? "bg-primary/10 text-primary-400"
+                          ? "bg-primary/10 text-primary"
                           : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                       )}
                     >
@@ -350,7 +350,7 @@ export function ModelAuditClient() {
                         className={cn(
                           "flex w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                           leagueFilter === league.id
-                            ? "bg-primary/10 text-primary-400"
+                            ? "bg-primary/10 text-primary"
                             : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                         )}
                       >
@@ -493,7 +493,7 @@ function SummaryCards({ summary }: { summary: AuditSummary }) {
           <Card key={c.label}>
             <CardContent className="flex items-center gap-3 py-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <Icon className="h-5 w-5 text-primary-400" />
+                <Icon className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
                 <p className="text-xl font-bold text-foreground">{c.value}</p>
@@ -588,7 +588,7 @@ function PipelineStep({
   return (
     <div className="flex items-start gap-3">
       {status === "done" && (
-        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary-400" />
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
       )}
       {status === "pending" && (
         <Clock className="mt-0.5 h-4 w-4 shrink-0 text-foreground-subtle" />
@@ -601,7 +601,7 @@ function PipelineStep({
           className={cn(
             "text-sm font-medium",
             status === "done"
-              ? "text-primary-400"
+              ? "text-success"
               : status === "error"
                 ? "text-danger"
                 : "text-foreground-muted",
@@ -947,7 +947,7 @@ function AuditRow({ row }: { row: FlatRow }) {
                 ? "text-warning"
                 : outcome.overround > 1.04
                   ? "text-foreground-subtle"
-                  : "text-primary-400",
+                  : "text-success",
             )}
           >
             {fmtPercent(outcome.overround - 1)}
@@ -1023,7 +1023,7 @@ function AuditRow({ row }: { row: FlatRow }) {
           <span
             className={cn(
               "font-mono text-xs",
-              outcome.ev > 0 ? "text-primary-400" : "text-danger",
+              outcome.ev > 0 ? "text-success" : "text-danger",
             )}
           >
             {outcome.ev >= 0 ? "+" : ""}
@@ -1109,7 +1109,7 @@ function GradingBadge({ status }: { status: string }) {
 function PrediqBadge({ value }: { value: number }) {
   const color =
     value >= 70
-      ? "text-primary-400"
+      ? "text-primary"
       : value >= 40
         ? "text-warning"
         : "text-foreground-muted";
@@ -1125,7 +1125,7 @@ function PrediqBadge({ value }: { value: number }) {
 function getEdgeColor(edge: number | null): string {
   if (edge == null) return "text-foreground-subtle";
   if (edge < 0) return "text-danger";
-  if (edge >= 0.05) return "text-primary-400";
+  if (edge >= 0.05) return "text-success";
   if (edge >= 0.02) return "text-warning";
   return "text-foreground";
 }
@@ -1145,15 +1145,15 @@ function GradingPanel({ stats }: { stats: GradingStats }) {
       label: "Ativas",
       value: stats.totalActive,
       icon: Activity,
-      color: "text-primary-400",
+      color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
       label: "Acertadas",
       value: stats.totalWon,
       icon: Trophy,
-      color: "text-primary-400",
-      bgColor: "bg-primary/10",
+      color: "text-success",
+      bgColor: "bg-success/10",
     },
     {
       label: "Erradas",
@@ -1173,8 +1173,8 @@ function GradingPanel({ stats }: { stats: GradingStats }) {
       label: "Win Rate",
       value: stats.winRate != null ? fmtPercent(stats.winRate, 1) : "—",
       icon: Target,
-      color: stats.winRate != null && stats.winRate > 0.5 ? "text-primary-400" : "text-warning",
-      bgColor: stats.winRate != null && stats.winRate > 0.5 ? "bg-primary/10" : "bg-warning/10",
+      color: stats.winRate != null && stats.winRate > 0.5 ? "text-success" : "text-warning",
+      bgColor: stats.winRate != null && stats.winRate > 0.5 ? "bg-success/10" : "bg-warning/10",
       subtitle: resolved > 0 ? `${resolved} resolvidas` : undefined,
     },
   ];
@@ -1183,7 +1183,7 @@ function GradingPanel({ stats }: { stats: GradingStats }) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Target className="h-4 w-4 text-primary-400" />
+          <Target className="h-4 w-4 text-primary" />
           Grading — Resultado das Oportunidades
         </CardTitle>
       </CardHeader>
@@ -1241,7 +1241,7 @@ function ModelPerformancePanel({ models }: { models: ModelPerf[] }) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <BarChart3 className="h-4 w-4 text-primary-400" />
+          <BarChart3 className="h-4 w-4 text-primary" />
           Performance dos Modelos — Walk-Forward
         </CardTitle>
       </CardHeader>
@@ -1378,9 +1378,9 @@ function MetricCell({
     const v = invert ? -value : value;
     const t = invert ? -threshold : threshold;
     if (good === "low") {
-      color = v <= t ? "text-primary-400" : v <= t * 1.5 ? "text-warning" : "text-danger";
+      color = v <= t ? "text-success" : v <= t * 1.5 ? "text-warning" : "text-danger";
     } else {
-      color = v >= t ? "text-primary-400" : "text-danger";
+      color = v >= t ? "text-success" : "text-danger";
     }
   }
 

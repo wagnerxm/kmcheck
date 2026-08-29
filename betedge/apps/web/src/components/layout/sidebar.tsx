@@ -101,7 +101,7 @@ function NavLink({
       className={cn(
         "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         isActive
-          ? "bg-primary/10 text-primary-400 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.25)]"
+          ? "bg-primary/10 text-primary shadow-[inset_3px_0_0_0_theme(colors.primary.DEFAULT)]"
           : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
         isCollapsed && "justify-center px-2",
       )}
@@ -109,7 +109,7 @@ function NavLink({
       <Icon
         className={cn(
           "h-[18px] w-[18px] shrink-0",
-          isActive ? "text-primary-400" : "text-foreground-subtle group-hover:text-foreground",
+          isActive ? "text-primary" : "text-foreground-subtle group-hover:text-foreground",
         )}
       />
       {!isCollapsed && <span className="truncate">{item.label}</span>}
@@ -148,11 +148,11 @@ function SidebarContent({
         )}
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15">
-          <TrendingUp className="h-[18px] w-[18px] text-primary-400" />
+          <TrendingUp className="h-[18px] w-[18px] text-primary" />
         </div>
         {!isCollapsed && (
-          <span className="text-base font-semibold tracking-tight text-foreground">
-            Bet<span className="text-primary-400">Edge</span>
+          <span className="font-display text-base font-bold tracking-tight text-foreground">
+            PREDIQ
           </span>
         )}
       </div>
@@ -187,7 +187,7 @@ function SidebarContent({
 
       {/* Rodapé: usuário + logout */}
       <div className={cn("flex items-center gap-2 p-3", isCollapsed && "flex-col")}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary-400">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
           {initial}
         </div>
         {!isCollapsed && (
@@ -212,7 +212,7 @@ function SidebarContent({
 }
 
 function Separator() {
-  return <div className="h-px w-full bg-card-border/50" />;
+  return <div className="h-px w-full bg-card-border/30" />;
 }
 
 /** Sidebar de navegação principal: fixa em desktop, gaveta sobreposta em mobile. */
@@ -224,7 +224,7 @@ export function Sidebar() {
       {/* Desktop: coluna fixa, recolhível entre 240px e 72px. */}
       <aside
         className={cn(
-          "relative hidden shrink-0 border-r border-card-border/50 bg-background-surface/60 backdrop-blur-xl transition-all duration-200 lg:flex",
+          "relative hidden shrink-0 border-r border-card-border/30 bg-background-surface transition-all duration-200 lg:flex",
           isCollapsed ? "w-[72px]" : "w-[240px]",
         )}
       >
@@ -233,7 +233,7 @@ export function Sidebar() {
           type="button"
           onClick={toggleCollapsed}
           title={isCollapsed ? "Expandir menu" : "Recolher menu"}
-          className="absolute -right-3 top-16 flex h-6 w-6 items-center justify-center rounded-full border border-card-border bg-background-surface text-foreground-subtle shadow-glass transition-colors hover:text-foreground"
+          className="absolute -right-3 top-16 flex h-6 w-6 items-center justify-center rounded-full border border-card-border bg-background-surface text-foreground-subtle shadow-sm transition-colors hover:text-foreground"
         >
           {isCollapsed ? (
             <ChevronsRight className="h-3.5 w-3.5" />
@@ -250,7 +250,7 @@ export function Sidebar() {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-card-border/50 bg-background-surface shadow-glass animate-fade-in">
+          <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-card-border/30 bg-background-surface shadow-lg animate-fade-in">
             <button
               type="button"
               onClick={() => setMobileOpen(false)}

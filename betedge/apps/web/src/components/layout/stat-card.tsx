@@ -31,7 +31,7 @@ export function StatCard({ label, value, icon: Icon, trend, isLoading }: StatCar
             <p
               className={cn(
                 "text-xs font-medium",
-                trend.direction === "up" && "text-primary-400",
+                trend.direction === "up" && "text-success",
                 trend.direction === "down" && "text-danger",
                 trend.direction === "neutral" && "text-foreground-subtle",
               )}
@@ -41,7 +41,7 @@ export function StatCard({ label, value, icon: Icon, trend, isLoading }: StatCar
           )}
         </div>
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <Icon className="h-[18px] w-[18px] text-primary-400" />
+          <Icon className="h-[18px] w-[18px] text-primary" />
         </div>
       </CardContent>
     </Card>

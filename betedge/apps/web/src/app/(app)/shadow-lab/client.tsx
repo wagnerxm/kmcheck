@@ -177,11 +177,11 @@ const fmtDateTime = (s: string) =>
 
 const edgeColor = (edge: number) =>
   edge > 0.05
-    ? "text-emerald-400"
+    ? "text-success"
     : edge > 0.02
-      ? "text-amber-400"
+      ? "text-warning"
       : edge < 0
-        ? "text-red-400"
+        ? "text-danger"
         : "text-foreground-muted";
 
 const prediqBadge = (score: number): "default" | "warning" | "secondary" =>
@@ -196,16 +196,16 @@ function metricColor(
   if (value == null) return "text-foreground-subtle";
   if (direction === "low") {
     return value <= threshold
-      ? "text-emerald-400"
+      ? "text-success"
       : value <= threshold * 2
-        ? "text-amber-400"
-        : "text-red-400";
+        ? "text-warning"
+        : "text-danger";
   }
   return value >= threshold
-    ? "text-emerald-400"
+    ? "text-success"
     : value >= threshold * 0.5
-      ? "text-amber-400"
-      : "text-red-400";
+      ? "text-warning"
+      : "text-danger";
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -435,7 +435,7 @@ export function ShadowLabClient() {
               className={cn(
                 "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                 tab === t.id
-                  ? "bg-primary/15 text-primary-400"
+                  ? "bg-primary/15 text-primary"
                   : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
               )}
             >
@@ -455,23 +455,23 @@ export function ShadowLabClient() {
 
       {/* ─── Status badge ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3 mb-6">
-        <Badge variant="outline" className="px-3 py-1.5 text-sm font-semibold border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
+        <Badge variant="warning" className="px-3 py-1.5 text-sm font-semibold">
           <FlaskConical className="w-4 h-4 mr-1.5" />
           COLETANDO EVIDÊNCIAS
         </Badge>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-foreground-muted">
           Shadow Mode v1 — validação prospectiva sem dinheiro real
         </span>
       </div>
 
       {/* ─── Graduation progress ──────────────────────────────────── */}
       {overview && (
-        <Card className="mb-6 border-amber-200 dark:border-amber-800/50">
+        <Card className="mb-6 border-warning/30">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-2 mb-3">
-              <Target className="w-4 h-4 text-amber-600" />
+              <Target className="w-4 h-4 text-warning" />
               <span className="text-sm font-semibold">Progresso para Graduação</span>
-              <span className="text-xs text-muted-foreground ml-auto">
+              <span className="text-xs text-foreground-muted ml-auto">
                 {Object.values(overview.graduationCriteria).filter(c => 'met' in c && c.met).length} / {Object.values(overview.graduationCriteria).length} critérios
               </span>
             </div>
@@ -487,16 +487,16 @@ export function ShadowLabClient() {
                 <div key={i} className={cn(
                   "flex flex-col items-center p-2 rounded-md border text-center",
                   item.criterion.met
-                    ? "border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-950/20"
-                    : "border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50"
+                    ? "border-success/30 bg-success/5"
+                    : "border-card-border/30 bg-card/40"
                 )}>
                   {item.criterion.met ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mb-1" />
+                    <CheckCircle2 className="w-4 h-4 text-success mb-1" />
                   ) : (
-                    <Clock className="w-4 h-4 text-zinc-400 mb-1" />
+                    <Clock className="w-4 h-4 text-foreground-subtle mb-1" />
                   )}
                   <span className="text-xs font-medium">{item.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{item.format(item.criterion as any)}</span>
+                  <span className="text-[10px] text-foreground-subtle">{item.format(item.criterion as any)}</span>
                 </div>
               ))}
             </div>
@@ -639,7 +639,7 @@ function OverviewTab({
         <MetricMiniCard
           label="Sample Size"
           value={data.sampleSize.toLocaleString("pt-BR")}
-          color={data.sampleSize >= 200 ? "text-emerald-400" : "text-amber-400"}
+          color={data.sampleSize >= 200 ? "text-success" : "text-warning"}
         />
       </div>
     </div>
@@ -664,7 +664,7 @@ function KpiCard({
     <Card>
       <CardContent className="flex items-center gap-3 py-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-          <Icon className="h-5 w-5 text-primary-400" />
+          <Icon className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
           <p
@@ -767,7 +767,7 @@ function GraduationPanel({ criteria }: { criteria: GraduationCriteria }) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Crosshair className="h-4 w-4 text-primary-400" />
+          <Crosshair className="h-4 w-4 text-primary" />
           Criterios de Graduacao
           <Badge
             variant={metCount === items.length ? "default" : "warning"}
@@ -785,15 +785,15 @@ function GraduationPanel({ criteria }: { criteria: GraduationCriteria }) {
               className="flex items-start gap-3 rounded-xl border border-card-border/30 p-3"
             >
               {item.met ? (
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
               ) : (
-                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
               )}
               <div className="min-w-0 flex-1">
                 <p
                   className={cn(
                     "text-sm font-medium",
-                    item.met ? "text-emerald-400" : "text-foreground-muted",
+                    item.met ? "text-success" : "text-foreground-muted",
                   )}
                 >
                   {item.label}
@@ -808,7 +808,7 @@ function GraduationPanel({ criteria }: { criteria: GraduationCriteria }) {
                       <div
                         className={cn(
                           "h-full rounded-full transition-all",
-                          item.met ? "bg-emerald-500" : "bg-amber-500",
+                          item.met ? "bg-success" : "bg-warning",
                         )}
                         style={{ width: `${item.progress * 100}%` }}
                       />
@@ -838,7 +838,7 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <TrendingUp className="h-4 w-4 text-primary-400" />
+          <TrendingUp className="h-4 w-4 text-primary" />
           Curva de Equity — Bankroll Simulado
         </CardTitle>
       </CardHeader>
@@ -848,18 +848,18 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
             <AreaChart data={points}>
               <defs>
                 <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#22C55E" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#22C55E" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="rgba(51,65,85,0.4)"
+                stroke="rgba(39,39,42,0.6)"
                 vertical={false}
               />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: "#94a3b8" }}
+                tick={{ fontSize: 10, fill: "#A1A1AA" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: string) =>
@@ -870,7 +870,7 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
                 }
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "#94a3b8" }}
+                tick={{ fontSize: 10, fill: "#A1A1AA" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: number) => `${v.toFixed(0)}`}
@@ -878,11 +878,11 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#0f172a",
-                  border: "1px solid rgba(51,65,85,0.5)",
+                  backgroundColor: "#141416",
+                  border: "1px solid rgba(255,255,255,0.07)",
                   borderRadius: "0.75rem",
                   fontSize: 12,
-                  color: "#e2e8f0",
+                  color: "#FAFAFA",
                 }}
                 formatter={(value: number) => [
                   `${value.toFixed(2)} u`,
@@ -894,11 +894,11 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
               />
               <ReferenceLine
                 y={100}
-                stroke="rgba(148,163,184,0.3)"
+                stroke="rgba(161,161,170,0.3)"
                 strokeDasharray="4 4"
                 label={{
                   value: "Base",
-                  fill: "#64748b",
+                  fill: "#52525B",
                   fontSize: 10,
                   position: "right",
                 }}
@@ -906,11 +906,11 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
               <Area
                 type="monotone"
                 dataKey="bankroll"
-                stroke="#10b981"
+                stroke="#22C55E"
                 strokeWidth={2}
                 fill="url(#equityFill)"
                 dot={false}
-                activeDot={{ r: 4, fill: "#10b981" }}
+                activeDot={{ r: 4, fill: "#22C55E" }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -1007,7 +1007,7 @@ function PredictionsTab({
                         className={cn(
                           "flex w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                           status === s
-                            ? "bg-primary/10 text-primary-400"
+                            ? "bg-primary/10 text-primary"
                             : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                         )}
                       >
@@ -1053,7 +1053,7 @@ function PredictionsTab({
                       className={cn(
                         "flex w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                         !league
-                          ? "bg-primary/10 text-primary-400"
+                          ? "bg-primary/10 text-primary"
                           : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                       )}
                     >
@@ -1069,7 +1069,7 @@ function PredictionsTab({
                         className={cn(
                           "flex w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
                           league === l
-                            ? "bg-primary/10 text-primary-400"
+                            ? "bg-primary/10 text-primary"
                             : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                         )}
                       >
@@ -1279,7 +1279,7 @@ function PredictionRow({ prediction: p }: { prediction: ShadowPrediction }) {
           <span
             className={cn(
               "font-mono text-xs tabular-nums",
-              p.ev > 0 ? "text-emerald-400" : "text-red-400",
+              p.ev > 0 ? "text-success" : "text-danger",
             )}
           >
             {p.ev >= 0 ? "+" : ""}
@@ -1356,7 +1356,7 @@ function PerformanceTab({
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                   groupBy === d.key
-                    ? "bg-primary/15 text-primary-400 border border-primary/30"
+                    ? "bg-primary/15 text-primary border border-primary/30"
                     : "border border-card-border/50 text-foreground-muted hover:bg-card/60 hover:text-foreground",
                 )}
               >
@@ -1392,7 +1392,7 @@ function MetricsTable({
     <Card className="overflow-hidden">
       <CardHeader className="pb-0">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Layers className="h-4 w-4 text-primary-400" />
+          <Layers className="h-4 w-4 text-primary" />
           Metricas por {groupLabel}
         </CardTitle>
       </CardHeader>
@@ -1445,7 +1445,7 @@ function MetricsTable({
                     <span
                       className={cn(
                         "font-mono text-xs tabular-nums",
-                        row.sampleSize >= 50 ? "text-foreground" : "text-amber-400",
+                        row.sampleSize >= 50 ? "text-foreground" : "text-warning",
                       )}
                     >
                       {row.sampleSize.toLocaleString("pt-BR")}
@@ -1606,7 +1606,7 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="h-4 w-4 text-primary-400" />
+          <Activity className="h-4 w-4 text-primary" />
           Curva de Confiabilidade
         </CardTitle>
       </CardHeader>
@@ -1616,13 +1616,13 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
             <ComposedChart data={chartBins}>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="rgba(51,65,85,0.4)"
+                stroke="rgba(39,39,42,0.6)"
               />
               <XAxis
                 type="number"
                 dataKey="predicted"
                 domain={[0, 1]}
-                tick={{ fontSize: 10, fill: "#94a3b8" }}
+                tick={{ fontSize: 10, fill: "#A1A1AA" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
@@ -1630,14 +1630,14 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
                   value: "Probabilidade Prevista",
                   position: "insideBottom",
                   offset: -5,
-                  fill: "#64748b",
+                  fill: "#52525B",
                   fontSize: 11,
                 }}
               />
               <YAxis
                 type="number"
                 domain={[0, 1]}
-                tick={{ fontSize: 10, fill: "#94a3b8" }}
+                tick={{ fontSize: 10, fill: "#A1A1AA" }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
@@ -1646,17 +1646,17 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
                   value: "Frequencia Observada",
                   angle: -90,
                   position: "insideLeft",
-                  fill: "#64748b",
+                  fill: "#52525B",
                   fontSize: 11,
                 }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#0f172a",
-                  border: "1px solid rgba(51,65,85,0.5)",
+                  backgroundColor: "#141416",
+                  border: "1px solid rgba(255,255,255,0.07)",
                   borderRadius: "0.75rem",
                   fontSize: 12,
-                  color: "#e2e8f0",
+                  color: "#FAFAFA",
                 }}
                 formatter={(value: number, name: string) => {
                   if (name === "observed")
@@ -1673,11 +1673,11 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
                   { x: 0, y: 0 },
                   { x: 1, y: 1 },
                 ]}
-                stroke="rgba(148,163,184,0.4)"
+                stroke="rgba(161,161,170,0.4)"
                 strokeDasharray="6 4"
                 label={{
                   value: "Perfeito",
-                  fill: "#64748b",
+                  fill: "#52525B",
                   fontSize: 10,
                   position: "insideTopLeft",
                 }}
@@ -1685,16 +1685,16 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
               {/* Pontos do scatter — tamanho proporcional ao N */}
               <Scatter
                 dataKey="observed"
-                fill="#10b981"
+                fill="#DC2626"
                 fillOpacity={0.7}
-                stroke="#10b981"
+                stroke="#DC2626"
                 strokeWidth={1}
               />
               {/* Linha conectando os bins */}
               <Line
                 type="monotone"
                 dataKey="observed"
-                stroke="#10b981"
+                stroke="#DC2626"
                 strokeWidth={2}
                 dot={false}
               />
@@ -1718,7 +1718,7 @@ function LeagueEceTable({ rows }: { rows: LeagueEce[] }) {
     <Card className="overflow-hidden">
       <CardHeader className="pb-0">
         <CardTitle className="flex items-center gap-2 text-base">
-          <BarChart3 className="h-4 w-4 text-primary-400" />
+          <BarChart3 className="h-4 w-4 text-primary" />
           ECE por Liga
         </CardTitle>
       </CardHeader>

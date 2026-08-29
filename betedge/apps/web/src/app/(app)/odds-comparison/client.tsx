@@ -600,7 +600,7 @@ function BookmakerBar({
                   className={cn(
                     "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
                     showOddsFormat === fmt
-                      ? "bg-primary/15 text-primary-400"
+                      ? "bg-primary/15 text-primary"
                       : "text-foreground-muted hover:text-foreground",
                   )}
                 >
@@ -634,7 +634,7 @@ function BookmakerBar({
                           className={cn(
                             "flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors",
                             vigMethod === m
-                              ? "bg-primary/10 text-primary-400"
+                              ? "bg-primary/10 text-primary"
                               : "text-foreground-muted hover:bg-card/60 hover:text-foreground",
                           )}
                         >
@@ -667,7 +667,7 @@ function BookmakerBar({
               className="flex items-center gap-1.5 rounded-lg border border-card-border/50 bg-background-surface/40 px-2.5 py-1.5"
             >
               {bk.spaAuthorized ? (
-                <ShieldCheck className="h-3.5 w-3.5 text-primary-400" />
+                <ShieldCheck className="h-3.5 w-3.5 text-success" />
               ) : (
                 <ShieldAlert className="h-3.5 w-3.5 text-warning" />
               )}
@@ -677,7 +677,7 @@ function BookmakerBar({
                   className={cn(
                     "text-[10px] font-mono",
                     bk.overround1x2 <= 0.04
-                      ? "text-primary-400"
+                      ? "text-success"
                       : bk.overround1x2 <= 0.08
                         ? "text-foreground-subtle"
                         : "text-warning",
@@ -717,7 +717,7 @@ function SpaLegend() {
             </p>
             <div className="space-y-1.5 text-[11px] text-foreground-muted">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-primary-400" />
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-success" />
                 <span>Casa autorizada pela Secretaria de Prêmios e Apostas</span>
               </div>
               <div className="flex items-center gap-2">
@@ -767,7 +767,7 @@ function MarketTable({
                 className={cn(
                   "text-[10px] font-mono",
                   avg <= 0.04
-                    ? "text-primary-400"
+                    ? "text-success"
                     : avg <= 0.08
                       ? "text-foreground-subtle"
                       : "text-warning",
@@ -799,7 +799,7 @@ function MarketTable({
                         <span className="truncate">{bk.name}</span>
                         <div className="flex items-center gap-1">
                           {bk.spaAuthorized ? (
-                            <ShieldCheck className="h-3 w-3 text-primary-400" />
+                            <ShieldCheck className="h-3 w-3 text-success" />
                           ) : (
                             <ShieldAlert className="h-3 w-3 text-warning" />
                           )}
@@ -808,7 +808,7 @@ function MarketTable({
                               className={cn(
                                 "text-[9px] font-mono",
                                 or <= 0.04
-                                  ? "text-primary-400"
+                                  ? "text-success"
                                   : or <= 0.08
                                     ? "text-foreground-subtle"
                                     : "text-warning",
@@ -823,7 +823,7 @@ function MarketTable({
                     </th>
                   );
                 })}
-                <th className="min-w-[70px] px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-primary-400">
+                <th className="min-w-[70px] px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-primary">
                   Melhor
                 </th>
               </tr>
@@ -867,7 +867,7 @@ function MarketTable({
 
                   {/* Melhor odd */}
                   <td className="px-3 py-3 text-center">
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 font-mono text-sm font-bold text-primary-400">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 font-mono text-sm font-bold text-primary">
                       <CheckCircle2 className="h-3 w-3" />
                       {showOddsFormat === "fair"
                         ? fmtPercent(1 / outcome.bestOdds)
@@ -939,13 +939,13 @@ function OddsValue({
       className={cn(
         "relative inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-sm transition-colors",
         cell.isBest
-          ? "bg-primary/15 font-bold text-primary-400 ring-1 ring-primary/30"
+          ? "bg-primary/15 font-bold text-primary ring-1 ring-primary/30"
           : "text-foreground hover:bg-card/40",
       )}
     >
       <span>{displayValue}</span>
       {movement === "up" && (
-        <ArrowUp className="h-3 w-3 text-primary-400" title="Odd subiu" />
+        <ArrowUp className="h-3 w-3 text-success" title="Odd subiu" />
       )}
       {movement === "down" && (
         <ArrowDown className="h-3 w-3 text-danger" title="Odd caiu" />
