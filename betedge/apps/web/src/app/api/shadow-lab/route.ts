@@ -239,9 +239,9 @@ async function handleOverview(
     for (const r of rows) {
       const p = Number(r.model_prob ?? 0.5);
       const idx = Math.min(Math.floor(p * 10), 9);
-      bins[idx].sumPred += p;
-      bins[idx].sumOutcome += r.status === "won" ? 1 : 0;
-      bins[idx].count++;
+      bins[idx]!.sumPred += p;
+      bins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+      bins[idx]!.count++;
     }
     let eceSum = 0;
     for (const b of bins) {
@@ -306,9 +306,9 @@ async function handleOverview(
       const bins = leagueMap.get(league)!;
       const p = Number(r.model_prob ?? 0.5);
       const idx = Math.min(Math.floor(p * 10), 9);
-      bins[idx].sumPred += p;
-      bins[idx].sumOutcome += r.status === "won" ? 1 : 0;
-      bins[idx].count++;
+      bins[idx]!.sumPred += p;
+      bins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+      bins[idx]!.count++;
     }
 
     for (const [league, bins] of leagueMap) {
@@ -564,7 +564,7 @@ async function handleMetrics(
     if (n > 0) {
       let sum = 0;
       for (let i = 0; i < n; i++) {
-        sum += (g.probs[i] - g.outcomes[i]) ** 2;
+        sum += (g.probs[i]! - g.outcomes[i]!) ** 2;
       }
       brier = sum / n;
     }
@@ -575,10 +575,10 @@ async function handleMetrics(
       const eps = 1e-15;
       let sum = 0;
       for (let i = 0; i < n; i++) {
-        const p = Math.max(eps, Math.min(1 - eps, g.probs[i]));
+        const p = Math.max(eps, Math.min(1 - eps, g.probs[i]!));
         sum += -(
-          g.outcomes[i] * Math.log(p) +
-          (1 - g.outcomes[i]) * Math.log(1 - p)
+          g.outcomes[i]! * Math.log(p) +
+          (1 - g.outcomes[i]!) * Math.log(1 - p)
         );
       }
       ll = sum / n;
@@ -593,10 +593,10 @@ async function handleMetrics(
         c: 0,
       }));
       for (let i = 0; i < n; i++) {
-        const idx = Math.min(Math.floor(g.probs[i] * 10), 9);
-        bins[idx].sp += g.probs[i];
-        bins[idx].so += g.outcomes[i];
-        bins[idx].c++;
+        const idx = Math.min(Math.floor(g.probs[i]! * 10), 9);
+        bins[idx]!.sp += g.probs[i]!;
+        bins[idx]!.so += g.outcomes[i]!;
+        bins[idx]!.c++;
       }
       let eSum = 0;
       for (const b of bins) {
@@ -625,7 +625,7 @@ async function handleMetrics(
       let peak = 100;
       let worst = 0;
       for (let i = 0; i < n; i++) {
-        if (g.outcomes[i] === 1) {
+        if (g.outcomes[i]! === 1) {
           bankroll += 1 * ((g.odds[i] ?? 2) - 1);
         } else {
           bankroll -= 1;
@@ -673,7 +673,7 @@ async function handleCalibration(
     .select("status, model_prob, league")
     .in("status", ["won", "lost"]);
 
-  const rows = resolved ?? [];
+  const rows: ShadowRow[] = resolved ?? [];
   const n = rows.length;
 
   if (n === 0) {
@@ -694,9 +694,9 @@ async function handleCalibration(
   for (const r of rows) {
     const p = Number(r.model_prob ?? 0.5);
     const idx = Math.min(Math.floor(p * NUM_BINS), NUM_BINS - 1);
-    bins[idx].sumPred += p;
-    bins[idx].sumOutcome += r.status === "won" ? 1 : 0;
-    bins[idx].count++;
+    bins[idx]!.sumPred += p;
+    bins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+    bins[idx]!.count++;
   }
 
   let eceGlobal = 0;
@@ -742,9 +742,9 @@ async function handleCalibration(
     const lBins = leagueMap.get(league)!;
     const p = Number(r.model_prob ?? 0.5);
     const idx = Math.min(Math.floor(p * NUM_BINS), NUM_BINS - 1);
-    lBins[idx].sumPred += p;
-    lBins[idx].sumOutcome += r.status === "won" ? 1 : 0;
-    lBins[idx].count++;
+    lBins[idx]!.sumPred += p;
+    lBins[idx]!.sumOutcome += r.status === "won" ? 1 : 0;
+    lBins[idx]!.count++;
   }
 
   const leagueEce: { league: string; ece: number; sampleSize: number }[] = [];
@@ -792,7 +792,7 @@ async function handleEquityCurve(
     .in("status", ["won", "lost"])
     .order("settled_at", { ascending: true, nullsFirst: false });
 
-  const rows = resolved ?? [];
+  const rows: ShadowRow[] = resolved ?? [];
   if (rows.length === 0) return { points: [] };
 
   // Simular evolucao do bankroll — aposta fixa 1 unidade
