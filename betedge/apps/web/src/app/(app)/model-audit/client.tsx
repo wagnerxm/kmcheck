@@ -1109,7 +1109,7 @@ function GradingBadge({ status }: { status: string }) {
 function PrediqBadge({ value }: { value: number }) {
   const color =
     value >= 70
-      ? "text-primary"
+      ? "text-success"
       : value >= 40
         ? "text-warning"
         : "text-foreground-muted";

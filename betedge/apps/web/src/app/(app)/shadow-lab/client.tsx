@@ -854,7 +854,7 @@ function EquityCurveChart({ points }: { points: EquityPoint[] }) {
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="rgba(39,39,42,0.6)"
+                stroke="rgba(39,39,42,0.4)"
                 vertical={false}
               />
               <XAxis
@@ -1616,7 +1616,7 @@ function ReliabilityCurve({ bins }: { bins: CalibrationBin[] }) {
             <ComposedChart data={chartBins}>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="rgba(39,39,42,0.6)"
+                stroke="rgba(39,39,42,0.4)"
               />
               <XAxis
                 type="number"
