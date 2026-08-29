@@ -23,6 +23,7 @@ import hashlib
 import json
 import logging
 import math
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -70,6 +71,7 @@ FAIR_PROBABILITY_VERSION = "fair-prob-v1.0.0"
 FAIR_PROBABILITY_METHOD = "shin"
 PIPELINE_VERSION = "shadow-pipeline-v1.0.0"
 KELLY_VERSION = "kelly-v1.0.0"
+GRADING_VERSION = "grading-v1.0.0"
 
 # Kelly — quarter-Kelly padrão com cap configurável
 KELLY_FRACTION = 0.25
@@ -165,6 +167,10 @@ async def _finish_pipeline_run(
     run_id: str,
     result: ShadowCycleResult,
     status: str = "completed",
+    *,
+    duration_seconds: float | None = None,
+    markets_processed: int = 0,
+    odds_sources_count: int = 0,
 ) -> None:
     """Registra fim de uma execução do pipeline."""
     await db.execute(text("""
@@ -175,7 +181,11 @@ async def _finish_pipeline_run(
             predictions_created = :preds,
             selections_made = :sels,
             errors = :errors::jsonb,
-            warnings = :warnings::jsonb
+            warnings = :warnings::jsonb,
+            duration_seconds = :duration,
+            markets_processed = :mkts,
+            odds_sources_count = :odds_src,
+            skipped_fail_safe = :skipped
         WHERE pipeline_run_id = :run_id
     """), {
         "run_id": run_id,
@@ -185,6 +195,10 @@ async def _finish_pipeline_run(
         "sels": result.selections_made,
         "errors": json.dumps(result.errors),
         "warnings": json.dumps(result.warnings),
+        "duration": duration_seconds,
+        "mkts": markets_processed,
+        "odds_src": odds_sources_count,
+        "skipped": result.skipped_fail_safe,
     })
     await db.commit()
 
@@ -531,6 +545,11 @@ async def run_shadow_cycle(
         ShadowCycleResult com métricas da execução.
     """
     cycle_result = ShadowCycleResult()
+    cycle_start = time.monotonic()
+
+    # Contadores adicionais para métricas do run
+    total_markets_processed = 0
+    total_odds_sources = 0
 
     # 1. Pipeline run
     run_id = _generate_pipeline_run_id()
@@ -546,7 +565,11 @@ async def run_shadow_cycle(
         events = await _fetch_scheduled_events_with_odds(db, event_ids)
         if not events:
             logger.info("Shadow cycle: nenhum evento futuro com odds.")
-            await _finish_pipeline_run(db, run_id, cycle_result)
+            duration = time.monotonic() - cycle_start
+            await _finish_pipeline_run(
+                db, run_id, cycle_result,
+                duration_seconds=round(duration, 2),
+            )
             return cycle_result
 
         logger.info("Shadow cycle: %d eventos elegíveis.", len(events))
@@ -574,6 +597,12 @@ async def run_shadow_cycle(
                 if not event_odds:
                     continue
 
+                # Contabilizar fontes de odds (bookmakers distintas neste evento)
+                event_bookmakers = set()
+                for _mkt_odds in event_odds.values():
+                    event_bookmakers.update(_mkt_odds.keys())
+                total_odds_sources += len(event_bookmakers)
+
                 # Fair probabilities por mercado (Shin preferencial)
                 fair_probs_map = compute_fair_probs_for_event(
                     event_odds, method=FAIR_PROBABILITY_METHOD,
@@ -584,6 +613,7 @@ async def run_shadow_cycle(
                 event_selections = 0
 
                 for market_code, bookmaker_odds in event_odds.items():
+                    total_markets_processed += 1
                     fair_probs = fair_probs_map.get(market_code)
                     if not fair_probs:
                         continue
@@ -706,7 +736,8 @@ async def run_shadow_cycle(
                             INSERT INTO shadow_predictions (
                                 event_id, league, sport, market, outcome,
                                 kickoff_at, bookmaker, best_odds,
-                                fair_market_probability, model_probability,
+                                fair_market_probability, entry_fair_probability,
+                                model_probability,
                                 edge, ev, prediq_score, kelly_fraction,
                                 model_version, features_version,
                                 snapshot_odds, market_overround,
@@ -724,7 +755,8 @@ async def run_shadow_cycle(
                             ) VALUES (
                                 :event_id, :league, :sport, :market, :outcome,
                                 :kickoff_at, :bookmaker, :best_odds,
-                                :fair_prob, :model_prob,
+                                :fair_prob, :entry_fair_prob,
+                                :model_prob,
                                 :edge, :ev, :prediq_score, :kelly,
                                 :model_version, :features_version,
                                 :snapshot::jsonb, :overround,
@@ -753,6 +785,7 @@ async def run_shadow_cycle(
                             "bookmaker": best_bookmaker,
                             "best_odds": best_odds,
                             "fair_prob": fair_prob,
+                            "entry_fair_prob": fair_prob,
                             "model_prob": model_prob,
                             "edge": edge,
                             "ev": ev,
@@ -816,12 +849,24 @@ async def run_shadow_cycle(
         if not leakage["passed"]:
             cycle_result.errors.extend(leakage["violations"])
 
-        await _finish_pipeline_run(db, run_id, cycle_result)
+        duration = time.monotonic() - cycle_start
+        await _finish_pipeline_run(
+            db, run_id, cycle_result,
+            duration_seconds=round(duration, 2),
+            markets_processed=total_markets_processed,
+            odds_sources_count=total_odds_sources,
+        )
 
     except Exception as exc:
         cycle_result.errors.append(f"Erro fatal no pipeline: {exc}")
         logger.exception("Shadow cycle: erro fatal — run_id=%s", run_id)
-        await _finish_pipeline_run(db, run_id, cycle_result, status="failed")
+        duration = time.monotonic() - cycle_start
+        await _finish_pipeline_run(
+            db, run_id, cycle_result, status="failed",
+            duration_seconds=round(duration, 2),
+            markets_processed=total_markets_processed,
+            odds_sources_count=total_odds_sources,
+        )
 
     logger.info(
         "Shadow cycle concluído — run_id=%s, %d eventos, %d previsões, "
@@ -916,14 +961,37 @@ async def capture_closing_odds(db: AsyncSession) -> int:
             closing_valid = False
             closing_reason = f"closing odds {closing} > {MAX_ODDS}"
 
+        # Calcular fair probability de fechamento via Shin method —
+        # busca TODAS as odds do mercado de closing para remover overround.
+        closing_fair_prob = None
+        try:
+            closing_event_odds = await _fetch_event_odds(db, str(pred["event_id"]))
+            if closing_event_odds and pred["market"] in closing_event_odds:
+                closing_fair_map = compute_fair_probs_for_event(
+                    {pred["market"]: closing_event_odds[pred["market"]]},
+                    method=FAIR_PROBABILITY_METHOD,
+                )
+                closing_fair_probs = closing_fair_map.get(pred["market"])
+                if closing_fair_probs and pred["outcome"] in closing_fair_probs:
+                    closing_fair_prob = closing_fair_probs[pred["outcome"]]
+        except Exception:
+            # Falha no cálculo de fair prob de fechamento não deve impedir
+            # a captura da closing odds em si — closing_fair_probability
+            # ficará NULL e o CLV probability não será calculado.
+            logger.warning(
+                "Falha ao calcular closing_fair_probability para pred %s",
+                pred["id"],
+            )
+
         await db.execute(text("""
             UPDATE shadow_predictions
-            SET closing_odds      = :closing,
-                closing_bookmaker = :bookie,
-                closing_odds_at   = :captured_at,
-                closing_source    = :source,
-                closing_is_valid  = :is_valid,
-                closing_reason    = :reason
+            SET closing_odds              = :closing,
+                closing_bookmaker         = :bookie,
+                closing_odds_at           = :captured_at,
+                closing_source            = :source,
+                closing_is_valid          = :is_valid,
+                closing_reason            = :reason,
+                closing_fair_probability  = :closing_fair_prob
             WHERE id = :pred_id
               AND closing_odds IS NULL
         """), {
@@ -934,6 +1002,7 @@ async def capture_closing_odds(db: AsyncSession) -> int:
             "source": "odds_table_best",
             "is_valid": closing_valid,
             "reason": closing_reason,
+            "closing_fair_prob": closing_fair_prob,
         })
         updated += 1
 
@@ -1017,22 +1086,19 @@ def _calculate_clv_price(entry_odds: float, closing_odds: float | None) -> float
 
 
 def _calculate_clv_probability(
-    model_prob: float, closing_odds: float | None,
+    entry_fair_prob: float | None,
+    closing_fair_prob: float | None,
 ) -> float | None:
-    """CLV baseado em probabilidade: model_prob - (1 / closing_odds).
+    """CLV baseado em probabilidade: closing_fair_probability - entry_fair_probability.
 
-    Positivo = modelo atribuiu mais probabilidade que o mercado de fechamento.
-    Mantido para compatibilidade — campo 'clv' original.
+    Positivo = probabilidade justa de fechamento é MAIOR que a de abertura,
+    indicando que o mercado "caminhou" na direção do modelo.
     """
-    if closing_odds is None or closing_odds <= 1.0:
+    if entry_fair_prob is None or closing_fair_prob is None:
         return None
-    return model_prob - (1.0 / closing_odds)
-
-
-# Alias retrocompatível: o nome `_calculate_clv` era usado pela v1 (CLV
-# probability-based era o único CLV calculado). Mantido para não quebrar
-# chamadores/testes existentes que ainda importam este símbolo.
-_calculate_clv = _calculate_clv_probability
+    if entry_fair_prob <= 0 or closing_fair_prob <= 0:
+        return None
+    return closing_fair_prob - entry_fair_prob
 
 
 async def grade_shadow_predictions(db: AsyncSession) -> int:
@@ -1050,6 +1116,8 @@ async def grade_shadow_predictions(db: AsyncSession) -> int:
             sp.closing_odds,
             sp.closing_is_valid,
             sp.model_probability,
+            sp.fair_market_probability,
+            sp.closing_fair_probability,
             e.home_score,
             e.away_score
         FROM shadow_predictions sp
@@ -1084,12 +1152,15 @@ async def grade_shadow_predictions(db: AsyncSession) -> int:
         # CLV dual — só calcular se closing odds válidas
         clv_price = None
         clv_prob = None
+        # entry_fair_prob e closing_fair_prob para a nova fórmula de CLV probability
+        entry_fair_prob = float(row["fair_market_probability"]) if row["fair_market_probability"] is not None else None
+        closing_fair_prob = float(row["closing_fair_probability"]) if row["closing_fair_probability"] is not None else None
         if closing and closing_valid:
             clv_price = _calculate_clv_price(float(row["best_odds"]), closing)
-            clv_prob = _calculate_clv_probability(float(row["model_probability"]), closing)
+            clv_prob = _calculate_clv_probability(entry_fair_prob, closing_fair_prob)
         elif closing:
-            # Closing odds existem mas são inválidas — calcular mas marcar
-            clv_prob = _calculate_clv_probability(float(row["model_probability"]), closing)
+            # Closing odds existem mas são inválidas — calcular CLV prob se possível
+            clv_prob = _calculate_clv_probability(entry_fair_prob, closing_fair_prob)
 
         # Para compatibilidade, 'clv' mantém o valor probability-based
         clv_compat = clv_prob
@@ -1104,7 +1175,9 @@ async def grade_shadow_predictions(db: AsyncSession) -> int:
                 clv_price          = :clv_price,
                 clv_probability    = :clv_prob,
                 graded_at          = now(),
-                status             = :status
+                status             = :status,
+                grading_source     = 'events_table',
+                grading_version    = :grading_ver
             WHERE id = :pred_id
               AND status = 'open'
               AND kickoff_at < now()
@@ -1116,6 +1189,7 @@ async def grade_shadow_predictions(db: AsyncSession) -> int:
             "clv_price": clv_price,
             "clv_prob": clv_prob,
             "status": final_status,
+            "grading_ver": GRADING_VERSION,
         })
         graded += 1
 

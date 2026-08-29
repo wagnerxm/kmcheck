@@ -49,6 +49,12 @@ CREATE TABLE IF NOT EXISTS shadow_pipeline_runs (
     predictions_created         INT DEFAULT 0,
     selections_made              INT DEFAULT 0,
 
+    -- Métricas adicionais do run
+    duration_seconds          NUMERIC(10,2),
+    markets_processed         INT DEFAULT 0,
+    odds_sources_count        INT DEFAULT 0,
+    skipped_fail_safe         INT DEFAULT 0,
+
     -- Diagnóstico
     errors                    JSONB DEFAULT '[]'::jsonb,
     warnings                  JSONB DEFAULT '[]'::jsonb,
@@ -128,8 +134,18 @@ CREATE TABLE IF NOT EXISTS shadow_predictions (
     closing_is_valid        BOOLEAN,
     closing_reason          TEXT,
 
+    -- Fair probability de fechamento — calculada via Shin method no momento
+    -- da captura de closing odds, usada para CLV probability corrigido.
+    closing_fair_probability NUMERIC(8,6),
+
     -- Probabilidades
     fair_market_probability NUMERIC(8,6) NOT NULL,
+
+    -- Entry fair probability — snapshot no momento da geração da previsão.
+    -- Mesmo valor de fair_market_probability, persistido explicitamente para
+    -- CLV probability = closing_fair_probability - entry_fair_probability.
+    entry_fair_probability   NUMERIC(8,6),
+
     model_probability       NUMERIC(8,6) NOT NULL,
 
     -- Fair probability tracking: método usado para remover o overround
@@ -180,6 +196,10 @@ CREATE TABLE IF NOT EXISTS shadow_predictions (
     graded_at              TIMESTAMPTZ,
     status                 TEXT NOT NULL DEFAULT 'open'
                            CHECK (status IN ('open', 'graded', 'void')),
+
+    -- Rastreabilidade do grading
+    grading_source           TEXT DEFAULT 'events_table',
+    grading_version          TEXT DEFAULT 'grading-v1.0.0',
 
     -- CLV dual — clv (acima) é mantido por compatibilidade retroativa, mas
     -- clv_price e clv_probability são os campos canônicos daqui em diante:

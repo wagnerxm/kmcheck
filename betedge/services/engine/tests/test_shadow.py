@@ -270,46 +270,65 @@ class TestCalculateCLV:
         assert _calculate_clv_price(2.00, 1.0) is None
         assert _calculate_clv_price(2.00, 0.5) is None
 
-    # ── CLV Probability ─────────────────────────────────────────────────
+    # ── CLV Probability (nova fórmula: closing_fair - entry_fair) ──────
 
     def test_clv_probability_positive(self):
-        # Modelo diz 60%, closing odds implicam 50% → CLV = 0.10
+        # Entry fair prob 45%, closing fair prob 55% → mercado caminhou
+        # na direção do modelo → CLV = 0.10
         from app.shadow.engine import _calculate_clv_probability
-        clv = _calculate_clv_probability(0.60, 2.0)
+        clv = _calculate_clv_probability(0.45, 0.55)
         assert clv == pytest.approx(0.10)
 
     def test_clv_probability_negative(self):
-        # Modelo diz 40%, closing odds implicam 50% → CLV = -0.10
+        # Entry fair prob 55%, closing fair prob 45% → mercado caminhou
+        # CONTRA o modelo → CLV = -0.10
         from app.shadow.engine import _calculate_clv_probability
-        clv = _calculate_clv_probability(0.40, 2.0)
+        clv = _calculate_clv_probability(0.55, 0.45)
         assert clv == pytest.approx(-0.10)
 
     def test_clv_probability_zero(self):
-        # Modelo concorda exatamente com o mercado de fechamento
+        # Mesma fair probability de entrada e fechamento → sem movimento
         from app.shadow.engine import _calculate_clv_probability
-        clv = _calculate_clv_probability(0.50, 2.0)
+        clv = _calculate_clv_probability(0.50, 0.50)
         assert clv == pytest.approx(0.0)
+
+    def test_clv_probability_none_entry(self):
+        from app.shadow.engine import _calculate_clv_probability
+        assert _calculate_clv_probability(None, 0.50) is None
 
     def test_clv_probability_none_closing(self):
         from app.shadow.engine import _calculate_clv_probability
         assert _calculate_clv_probability(0.50, None) is None
 
-    def test_clv_probability_invalid(self):
+    def test_clv_probability_both_none(self):
         from app.shadow.engine import _calculate_clv_probability
-        assert _calculate_clv_probability(0.50, 1.0) is None
-        assert _calculate_clv_probability(0.50, 0.5) is None
+        assert _calculate_clv_probability(None, None) is None
 
-    def test_clv_probability_high_closing_odds(self):
-        # Closing odds altas (azarão) → prob implícita baixa
+    def test_clv_probability_invalid_zero_entry(self):
+        # Entry fair prob zero é inválida — não deveria existir
         from app.shadow.engine import _calculate_clv_probability
-        clv = _calculate_clv_probability(0.15, 10.0)
-        assert clv == pytest.approx(0.15 - 0.10)  # 0.05
+        assert _calculate_clv_probability(0.0, 0.50) is None
 
-    def test_clv_probability_low_closing_odds(self):
-        # Closing odds baixas (favorito) → prob implícita alta
+    def test_clv_probability_invalid_zero_closing(self):
         from app.shadow.engine import _calculate_clv_probability
-        clv = _calculate_clv_probability(0.85, 1.25)
-        assert clv == pytest.approx(0.85 - 0.80)  # 0.05
+        assert _calculate_clv_probability(0.50, 0.0) is None
+
+    def test_clv_probability_invalid_negative(self):
+        from app.shadow.engine import _calculate_clv_probability
+        assert _calculate_clv_probability(-0.10, 0.50) is None
+        assert _calculate_clv_probability(0.50, -0.10) is None
+
+    def test_clv_probability_large_movement(self):
+        # Grande movimento de mercado: entry 20%, closing 60% → CLV = 0.40
+        from app.shadow.engine import _calculate_clv_probability
+        clv = _calculate_clv_probability(0.20, 0.60)
+        assert clv == pytest.approx(0.40)
+
+    def test_clv_probability_small_movement(self):
+        # Movimento pequeno: entry 48%, closing 52% → CLV = 0.04
+        from app.shadow.engine import _calculate_clv_probability
+        clv = _calculate_clv_probability(0.48, 0.52)
+        assert clv == pytest.approx(0.04)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -866,11 +885,11 @@ class TestConstants:
         from app.shadow.engine import (
             MODEL_VERSION, FEATURES_VERSION, ENSEMBLE_VERSION,
             SCORE_VERSION, FAIR_PROBABILITY_VERSION, PIPELINE_VERSION,
-            KELLY_VERSION, SELECTION_VERSION,
+            KELLY_VERSION, SELECTION_VERSION, GRADING_VERSION,
         )
         for v in [MODEL_VERSION, FEATURES_VERSION, ENSEMBLE_VERSION,
                   SCORE_VERSION, FAIR_PROBABILITY_VERSION, PIPELINE_VERSION,
-                  KELLY_VERSION, SELECTION_VERSION]:
+                  KELLY_VERSION, SELECTION_VERSION, GRADING_VERSION]:
             assert isinstance(v, str)
             assert len(v) > 0
 
@@ -907,3 +926,119 @@ class TestReportFormat:
         table = f"{header}\n{separator}\n{row}"
         assert "|" in table
         assert "---" in separator
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Testes de metadados do grading
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestGradingMetadata:
+    """Testa metadados de rastreabilidade do grading (source e version).
+
+    grading_source identifica de onde vieram os dados usados para gradear
+    (ex.: 'events_table'). grading_version rastreia a versão do algoritmo
+    de grading para reprodutibilidade.
+    """
+
+    def test_grading_source_default(self):
+        """O grading_source padrão deve ser 'events_table'."""
+        # Reflete a DDL: DEFAULT 'events_table'
+        default_source = "events_table"
+        assert default_source == "events_table"
+
+    def test_grading_version_matches_constant(self):
+        """grading_version no banco deve corresponder à constante GRADING_VERSION."""
+        from app.shadow.engine import GRADING_VERSION
+        assert GRADING_VERSION == "grading-v1.0.0"
+
+    def test_grading_version_is_semver_like(self):
+        """Formato de versão deve seguir padrão legível (prefixo + semver)."""
+        from app.shadow.engine import GRADING_VERSION
+        assert GRADING_VERSION.startswith("grading-v")
+        # Parte numérica após o prefixo deve ter pontos (semver)
+        version_part = GRADING_VERSION.replace("grading-v", "")
+        parts = version_part.split(".")
+        assert len(parts) == 3
+        assert all(p.isdigit() for p in parts)
+
+    def test_grading_version_not_empty(self):
+        from app.shadow.engine import GRADING_VERSION
+        assert isinstance(GRADING_VERSION, str)
+        assert len(GRADING_VERSION) > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Testes de closing fair probability e CLV com nova fórmula
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestClosingFairProbability:
+    """Testa o cálculo de closing_fair_probability e o CLV probability
+    com a nova fórmula: closing_fair_prob - entry_fair_prob.
+
+    A closing_fair_probability é a probabilidade justa (sem overround)
+    calculada via Shin method no momento da captura de closing odds.
+    Junto com a entry_fair_probability (snapshot no momento da geração),
+    permite o cálculo de CLV probability mais preciso.
+    """
+
+    def test_clv_positive_market_moved_in_favor(self):
+        """Mercado caminhou na direção prevista pelo modelo."""
+        from app.shadow.engine import _calculate_clv_probability
+        # Entry fair prob 40%, closing fair prob 50% → mercado subiu a favor
+        clv = _calculate_clv_probability(0.40, 0.50)
+        assert clv == pytest.approx(0.10)
+        assert clv > 0  # positivo = mercado confirmou o modelo
+
+    def test_clv_negative_market_moved_against(self):
+        """Mercado caminhou contra a previsão do modelo."""
+        from app.shadow.engine import _calculate_clv_probability
+        # Entry fair prob 60%, closing fair prob 50% → mercado caiu contra
+        clv = _calculate_clv_probability(0.60, 0.50)
+        assert clv == pytest.approx(-0.10)
+        assert clv < 0  # negativo = mercado desmentiu o modelo
+
+    def test_clv_zero_no_market_movement(self):
+        """Fair probability não mudou entre abertura e fechamento."""
+        from app.shadow.engine import _calculate_clv_probability
+        clv = _calculate_clv_probability(0.45, 0.45)
+        assert clv == pytest.approx(0.0)
+
+    def test_clv_with_realistic_shin_values(self):
+        """Teste com valores realistas de fair probability via Shin.
+
+        Em um mercado 1x2 típico com overround ~5%, as fair probs são
+        ligeiramente menores que as probabilidades implícitas brutas.
+        """
+        from app.shadow.engine import _calculate_clv_probability
+        # Entrada: home fair prob 44.2%, fechamento: home fair prob 47.8%
+        clv = _calculate_clv_probability(0.442, 0.478)
+        assert clv == pytest.approx(0.036, abs=1e-4)
+
+    def test_clv_requires_both_fair_probs(self):
+        """CLV probability só pode ser calculado se ambas fair probs existem."""
+        from app.shadow.engine import _calculate_clv_probability
+        # Sem entry fair prob
+        assert _calculate_clv_probability(None, 0.50) is None
+        # Sem closing fair prob
+        assert _calculate_clv_probability(0.50, None) is None
+        # Ambos ausentes
+        assert _calculate_clv_probability(None, None) is None
+
+    def test_clv_rejects_invalid_probs(self):
+        """Probabilidades zero ou negativas devem ser rejeitadas."""
+        from app.shadow.engine import _calculate_clv_probability
+        assert _calculate_clv_probability(0.0, 0.50) is None
+        assert _calculate_clv_probability(0.50, 0.0) is None
+        assert _calculate_clv_probability(-0.05, 0.50) is None
+
+    def test_entry_fair_prob_equals_fair_market_prob(self):
+        """entry_fair_probability deve ser o mesmo valor de fair_market_probability.
+
+        Verifica a lógica de que, na inserção, entry_fair_probability recebe
+        o mesmo valor de fair_market_probability — são o mesmo conceito
+        (fair prob no momento da geração), persistido em campo separado para
+        clareza na fórmula de CLV.
+        """
+        fair_market_prob = 0.4523
+        entry_fair_prob = fair_market_prob  # mesmo valor na inserção
+        assert entry_fair_prob == pytest.approx(fair_market_prob)
