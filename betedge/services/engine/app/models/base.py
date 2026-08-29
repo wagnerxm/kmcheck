@@ -91,14 +91,23 @@ class BaseModel(ABC):
         """Verifica que nenhuma feature em `event_data` usa informação posterior a `as_of`.
 
         Implementação de referência: percorre campos de timestamp conhecidos
-        (`"timestamp"`, `"as_of"`, `"kickoff_at"`, ou chaves terminadas em
-        `"_at"`/`"_date"`) e garante que nenhum é posterior a `as_of`.
+        (chaves terminadas em `"_at"`/`"_date"`, ou `"timestamp"`, `"as_of"`)
+        e garante que nenhum é posterior a `as_of`.
+
+        Exceção: `kickoff_at` é o horário agendado do evento sendo previsto —
+        naturalmente no futuro em relação ao cutoff de treino. Não é dado
+        histórico que possa vazar informação futura.
+
         Modelos com estruturas de dados mais ricas (ex.: séries temporais
         aninhadas) devem sobrescrever este método com uma checagem mais
         específica em vez de apenas confiar na implementação genérica.
         """
+        # `kickoff_at` é metadado do evento a prever, não feature histórica
+        _EXEMPT_KEYS = {"kickoff_at"}
         for key, value in event_data.items():
             if not isinstance(value, datetime):
+                continue
+            if key in _EXEMPT_KEYS:
                 continue
             if key.endswith(("_at", "_date")) or key in {"timestamp", "as_of"}:
                 if value > as_of:

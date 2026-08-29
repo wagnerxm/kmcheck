@@ -5,7 +5,7 @@ registro de rotas centralizado num único lugar.
 """
 from fastapi import APIRouter
 
-from app.api import backtest, health, models_api, odds, predictions, validation, value
+from app.api import backtest, health, models_api, odds, pipeline, predictions, validation, value
 
 api_router = APIRouter()
 
@@ -19,5 +19,6 @@ api_router.include_router(models_api.router, prefix="/models", tags=["models"])
 api_router.include_router(backtest.router, prefix="/backtest", tags=["backtest"])
 api_router.include_router(odds.router, prefix="/odds", tags=["odds"])
 api_router.include_router(validation.router, prefix="/validation", tags=["validation"])
+api_router.include_router(pipeline.router, prefix="/pipeline", tags=["pipeline"])
 
 __all__ = ["api_router"]
