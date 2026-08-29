@@ -3,12 +3,60 @@
  *
  * Retorna todas as odds atuais de um evento, agrupadas por mercado e resultado,
  * com dados das casas de apostas (nome, slug, status SPA) e o destaque da
- * melhor odd de cada seleção. Dados vêm da tabela `odds` (materialização
- * do último estado via trigger de odds_history).
+ * melhor odd de cada seleção. Dados estruturais vêm da tabela `odds` (Supabase).
+ *
+ * Fair probabilities e overround vêm do Python Engine (fonte canônica).
+ * Quando o engine está indisponível, fair probs e overround são null.
+ *
+ * NOTA: Cálculos quantitativos (Shin, power, multiplicative) foram REMOVIDOS
+ * deste arquivo. Python é a única fonte de toda matemática quantitativa.
+ * Ver: PYTHON_TS_CONVERGENCE_REPORT.md
  */
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+
+// ═══════════════════════════════════════════════════════════════════════
+// Helper — tentativa de proxy para o engine Python
+// ═══════════════════════════════════════════════════════════════════════
+
+async function tryEngine(path: string): Promise<Response | null> {
+  const engineUrl = process.env.ENGINE_URL;
+  if (!engineUrl) return null;
+
+  try {
+    const res = await fetch(`${engineUrl}${path}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) return res;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Tipo do response do Python Engine /api/odds/comparison/{event_id}/{market}
+// ═══════════════════════════════════════════════════════════════════════
+
+interface EngineFairProbs {
+  bookmaker: string;
+  outcomes: string[];
+  decimal_odds: number[];
+  implied_probabilities: number[];
+  overround_pct: number;
+  fair_probs: {
+    multiplicative: Record<string, number>;
+    power: Record<string, number>;
+    shin: Record<string, number>;
+  };
+}
+
+interface EngineComparisonResponse {
+  by_bookmaker: EngineFairProbs[];
+  best_odds: Record<string, number>;
+}
 
 export async function GET(
   _request: Request,
@@ -82,11 +130,11 @@ export async function GET(
 
   // ─── Agrupar por mercado → outcome → casas ────────────────────────
 
-  /** Mapa: marketCode → { market, outcomes: { outcomeCode → { outcome, bookmakers: [...] } } } */
   const marketMap = new Map<
     string,
     {
       market: (typeof oddsRows)[number]["market"];
+      marketCode: string;
       outcomes: Map<
         string,
         {
@@ -104,7 +152,6 @@ export async function GET(
     }
   >();
 
-  /** Conjunto de todas as casas presentes, para montar o cabeçalho da tabela. */
   const bookmakerSet = new Map<
     string,
     (typeof oddsRows)[number]["bookmaker"]
@@ -115,7 +162,7 @@ export async function GET(
 
     const mCode = row.market.code + (row.outcome.line != null ? `_${row.outcome.line}` : "");
     if (!marketMap.has(mCode)) {
-      marketMap.set(mCode, { market: row.market, outcomes: new Map() });
+      marketMap.set(mCode, { market: row.market, marketCode: row.market.code, outcomes: new Map() });
     }
 
     const oCode = row.outcome.code + (row.outcome.line != null ? `_${row.outcome.line}` : "");
@@ -138,93 +185,48 @@ export async function GET(
     }
   }
 
-  // ─── Calcular melhor odd, fair probs (sem vig) e overround ─────────
+  // ─── Buscar fair probs e overround do Python Engine ───────────────
+  // Fair probs são computadas exclusivamente pelo Python (fonte canônica).
+  // Indexadas por (marketCode, bookmakerName, outcomeCode) para merge.
 
-  /** Ordem de exibição dos mercados (corresponde ao catálogo do seed). */
+  // Cache de fair probs do engine: marketCode → bookmakerName → outcomeCode → {mult, power, shin}
+  const engineFairProbs = new Map<string, Map<string, Map<string, { multiplicative: number; power: number; shin: number }>>>();
+  // Cache de overround: marketCode → bookmakerName → overround_pct
+  const engineOverrounds = new Map<string, Map<string, number>>();
+
+  // Buscar do engine para cada mercado
+  const marketCodes = new Set([...marketMap.values()].map((m) => m.marketCode));
+  for (const mc of marketCodes) {
+    const engineRes = await tryEngine(`/api/odds/comparison/${eventId}/${mc}`);
+    if (!engineRes) continue;
+
+    try {
+      const engineData: EngineComparisonResponse = await engineRes.json();
+      const fpByBk = new Map<string, Map<string, { multiplicative: number; power: number; shin: number }>>();
+      const orByBk = new Map<string, number>();
+
+      for (const bk of engineData.by_bookmaker) {
+        const outcomeMap = new Map<string, { multiplicative: number; power: number; shin: number }>();
+        for (const oc of bk.outcomes) {
+          outcomeMap.set(oc, {
+            multiplicative: bk.fair_probs.multiplicative[oc] ?? 0,
+            power: bk.fair_probs.power[oc] ?? 0,
+            shin: bk.fair_probs.shin[oc] ?? 0,
+          });
+        }
+        fpByBk.set(bk.bookmaker, outcomeMap);
+        orByBk.set(bk.bookmaker, bk.overround_pct / 100); // converter pct → fração
+      }
+      engineFairProbs.set(mc, fpByBk);
+      engineOverrounds.set(mc, orByBk);
+    } catch {
+      // Parse error — continua sem fair probs para este mercado
+    }
+  }
+
+  // ─── Montar resposta ──────────────────────────────────────────────
+
   const MARKET_ORDER = ["1x2", "double_chance", "dnb", "ou", "ah", "btts", "team_totals"];
-
-  /**
-   * Remoção de vig — normalização multiplicativa (a mesma fórmula de
-   * @betedge/utils, inline para evitar import de workspace no runtime).
-   * Recebe probabilidades implícitas (com vig), retorna prob. justas que somam 1.
-   */
-  function removeVigMultiplicative(impliedProbs: number[]): number[] {
-    const total = impliedProbs.reduce((s, p) => s + p, 0);
-    return total > 0 ? impliedProbs.map((p) => p / total) : impliedProbs;
-  }
-
-  /**
-   * Remoção de vig — método da potência. Resolve k tal que sum(pi_i^k) = 1
-   * por busca binária. Corrige melhor o viés favorito/azarão.
-   */
-  function removeVigPower(impliedProbs: number[]): number[] {
-    if (impliedProbs.some((p) => p <= 0 || p >= 1)) {
-      return removeVigMultiplicative(impliedProbs);
-    }
-    const totalAt = (k: number) => impliedProbs.reduce((s, p) => s + p ** k, 0);
-    if (Math.abs(totalAt(1.0) - 1.0) < 1e-10) {
-      return removeVigMultiplicative(impliedProbs);
-    }
-    let lo = 1.0, hi = 2.0;
-    while (totalAt(hi) > 1.0 && hi < 1e6) hi *= 2.0;
-    for (let i = 0; i < 200; i++) {
-      const mid = (lo + hi) / 2.0;
-      if (totalAt(mid) > 1.0) lo = mid; else hi = mid;
-      if (hi - lo < 1e-10) break;
-    }
-    const k = (lo + hi) / 2.0;
-    const probs = impliedProbs.map((p) => p ** k);
-    const s = probs.reduce((sum, p) => sum + p, 0);
-    return probs.map((p) => p / s);
-  }
-
-  /**
-   * Remoção de vig — método de Shin (1992). Modela fração de insider trading.
-   * Mais preciso para mercados com forte assimetria favorito/azarão.
-   */
-  function removeVigShin(impliedProbs: number[]): number[] {
-    if (impliedProbs.some((p) => p <= 0)) {
-      return removeVigMultiplicative(impliedProbs);
-    }
-    const s = impliedProbs.reduce((sum, p) => sum + p, 0);
-    if (s <= 1.0) return removeVigMultiplicative(impliedProbs);
-
-    const probsAt = (z: number): number[] => {
-      if (z <= 0) {
-        const sqrtS = Math.sqrt(s);
-        return impliedProbs.map((p) => p / sqrtS);
-      }
-      const denom = 2.0 * (1.0 - z);
-      return impliedProbs.map(
-        (p) => (Math.sqrt(z * z + (4.0 * (1.0 - z) * p * p) / s) - z) / denom,
-      );
-    };
-    const totalAt = (z: number) => probsAt(z).reduce((sum, p) => sum + p, 0);
-
-    let lo = 0.0, hi = 1.0 - 1e-9;
-    if (totalAt(hi) > 1.0) {
-      /* overround extremo — melhor esforço */
-    } else {
-      for (let i = 0; i < 200; i++) {
-        const mid = (lo + hi) / 2.0;
-        if (totalAt(mid) > 1.0) lo = mid; else hi = mid;
-        if (hi - lo < 1e-12) break;
-      }
-    }
-    const probs = probsAt((lo + hi) / 2.0);
-    const total = probs.reduce((sum, p) => sum + p, 0);
-    return probs.map((p) => p / total);
-  }
-
-  /** Escolhe o método de remoção de vig. */
-  type VigMethod = "multiplicative" | "power" | "shin";
-  function removeVig(impliedProbs: number[], method: VigMethod = "multiplicative"): number[] {
-    switch (method) {
-      case "power": return removeVigPower(impliedProbs);
-      case "shin": return removeVigShin(impliedProbs);
-      default: return removeVigMultiplicative(impliedProbs);
-    }
-  }
 
   const markets = [...marketMap.entries()]
     .sort(([a], [b]) => {
@@ -237,39 +239,9 @@ export async function GET(
         (a, b) => (a.outcome.display_order ?? 99) - (b.outcome.display_order ?? 99),
       );
 
-      // ── Calcular fair probs (sem vig) por casa ──
-      // Para cada casa, coletamos as odds de todos os outcomes deste mercado,
-      // removemos o vig, e distribuímos as probabilidades justas de volta.
-      const fairProbsByBookmaker = new Map<string, Map<string, { multiplicative: number; power: number; shin: number }>>();
-
-      // Agrupar odds por bookmaker dentro deste mercado
-      const oddsByBookmaker = new Map<string, { outcomeCode: string; decimalOdds: number }[]>();
-      for (const o of outcomeEntries) {
-        const oCode = o.outcome.code + (o.outcome.line != null ? `_${o.outcome.line}` : "");
-        for (const bk of o.bookmakers) {
-          if (!oddsByBookmaker.has(bk.bookmaker.id)) oddsByBookmaker.set(bk.bookmaker.id, []);
-          oddsByBookmaker.get(bk.bookmaker.id)!.push({ outcomeCode: oCode, decimalOdds: bk.decimalOdds });
-        }
-      }
-
-      // Calcular fair probs por casa com os 3 métodos
-      for (const [bkId, bkOdds] of oddsByBookmaker) {
-        if (bkOdds.length < 2) continue; // precisa de ao menos 2 outcomes p/ remover vig
-        const impliedProbs = bkOdds.map((o) => 1 / o.decimalOdds);
-        const fairMult = removeVig(impliedProbs, "multiplicative");
-        const fairPow = removeVig(impliedProbs, "power");
-        const fairSh = removeVig(impliedProbs, "shin");
-
-        const bkMap = new Map<string, { multiplicative: number; power: number; shin: number }>();
-        for (let i = 0; i < bkOdds.length; i++) {
-          bkMap.set(bkOdds[i].outcomeCode, {
-            multiplicative: fairMult[i],
-            power: fairPow[i],
-            shin: fairSh[i],
-          });
-        }
-        fairProbsByBookmaker.set(bkId, bkMap);
-      }
+      // Fair probs do engine para este mercado
+      const mFairProbs = engineFairProbs.get(entry.marketCode);
+      const mOverrounds = engineOverrounds.get(entry.marketCode);
 
       const outcomes = outcomeEntries.map((o) => {
         const oCode = o.outcome.code + (o.outcome.line != null ? `_${o.outcome.line}` : "");
@@ -292,7 +264,12 @@ export async function GET(
           bestOdds,
           bestBookmakerId,
           odds: o.bookmakers.map((bk) => {
-            const fairProbs = fairProbsByBookmaker.get(bk.bookmaker.id)?.get(oCode);
+            // Fair probs do engine (Python canônico) — match por bookmaker name
+            const bkFairProbs = mFairProbs?.get(bk.bookmaker.name);
+            // O engine retorna outcome codes que podem diferir do oCode (ex.: sem _line)
+            // Tentar match exato pelo oCode, fallback pelo outcome.code puro
+            const fairProbs = bkFairProbs?.get(oCode) ?? bkFairProbs?.get(o.outcome.code) ?? null;
+
             return {
               bookmakerId: bk.bookmaker.id,
               decimalOdds: bk.decimalOdds,
@@ -301,7 +278,7 @@ export async function GET(
               changeCount: bk.changeCount,
               lastUpdatedAt: bk.lastUpdatedAt,
               isBest: bk.bookmaker.id === bestBookmakerId,
-              // Probabilidades justas (sem vig) pelos 3 métodos
+              // Fair probs do Python (fonte canônica) — null se engine indisponível
               fairProb: fairProbs
                 ? {
                     multiplicative: +fairProbs.multiplicative.toFixed(6),
@@ -314,11 +291,15 @@ export async function GET(
         };
       });
 
-      // Overround deste mercado por casa
-      const marketOverrounds: Record<string, number> = {};
-      for (const [bkId, bkOdds] of oddsByBookmaker) {
-        const impliedSum = bkOdds.reduce((s, o) => s + 1 / o.decimalOdds, 0);
-        marketOverrounds[bkId] = +(impliedSum - 1).toFixed(4);
+      // Overround do engine por casa — null se engine indisponível
+      const marketOverrounds: Record<string, number | null> = {};
+      for (const [, oEntry] of entry.outcomes) {
+        for (const bk of oEntry.bookmakers) {
+          if (!(bk.bookmaker.id in marketOverrounds)) {
+            const or = mOverrounds?.get(bk.bookmaker.name) ?? null;
+            marketOverrounds[bk.bookmaker.id] = or != null ? +or.toFixed(4) : null;
+          }
+        }
       }
 
       return {
@@ -333,7 +314,7 @@ export async function GET(
     });
 
   // Overround por casa para o mercado 1x2 (para a barra de bookmakers)
-  const overrounds1x2: Record<string, number> = {};
+  const overrounds1x2: Record<string, number | null> = {};
   const m1x2 = markets.find((m) => m.code === "1x2");
   if (m1x2) {
     for (const [bkId, or] of Object.entries(m1x2.overrounds)) {

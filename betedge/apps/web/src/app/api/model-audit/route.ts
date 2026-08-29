@@ -76,44 +76,11 @@ interface AuditSummary {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// Remoção de vig — Shin (1992)
-// Inline para evitar import do workspace no runtime do edge.
+// NOTA: removeVigShin foi REMOVIDO. Fair probability vem exclusivamente
+// da materialized view mv_fair_probabilities (Python é fonte canônica).
+// Edge e EV vêm da tabela value_opportunities (Python pipeline).
+// Ver: PYTHON_TS_CONVERGENCE_REPORT.md
 // ═══════════════════════════════════════════════════════════════════════
-
-function removeVigShin(impliedProbs: number[]): number[] {
-  if (impliedProbs.length < 2 || impliedProbs.some((p) => p <= 0)) {
-    const total = impliedProbs.reduce((s, p) => s + p, 0);
-    return total > 0 ? impliedProbs.map((p) => p / total) : impliedProbs;
-  }
-  const s = impliedProbs.reduce((sum, p) => sum + p, 0);
-  if (s <= 1.0) {
-    return impliedProbs.map((p) => p / s);
-  }
-
-  const probsAt = (z: number): number[] => {
-    if (z <= 0) {
-      const sqrtS = Math.sqrt(s);
-      return impliedProbs.map((p) => p / sqrtS);
-    }
-    const denom = 2.0 * (1.0 - z);
-    return impliedProbs.map(
-      (p) => (Math.sqrt(z * z + (4.0 * (1.0 - z) * p * p) / s) - z) / denom,
-    );
-  };
-  const totalAt = (z: number) => probsAt(z).reduce((sum, p) => sum + p, 0);
-
-  let lo = 0.0,
-    hi = 1.0 - 1e-9;
-  for (let i = 0; i < 200; i++) {
-    const mid = (lo + hi) / 2.0;
-    if (totalAt(mid) > 1.0) lo = mid;
-    else hi = mid;
-    if (hi - lo < 1e-12) break;
-  }
-  const probs = probsAt((lo + hi) / 2.0);
-  const total = probs.reduce((sum, p) => sum + p, 0);
-  return probs.map((p) => p / total);
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // Handler GET
@@ -240,8 +207,8 @@ export async function GET(request: NextRequest) {
 
   // ─── 4. Tentar buscar da materialized view de fair probs ─────────────
 
+  // Fair probabilities — da materialized view (Python é fonte canônica)
   const fairProbsMap = new Map<string, number>();
-  let usedMV = false;
 
   if (eventIds.length > 0) {
     const { data: fairData, error: fairError } = await supabase
@@ -250,7 +217,6 @@ export async function GET(request: NextRequest) {
       .in("event_id", eventIds);
 
     if (!fairError && fairData && fairData.length > 0) {
-      usedMV = true;
       for (const row of fairData) {
         const r = row as EventRow;
         const key = `${r.event_id}:${r.market_code}:${r.outcome_code}`;
@@ -263,10 +229,12 @@ export async function GET(request: NextRequest) {
 
   const prediqMap = new Map<string, number>();
   const gradingMap = new Map<string, string>();
+  const edgeMap = new Map<string, number>();
+  const evMap = new Map<string, number>();
   if (eventIds.length > 0) {
     const { data: voData, error: voError } = await supabase
       .from("value_opportunities")
-      .select("event_id, outcome_id, edge_score, status")
+      .select("event_id, outcome_id, edge_score, edge, ev, status")
       .in("event_id", eventIds);
 
     if (!voError && voData) {
@@ -275,6 +243,12 @@ export async function GET(request: NextRequest) {
         const key = `${r.event_id}:${r.outcome_id}`;
         if (r.edge_score != null) {
           prediqMap.set(key, Number(r.edge_score));
+        }
+        if (r.edge != null) {
+          edgeMap.set(key, Number(r.edge));
+        }
+        if (r.ev != null) {
+          evMap.set(key, Number(r.ev));
         }
         if (r.status) {
           gradingMap.set(key, r.status as string);
@@ -512,19 +486,17 @@ export async function GET(request: NextRequest) {
         return o.impliedProbs.reduce((s, p) => s + p, 0) / o.impliedProbs.length;
       });
 
-      // Fair probs via Shin (inline) caso a MV não esteja disponível
-      const shinFairProbs = !usedMV ? removeVigShin(avgImpliedProbs) : [];
+      // Fair probs — exclusivamente da materialized view mv_fair_probabilities
+      // (fonte canônica: Python pipeline). Sem fallback TS.
 
       const outcomes: OutcomeAudit[] = allOutcomes.map((o, idx) => {
         const overround = avgImpliedProbs.reduce((s, p) => s + p, 0);
 
-        // Fair probability — da MV ou calculada inline
+        // Fair probability — da MV (Python é a fonte canônica)
         let fairProb: number | null = null;
         const mvKey = `${ev.id}:${mEntry.marketCode}:${o.outcomeCode}`;
-        if (usedMV && fairProbsMap.has(mvKey)) {
+        if (fairProbsMap.has(mvKey)) {
           fairProb = fairProbsMap.get(mvKey)!;
-        } else if (shinFairProbs.length > idx) {
-          fairProb = shinFairProbs[idx] ?? null;
         }
 
         // Previsões dos modelos
@@ -546,25 +518,11 @@ export async function GET(request: NextRequest) {
 
         if (modelPredictions.length > 0) eventHasPredictions = true;
 
-        // Edge e EV — usa a primeira previsão disponível
-        const primaryPred = modelPredictions[0] ?? null;
-        let edge: number | null = null;
-        let expectedValue: number | null = null;
-
-        if (primaryPred && fairProb && fairProb > 0) {
-          edge = (primaryPred.probability - fairProb) / fairProb;
-        }
-
-        const bestOdds = o.bookmakers.reduce(
-          (best, bk) => (bk.odds > best ? bk.odds : best),
-          0,
-        );
-        if (primaryPred && bestOdds > 0) {
-          expectedValue = primaryPred.probability * bestOdds - 1;
-        }
-
-        // Índice PREDIQ (= edge_score na tabela value_opportunities)
+        // Edge, EV e Índice PREDIQ — da tabela value_opportunities (Python pipeline)
+        // Não recalcula no TS — consome valores canônicos do banco.
         const voKey = `${ev.id}:${o.outcomeId}`;
+        const edge = edgeMap.get(voKey) ?? null;
+        const expectedValue = evMap.get(voKey) ?? null;
         const prediqIndex = prediqMap.get(voKey) ?? null;
         const gradingStatus = gradingMap.get(voKey) ?? null;
 

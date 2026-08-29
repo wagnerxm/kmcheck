@@ -1,8 +1,11 @@
 /**
- * Testes unitários das funções de odds e remoção de vig.
+ * Testes unitários das funções de conversão de odds.
  *
- * Cobertura: conversões de odds, overround, remoção de vig (3 métodos),
- * fairProbabilities, fairOdds, interface unificada removeVig.
+ * NOTA: Funções de cálculo quantitativo (remoção de vig, overround,
+ * fairProbabilities, fairOdds) foram REMOVIDAS do módulo odds.ts.
+ * Python é a única fonte oficial de toda matemática quantitativa.
+ * Os testes dessas funções removidas foram removidos junto com elas.
+ * Ver: PYTHON_TS_CONVERGENCE_REPORT.md
  */
 
 import { describe, expect, it } from "vitest";
@@ -12,36 +15,10 @@ import {
   decimalToAmerican,
   americanToDecimal,
   decimalToFractional,
-  calculateOverround,
-  removVig,
-  removeVigMultiplicative,
-  removeVigPower,
-  removeVigShin,
-  removeVig,
-  fairProbabilities,
-  fairOdds,
 } from "./odds";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Helpers
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Verifica que os valores somam ≈ 1.0. */
-function expectSumsToOne(probs: number[], tol = 1e-6) {
-  const sum = probs.reduce((s, p) => s + p, 0);
-  expect(sum).toBeCloseTo(1.0, 6);
-}
-
-/** Verifica que cada probabilidade está em (0, 1). */
-function expectAllInRange(probs: number[]) {
-  for (const p of probs) {
-    expect(p).toBeGreaterThan(0);
-    expect(p).toBeLessThan(1);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Conversões básicas
+// Conversões básicas (mantidas — formato, não cálculo quantitativo)
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("decimalToImplied", () => {
@@ -114,383 +91,46 @@ describe("decimalToFractional", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Overround
+// Verificação: funções de cálculo quantitativo NÃO devem estar exportadas
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe("calculateOverround", () => {
-  it("calcula a margem de um mercado 1x2 típico", () => {
-    // Odds: 2.10, 3.40, 3.60 → pi ≈ 0.4762 + 0.2941 + 0.2778 = 1.0481
-    const or = calculateOverround([2.1, 3.4, 3.6]);
-    expect(or).toBeCloseTo(0.0481, 3);
-  });
+describe("funções removidas não exportadas", () => {
+  it("módulo odds.ts não exporta funções de vig removal", async () => {
+    const oddsModule = await import("./odds");
+    const exportedNames = Object.keys(oddsModule);
 
-  it("mercado justo (sem margem) → overround ≈ 0", () => {
-    // Odds: 2.0, 2.0 para mercado binário justo
-    const or = calculateOverround([2.0, 2.0]);
-    expect(or).toBeCloseTo(0, 6);
-  });
+    // Funções de cálculo quantitativo devem ter sido removidas
+    const forbiddenExports = [
+      "calculateOverround",
+      "removVig",
+      "removeVigMultiplicative",
+      "removeVigPower",
+      "removeVigShin",
+      "removeVig",
+      "fairProbabilities",
+      "fairOdds",
+      "VigRemovalMethod",
+    ];
 
-  it("lança erro para lista vazia", () => {
-    expect(() => calculateOverround([])).toThrow();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// removVig (legado — retorna odds justas)
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("removVig (legado)", () => {
-  it("retorna odds justas (decimais) sem margem", () => {
-    const fairOddsList = removVig([2.1, 3.4, 3.6]);
-    // A soma das probabilidades implícitas das fair odds deve ser ≈ 1
-    const impliedSum = fairOddsList.reduce((s, o) => s + 1 / o, 0);
-    expect(impliedSum).toBeCloseTo(1.0, 6);
-  });
-
-  it("mercado justo permanece inalterado", () => {
-    const fairOddsList = removVig([2.0, 2.0]);
-    expect(fairOddsList[0]).toBeCloseTo(2.0, 4);
-    expect(fairOddsList[1]).toBeCloseTo(2.0, 4);
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// removeVigMultiplicative
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("removeVigMultiplicative", () => {
-  it("normaliza probabilidades implícitas para somar 1", () => {
-    // Mercado 1x2: odds 2.10, 3.40, 3.60
-    const implied = [1 / 2.1, 1 / 3.4, 1 / 3.6]; // soma ≈ 1.048
-    const fair = removeVigMultiplicative(implied);
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-
-  it("mantém a ordem relativa das probabilidades", () => {
-    const implied = [0.5, 0.3, 0.25]; // soma = 1.05
-    const fair = removeVigMultiplicative(implied);
-
-    expect(fair[0]).toBeGreaterThan(fair[1]);
-    expect(fair[1]).toBeGreaterThan(fair[2]);
-  });
-
-  it("preserva proporcionalidade exata", () => {
-    const implied = [0.6, 0.3, 0.2]; // soma = 1.1
-    const fair = removeVigMultiplicative(implied);
-
-    // Razão entre fair probs deve ser igual à razão entre implied probs
-    expect(fair[0] / fair[1]).toBeCloseTo(0.6 / 0.3, 6);
-    expect(fair[1] / fair[2]).toBeCloseTo(0.3 / 0.2, 6);
-  });
-
-  it("probabilidades sem vig retornam inalteradas", () => {
-    const implied = [0.5, 0.3, 0.2]; // soma = 1.0
-    const fair = removeVigMultiplicative(implied);
-
-    expect(fair[0]).toBeCloseTo(0.5, 6);
-    expect(fair[1]).toBeCloseTo(0.3, 6);
-    expect(fair[2]).toBeCloseTo(0.2, 6);
-  });
-
-  it("lança erro para lista vazia", () => {
-    expect(() => removeVigMultiplicative([])).toThrow();
-  });
-
-  it("lança erro quando soma é zero ou negativa", () => {
-    expect(() => removeVigMultiplicative([0, 0, 0])).toThrow();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// removeVigPower
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("removeVigPower", () => {
-  it("produz probabilidades que somam 1", () => {
-    const implied = [1 / 2.1, 1 / 3.4, 1 / 3.6];
-    const fair = removeVigPower(implied);
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-
-  it("mantém a ordem relativa", () => {
-    const implied = [1 / 1.8, 1 / 3.5, 1 / 4.0];
-    const fair = removeVigPower(implied);
-
-    expect(fair[0]).toBeGreaterThan(fair[1]);
-    expect(fair[1]).toBeGreaterThan(fair[2]);
-  });
-
-  it("produz resultado diferente do multiplicativo (corrige viés)", () => {
-    // Favorito forte vs azarão com overround
-    const impliedWithVig = [1 / 1.15, 1 / 6.5]; // [0.8696, 0.1538], soma ≈ 1.023
-    const fairMult = removeVigMultiplicative(impliedWithVig);
-    const fairPow = removeVigPower(impliedWithVig);
-
-    // O power method deve produzir um resultado que difere do multiplicativo
-    // (a direção depende da forma do mercado, mas os valores diferem)
-    const diff = Math.abs(fairPow[1] - fairMult[1]);
-    expect(diff).toBeGreaterThan(0.001);
-    expectSumsToOne(fairPow);
-  });
-
-  it("sem overround → retorna multiplicativo", () => {
-    const implied = [0.5, 0.3, 0.2]; // soma = 1.0
-    const fair = removeVigPower(implied);
-
-    expect(fair[0]).toBeCloseTo(0.5, 4);
-    expect(fair[1]).toBeCloseTo(0.3, 4);
-    expect(fair[2]).toBeCloseTo(0.2, 4);
-  });
-
-  it("overround alto (>20%) ainda converge", () => {
-    // Mercado com margem muito alta
-    const implied = [0.55, 0.40, 0.35]; // soma = 1.30 → 30% overround
-    const fair = removeVigPower(implied);
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-
-  it("lança erro para pi_i ≥ 1 ou ≤ 0", () => {
-    expect(() => removeVigPower([1.0, 0.5])).toThrow();
-    expect(() => removeVigPower([0, 0.5])).toThrow();
-  });
-
-  it("lança erro para lista vazia", () => {
-    expect(() => removeVigPower([])).toThrow();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// removeVigShin
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("removeVigShin", () => {
-  it("produz probabilidades que somam 1", () => {
-    const implied = [1 / 2.1, 1 / 3.4, 1 / 3.6];
-    const fair = removeVigShin(implied);
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-
-  it("mantém a ordem relativa", () => {
-    const implied = [1 / 1.8, 1 / 3.5, 1 / 4.0];
-    const fair = removeVigShin(implied);
-
-    expect(fair[0]).toBeGreaterThan(fair[1]);
-    expect(fair[1]).toBeGreaterThan(fair[2]);
-  });
-
-  it("produz resultado diferente do multiplicativo (modelo Shin)", () => {
-    // Favorito forte vs azarão com overround
-    const implied = [1 / 1.15, 1 / 6.5]; // [0.8696, 0.1538]
-    const fairMult = removeVigMultiplicative(implied);
-    const fairShin = removeVigShin(implied);
-
-    // Shin modela insider trading — deve diferir do multiplicativo
-    const diff = Math.abs(fairShin[1] - fairMult[1]);
-    expect(diff).toBeGreaterThan(0.001);
-    expectSumsToOne(fairShin);
-  });
-
-  it("sem overround (soma ≤ 1) → retorna multiplicativo", () => {
-    const implied = [0.5, 0.3, 0.2]; // soma = 1.0
-    const fair = removeVigShin(implied);
-
-    expect(fair[0]).toBeCloseTo(0.5, 4);
-    expect(fair[1]).toBeCloseTo(0.3, 4);
-    expect(fair[2]).toBeCloseTo(0.2, 4);
-  });
-
-  it("overround alto ainda converge", () => {
-    const implied = [0.55, 0.40, 0.35]; // soma = 1.30
-    const fair = removeVigShin(implied);
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-
-  it("mercado binário simétrico", () => {
-    // Odds: 1.90, 1.90 → implied: [0.5263, 0.5263], soma ≈ 1.0526
-    const implied = [1 / 1.9, 1 / 1.9];
-    const fair = removeVigShin(implied);
-
-    // Mercado simétrico → probabilidades justas devem ser iguais
-    expect(fair[0]).toBeCloseTo(fair[1], 4);
-    expect(fair[0]).toBeCloseTo(0.5, 4);
-  });
-
-  it("lança erro para pi_i ≤ 0", () => {
-    expect(() => removeVigShin([0, 0.5])).toThrow();
-    expect(() => removeVigShin([-0.1, 0.5])).toThrow();
-  });
-
-  it("lança erro para lista vazia", () => {
-    expect(() => removeVigShin([])).toThrow();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// removeVig (interface unificada)
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("removeVig (interface unificada)", () => {
-  const implied = [1 / 2.1, 1 / 3.4, 1 / 3.6];
-
-  it("default é multiplicativo", () => {
-    const fair = removeVig(implied);
-    const fairMult = removeVigMultiplicative(implied);
-
-    for (let i = 0; i < fair.length; i++) {
-      expect(fair[i]).toBeCloseTo(fairMult[i], 10);
+    for (const name of forbiddenExports) {
+      expect(exportedNames, `${name} não deveria estar exportado`).not.toContain(name);
     }
   });
 
-  it("method='multiplicative' despacha corretamente", () => {
-    const fair = removeVig(implied, "multiplicative");
-    const fairMult = removeVigMultiplicative(implied);
+  it("módulo odds.ts exporta apenas funções de conversão de formato", async () => {
+    const oddsModule = await import("./odds");
+    const exportedNames = Object.keys(oddsModule);
 
-    for (let i = 0; i < fair.length; i++) {
-      expect(fair[i]).toBeCloseTo(fairMult[i], 10);
+    const allowedExports = [
+      "decimalToImplied",
+      "impliedToDecimal",
+      "decimalToAmerican",
+      "americanToDecimal",
+      "decimalToFractional",
+    ];
+
+    for (const name of allowedExports) {
+      expect(exportedNames, `${name} deveria estar exportado`).toContain(name);
     }
   });
-
-  it("method='power' despacha corretamente", () => {
-    const fair = removeVig(implied, "power");
-    const fairPow = removeVigPower(implied);
-
-    for (let i = 0; i < fair.length; i++) {
-      expect(fair[i]).toBeCloseTo(fairPow[i], 10);
-    }
-  });
-
-  it("method='shin' despacha corretamente", () => {
-    const fair = removeVig(implied, "shin");
-    const fairShin = removeVigShin(implied);
-
-    for (let i = 0; i < fair.length; i++) {
-      expect(fair[i]).toBeCloseTo(fairShin[i], 10);
-    }
-  });
-
-  it("lança erro para método desconhecido", () => {
-    // @ts-expect-error — testando runtime guard
-    expect(() => removeVig(implied, "desconhecido")).toThrow();
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// fairProbabilities & fairOdds
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("fairProbabilities", () => {
-  it("converte odds decimais em probabilidades justas", () => {
-    const odds = [2.1, 3.4, 3.6];
-    const fair = fairProbabilities(odds);
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-    // Favorito (menor odd = maior prob) deve ter a maior prob justa
-    expect(fair[0]).toBeGreaterThan(fair[1]);
-    expect(fair[0]).toBeGreaterThan(fair[2]);
-  });
-
-  it("aceita método power", () => {
-    const odds = [2.1, 3.4, 3.6];
-    const fair = fairProbabilities(odds, "power");
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-
-  it("aceita método shin", () => {
-    const odds = [2.1, 3.4, 3.6];
-    const fair = fairProbabilities(odds, "shin");
-
-    expectSumsToOne(fair);
-    expectAllInRange(fair);
-  });
-});
-
-describe("fairOdds", () => {
-  it("retorna odds decimais sem margem", () => {
-    const odds = [2.1, 3.4, 3.6];
-    const fair = fairOdds(odds);
-
-    // Fair odds devem ser ≥ odds originais (sem margem → odds maiores)
-    for (let i = 0; i < odds.length; i++) {
-      expect(fair[i]).toBeGreaterThanOrEqual(odds[i]);
-    }
-
-    // A soma das probabilidades implícitas das fair odds deve ser ≈ 1
-    const impliedSum = fair.reduce((s, o) => s + 1 / o, 0);
-    expect(impliedSum).toBeCloseTo(1.0, 6);
-  });
-
-  it("mercado justo → fair odds ≈ odds originais", () => {
-    const odds = [2.0, 2.0]; // mercado sem margem
-    const fair = fairOdds(odds);
-
-    expect(fair[0]).toBeCloseTo(2.0, 4);
-    expect(fair[1]).toBeCloseTo(2.0, 4);
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Consistência entre métodos — propriedades que todos devem satisfazer
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("consistência entre métodos", () => {
-  const testCases = [
-    { name: "1x2 brasileiro típico", odds: [2.1, 3.4, 3.6] },
-    { name: "mercado binário (BTTS)", odds: [1.75, 2.0] },
-    { name: "grande favorito", odds: [1.15, 6.5] },
-    { name: "mercado equilibrado", odds: [1.9, 1.9] },
-    { name: "Double chance", odds: [1.35, 1.65, 2.5] },
-  ];
-
-  for (const { name, odds } of testCases) {
-    describe(name, () => {
-      const implied = odds.map((o) => 1 / o);
-      const methods = ["multiplicative", "power", "shin"] as const;
-
-      for (const method of methods) {
-        it(`${method}: probabilidades somam 1 e estão em (0,1)`, () => {
-          const fair = removeVig(implied, method);
-          expectSumsToOne(fair);
-          expectAllInRange(fair);
-        });
-
-        it(`${method}: mantém ordenação das probabilidades`, () => {
-          const fair = removeVig(implied, method);
-          // O resultado com maior prob implícita deve ter a maior fair prob
-          const sortedImplied = [...implied].sort((a, b) => b - a);
-          const sortedFair = [...fair].sort((a, b) => b - a);
-          for (let i = 0; i < sortedImplied.length; i++) {
-            const originalIdx = implied.indexOf(sortedImplied[i]);
-            const fairIdx = fair.indexOf(sortedFair[i]);
-            expect(originalIdx).toBe(fairIdx);
-          }
-        });
-      }
-
-      it("todos os métodos produzem probabilidades 'maiores' (vig removido)", () => {
-        const overround = implied.reduce((s, p) => s + p, 0) - 1;
-        if (overround <= 0) return; // sem vig, nada a verificar
-
-        for (const method of methods) {
-          const fair = removeVig(implied, method);
-          // Fair probs são menores que implied probs (margem removida)
-          for (let i = 0; i < implied.length; i++) {
-            expect(fair[i]).toBeLessThanOrEqual(implied[i] + 1e-6);
-          }
-        }
-      });
-    });
-  }
 });

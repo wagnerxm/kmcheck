@@ -190,6 +190,101 @@ async def get_overround(
     )
 
 
+class BookmakerFairProbs(BaseModel):
+    """Fair probs por casa de apostas — 3 métodos de remoção de vig."""
+
+    bookmaker: str
+    outcomes: list[str]
+    decimal_odds: list[float]
+    implied_probabilities: list[float]
+    overround_pct: float = Field(description="Overround em percentual (ex.: 5.2 = 5,2%).")
+    fair_probs: dict[str, dict[str, float]] = Field(
+        description="Mapa método → {outcome: fair_prob}. Métodos: multiplicative, power, shin."
+    )
+
+
+class OddsComparisonResponse(BaseModel):
+    """Comparação completa de odds: fair probs com 3 métodos, por casa de apostas."""
+
+    event_id: UUID
+    market: str
+    by_bookmaker: list[BookmakerFairProbs]
+    best_odds: dict[str, float] = Field(description="Melhor odd por outcome entre todas as casas.")
+    computed_at: datetime
+
+
+@router.get(
+    "/comparison/{event_id}/{market}",
+    response_model=OddsComparisonResponse,
+    summary="Comparação de odds: fair probs com 3 métodos por casa",
+)
+async def get_odds_comparison(
+    event_id: UUID,
+    market: str,
+    db: DbSession,
+) -> OddsComparisonResponse:
+    """Retorna fair probabilities calculadas por 3 métodos (Shin, power, multiplicative)
+    para cada casa de apostas, além do overround e melhor odd por outcome.
+
+    Endpoint criado para que o frontend consuma fair probs do Python (fonte canônica)
+    em vez de recalcular no TypeScript.
+    """
+    by_bookmaker = await _fetch_odds(db, event_id, market)
+
+    if not by_bookmaker:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhuma odds encontrada para este evento/mercado.",
+        )
+
+    best_odds: dict[str, float] = {}
+    result: list[BookmakerFairProbs] = []
+
+    for bk_name, bk_odds in sorted(by_bookmaker.items()):
+        outcome_names = sorted(bk_odds.keys())
+        odds_list = [bk_odds[oc] for oc in outcome_names]
+        implied = [implied_probability(o) for o in odds_list]
+        overround = calculate_overround(implied)
+
+        # Computar fair probs com 3 métodos
+        fair_mult = remove_vig_multiplicative(implied)
+        try:
+            fair_pow = remove_vig_power(implied)
+        except Exception:
+            # Fallback: power pode falhar com probs fora de (0,1)
+            fair_pow = remove_vig_multiplicative(implied)
+        try:
+            fair_shin = remove_vig_shin(implied)
+        except Exception:
+            fair_shin = remove_vig_multiplicative(implied)
+
+        result.append(BookmakerFairProbs(
+            bookmaker=bk_name,
+            outcomes=outcome_names,
+            decimal_odds=[round(o, 4) for o in odds_list],
+            implied_probabilities=[round(p, 6) for p in implied],
+            overround_pct=round(overround * 100.0, 2),
+            fair_probs={
+                "multiplicative": {oc: round(fp, 6) for oc, fp in zip(outcome_names, fair_mult)},
+                "power": {oc: round(fp, 6) for oc, fp in zip(outcome_names, fair_pow)},
+                "shin": {oc: round(fp, 6) for oc, fp in zip(outcome_names, fair_shin)},
+            },
+        ))
+
+        # Atualizar melhor odd por outcome
+        for i, oc in enumerate(outcome_names):
+            if oc not in best_odds or odds_list[i] > best_odds[oc]:
+                best_odds[oc] = round(odds_list[i], 4)
+
+    return OddsComparisonResponse(
+        event_id=event_id,
+        market=market,
+        by_bookmaker=result,
+        best_odds=best_odds,
+        computed_at=datetime.utcnow(),
+    )
+
+
 @router.get(
     "/implied/{event_id}",
     response_model=ImpliedProbabilitiesResponse,
