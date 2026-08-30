@@ -389,6 +389,65 @@ const BOOKS=['Bet365','Betano','Pinnacle','1xBet','Sportingbet','KTO','Betfair']
 const LEAGUES=['Brasileirão Série A','Copa do Brasil','Copa Libertadores'];
 const MARKETS=['1X2','Over/Under 2.5','Ambas Marcam'];
 
+/* ===== Supabase — conexão com banco real ===== */
+const SB_URL='https://fyybovmpzoxrpipfnbzk.supabase.co';
+const SB_KEY='sb_publishable__YBuks2J_MlwA8AzlE0fpg_seS2_iX-';
+let sbOnline=false;     /* true se o Supabase respondeu com sucesso */
+let sbLeagues=[];       /* ligas vindas do banco */
+let sbEvents=[];        /* eventos reais (quando houver) */
+let liveMode=false;     /* true = mostrando dados reais; false = demo */
+
+async function sbFetch(table,params=''){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{
+      headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}
+    });
+    if(!r.ok) throw new Error(r.status);
+    return await r.json();
+  }catch(e){return null;}
+}
+
+/* testa conexão e busca ligas/eventos reais */
+async function checkSupabase(){
+  /* 1) busca ligas do seed */
+  const leagues=await sbFetch('leagues','select=id,name,country_name,provider_league_id&order=name');
+  if(leagues&&leagues.length){
+    sbOnline=true;
+    sbLeagues=leagues;
+  }
+  /* 2) busca eventos futuros (se houver) */
+  const events=await sbFetch('v_upcoming_events','select=*&limit=20');
+  if(events&&events.length){
+    sbEvents=events;
+    /* TODO: quando tiver predictions populadas, habilitar liveMode */
+  }
+  /* atualiza indicadores na UI */
+  updateConnectionStatus();
+}
+
+function updateConnectionStatus(){
+  const el=$('#sb-status');
+  if(!el) return;
+  if(sbOnline){
+    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;
+      background:rgba(141,255,31,.1);color:var(--success);font-size:.625rem;font-weight:600;letter-spacing:.04em">
+      <span style="width:5px;height:5px;border-radius:50%;background:var(--success);display:inline-block"></span>
+      SUPABASE ${sbLeagues.length} LIGAS</span>`;
+  }else{
+    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;
+      background:rgba(255,71,87,.1);color:var(--danger);font-size:.625rem;font-weight:600;letter-spacing:.04em">
+      <span style="width:5px;height:5px;border-radius:50%;background:var(--danger);display:inline-block"></span>
+      OFFLINE</span>`;
+  }
+  /* badge demo/live */
+  const badge=$('#mode-badge');
+  if(badge){
+    badge.textContent=liveMode?'LIVE':'DEMO';
+    badge.style.background=liveMode?'var(--success-d)':'var(--primary-d)';
+    badge.style.color=liveMode?'var(--success)':'var(--primary)';
+  }
+}
+
 /* oportunidades demo — dados realistas de futebol brasileiro */
 const OPPS=[
 {id:1,home:'Flamengo',away:'Palmeiras',league:'Brasileirão Série A',round:'Rodada 23',
@@ -704,6 +763,13 @@ function renderTopbar(){
   $('#tb-icon').innerHTML=icon('trending',16,'');
   $('#tb-icon').style.cssText='width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--primary-d);color:var(--primary)';
   $('#tb-bell').innerHTML=icon('bell',18);
+  /* indicador de conexão Supabase no topbar */
+  const tbR=$('#topbar');
+  if(!$('#sb-status')){
+    const st=document.createElement('div');st.id='sb-status';
+    st.style.cssText='margin-left:auto;margin-right:8px';
+    tbR.insertBefore(st,$('#tb-bell'));
+  }
 }
 
 /* ===== drawer mobile ===== */
@@ -786,7 +852,11 @@ function renderDashboard(){
   return `<div class="page active fade-in">
     <!-- saudação -->
     <div class="section">
-      <h1 class="font-d fw8 fs-hero">${greeting()}, Wagner</h1>
+      <div class="flex items-center gap-2">
+        <h1 class="font-d fw8 fs-hero">${greeting()}, Wagner</h1>
+        <span id="mode-badge" style="padding:2px 6px;border-radius:4px;font-size:.5625rem;font-weight:700;
+          letter-spacing:.06em;background:var(--primary-d);color:var(--primary)">DEMO</span>
+      </div>
       <p class="c-muted fs-sm mt-2">${OPPS.length} oportunidades ativas · ${OPPS.filter(o=>o.score>=80).length} com score alto</p>
     </div>
 
@@ -1367,7 +1437,11 @@ function init(){
   },{passive:true});
 }
 
-document.addEventListener('DOMContentLoaded',init);
+document.addEventListener('DOMContentLoaded',()=>{
+  init();
+  /* tenta conectar ao Supabase em background (não bloqueia o boot) */
+  checkSupabase();
+});
 </script>
 </body>
 </html>
