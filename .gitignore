@@ -4,3 +4,4 @@ package-lock.json
 install-guide.html
 render-jpg.mjs
 .claude/worktrees/
+betedge/
