@@ -12,10 +12,8 @@ import { config } from './config.js';
 // Node 20 não tem WebSocket nativo — importar ws como polyfill global
 // para o @supabase/supabase-js não falhar ao tentar Realtime.
 import WebSocket from 'ws';
-// @ts-expect-error — polyfill global necessário para Node <22
 if (typeof globalThis.WebSocket === 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).WebSocket = WebSocket;
+  Object.defineProperty(globalThis, 'WebSocket', { value: WebSocket });
 }
 
 let _client: SupabaseClient | null = null;
