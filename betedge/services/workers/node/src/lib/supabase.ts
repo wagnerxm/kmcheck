@@ -9,11 +9,14 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { config } from './config.js';
 
-// Node 20 não tem WebSocket nativo — importar ws como polyfill global
-// para o @supabase/supabase-js não falhar ao tentar Realtime.
-import WebSocket from 'ws';
+// Node 20 não tem WebSocket nativo — polyfill global necessário para que
+// o @supabase/supabase-js não falhe ao tentar abrir conexão Realtime.
+// Usa createRequire para evitar problemas de resolução de tipos com ESM.
+import { createRequire } from 'node:module';
 if (typeof globalThis.WebSocket === 'undefined') {
-  Object.defineProperty(globalThis, 'WebSocket', { value: WebSocket });
+  const _require = createRequire(import.meta.url);
+  const WS = _require('ws');
+  Object.defineProperty(globalThis, 'WebSocket', { value: WS });
 }
 
 let _client: SupabaseClient | null = null;

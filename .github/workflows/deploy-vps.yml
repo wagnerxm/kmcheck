@@ -1,0 +1,73 @@
+# =============================================================================
+# deploy-vps.yml — Deploy automático no Contabo VPS
+#
+# Dispara em todo push na main que altere arquivos do backend (betedge/).
+# Conecta via SSH e faz: git pull → docker compose build → docker compose up.
+#
+# Secrets necessários (configurar em Settings → Secrets → Actions):
+#   VPS_HOST       — IP do VPS (ex: 80.190.78.56)
+#   VPS_USER       — usuário SSH (ex: root)
+#   VPS_SSH_KEY    — chave privada SSH (conteúdo completo do id_ed25519)
+# =============================================================================
+
+name: Deploy VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'betedge/**'
+      - 'deploy.sh'
+  workflow_dispatch:   # botão manual no GitHub
+
+jobs:
+  deploy:
+    name: Deploy no Contabo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          timeout: 600s
+          script: |
+            set -e
+            APP_DIR="$HOME/apps/noblind"
+
+            echo "═══ 1. Atualizando código ═══"
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "═══ 2. Rebuild dos serviços alterados ═══"
+            cd "$APP_DIR/betedge/docker"
+            docker compose build
+            docker compose up -d --force-recreate --remove-orphans
+
+            echo "═══ 3. Verificação ═══"
+            sleep 15
+            docker compose ps
+
+            # Testar Redis
+            if docker exec betedge-redis redis-cli ping 2>/dev/null | grep -q PONG; then
+              echo "✅ Redis: PONG"
+            else
+              echo "⚠️ Redis: ainda iniciando"
+            fi
+
+            # Testar Engine
+            if curl -sf http://localhost:8000/health; then
+              echo "✅ Engine: saudável"
+            else
+              echo "⚠️ Engine: verificar logs com 'docker compose logs engine'"
+            fi
+
+            # Limpeza de imagens antigas
+            docker image prune -f
+
+            echo "═══ ✅ Deploy concluído! ═══"
