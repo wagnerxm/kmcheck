@@ -1,8 +1,8 @@
 # =============================================================================
 # deploy-vps.yml — Deploy automático no Contabo VPS
 #
-# Dispara em todo push na main que altere arquivos do backend (betedge/).
-# Conecta via SSH e faz: git pull → docker compose build → docker compose up.
+# Dispara em todo push na main que altere backend (betedge/) ou frontend (noblind/).
+# Conecta via SSH e faz: git pull → nginx + frontend → docker compose → verifica.
 #
 # Secrets necessários (configurar em Settings → Secrets → Actions):
 #   VPS_HOST       — IP do VPS (ex: 80.190.78.56)
@@ -17,6 +17,7 @@ on:
     branches: [main]
     paths:
       - 'betedge/**'
+      - 'noblind/**'
       - 'deploy.sh'
       - '.github/workflows/deploy-vps.yml'
   workflow_dispatch:   # botão manual no GitHub
@@ -45,8 +46,85 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "═══ 2. Preparando .env ═══"
-            # Garantir que o .env exista (criado no setup inicial)
+            echo "═══ 2. Nginx (frontend + reverse proxy) ═══"
+
+            # Instalar nginx se não existir (idempotente)
+            if ! command -v nginx &>/dev/null; then
+              echo "→ Instalando nginx..."
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -qq
+              apt-get install -y -qq nginx
+              systemctl enable nginx
+            fi
+
+            # Abrir firewall (idempotente — ignora erro se ufw inativo)
+            if command -v ufw &>/dev/null; then
+              ufw allow 80/tcp  >/dev/null 2>&1 || true
+              ufw allow 443/tcp >/dev/null 2>&1 || true
+              ufw allow 8000/tcp >/dev/null 2>&1 || true
+            fi
+
+            # Copiar frontend para /var/www/noblind
+            mkdir -p /var/www/noblind
+            rsync -a --delete "$APP_DIR/noblind/" /var/www/noblind/
+
+            # Escrever configuração nginx
+            cat > /etc/nginx/sites-available/noblind << 'NGINX_CONF'
+            server {
+                listen 80;
+                server_name _;
+
+                root /var/www/noblind;
+                index index.html;
+
+                # Gzip para performance
+                gzip on;
+                gzip_types text/plain text/css application/json application/javascript text/xml image/svg+xml;
+                gzip_min_length 256;
+
+                # Frontend NO.BLIND (SPA — fallback para index.html)
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+
+                # Engine API — reverse proxy
+                location /api/ {
+                    proxy_pass http://127.0.0.1:8000/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_read_timeout 300s;
+                    proxy_connect_timeout 10s;
+                }
+
+                # Cache de assets estáticos (30 dias)
+                location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?|webmanifest)$ {
+                    expires 30d;
+                    add_header Cache-Control "public, immutable";
+                }
+
+                # Segurança
+                add_header X-Frame-Options "SAMEORIGIN" always;
+                add_header X-Content-Type-Options "nosniff" always;
+                add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            }
+            NGINX_CONF
+
+            # Remover indentação do heredoc (o YAML adiciona espaços)
+            sed -i 's/^            //' /etc/nginx/sites-available/noblind
+
+            # Ativar site, desativar default
+            ln -sf /etc/nginx/sites-available/noblind /etc/nginx/sites-enabled/noblind
+            rm -f /etc/nginx/sites-enabled/default
+
+            # Testar config e recarregar
+            nginx -t
+            systemctl reload nginx || systemctl start nginx
+            echo "✅ Nginx configurado"
+
+            echo "═══ 3. Preparando .env ═══"
             if [ ! -f "$APP_DIR/betedge/.env" ]; then
               echo "⚠️ .env não encontrado em betedge/ — crie com deploy.sh primeiro"
               exit 1
@@ -60,31 +138,50 @@ jobs:
             # Symlink para docker compose enxergar o .env
             ln -sf "$APP_DIR/betedge/.env" "$APP_DIR/betedge/docker/.env"
 
-            echo "═══ 3. Rebuild dos serviços ═══"
+            echo "═══ 4. Rebuild dos serviços Docker ═══"
             cd "$APP_DIR/betedge/docker"
             docker compose build
-            docker compose down
+            docker compose down --remove-orphans
             docker compose up -d
 
-            echo "═══ 4. Verificação ═══"
+            echo "═══ 5. Verificação ═══"
             sleep 15
             docker compose ps
 
-            # Testar Redis
+            # Redis
             if docker exec betedge-redis redis-cli ping 2>/dev/null | grep -q PONG; then
               echo "✅ Redis: PONG"
             else
               echo "⚠️ Redis: ainda iniciando"
             fi
 
-            # Testar Engine
+            # Engine (direto)
             if curl -sf http://localhost:8000/health; then
+              echo ""
               echo "✅ Engine: saudável"
             else
               echo "⚠️ Engine: verificar logs com 'docker compose logs engine'"
             fi
 
-            # Limpeza de imagens antigas
+            # Frontend (via nginx)
+            if curl -sf http://localhost/ | grep -q "NO.BLIND"; then
+              echo "✅ Frontend NO.BLIND: online"
+            else
+              echo "⚠️ Frontend: verificar nginx"
+            fi
+
+            # API via nginx (reverse proxy)
+            if curl -sf http://localhost/api/health | grep -q '"ok"'; then
+              echo "✅ API via nginx (/api/): funcionando"
+            else
+              echo "⚠️ API via nginx: verificar proxy"
+            fi
+
+            # Limpeza
             docker image prune -f
 
+            VPS_IP=$(hostname -I | awk '{print $1}')
+            echo ""
             echo "═══ ✅ Deploy concluído! ═══"
+            echo "🌐 Frontend: http://$VPS_IP/"
+            echo "🔌 API:      http://$VPS_IP/api/health"
