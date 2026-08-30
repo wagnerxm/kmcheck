@@ -17,15 +17,19 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#050505;--bg2:#090A0C;--card:#101114;--surface:#17191D;--elevated:#1C1E22;
-  --border:#1E2024;--border-s:rgba(30,32,36,.4);
+  --border:#1E2024;--border-s:rgba(30,32,36,.45);
   --primary:#FF1F2D;--primary-h:#E6101E;--primary-d:rgba(255,31,45,.1);--primary-g:rgba(255,31,45,.15);
-  --success:#8DFF1F;--success-d:rgba(141,255,31,.1);
+  --primary-glow:rgba(255,31,45,.25);
+  --success:#8DFF1F;--success-d:rgba(141,255,31,.1);--success-glow:rgba(141,255,31,.2);
   --danger:#FF4757;--warning:#FFAA1F;
   --txt:#FFFFFF;--muted:#A7A9AD;--subtle:#65686E;
   --font-d:'Barlow Condensed',system-ui,sans-serif;
   --font-b:'Inter',system-ui,sans-serif;
-  --r:12px;--r-sm:8px;--r-lg:16px;
+  --r:12px;--r-sm:8px;--r-lg:16px;--r-xl:20px;
   --safe-b:env(safe-area-inset-bottom,0px);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 4px 12px rgba(0,0,0,.5);
+  --shadow-glow:0 0 20px -4px var(--primary-glow);
 }
 html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--font-b);background:var(--bg);color:var(--txt);line-height:1.5;
@@ -33,7 +37,7 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--txt);line-height
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-user-select:none}
 img{max-width:100%}
-::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
@@ -53,14 +57,15 @@ img{max-width:100%}
   border-right:1px solid var(--border-s);background:var(--bg2);transition:width .2s}
 #sidebar.collapsed{width:72px}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-#topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
-  padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border-s)}
+#topbar{display:flex;align-items:center;justify-content:space-between;height:52px;
+  padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border-s);
+  background:rgba(5,5,5,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(72px + var(--safe-b))}
-#bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(64px + var(--safe-b));
+  padding-bottom:calc(76px + var(--safe-b))}
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(68px + var(--safe-b));
   padding-bottom:var(--safe-b);display:flex;align-items:center;justify-content:space-around;
-  background:var(--bg2);border-top:1px solid var(--border-s);z-index:50;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  background:rgba(9,10,12,.92);border-top:1px solid var(--border-s);z-index:50;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 
 /* ===== sidebar ===== */
 @media(min-width:1024px){
@@ -91,102 +96,132 @@ img{max-width:100%}
 #sidebar.collapsed .sb-logo{justify-content:center;padding:0}
 #sidebar.collapsed .sb-footer{flex-direction:column;gap:6px}
 
-/* ===== bottom nav ===== */
-.bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;
-  font-size:.625rem;font-weight:600;color:var(--subtle);transition:color .15s;
-  -webkit-tap-highlight-color:transparent;min-width:56px}
+/* ===== bottom nav — redesign premium com 5 itens ===== */
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;
+  font-size:.5625rem;font-weight:600;color:var(--subtle);transition:all .2s;
+  -webkit-tap-highlight-color:transparent;min-width:52px;position:relative;
+  letter-spacing:.04em;text-transform:uppercase}
+.bn-item svg{transition:all .2s}
 .bn-item.active{color:var(--primary)}
-.bn-item.active .bn-dot{opacity:1;transform:scaleX(1)}
-.bn-dot{width:4px;height:4px;border-radius:50%;background:var(--primary);opacity:0;
-  transform:scaleX(0);transition:all .2s}
-.bn-item.disabled{color:var(--border);pointer-events:none}
+.bn-item.active svg{filter:drop-shadow(0 0 6px var(--primary-glow))}
+.bn-item.active::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);
+  width:24px;height:3px;border-radius:0 0 3px 3px;background:var(--primary);
+  box-shadow:0 2px 8px var(--primary-glow)}
 
 /* ===== topbar ===== */
 .tb-brand{display:flex;align-items:center;gap:8px}
 .tb-brand .icon-box{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
   border-radius:6px;background:var(--primary-d)}
-.tb-badge{font-size:.5625rem;font-weight:700;background:var(--primary);color:#fff;
-  padding:1px 5px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em}
+.tb-badge{font-size:.5rem;font-weight:700;background:var(--primary);color:#fff;
+  padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em}
 .tb-actions{display:flex;gap:4px}
 .tb-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
   border-radius:var(--r-sm);color:var(--muted);transition:all .15s}
 .tb-btn:hover{background:rgba(255,255,255,.06);color:var(--txt)}
 
-/* ===== cards ===== */
-.card{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:16px}
-.card-premium{background:var(--card);border:1px solid rgba(255,31,45,.2);border-radius:var(--r-lg);
-  padding:16px;box-shadow:0 0 30px -10px rgba(255,31,45,.12)}
-.card-accent{background:var(--card);border:1px solid rgba(141,255,31,.15);border-radius:var(--r);padding:16px}
+/* ===== cards — sistema de elevação ===== */
+.card{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:16px;
+  transition:border-color .2s}
+.card-premium{background:linear-gradient(135deg,var(--card) 0%,rgba(255,31,45,.04) 100%);
+  border:1px solid rgba(255,31,45,.18);border-radius:var(--r-lg);
+  padding:16px;position:relative;overflow:hidden;
+  box-shadow:0 0 40px -12px rgba(255,31,45,.12),inset 0 1px 0 rgba(255,255,255,.03)}
+.card-accent{background:var(--card);border:1px solid rgba(141,255,31,.12);border-radius:var(--r);padding:16px;
+  box-shadow:0 0 20px -8px var(--success-glow)}
 
 /* ===== chips ===== */
-.chip{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:20px;
+.chip{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;
   font-size:.75rem;font-weight:600;background:var(--surface);color:var(--muted);
-  border:1px solid transparent;transition:all .15s;cursor:pointer;white-space:nowrap;
+  border:1px solid transparent;transition:all .2s;cursor:pointer;white-space:nowrap;
   -webkit-tap-highlight-color:transparent}
-.chip:active{transform:scale(.97)}
-.chip.active{background:var(--primary-d);color:var(--primary);border-color:rgba(255,31,45,.25)}
+.chip:active{transform:scale(.96)}
+.chip.active{background:var(--primary-d);color:var(--primary);border-color:rgba(255,31,45,.3);
+  box-shadow:0 0 12px -4px var(--primary-glow)}
 
 /* ===== page ===== */
-.page{display:none;padding:16px;padding-top:12px}
+.page{display:none;padding:16px;padding-top:14px}
 .page.active{display:block}
-.section{margin-bottom:24px}
+.section{margin-bottom:20px}
+
+/* seção com barra vermelha — identidade visual do layout 01 */
 .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.section-title{font-family:var(--font-d);font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:.03em}
+.section-title{font-family:var(--font-d);font-weight:700;font-size:.9375rem;text-transform:uppercase;
+  letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';display:inline-block;width:3px;height:16px;border-radius:2px;
+  background:var(--primary);flex-shrink:0}
+.section-title svg{color:var(--primary);flex-shrink:0}
 
-/* ===== kpi card ===== */
-.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.kpi{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:12px;text-align:center}
+/* ===== kpi card — redesign com gradientes ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:12px 10px;
+  text-align:center;transition:border-color .2s}
+.kpi:active{border-color:var(--border)}
 .kpi-val{font-family:var(--font-d);font-weight:800;font-size:1.25rem;line-height:1.2}
-.kpi-label{font-size:.6875rem;color:var(--muted);margin-top:2px}
+.kpi-label{font-size:.625rem;color:var(--subtle);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.kpi-trend{font-size:.5625rem;font-weight:600;margin-top:2px}
 
-/* ===== opportunity row ===== */
+/* ===== opportunity row — visual premium ===== */
 .opp-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);
   border:1px solid var(--border-s);border-radius:var(--r);margin-bottom:8px;
-  transition:border-color .15s;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.opp-row:active{transform:scale(.985);border-color:var(--border)}
+  transition:all .15s;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.opp-row:active{transform:scale(.985);border-color:rgba(255,255,255,.08)}
 .opp-teams{display:flex;align-items:center}
 .team-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--card)}
+  font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--card);
+  box-shadow:var(--shadow-sm)}
 .team-circle.away{margin-left:-10px}
 .opp-info{flex:1;min-width:0}
 .opp-match{font-size:.8125rem;font-weight:600;line-height:1.3}
 .opp-meta{font-size:.6875rem;color:var(--subtle)}
 .opp-edge{text-align:right;flex-shrink:0}
-.opp-edge-val{font-family:var(--font-d);font-weight:700;font-size:1rem;color:var(--success)}
-.opp-edge-label{font-size:.625rem;color:var(--subtle)}
+/* badge de edge com fundo gradiente verde */
+.edge-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:6px;
+  background:var(--success-d);border:1px solid rgba(141,255,31,.15);
+  font-family:var(--font-d);font-weight:700;font-size:.875rem;color:var(--success)}
+.opp-edge-label{font-size:.5625rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 
-/* ===== hero card ===== */
+/* ===== hero card — layout 01 premium ===== */
 .hero{position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:0;right:0;width:120px;height:120px;
-  background:radial-gradient(circle,var(--primary-g),transparent 70%);pointer-events:none}
-.hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.hero-badge{font-size:.625rem;font-weight:700;background:var(--primary);color:#fff;
-  padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.05em}
-.hero-teams{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.hero::before{content:'';position:absolute;top:-20px;right:-20px;width:160px;height:160px;
+  background:radial-gradient(circle,rgba(255,31,45,.2),transparent 65%);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-40px;left:-40px;width:120px;height:120px;
+  background:radial-gradient(circle,rgba(255,31,45,.08),transparent 65%);pointer-events:none}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.hero-badge{display:inline-flex;align-items:center;gap:4px;font-size:.625rem;font-weight:700;
+  background:var(--primary);color:#fff;padding:4px 10px;border-radius:6px;
+  text-transform:uppercase;letter-spacing:.05em;
+  box-shadow:0 2px 8px rgba(255,31,45,.3)}
+.hero-teams{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .hero-team{display:flex;align-items:center;gap:8px}
-.hero-team-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:.75rem;font-weight:700;color:#fff}
+.hero-team-circle{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.75rem;font-weight:700;color:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .hero-vs{font-family:var(--font-d);font-weight:700;color:var(--subtle);font-size:.875rem}
-.hero-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.hero-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;
+  padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
 .hero-metric{text-align:center}
 .hero-metric-val{font-family:var(--font-d);font-weight:800;font-size:1.125rem}
-.hero-metric-label{font-size:.625rem;color:var(--subtle);margin-top:1px}
+.hero-metric-label{font-size:.5625rem;color:var(--subtle);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
 
 /* ===== gauge ===== */
 .gauge{display:inline-flex;align-items:center;justify-content:center;position:relative}
 .gauge-text{position:absolute;font-family:var(--font-d);font-weight:700;text-align:center}
 
-/* ===== date scroll ===== */
+/* ===== date scroll — pílulas com glow ativo ===== */
 .date-scroll{display:flex;gap:6px;overflow-x:auto;padding:4px 0;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;-ms-overflow-style:none}
 .date-scroll::-webkit-scrollbar{display:none}
-.date-pill{display:flex;flex-direction:column;align-items:center;padding:6px 10px;
-  border-radius:var(--r-sm);background:var(--surface);min-width:44px;cursor:pointer;
-  transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
-.date-pill.active{background:var(--primary);color:#fff}
+.date-pill{display:flex;flex-direction:column;align-items:center;padding:8px 10px;
+  border-radius:var(--r);background:var(--surface);min-width:46px;cursor:pointer;
+  transition:all .2s;flex-shrink:0;-webkit-tap-highlight-color:transparent;
+  border:1px solid transparent}
+.date-pill.active{background:var(--primary);color:#fff;border-color:rgba(255,31,45,.5);
+  box-shadow:0 0 16px -4px var(--primary-glow)}
 .date-pill .dow{font-size:.5625rem;font-weight:600;text-transform:uppercase;color:var(--subtle)}
-.date-pill.active .dow{color:rgba(255,255,255,.7)}
-.date-pill .day{font-family:var(--font-d);font-weight:700;font-size:1rem;line-height:1.2}
+.date-pill.active .dow{color:rgba(255,255,255,.75)}
+.date-pill .day{font-family:var(--font-d);font-weight:700;font-size:1.125rem;line-height:1.2}
+.date-pill .month{font-size:.5rem;font-weight:500;color:var(--subtle);text-transform:uppercase}
+.date-pill.active .month{color:rgba(255,255,255,.6)}
 
 /* ===== odds grid ===== */
 .odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
@@ -206,9 +241,9 @@ img{max-width:100%}
   overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:1;padding:8px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:600;
-  text-align:center;color:var(--muted);transition:all .15s;cursor:pointer;white-space:nowrap;
+  text-align:center;color:var(--muted);transition:all .2s;cursor:pointer;white-space:nowrap;
   min-width:0;-webkit-tap-highlight-color:transparent}
-.tab.active{background:var(--card);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tab.active{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 
 /* ===== filter bar ===== */
 .filter-bar{display:flex;gap:6px;overflow-x:auto;padding:4px 0;margin-bottom:12px;
@@ -227,15 +262,16 @@ img{max-width:100%}
 /* ===== detail sheet ===== */
 #detail-sheet{position:fixed;inset:0;z-index:100;display:none;flex-direction:column}
 #detail-sheet.open{display:flex}
-.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .sheet-body{position:absolute;bottom:0;left:0;right:0;max-height:92dvh;background:var(--bg2);
-  border-radius:var(--r-lg) var(--r-lg) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  animation:sheetUp .25s ease-out}
+  border-radius:var(--r-xl) var(--r-xl) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  animation:sheetUp .28s cubic-bezier(.22,1,.36,1)}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto}
 .sheet-close{position:absolute;top:12px;right:12px;width:32px;height:32px;display:flex;
   align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);
-  background:var(--surface);z-index:1}
+  background:var(--surface);z-index:1;transition:all .15s}
+.sheet-close:active{background:var(--elevated)}
 
 /* ===== model probs ===== */
 .model-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -247,19 +283,20 @@ img{max-width:100%}
 /* ===== mobile drawer ===== */
 #mobile-drawer{position:fixed;inset:0;z-index:60;display:none}
 #mobile-drawer.open{display:block}
-.drawer-bg{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+.drawer-bg{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .drawer-body{position:absolute;inset:0;right:auto;width:260px;background:var(--bg2);
-  border-right:1px solid var(--border-s);animation:drawerIn .2s ease-out}
+  border-right:1px solid var(--border-s);animation:drawerIn .22s cubic-bezier(.22,1,.36,1)}
 @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
 /* ===== animações ===== */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .35s ease-out both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease-out both}
 .skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--elevated) 50%,var(--surface) 75%);
   background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r-sm)}
 @keyframes shimmer{to{background-position:-200% 0}}
 .interactive{transition:transform .1s}
 .interactive:active{transform:scale(.98)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* ===== calibration table ===== */
 .cal-table{width:100%;border-collapse:collapse;font-size:.75rem}
@@ -268,6 +305,16 @@ img{max-width:100%}
 .cal-table td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--border-s)}
 .cal-table tr:last-child td{border-bottom:none}
 .cal-table .val-positive{color:var(--success)}.cal-table .val-negative{color:var(--danger)}
+
+/* ===== stat-pill — mini indicador no topbar/header ===== */
+.stat-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;
+  font-size:.5625rem;font-weight:600;letter-spacing:.04em}
+.stat-pill--live{background:var(--success-d);color:var(--success)}
+.stat-pill--offline{background:rgba(255,71,87,.1);color:var(--danger)}
+.stat-pill--demo{background:var(--primary-d);color:var(--primary)}
+.stat-pill__dot{width:5px;height:5px;border-radius:50%;display:inline-block}
+.stat-pill--live .stat-pill__dot{background:var(--success);animation:pulse 2s ease-in-out infinite}
+.stat-pill--offline .stat-pill__dot{background:var(--danger)}
 
 /* ===== util ===== */
 .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
@@ -307,7 +354,8 @@ img{max-width:100%}
         </span>
         <span class="tb-badge">PRO</span>
       </div>
-      <div class="tb-actions">
+      <div class="tb-actions" style="display:flex;align-items:center;gap:6px">
+        <div id="sb-status"></div>
         <button class="tb-btn" id="tb-bell" aria-label="Notificações"></button>
       </div>
     </header>
@@ -359,6 +407,7 @@ clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
 sort:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
 eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
 trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+settings:'<circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>',
 };
 function icon(name,size=20,cls=''){
   return `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[name]||''}</svg>`;
@@ -429,22 +478,24 @@ function updateConnectionStatus(){
   const el=$('#sb-status');
   if(!el) return;
   if(sbOnline){
-    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;
-      background:rgba(141,255,31,.1);color:var(--success);font-size:.625rem;font-weight:600;letter-spacing:.04em">
-      <span style="width:5px;height:5px;border-radius:50%;background:var(--success);display:inline-block"></span>
+    el.innerHTML=`<span class="stat-pill stat-pill--live">
+      <span class="stat-pill__dot"></span>
       SUPABASE ${sbLeagues.length} LIGAS</span>`;
   }else{
-    el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;
-      background:rgba(255,71,87,.1);color:var(--danger);font-size:.625rem;font-weight:600;letter-spacing:.04em">
-      <span style="width:5px;height:5px;border-radius:50%;background:var(--danger);display:inline-block"></span>
+    el.innerHTML=`<span class="stat-pill stat-pill--offline">
+      <span class="stat-pill__dot"></span>
       OFFLINE</span>`;
   }
   /* badge demo/live */
   const badge=$('#mode-badge');
   if(badge){
-    badge.textContent=liveMode?'LIVE':'DEMO';
-    badge.style.background=liveMode?'var(--success-d)':'var(--primary-d)';
-    badge.style.color=liveMode?'var(--success)':'var(--primary)';
+    if(liveMode){
+      badge.className='stat-pill stat-pill--live';
+      badge.innerHTML='<span class="stat-pill__dot"></span> LIVE';
+    }else{
+      badge.className='stat-pill stat-pill--demo';
+      badge.textContent='DEMO';
+    }
   }
 }
 
@@ -607,8 +658,16 @@ function sparkline(data,w=100,h=32,color='var(--success)'){
   if(!data.length)return '';
   const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
   const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/range)*h*.85-h*.075}`).join(' ');
+  /* área preenchida para efeito premium */
+  const areaPath=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/range)*h*.85-h*.075}`).join(' ');
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block">
+    <defs><linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity=".25"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${areaPath} ${w},${h} 0,${h}" fill="url(#spGrad)"/>
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${w}" cy="${pts.split(' ').pop().split(',')[1]}" r="3" fill="${color}"/>
   </svg>`;
 }
 
@@ -643,13 +702,13 @@ function areaChart(data,labels,w=300,h=140,color='var(--primary)'){
   }
   return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
     ${gridLines}${xLabels}
-    <polygon points="${areaPath}" fill="url(#areaGrad)" opacity=".3"/>
-    <polyline points="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${pts[pts.length-1].split(',')[0]}" cy="${pts[pts.length-1].split(',')[1]}" r="4" fill="${color}"/>
     <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${color}" stop-opacity=".4"/>
+      <stop offset="0%" stop-color="${color}" stop-opacity=".35"/>
       <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
     </linearGradient></defs>
+    <polygon points="${areaPath}" fill="url(#areaGrad)"/>
+    <polyline points="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${pts[pts.length-1].split(',')[0]}" cy="${pts[pts.length-1].split(',')[1]}" r="4" fill="${color}"/>
   </svg>`;
 }
 
@@ -709,21 +768,20 @@ function updateNav(){
   });
 }
 
-/* ===== render bottom nav ===== */
+/* ===== render bottom nav — 5 itens, layout 01 ===== */
 function renderBottomNav(){
   const nav=$('#bottom-nav');
+  const items=[...PAGES,{id:'perfil',label:'Perfil',icon:'user'}];
   let h='';
-  PAGES.forEach(p=>{
-    h+=`<button class="bn-item${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}')">
-      ${icon(p.icon,22)}
-      <span class="upper" style="font-size:.5625rem">${p.label}</span>
-      <div class="bn-dot"></div>
+  items.forEach(p=>{
+    const isActive=p.id===currentPage;
+    const isPerfil=p.id==='perfil';
+    h+=`<button class="bn-item${isActive?' active':''}" data-page="${p.id}"
+      onclick="${isPerfil?'':`navigate('${p.id}')`}">
+      ${icon(p.icon,21)}
+      <span>${p.label}</span>
     </button>`;
   });
-  /* perfil desabilitado */
-  h+=`<button class="bn-item disabled">
-    ${icon('user',22)}<span class="upper" style="font-size:.5625rem">Perfil</span><div class="bn-dot"></div>
-  </button>`;
   nav.innerHTML=h;
 }
 
@@ -763,13 +821,6 @@ function renderTopbar(){
   $('#tb-icon').innerHTML=icon('trending',16,'');
   $('#tb-icon').style.cssText='width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--primary-d);color:var(--primary)';
   $('#tb-bell').innerHTML=icon('bell',18);
-  /* indicador de conexão Supabase no topbar */
-  const tbR=$('#topbar');
-  if(!$('#sb-status')){
-    const st=document.createElement('div');st.id='sb-status';
-    st.style.cssText='margin-left:auto;margin-right:8px';
-    tbR.insertBefore(st,$('#tb-bell'));
-  }
 }
 
 /* ===== drawer mobile ===== */
@@ -829,12 +880,14 @@ function renderPlaceholder(title,desc,ic){
 function renderDashboard(){
   /* datas para o scroll horizontal */
   const today=new Date();
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const dates=[];
   for(let i=-2;i<=5;i++){
     const d=new Date(today);d.setDate(d.getDate()+i);
     dates.push({
       dow:d.toLocaleDateString('pt-BR',{weekday:'short'}).slice(0,3).toUpperCase(),
       day:d.getDate(),
+      month:months[d.getMonth()],
       full:d.toISOString().slice(0,10),
       isToday:i===0
     });
@@ -851,17 +904,16 @@ function renderDashboard(){
 
   return `<div class="page active fade-in">
     <!-- saudação -->
-    <div class="section">
+    <div class="section" style="margin-bottom:14px">
       <div class="flex items-center gap-2">
-        <h1 class="font-d fw8 fs-hero">${greeting()}, Wagner</h1>
-        <span id="mode-badge" style="padding:2px 6px;border-radius:4px;font-size:.5625rem;font-weight:700;
-          letter-spacing:.06em;background:var(--primary-d);color:var(--primary)">DEMO</span>
+        <h1 class="font-d fw8 fs-hero" style="line-height:1.1">${greeting()}, Wagner</h1>
+        <span id="mode-badge" class="stat-pill stat-pill--demo">DEMO</span>
       </div>
-      <p class="c-muted fs-sm mt-2">${OPPS.length} oportunidades ativas · ${OPPS.filter(o=>o.score>=80).length} com score alto</p>
+      <p class="c-subtle fs-sm" style="margin-top:6px">${OPPS.length} oportunidades ativas · <span style="color:var(--success)">${OPPS.filter(o=>o.score>=80).length} score alto</span></p>
     </div>
 
-    <!-- filtro de esporte -->
-    <div class="section" style="margin-bottom:16px">
+    <!-- filtro de esporte — chips com ícones -->
+    <div class="section" style="margin-bottom:14px">
       <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none">
         <button class="chip active" data-sport="futebol" onclick="setSport(this)">⚽ Futebol</button>
         <button class="chip" data-sport="basquete" onclick="setSport(this)">🏀 Basquete</button>
@@ -870,41 +922,46 @@ function renderDashboard(){
       </div>
     </div>
 
-    <!-- calendário horizontal -->
+    <!-- calendário horizontal com mês -->
     <div class="section" style="margin-bottom:16px">
       <div class="date-scroll">
         ${dates.map((d,i)=>`<button class="date-pill${d.isToday?' active':''}" data-idx="${i}" onclick="setDate(this)">
-          <span class="dow">${d.dow}</span><span class="day">${d.day}</span>
+          <span class="dow">${d.dow}</span><span class="day">${d.day}</span><span class="month">${d.month}</span>
         </button>`).join('')}
       </div>
     </div>
 
-    <!-- hero card -->
+    <!-- hero card — melhor oportunidade, design premium -->
     <div class="section">
       <div class="card-premium hero">
         <div class="hero-top">
           <div>
-            <span class="hero-badge">${icon('zap',10)} Melhor Oportunidade</span>
-            <p class="c-subtle fs-xs mt-2">${hero.league} · ${hero.round}</p>
+            <span class="hero-badge">${icon('zap',10)} MELHOR OPORTUNIDADE</span>
+            <p class="c-subtle fs-xs" style="margin-top:6px">${hero.league} · ${hero.round}</p>
           </div>
-          ${gauge(hero.score,56,4)}
+          ${gauge(hero.score,58,4)}
         </div>
         <div class="hero-teams" onclick="openSheet(${hero.id})" style="cursor:pointer">
           <div class="hero-team">
-            ${teamCircle(hero.home,40)}
-            <span class="fw6 fs-base">${hero.home}</span>
+            ${teamCircle(hero.home,42)}
+            <div>
+              <span class="fw6 fs-base">${hero.home}</span>
+              <div class="fs-xs c-subtle">${fmtDate(hero.date)} ${fmtTime(hero.date)}</div>
+            </div>
           </div>
-          <span class="hero-vs">vs</span>
+          <span class="hero-vs">VS</span>
           <div class="hero-team">
-            <span class="fw6 fs-base">${hero.away}</span>
-            ${teamCircle(hero.away,40)}
+            <div style="text-align:right">
+              <span class="fw6 fs-base">${hero.away}</span>
+              <div class="fs-xs c-subtle">${hero.market} · ${hero.sel}</div>
+            </div>
+            ${teamCircle(hero.away,42)}
           </div>
         </div>
-        <p class="c-muted fs-xs">${hero.market} · ${hero.sel} · ${fmtDate(hero.date)} ${fmtTime(hero.date)}</p>
         <div class="hero-metrics">
           <div class="hero-metric">
             <div class="hero-metric-val c-success">${fmtPct(hero.edge)}</div>
-            <div class="hero-metric-label">EDGE</div>
+            <div class="hero-metric-label">Edge</div>
           </div>
           <div class="hero-metric">
             <div class="hero-metric-val c-success">${fmtPct(hero.ev)}</div>
@@ -918,29 +975,32 @@ function renderDashboard(){
       </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- KPIs — grid refinado -->
     <div class="section">
       <div class="kpi-grid">
         <div class="kpi">
           <div class="kpi-val c-success">${fmtPct(KPIS.roi)}</div>
           <div class="kpi-label">ROI</div>
+          <div class="kpi-trend" style="color:var(--success)">▲ 2.1% 30d</div>
         </div>
         <div class="kpi">
           <div class="kpi-val">${KPIS.hitRate}%</div>
           <div class="kpi-label">Hit Rate</div>
+          <div class="kpi-trend" style="color:var(--success)">▲ 3.8%</div>
         </div>
         <div class="kpi">
           <div class="kpi-val c-primary">${KPIS.activeBets}</div>
           <div class="kpi-label">Ativas</div>
+          <div class="kpi-trend c-subtle">+4 hoje</div>
         </div>
       </div>
     </div>
 
-    <!-- top oportunidades -->
+    <!-- top oportunidades — com barra vermelha no título -->
     <div class="section">
       <div class="section-head">
-        <h3 class="section-title">${icon('target',16)} Top Oportunidades</h3>
-        <button class="c-primary fs-xs fw6" onclick="navigate('oportunidades')">Ver todas →</button>
+        <h3 class="section-title">${icon('target',15)} Top Oportunidades</h3>
+        <button class="c-primary fs-xs fw6" onclick="navigate('oportunidades')" style="white-space:nowrap">Ver todas →</button>
       </div>
       ${top5.map(o=>`
         <div class="opp-row interactive" onclick="openSheet(${o.id})">
@@ -952,8 +1012,8 @@ function renderDashboard(){
             <div class="opp-match">${o.home} vs ${o.away}</div>
             <div class="opp-meta">${o.market} · ${o.sel} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
           </div>
-          <div class="opp-edge">
-            <div class="opp-edge-val">${fmtPct(o.edge)}</div>
+          <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <div class="edge-badge">${fmtPct(o.edge)}</div>
             <div class="opp-edge-label">Edge</div>
           </div>
         </div>
@@ -963,7 +1023,7 @@ function renderDashboard(){
     <!-- movimento de odds (mini chart) -->
     <div class="section">
       <div class="section-head">
-        <h3 class="section-title">${icon('trending',16)} Movimento de Odds</h3>
+        <h3 class="section-title">${icon('trending',15)} Movimento de Odds</h3>
       </div>
       <div class="chart-wrap">
         <div class="flex items-center justify-between mb-2">
@@ -976,14 +1036,14 @@ function renderDashboard(){
             <div class="fs-xs c-subtle">Atual</div>
           </div>
         </div>
-        ${sparkline(oddsMovement,280,40,'var(--success)')}
+        ${sparkline(oddsMovement,280,44,'var(--success)')}
       </div>
     </div>
 
     <!-- performance do modelo -->
     <div class="section">
       <div class="section-head">
-        <h3 class="section-title">${icon('chart',16)} Modelo</h3>
+        <h3 class="section-title">${icon('chart',15)} Modelo</h3>
       </div>
       <div class="grid-2">
         <div class="kpi">
@@ -1012,7 +1072,7 @@ function renderOportunidades(){
   return `<div class="page active fade-in">
     <div class="section">
       <h2 class="font-d fw8 fs-2xl upper">Oportunidades</h2>
-      <p class="c-muted fs-sm mt-2">${filtered.length} oportunidade${filtered.length!==1?'s':''} encontrada${filtered.length!==1?'s':''}</p>
+      <p class="c-subtle fs-sm mt-2">${filtered.length} oportunidade${filtered.length!==1?'s':''} encontrada${filtered.length!==1?'s':''}</p>
     </div>
 
     <!-- filtros -->
@@ -1046,8 +1106,9 @@ function renderOportunidades(){
             <div class="opp-meta">${o.league} · ${o.market} · ${o.sel}</div>
             <div class="opp-meta">${fmtDate(o.date)} ${fmtTime(o.date)} · ${o.bestBook} @ ${o.bestOdds.toFixed(2)}</div>
           </div>
-          <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
             ${gauge(o.score,44,3)}
+            <div class="edge-badge" style="font-size:.75rem;padding:2px 6px">${fmtPct(o.edge)}</div>
           </div>
         </div>
       `).join('')}
@@ -1066,7 +1127,7 @@ function renderOdds(){
   return `<div class="page active fade-in">
     <div class="section">
       <h2 class="font-d fw8 fs-2xl upper">Comparação de Odds</h2>
-      <p class="c-muted fs-sm mt-2">Odds ao vivo de ${BOOKS.length} casas</p>
+      <p class="c-subtle fs-sm mt-2">Odds ao vivo de ${BOOKS.length} casas</p>
     </div>
 
     <!-- seletor de jogos (chips) -->
@@ -1093,7 +1154,7 @@ function renderOdds(){
     <!-- fair probs -->
     <div class="section mt-4">
       <div class="section-head">
-        <h3 class="section-title">${icon('eye',16)} Fair Probabilities (Ensemble)</h3>
+        <h3 class="section-title">${icon('eye',15)} Fair Probabilities (Ensemble)</h3>
       </div>
       <div class="card" id="odds-fair-section">
         ${renderFairProbs(selected)}
@@ -1144,7 +1205,7 @@ function renderFairProbs(o){
   </div>
   <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-s)" class="flex items-center justify-between">
     <span class="fs-sm c-muted">Edge detectado</span>
-    <span class="font-d fw7 fs-lg c-success">${fmtPct(o.edge)}</span>
+    <span class="edge-badge">${fmtPct(o.edge)}</span>
   </div>`;
 }
 
@@ -1153,7 +1214,7 @@ function renderAnalises(){
   return `<div class="page active fade-in">
     <div class="section">
       <h2 class="font-d fw8 fs-2xl upper">Centro de Inteligência</h2>
-      <p class="c-muted fs-sm mt-2">Desempenho consolidado dos modelos</p>
+      <p class="c-subtle fs-sm mt-2">Desempenho consolidado dos modelos</p>
     </div>
 
     <!-- tabs -->
