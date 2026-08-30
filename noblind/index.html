@@ -41,34 +41,33 @@ img{max-width:100%}
 
 /* ===== layout ===== */
 #app{display:flex;height:100dvh;width:100%}
-#sidebar{display:none;flex-direction:column;width:260px;flex-shrink:0;
-  background:var(--card);border-right:1px solid var(--border)}
+#sidebar{display:none}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
 #topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
   padding:0 20px;flex-shrink:0;background:var(--bg)}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(88px + var(--safe-b))}
+  padding-bottom:calc(96px + var(--safe-b))}
 
-/* ===== bottom nav — Paytin: barra escura arredondada no centro ===== */
-#bottom-nav{position:fixed;bottom:0;left:0;right:0;
-  padding:8px 16px calc(8px + var(--safe-b));
+/* ===== bottom nav — dock flutuante premium (estilo KM Check) ===== */
+#bottom-nav{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(6px + var(--safe-b));
   display:flex;align-items:center;justify-content:center;
   z-index:50}
 .bn-bar{display:flex;align-items:center;gap:4px;
-  background:var(--dark);border-radius:999px;padding:6px 8px;
-  box-shadow:0 8px 32px rgba(0,0,0,.18)}
-.bn-item{display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:10px 16px;border-radius:999px;
-  font-size:.75rem;font-weight:600;color:rgba(255,255,255,.45);
-  transition:all .25s ease;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+  background:linear-gradient(135deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 55%),rgba(24,26,28,.78);
+  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+  border-radius:999px;padding:6px;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.25),
+    0 14px 34px rgba(0,0,0,.45)}
+.bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  padding:10px 20px;border-radius:999px;
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.4);
+  transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;white-space:nowrap;
+  cursor:pointer}
 .bn-item.active{background:var(--lime);color:var(--dark)}
 .bn-item svg{flex-shrink:0}
-
-@media(min-width:1024px){
-  #sidebar{display:flex}
-  #bottom-nav{display:none}
-  #content{padding-bottom:0}
-}
+.bn-item .ic{line-height:0}
 
 /* ===== sidebar (desktop) ===== */
 .sb-logo{display:flex;align-items:center;gap:10px;height:56px;padding:0 20px;flex-shrink:0}
@@ -559,7 +558,7 @@ const PAGES=[
   {id:'dashboard',label:'Início',icon:'home'},
   {id:'oportunidades',label:'Valor',icon:'target'},
   {id:'odds',label:'Odds',icon:'trending'},
-  {id:'analises',label:'Stats',icon:'chart'},
+  {id:'analises',label:'Análise',icon:'chart'},
 ];
 
 function navigate(page){currentPage=page;renderPage();updateNav();$('#content').scrollTop=0}
@@ -568,14 +567,14 @@ function updateNav(){
   $$('.sb-link').forEach(l=>l.classList.toggle('active',l.dataset.page===currentPage));
 }
 
-/* ===== bottom nav — Paytin: barra flutuante escura com cápsula ativa ===== */
+/* ===== bottom nav — dock flutuante premium (estilo KM Check) ===== */
 function renderBottomNav(){
   const nav=$('#bottom-nav');
   let h='<div class="bn-bar">';
   PAGES.forEach(p=>{
     const isActive=p.id===currentPage;
     h+=`<button class="bn-item${isActive?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}')">
-      ${icon(p.icon,18)}${isActive?`<span>${p.label}</span>`:''}
+      <span class="ic">${icon(p.icon,21)}</span><span>${p.label}</span>
     </button>`;
   });
   h+='</div>';
