@@ -14,6 +14,7 @@
     "bullmq": "^5.20.0",
     "ioredis": "^5.4.1",
     "@supabase/supabase-js": "^2.45.0",
+    "ws": "^8.18.0",
     "dotenv": "^16.4.0",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
