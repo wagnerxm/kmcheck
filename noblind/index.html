@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#050505">
+<meta name="theme-color" content="#0c0c0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="NO.BLIND — Plataforma de análise esportiva com modelos estatísticos">
@@ -13,72 +13,71 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ===== reset & tokens ===== */
+/* ===== reset & tokens — estilo PATODesempenho ===== */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#050505;--bg2:#090A0C;--card:#101114;--surface:#17191D;--elevated:#1C1E22;
-  --border:#1E2024;--border-s:rgba(30,32,36,.45);
-  --primary:#FF1F2D;--primary-h:#E6101E;--primary-d:rgba(255,31,45,.1);--primary-g:rgba(255,31,45,.15);
-  --primary-glow:rgba(255,31,45,.25);
-  --success:#8DFF1F;--success-d:rgba(141,255,31,.1);--success-glow:rgba(141,255,31,.2);
+  --bg:#0c0c0e;--bg2:#0f0f12;--card:#1a1a1e;--surface:#28282e;--elevated:#32323a;
+  --border-s:rgba(50,50,58,.3);
+  --primary:#FF1F2D;--primary-d:rgba(255,31,45,.12);--primary-glow:rgba(255,31,45,.2);
+  --success:#8DFF1F;--success-d:rgba(141,255,31,.12);--success-glow:rgba(141,255,31,.2);
   --danger:#FF4757;--warning:#FFAA1F;
-  --txt:#FFFFFF;--muted:#A7A9AD;--subtle:#65686E;
+  --txt:#FFFFFF;--muted:#9a9ca2;--subtle:#5c5e64;
   --font-d:'Barlow Condensed',system-ui,sans-serif;
   --font-b:'Inter',system-ui,sans-serif;
-  --r:12px;--r-sm:8px;--r-lg:16px;--r-xl:20px;
+  --r:18px;--r-sm:10px;--r-lg:22px;--r-xl:26px;
   --safe-b:env(safe-area-inset-bottom,0px);
-  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
-  --shadow-md:0 4px 12px rgba(0,0,0,.5);
-  --shadow-glow:0 0 20px -4px var(--primary-glow);
 }
 html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--font-b);background:var(--bg);color:var(--txt);line-height:1.5;
-  overflow:hidden;height:100dvh;position:fixed;width:100%;top:0;left:0;
-  background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(255,31,45,.05),transparent),
-    radial-gradient(ellipse 50% 30% at 100% 0%,rgba(255,31,45,.02),transparent);
-  background-attachment:fixed}
+  overflow:hidden;height:100dvh;position:fixed;width:100%;top:0;left:0}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-user-select:none}
 img{max-width:100%}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--surface);border-radius:4px}
 
 /* ===== tipografia ===== */
 .font-d{font-family:var(--font-d)}
 .fw6{font-weight:600}.fw7{font-weight:700}.fw8{font-weight:800}
-.fs-xs{font-size:.6875rem}.fs-sm{font-size:.75rem}.fs-base{font-size:.875rem}
-.fs-lg{font-size:1rem}.fs-xl{font-size:1.125rem}.fs-2xl{font-size:1.25rem}
-.fs-3xl{font-size:1.5rem}.fs-hero{font-size:1.75rem}
-.upper{text-transform:uppercase;letter-spacing:.05em}
+.upper{text-transform:uppercase;letter-spacing:.06em}
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.c-muted{color:var(--muted)}.c-subtle{color:var(--subtle)}.c-primary{color:var(--primary)}.c-success{color:var(--success)}
 
-/* ===== layout ===== */
+/* ===== layout principal ===== */
 #app{display:flex;height:100dvh;width:100%}
+/* sidebar — apenas desktop */
 #sidebar{display:none;flex-direction:column;width:240px;flex-shrink:0;
   border-right:1px solid var(--border-s);background:var(--bg2);transition:width .2s}
 #sidebar.collapsed{width:72px}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-/* topbar — layout 01: h-14 (56px), sem hambúrguer */
-#topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
-  padding:0 16px;flex-shrink:0;border-bottom:1px solid rgba(30,32,36,.3);
-  background:rgba(5,5,5,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+/* topbar — PATODesempenho: nome do app à esquerda, versão à direita */
+#topbar{display:flex;align-items:center;justify-content:space-between;height:52px;
+  padding:0 20px;flex-shrink:0;background:var(--bg)}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(76px + var(--safe-b))}
-/* bottom nav — layout 01: borda sutil, backdrop blur */
-#bottom-nav{position:fixed;bottom:0;left:0;right:0;
-  padding-bottom:var(--safe-b);display:flex;align-items:center;
-  background:rgba(9,10,12,.95);border-top:1px solid rgba(30,32,36,.4);z-index:50;
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  padding-bottom:calc(84px + var(--safe-b))}
 
-/* ===== sidebar ===== */
+/* ===== bottom nav — PATODesempenho: cápsula arredondada no item ativo ===== */
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;
+  padding:6px 16px calc(6px + var(--safe-b));
+  display:flex;align-items:center;gap:6px;
+  background:rgba(14,14,16,.96);border-top:1px solid rgba(50,50,58,.25);
+  z-index:50;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;
+  flex:1;padding:10px 6px;border-radius:20px;
+  font-size:.5625rem;font-weight:600;color:var(--subtle);
+  text-transform:uppercase;letter-spacing:.06em;
+  transition:all .25s ease;-webkit-tap-highlight-color:transparent}
+/* cápsula ativa — fundo escuro arredondado, ícone e texto em cor de destaque */
+.bn-item.active{background:var(--card);color:var(--primary);
+  box-shadow:inset 0 0 0 1px rgba(255,31,45,.1)}
+
+/* ===== sidebar (desktop) ===== */
 @media(min-width:1024px){
   #sidebar{display:flex}
   #bottom-nav{display:none}
   #content{padding-bottom:0}
 }
-.sb-logo{display:flex;align-items:center;gap:8px;height:56px;padding:0 16px;flex-shrink:0}
+.sb-logo{display:flex;align-items:center;gap:8px;height:52px;padding:0 16px;flex-shrink:0}
 .sb-logo .icon-box{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
   border-radius:var(--r-sm);background:var(--primary-d)}
 .sb-nav{flex:1;overflow-y:auto;padding:12px}
@@ -100,163 +99,131 @@ img{max-width:100%}
 #sidebar.collapsed .sb-logo{justify-content:center;padding:0}
 #sidebar.collapsed .sb-footer{flex-direction:column;gap:6px}
 
-/* ===== bottom nav — layout 01: ícone ativo com fundo sutil, sem barra superior ===== */
-.bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;flex:1;
-  font-size:.625rem;font-weight:500;color:var(--subtle);transition:color .2s;
-  -webkit-tap-highlight-color:transparent;text-transform:uppercase}
-.bn-item.active{color:var(--primary)}
-.bn-item.disabled{color:rgba(101,104,110,.5);pointer-events:none}
-.bn-icon-wrap{display:flex;align-items:center;justify-content:center;width:28px;height:28px;
-  border-radius:8px;transition:background .2s}
-.bn-item.active .bn-icon-wrap{background:rgba(255,31,45,.1)}
+/* ===== topbar ===== */
+.tb-brand{display:flex;align-items:center;gap:6px}
+.tb-logo{font-family:var(--font-d);font-size:1.25rem;font-weight:700;text-transform:uppercase;letter-spacing:-.01em}
+.tb-actions{display:flex;align-items:center;gap:8px}
+.tb-version{font-size:.75rem;color:var(--subtle);font-weight:500}
 
-/* ===== topbar — layout 01: logo tipográfico, PRO badge, bookmark + sino ===== */
-.tb-brand{display:flex;align-items:center;gap:8px}
-.tb-logo{font-family:var(--font-d);font-size:1.125rem;font-weight:700;text-transform:uppercase;letter-spacing:-.01em}
-.tb-badge{font-size:.625rem;font-weight:700;background:var(--primary);color:#fff;
-  padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;margin-left:2px}
-.tb-actions{display:flex;align-items:center;gap:4px}
-.tb-btn{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-  border-radius:var(--r-sm);color:var(--muted);transition:all .15s}
-.tb-btn:hover,.tb-btn:active{background:rgba(255,255,255,.06);color:var(--txt)}
-.tb-notif-dot{position:absolute;right:8px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+/* ===== cards — PATODesempenho: arredondados, sem borda, fundo elevado ===== */
+.card{background:var(--card);border-radius:var(--r);padding:20px}
+.card-accent{background:var(--card);border:2px solid var(--primary);border-radius:var(--r);
+  padding:20px;box-shadow:0 0 24px -4px var(--primary-glow)}
 
-/* ===== cards — sistema de elevação ===== */
-.card{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:16px;
-  transition:border-color .2s}
-/* card-premium — layout 01: fundo superfície, borda vermelha sutil, raio xl */
-.card-premium{background:var(--surface);border:1px solid rgba(30,32,36,.4);border-radius:var(--r-lg);
-  padding:16px;position:relative;overflow:hidden;
-  box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.card-accent{background:var(--card);border:1px solid rgba(141,255,31,.12);border-radius:var(--r);padding:16px;
-  box-shadow:0 0 20px -8px var(--success-glow)}
+/* ===== KPI cards — números grandes centralizados ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--card);border-radius:var(--r);padding:16px 12px;text-align:center}
+.kpi-val{font-family:var(--font-d);font-weight:800;font-size:1.75rem;line-height:1.1}
+.kpi-label{font-size:.625rem;color:var(--subtle);margin-top:6px;text-transform:uppercase;
+  letter-spacing:.06em;font-weight:600}
 
-/* ===== chips — layout 01: ativo = fundo vermelho sólido ===== */
+/* ===== section label — PATODesempenho: uppercase cinza com tracking largo ===== */
+.section-label{font-size:.75rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--subtle);padding:0 4px}
+
+/* ===== indicator card — card de oportunidade estilo PATODesempenho ===== */
+.ind-card{background:var(--card);border-radius:var(--r);padding:20px;cursor:pointer;
+  transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.ind-card:active{transform:scale(.985)}
+.ind-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.ind-title{font-weight:700;font-size:.9375rem}
+.ind-weight{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+/* ===== progress bar — barra de progresso com preenchimento colorido ===== */
+.progress-track{width:100%;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;
+  margin-bottom:12px}
+.progress-fill{height:100%;border-radius:3px;transition:width .6s ease-out}
+
+/* stats row dentro do indicator card */
+.ind-stats{display:flex;align-items:center;justify-content:space-between;
+  font-size:.8125rem;color:var(--muted);margin-bottom:12px}
+
+/* ===== badge pill — PATODesempenho: pílula arredondada com destaque ===== */
+.badge-pill{display:inline-flex;align-items:center;gap:4px;
+  padding:5px 14px;border-radius:20px;
+  font-size:.8125rem;font-weight:700}
+
+/* ===== total/hero card — borda de destaque, número gigante centralizado ===== */
+.total-card{background:var(--card);border:2px solid var(--primary);border-radius:var(--r);
+  padding:24px;text-align:center;box-shadow:0 0 28px -6px var(--primary-glow)}
+.total-label{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--primary);margin-bottom:8px}
+.total-value{font-family:var(--font-d);font-weight:800;font-size:3.5rem;line-height:1;
+  color:var(--primary)}
+.total-sub{font-size:.8125rem;color:var(--muted);margin-top:8px}
+
+/* ===== chips (filtros) ===== */
 .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9999px;
-  font-size:.875rem;font-weight:500;background:var(--surface);color:var(--muted);
-  border:1px solid rgba(30,32,36,.4);transition:all .2s;cursor:pointer;white-space:nowrap;
+  font-size:.8125rem;font-weight:600;background:var(--card);color:var(--muted);
+  transition:all .2s;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.chip:active{transform:scale(.97)}
+.chip.active{background:var(--primary);color:#fff}
+
+/* ===== date pills ===== */
+.date-wrap{display:flex;align-items:center;gap:6px}
+.date-arrow{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;
+  border-radius:var(--r-sm);color:var(--subtle);transition:all .15s}
+.date-arrow:active{color:var(--txt)}
+.date-scroll{display:flex;flex:1;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none}
+.date-scroll::-webkit-scrollbar{display:none}
+.date-pill{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;
+  border-radius:var(--r-sm);background:var(--card);min-width:3rem;flex:1;cursor:pointer;
+  transition:all .2s;-webkit-tap-highlight-color:transparent}
+.date-pill:active{transform:scale(.97)}
+.date-pill.active{background:var(--primary);color:#fff}
+.date-pill .dow{font-size:.5625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)}
+.date-pill.active .dow{color:rgba(255,255,255,.7)}
+.date-pill .day{font-size:.875rem;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ===== opportunity row (lista de oportunidades) ===== */
+.opp-row{display:flex;align-items:center;gap:12px;padding:14px 20px;
+  background:var(--card);border-radius:var(--r);transition:all .15s;cursor:pointer;
   -webkit-tap-highlight-color:transparent}
-.chip:active{transform:scale(.98)}
-.chip.active{background:var(--primary);color:#fff;border-color:var(--primary);
-  box-shadow:0 0 24px rgba(255,31,45,.25)}
-
-/* ===== page ===== */
-.page{display:none;padding:16px;padding-top:14px}
-.page.active{display:block}
-.section{margin-bottom:20px}
-
-/* seção com barra vermelha — layout 01: 4px × 20px, totalmente arredondada */
-.section-head{display:flex;align-items:center;justify-content:space-between}
-.section-title{font-family:var(--font-d);font-weight:700;font-size:.875rem;text-transform:uppercase;
-  letter-spacing:.05em;display:flex;align-items:center;gap:12px}
-.section-title::before{content:'';display:inline-block;width:4px;height:20px;border-radius:9999px;
-  background:var(--primary);flex-shrink:0}
-
-/* ===== kpi card — redesign com gradientes ===== */
-.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.kpi{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:12px 10px;
-  text-align:center;transition:border-color .2s}
-.kpi:active{border-color:var(--border)}
-.kpi-val{font-family:var(--font-d);font-weight:800;font-size:1.25rem;line-height:1.2}
-.kpi-label{font-size:.625rem;color:var(--subtle);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
-.kpi-trend{font-size:.5625rem;font-weight:600;margin-top:2px}
-
-/* ===== opportunity row — layout 01: sem borda, hover sutil ===== */
-.opp-row{display:flex;align-items:center;gap:12px;padding:12px 16px;
-  border-radius:var(--r);transition:all .2s;cursor:pointer;
-  -webkit-tap-highlight-color:transparent}
-.opp-row:hover,.opp-row:active{background:rgba(255,255,255,.04)}
-.opp-row:active{transform:scale(.98)}
+.opp-row:active{transform:scale(.985)}
 .opp-teams{display:flex;align-items:center}
 .team-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--card);
-  box-shadow:var(--shadow-sm)}
+  font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--bg)}
 .team-circle.away{margin-left:-10px}
 .opp-info{flex:1;min-width:0}
 .opp-match{font-size:.8125rem;font-weight:600;line-height:1.3}
 .opp-meta{font-size:.6875rem;color:var(--subtle)}
 .opp-edge{text-align:right;flex-shrink:0}
-/* badge de edge com fundo gradiente verde */
-.edge-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:6px;
-  background:var(--success-d);border:1px solid rgba(141,255,31,.15);
-  font-family:var(--font-d);font-weight:700;font-size:.875rem;color:var(--success)}
-.opp-edge-label{font-size:.5625rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.edge-badge{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:10px;
+  background:var(--success-d);font-family:var(--font-d);font-weight:700;font-size:.875rem;color:var(--success)}
 
-/* ===== hero card — layout 01: borda primary/20, sombra glass ===== */
-.hero{position:relative;overflow:hidden;border-color:rgba(255,31,45,.2)!important;
-  box-shadow:0 8px 32px rgba(0,0,0,.55)!important}
-.hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
-.hero-badge{display:inline-flex;align-items:center;gap:4px;font-size:.625rem;font-weight:700;
-  background:var(--primary);color:#fff;padding:4px 10px;border-radius:6px;
-  text-transform:uppercase;letter-spacing:.05em;
-  box-shadow:0 2px 8px rgba(255,31,45,.3)}
-.hero-teams{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.hero-team{display:flex;align-items:center;gap:8px}
-.hero-team-circle{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:.75rem;font-weight:700;color:#fff;
-  box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.hero-vs{font-family:var(--font-d);font-weight:700;color:var(--subtle);font-size:.875rem}
-.hero-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;
-  padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
-.hero-metric{text-align:center}
-.hero-metric-val{font-family:var(--font-d);font-weight:800;font-size:1.125rem}
-.hero-metric-label{font-size:.5625rem;color:var(--subtle);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
-
-/* ===== gauge ===== */
-.gauge{display:inline-flex;align-items:center;justify-content:center;position:relative}
-.gauge-text{position:absolute;font-family:var(--font-d);font-weight:700;text-align:center}
-
-/* ===== date selector — layout 01: setas + pílulas sem mês ===== */
-.date-wrap{display:flex;align-items:center;gap:8px}
-.date-arrow{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;
-  border-radius:var(--r-sm);color:var(--muted);transition:all .15s}
-.date-arrow:active{background:rgba(16,17,20,.6);color:var(--txt)}
-.date-scroll{display:flex;flex:1;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-  scrollbar-width:none;-ms-overflow-style:none}
-.date-scroll::-webkit-scrollbar{display:none}
-.date-pill{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;
-  border-radius:var(--r);background:var(--surface);min-width:3rem;flex:1;cursor:pointer;
-  transition:all .2s;-webkit-tap-highlight-color:transparent}
-.date-pill:active{transform:scale(.98)}
-.date-pill.active{background:var(--primary);color:#fff;box-shadow:0 0 24px rgba(255,31,45,.25)}
-.date-pill .dow{font-size:.625rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-.date-pill.active .dow{color:rgba(255,255,255,.8)}
-.date-pill .day{font-size:.875rem;font-weight:700;font-variant-numeric:tabular-nums}
-
-/* ===== odds grid ===== */
+/* ===== odds table ===== */
 .odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
 .odds-table th{font-size:.625rem;font-weight:600;color:var(--subtle);text-transform:uppercase;
   letter-spacing:.06em;padding:4px 8px;text-align:center;position:sticky;top:0;background:var(--bg)}
 .odds-table th:first-child{text-align:left}
 .odds-table td{padding:8px;text-align:center;font-size:.8125rem;font-weight:500;
-  background:var(--card);border-top:1px solid var(--border-s);border-bottom:1px solid var(--border-s)}
-.odds-table td:first-child{border-left:1px solid var(--border-s);border-radius:var(--r-sm) 0 0 var(--r-sm);
-  text-align:left;font-weight:600}
-.odds-table td:last-child{border-right:1px solid var(--border-s);border-radius:0 var(--r-sm) var(--r-sm) 0}
+  background:var(--card);border:none}
+.odds-table td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);text-align:left;font-weight:600}
+.odds-table td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
 .odds-best{color:var(--success);font-weight:700}
 .odds-fair{background:var(--surface)!important}
 
 /* ===== tabs ===== */
-.tabs{display:flex;gap:0;background:var(--surface);border-radius:var(--r);padding:3px;margin-bottom:16px;
+.tabs{display:flex;gap:0;background:var(--card);border-radius:var(--r);padding:4px;margin-bottom:16px;
   overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:1;padding:8px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:600;
-  text-align:center;color:var(--muted);transition:all .2s;cursor:pointer;white-space:nowrap;
+.tab{flex:1;padding:10px 12px;border-radius:calc(var(--r) - 4px);font-size:.75rem;font-weight:600;
+  text-align:center;color:var(--subtle);transition:all .2s;cursor:pointer;white-space:nowrap;
   min-width:0;-webkit-tap-highlight-color:transparent}
-.tab.active{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.tab.active{background:var(--surface);color:var(--txt)}
 
 /* ===== filter bar ===== */
 .filter-bar{display:flex;gap:6px;overflow-x:auto;padding:4px 0;margin-bottom:12px;
   scrollbar-width:none;-ms-overflow-style:none}
 .filter-bar::-webkit-scrollbar{display:none}
-.filter-select{appearance:none;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2365686E'/%3E%3C/svg%3E") no-repeat right 8px center;
-  border:1px solid var(--border-s);border-radius:var(--r-sm);padding:7px 24px 7px 10px;
+.filter-select{appearance:none;background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235c5e64'/%3E%3C/svg%3E") no-repeat right 8px center;
+  border:none;border-radius:var(--r-sm);padding:8px 24px 8px 12px;
   font-size:.75rem;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0}
-.filter-select:focus{outline:none;border-color:var(--primary)}
+.filter-select:focus{outline:2px solid var(--primary);outline-offset:-2px}
 
-/* ===== chart ===== */
-.chart-wrap{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);
-  padding:12px;overflow:hidden}
+/* ===== charts ===== */
+.chart-wrap{background:var(--card);border-radius:var(--r);padding:16px;overflow:hidden}
 .chart-wrap svg{display:block}
 
 /* ===== detail sheet ===== */
@@ -267,11 +234,11 @@ img{max-width:100%}
   border-radius:var(--r-xl) var(--r-xl) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
   animation:sheetUp .28s cubic-bezier(.22,1,.36,1)}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--surface);margin:10px auto}
 .sheet-close{position:absolute;top:12px;right:12px;width:32px;height:32px;display:flex;
   align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);
-  background:var(--surface);z-index:1;transition:all .15s}
-.sheet-close:active{background:var(--elevated)}
+  background:var(--card);z-index:1;transition:all .15s}
+.sheet-close:active{background:var(--surface)}
 
 /* ===== model probs ===== */
 .model-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -279,24 +246,6 @@ img{max-width:100%}
 .model-bar-track{flex:1;height:6px;background:var(--surface);border-radius:3px;overflow:hidden}
 .model-bar-fill{height:100%;border-radius:3px;transition:width .6s ease-out}
 .model-bar-val{font-size:.75rem;font-weight:600;width:42px;flex-shrink:0}
-
-/* ===== mobile drawer ===== */
-#mobile-drawer{position:fixed;inset:0;z-index:60;display:none}
-#mobile-drawer.open{display:block}
-.drawer-bg{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.drawer-body{position:absolute;inset:0;right:auto;width:260px;background:var(--bg2);
-  border-right:1px solid var(--border-s);animation:drawerIn .22s cubic-bezier(.22,1,.36,1)}
-@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
-
-/* ===== animações ===== */
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .3s ease-out both}
-.skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--elevated) 50%,var(--surface) 75%);
-  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r-sm)}
-@keyframes shimmer{to{background-position:-200% 0}}
-.interactive{transition:transform .1s}
-.interactive:active{transform:scale(.98)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* ===== calibration table ===== */
 .cal-table{width:100%;border-collapse:collapse;font-size:.75rem}
@@ -306,7 +255,7 @@ img{max-width:100%}
 .cal-table tr:last-child td{border-bottom:none}
 .cal-table .val-positive{color:var(--success)}.cal-table .val-negative{color:var(--danger)}
 
-/* ===== stat-pill — mini indicador no topbar/header ===== */
+/* ===== stat-pill ===== */
 .stat-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;
   font-size:.5625rem;font-weight:600;letter-spacing:.04em}
 .stat-pill--live{background:var(--success-d);color:var(--success)}
@@ -316,14 +265,25 @@ img{max-width:100%}
 .stat-pill--live .stat-pill__dot{background:var(--success);animation:pulse 2s ease-in-out infinite}
 .stat-pill--offline .stat-pill__dot{background:var(--danger)}
 
+/* ===== gauge ===== */
+.gauge{display:inline-flex;align-items:center;justify-content:center;position:relative}
+.gauge-text{position:absolute;font-family:var(--font-d);font-weight:700;text-align:center}
+
+/* ===== animações ===== */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease-out both}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ===== page ===== */
+.page{display:none;padding:20px;padding-top:16px}
+.page.active{display:block}
+
 /* ===== util ===== */
 .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
 .gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
 .mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mb-2{margin-bottom:8px}
-.p-3{padding:12px}.p-4{padding:16px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .text-center{text-align:center}
-.w-full{width:100%}
 .hidden{display:none!important}
 </style>
 </head>
@@ -344,18 +304,16 @@ img{max-width:100%}
   </aside>
 
   <div id="main" style="display:flex;flex-direction:column;flex:1;min-width:0">
-    <!-- topbar — layout 01: tipografia display, sem hambúrguer -->
+    <!-- topbar — PATODesempenho: logo à esquerda, versão/status à direita -->
     <header id="topbar">
       <div class="tb-brand">
         <span class="tb-logo">
-          <span style="color:var(--txt)">NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span>
+          <span style="color:var(--primary)">NO</span><span style="color:var(--primary)">.</span><span style="color:var(--txt)">BLIND</span>
         </span>
-        <span class="tb-badge">PRO</span>
       </div>
       <div class="tb-actions">
         <div id="sb-status"></div>
-        <button class="tb-btn" id="tb-bookmark" aria-label="Favoritos"></button>
-        <button class="tb-btn" id="tb-bell" aria-label="Notificações"></button>
+        <span class="tb-version" id="mode-badge"></span>
       </div>
     </header>
 
@@ -363,7 +321,7 @@ img{max-width:100%}
     <div id="content"></div>
   </div>
 
-  <!-- bottom nav (mobile) -->
+  <!-- bottom nav (mobile) — PATODesempenho: 4 itens, cápsula ativa -->
   <nav id="bottom-nav"></nav>
 </div>
 
@@ -371,12 +329,6 @@ img{max-width:100%}
 <div id="detail-sheet">
   <div class="sheet-backdrop" onclick="closeSheet()"></div>
   <div class="sheet-body" id="sheet-content"></div>
-</div>
-
-<!-- mobile drawer -->
-<div id="mobile-drawer">
-  <div class="drawer-bg" onclick="closeDrawer()"></div>
-  <div class="drawer-body" id="drawer-body"></div>
 </div>
 
 <script>
@@ -392,18 +344,14 @@ search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.6
 bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
 bookmark:'<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
 logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
-chevronsL:'<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>',
-chevronsR:'<polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/>',
 x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
 arrowUp:'<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
 arrowDown:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
 testTubes:'<path d="M9 2v17.5A2.5 2.5 0 0 1 6.5 22 2.5 2.5 0 0 1 4 19.5V2"/><path d="M20 2v17.5a2.5 2.5 0 0 1-2.5 2.5 2.5 2.5 0 0 1-2.5-2.5V2"/><path d="M3 2h7"/><path d="M14 2h7"/><path d="M9 16H4"/><path d="M20 16h-5"/>',
 shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
-menu:'<line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>',
 zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
 check:'<polyline points="20 6 9 17 4 12"/>',
 clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-sort:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
 eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
 trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
 settings:'<circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>',
@@ -440,10 +388,10 @@ const MARKETS=['1X2','Over/Under 2.5','Ambas Marcam'];
 /* ===== Supabase — conexão com banco real ===== */
 const SB_URL='https://fyybovmpzoxrpipfnbzk.supabase.co';
 const SB_KEY='sb_publishable__YBuks2J_MlwA8AzlE0fpg_seS2_iX-';
-let sbOnline=false;     /* true se o Supabase respondeu com sucesso */
-let sbLeagues=[];       /* ligas vindas do banco */
-let sbEvents=[];        /* eventos reais (quando houver) */
-let liveMode=false;     /* true = mostrando dados reais; false = demo */
+let sbOnline=false;
+let sbLeagues=[];
+let sbEvents=[];
+let liveMode=false;
 
 async function sbFetch(table,params=''){
   try{
@@ -455,21 +403,16 @@ async function sbFetch(table,params=''){
   }catch(e){return null;}
 }
 
-/* testa conexão e busca ligas/eventos reais */
 async function checkSupabase(){
-  /* 1) busca ligas do seed */
   const leagues=await sbFetch('leagues','select=id,name,country_name,provider_league_id&order=name');
   if(leagues&&leagues.length){
     sbOnline=true;
     sbLeagues=leagues;
   }
-  /* 2) busca eventos futuros (se houver) */
   const events=await sbFetch('v_upcoming_events','select=*&limit=20');
   if(events&&events.length){
     sbEvents=events;
-    /* TODO: quando tiver predictions populadas, habilitar liveMode */
   }
-  /* atualiza indicadores na UI */
   updateConnectionStatus();
 }
 
@@ -485,7 +428,6 @@ function updateConnectionStatus(){
       <span class="stat-pill__dot"></span>
       OFFLINE</span>`;
   }
-  /* badge demo/live */
   const badge=$('#mode-badge');
   if(badge){
     if(liveMode){
@@ -603,7 +545,7 @@ const MARKET_PERF=[
 
 /* ===== estado ===== */
 let currentPage='dashboard';
-let selectedDate=0; /* índice no date-scroll */
+let selectedDate=0;
 let sidebarCollapsed=false;
 let activeAnaliseTab='desempenho';
 let activeSport='futebol';
@@ -614,11 +556,6 @@ let sortField='score';
 /* ===== utilidades ===== */
 function $(sel){return document.querySelector(sel)}
 function $$(sel){return document.querySelectorAll(sel)}
-function el(tag,attrs={},html=''){
-  const e=document.createElement(tag);
-  Object.entries(attrs).forEach(([k,v])=>{if(k==='class')e.className=v;else e.setAttribute(k,v)});
-  if(html)e.innerHTML=html;return e;
-}
 
 function teamCircle(name,size=32,extra=''){
   const t=TEAMS[name]||{abbr:name.slice(0,3).toUpperCase(),color:'#555'};
@@ -643,31 +580,13 @@ function gauge(value,size=72,strokeW=5){
   const col=scoreColor(value);
   return `<div class="gauge" style="width:${size}px;height:${size}px">
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface)" stroke-width="${strokeW}"/>
       <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${strokeW}"
         stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
         transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dashoffset .8s ease-out"/>
     </svg>
     <span class="gauge-text" style="font-size:${size*.28}px;color:${col}">${value}</span>
   </div>`;
-}
-
-/* mini sparkline SVG */
-function sparkline(data,w=100,h=32,color='var(--success)'){
-  if(!data.length)return '';
-  const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
-  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/range)*h*.85-h*.075}`).join(' ');
-  /* área preenchida para efeito premium */
-  const areaPath=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/range)*h*.85-h*.075}`).join(' ');
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block">
-    <defs><linearGradient id="spGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${color}" stop-opacity=".25"/>
-      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-    </linearGradient></defs>
-    <polygon points="${areaPath} ${w},${h} 0,${h}" fill="url(#spGrad)"/>
-    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${w}" cy="${pts.split(' ').pop().split(',')[1]}" r="3" fill="${color}"/>
-  </svg>`;
 }
 
 /* area chart SVG */
@@ -683,7 +602,6 @@ function areaChart(data,labels,w=300,h=140,color='var(--primary)'){
   });
   const linePath=pts.join(' ');
   const areaPath=`${pts.join(' ')} ${pad.l+cw},${pad.t+ch} ${pad.l},${pad.t+ch}`;
-  /* grid lines */
   const gridY=4;
   let gridLines='';
   for(let i=0;i<=gridY;i++){
@@ -692,7 +610,6 @@ function areaChart(data,labels,w=300,h=140,color='var(--primary)'){
     gridLines+=`<line x1="${pad.l}" y1="${y}" x2="${w-pad.r}" y2="${y}" stroke="var(--border-s)" stroke-width="1"/>`;
     gridLines+=`<text x="${pad.l-4}" y="${y+3}" text-anchor="end" fill="var(--subtle)" font-size="9" font-family="var(--font-b)">${val.toFixed(1)}</text>`;
   }
-  /* labels x */
   let xLabels='';
   const step=Math.max(1,Math.floor(data.length/5));
   for(let i=0;i<data.length;i+=step){
@@ -729,14 +646,6 @@ function hBarChart(items,w=300,barH=24,gap=6){
   return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${bars}</svg>`;
 }
 
-/* ===== saudação ===== */
-function greeting(){
-  const h=new Date().getHours();
-  if(h<12) return 'Bom dia';
-  if(h<18) return 'Boa tarde';
-  return 'Boa noite';
-}
-
 /* ===== navegação ===== */
 const PAGES=[
   {id:'dashboard',label:'Início',icon:'home'},
@@ -757,46 +666,39 @@ function navigate(page){
 }
 
 function updateNav(){
-  /* bottom nav */
   $$('.bn-item').forEach(b=>{
     b.classList.toggle('active',b.dataset.page===currentPage);
   });
-  /* sidebar */
   $$('.sb-link').forEach(l=>{
     l.classList.toggle('active',l.dataset.page===currentPage);
   });
 }
 
-/* ===== render bottom nav — layout 01: ícone com fundo sutil quando ativo ===== */
+/* ===== render bottom nav — PATODesempenho: 4 itens, cápsula arredondada ativa ===== */
 function renderBottomNav(){
   const nav=$('#bottom-nav');
-  const items=[...PAGES,{id:'perfil',label:'Perfil',icon:'user'}];
+  /* labels curtas para o nav, igual PATODesempenho (CONTRATOS, VISTORIA, RESULTADO, PLANILHA) */
+  const items=[
+    {id:'dashboard',label:'INÍCIO',icon:'home'},
+    {id:'oportunidades',label:'VALOR',icon:'target'},
+    {id:'odds',label:'ODDS',icon:'trending'},
+    {id:'analises',label:'ANÁLISE',icon:'chart'},
+  ];
   let h='';
   items.forEach(p=>{
     const isActive=p.id===currentPage;
-    const isPerfil=p.id==='perfil';
-    const cls=isPerfil?'bn-item disabled':`bn-item${isActive?' active':''}`;
-    if(isPerfil){
-      h+=`<div class="${cls}">
-        <div class="bn-icon-wrap">${icon(p.icon,20)}</div>
-        <span>${p.label}</span>
-      </div>`;
-    }else{
-      h+=`<button class="${cls}" data-page="${p.id}" onclick="navigate('${p.id}')">
-        <div class="bn-icon-wrap">${icon(p.icon,20)}</div>
-        <span>${p.label}</span>
-      </button>`;
-    }
+    h+=`<button class="bn-item${isActive?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}')">
+      ${icon(p.icon,20)}
+      <span>${p.label}</span>
+    </button>`;
   });
   nav.innerHTML=h;
 }
 
-/* ===== render sidebar ===== */
+/* ===== render sidebar (desktop) ===== */
 function renderSidebar(){
-  /* ícone do logo */
   $('#sb-icon').innerHTML=icon('trending',18,'');
   $('#sb-icon').style.cssText='width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--primary-d);color:var(--primary)';
-  /* nav links */
   let h='<div style="margin-bottom:16px"><p class="sb-section-title">Principal</p>';
   PAGES.forEach(p=>{
     h+=`<a class="sb-link${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}');event.preventDefault()" href="#">
@@ -809,53 +711,21 @@ function renderSidebar(){
   });
   h+='</div>';
   $('#sb-nav').innerHTML=h;
-  /* footer */
   $('#sb-footer').innerHTML=`
     <div class="sb-avatar">W</div>
     <div class="sb-footer-info" style="flex:1;min-width:0">
-      <div class="truncate fs-sm fw5" style="color:var(--txt)">Wagner</div>
-      <div class="fs-xs c-subtle">Plano PRO</div>
+      <div class="truncate" style="font-size:.8125rem;font-weight:500;color:var(--txt)">Wagner</div>
+      <div style="font-size:.6875rem;color:var(--subtle)">Plano PRO</div>
     </div>
     <button onclick="alert('Logout')" title="Sair" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--subtle)">${icon('logout',16)}</button>
   `;
 }
 
-/* ===== render topbar — layout 01: bookmark + sino com dot ===== */
+/* ===== render topbar — PATODesempenho: logo à esquerda, status à direita ===== */
 function renderTopbar(){
-  const bm=$('#tb-bookmark');
-  if(bm) bm.innerHTML=icon('bookmark',18);
-  const bell=$('#tb-bell');
-  if(bell) bell.innerHTML=`${icon('bell',18)}<span class="tb-notif-dot"></span>`;
+  /* topbar já é montado no HTML; apenas atualiza o status */
+  updateConnectionStatus();
 }
-
-/* ===== drawer mobile ===== */
-function openDrawer(){
-  const d=$('#mobile-drawer');
-  d.classList.add('open');
-  /* reutiliza sidebar content */
-  let h=`<div style="padding:12px">
-    <div class="flex items-center justify-between" style="height:44px;margin-bottom:8px">
-      <div class="flex items-center gap-2">
-        <div style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--primary-d);color:var(--primary)">${icon('trending',16)}</div>
-        <span class="font-d fw7 upper" style="font-size:.8125rem"><span>NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span></span>
-      </div>
-      <button onclick="closeDrawer()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--muted)">${icon('x',18)}</button>
-    </div>
-    <div style="height:1px;background:var(--border-s);margin:8px 0"></div>
-    <p class="sb-section-title" style="margin-top:12px">Principal</p>`;
-  PAGES.forEach(p=>{
-    h+=`<a class="sb-link${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}');closeDrawer();event.preventDefault()" href="#">
-      ${icon(p.icon,18)}<span>${p.label}</span></a>`;
-  });
-  h+='<div style="height:1px;background:var(--border-s);margin:12px 0"></div><p class="sb-section-title">Laboratório</p>';
-  SB_EXTRA.forEach(p=>{
-    h+=`<a class="sb-link" data-page="${p.id}" onclick="navigate('${p.id}');closeDrawer();event.preventDefault()" href="#">
-      ${icon(p.icon,18)}<span>${p.label}</span></a>`;
-  });
-  h+='</div>';
-  $('#drawer-body').innerHTML=h;
-}
-function closeDrawer(){$('#mobile-drawer').classList.remove('open')}
 
 /* ===== render páginas ===== */
 function renderPage(){
@@ -869,238 +739,88 @@ function renderPage(){
     case 'model-audit': c.innerHTML=renderPlaceholder('Model Audit','Trilha de auditoria completa dos modelos estatísticos.','shield');break;
     default: c.innerHTML=renderDashboard();
   }
-  /* re-bind eventos específicos */
-  bindPageEvents();
 }
 
 function renderPlaceholder(title,desc,ic){
   return `<div class="page active" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:32px">
-    <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:var(--primary-d);color:var(--primary);margin-bottom:16px">${icon(ic,28)}</div>
-    <h2 class="font-d fw7 fs-xl upper">${title}</h2>
-    <p class="c-muted fs-sm" style="margin-top:8px;max-width:280px">${desc}</p>
+    <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);background:var(--primary-d);color:var(--primary);margin-bottom:16px">${icon(ic,28)}</div>
+    <h2 class="font-d fw7 upper" style="font-size:1.125rem">${title}</h2>
+    <p style="color:var(--muted);font-size:.8125rem;margin-top:8px;max-width:280px">${desc}</p>
   </div>`;
 }
 
-/* ===== DASHBOARD — layout 01 fiel ao Next.js ===== */
+/* ===== DASHBOARD — layout PATODesempenho ===== */
 function renderDashboard(){
-  /* datas para o scroll horizontal */
   const today=new Date();
-  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const dates=[];
-  for(let i=-2;i<=5;i++){
-    const d=new Date(today);d.setDate(d.getDate()+i);
-    dates.push({
-      dow:d.toLocaleDateString('pt-BR',{weekday:'short'}).slice(0,3).toUpperCase(),
-      day:d.getDate(),
-      month:months[d.getMonth()],
-      full:d.toISOString().slice(0,10),
-      isToday:i===0
-    });
-  }
+  const todayStr=today.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 
-  /* melhor oportunidade (hero) */
-  const hero=OPPS.reduce((a,b)=>b.score>a.score?b:a,OPPS[0]);
+  /* top 6 por score para os indicator cards */
+  const sorted=[...OPPS].sort((a,b)=>b.score-a.score);
+  const hero=sorted[0];
+  const top5=sorted.slice(1,6);
 
-  /* top 5 por score (excluindo hero) */
-  const top5=[...OPPS].sort((a,b)=>b.score-a.score).filter(o=>o.id!==hero.id).slice(0,5);
-
-  /* KPIs derivados das oportunidades */
-  const bestEv=Math.max(...OPPS.map(o=>o.ev));
-  const bestOddsOpp=OPPS.reduce((a,b)=>a.bestOdds>b.bestOdds?a:b);
+  /* KPIs derivados */
+  const totalOpps=OPPS.length;
   const bestScore=Math.max(...OPPS.map(o=>o.score));
-
-  /* odds movement (simulado — 8 pontos com tendência de alta) */
-  const baseOdd=hero.bestOdds;
-  const oddsHistory=['12h','14h','16h','18h','20h','22h','00h','Agora'].map((t,i)=>{
-    const v=+(baseOdd-0.12+i*0.025+Math.sin(i*0.8)*0.03).toFixed(2);
-    return {t,v};
-  });
-  const oddsVals=oddsHistory.map(d=>d.v);
+  const bestEdge=Math.max(...OPPS.map(o=>o.edge));
 
   return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:20px">
 
-    <!-- A. Saudação + título grande "OPORTUNIDADES" — layout 01 -->
-    <div style="padding-top:4px">
-      <p class="fs-sm c-muted">${greeting()}, Analista</p>
-      <h1 class="font-d fw8 upper" style="font-size:2.75rem;line-height:1;letter-spacing:-.01em;margin-top:2px">Oportunidades</h1>
-      <p class="c-subtle fs-sm" style="margin-top:4px">As melhores leituras quantitativas para hoje.</p>
+    <!-- A. Título centralizado — PATODesempenho ("Resultado da Vistoria") -->
+    <div style="text-align:center;padding-top:8px">
+      <h1 class="font-d fw8" style="font-size:1.75rem;letter-spacing:-.01em">Oportunidades de Valor</h1>
+      <p style="color:var(--subtle);font-size:.875rem;margin-top:4px">Brasileirão · ${todayStr}</p>
     </div>
 
-    <!-- B. Filtros de esporte — chips -->
-    <div>
-      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none">
-        <button class="chip active" data-sport="futebol" onclick="setSport(this)">⚽ Futebol</button>
-        <button class="chip" data-sport="basquete" onclick="setSport(this)">🏀 Basquete</button>
-        <button class="chip" data-sport="tenis" onclick="setSport(this)">🎾 Tênis</button>
-        <button class="chip" data-sport="mma" onclick="setSport(this)">🥊 MMA</button>
-      </div>
-    </div>
-
-    <!-- C. Calendário horizontal — layout 01: setas + dia da semana + número -->
-    <div>
-      <div class="date-wrap">
-        <button class="date-arrow" aria-label="Semana anterior">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="date-scroll">
-          ${dates.map((d,i)=>`<button class="date-pill${d.isToday?' active':''}" data-idx="${i}" onclick="setDate(this)">
-            <span class="dow">${d.dow}</span><span class="day">${d.day}</span>
-          </button>`).join('')}
-        </div>
-        <button class="date-arrow" aria-label="Próxima semana">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- D. Hero — oportunidade em destaque -->
-    <div>
-      <div class="card-premium hero" onclick="openSheet(${hero.id})" style="cursor:pointer">
-        <div class="hero-top">
-          <div>
-            <span class="hero-badge">${icon('zap',10)} MELHOR OPORTUNIDADE</span>
-            <p class="c-subtle fs-xs" style="margin-top:6px">${hero.league} · ${hero.round}</p>
-          </div>
-          ${gauge(hero.score,58,4)}
-        </div>
-        <div class="hero-teams">
-          <div class="hero-team">
-            ${teamCircle(hero.home,42)}
-            <div>
-              <span class="fw6 fs-base">${hero.home}</span>
-              <div class="fs-xs c-subtle">${fmtDate(hero.date)} ${fmtTime(hero.date)}</div>
-            </div>
-          </div>
-          <span class="hero-vs">VS</span>
-          <div class="hero-team">
-            <div style="text-align:right">
-              <span class="fw6 fs-base">${hero.away}</span>
-              <div class="fs-xs c-subtle">${hero.market} · ${hero.sel}</div>
-            </div>
-            ${teamCircle(hero.away,42)}
-          </div>
-        </div>
-        <div class="hero-metrics">
-          <div class="hero-metric">
-            <div class="hero-metric-val c-success">${fmtPct(hero.edge)}</div>
-            <div class="hero-metric-label">Edge</div>
-          </div>
-          <div class="hero-metric">
-            <div class="hero-metric-val c-success">${fmtPct(hero.ev)}</div>
-            <div class="hero-metric-label">EV</div>
-          </div>
-          <div class="hero-metric">
-            <div class="hero-metric-val" style="color:var(--warning)">${hero.bestOdds.toFixed(2)}</div>
-            <div class="hero-metric-label">${hero.bestBook}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- E. KPIs — 3 cards layout 01 (Valor Esperado, Melhor Odd, Score) -->
+    <!-- B. KPIs — 3 cards PATODesempenho (número grande + label pequena) -->
     <div class="kpi-grid">
-      <!-- Valor Esperado com mini sparkline -->
-      <div class="card-premium" style="padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:8px">
-        <span style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Valor Esperado</span>
-        <div class="flex items-center justify-between">
-          <span class="font-d fw7 fs-xl c-success" style="font-variant-numeric:tabular-nums">${fmtPct(bestEv)}</span>
-          <svg width="32" height="18" viewBox="0 0 32 18" fill="none" style="opacity:.4;flex-shrink:0" aria-hidden="true">
-            <polyline points="2,16 8,12 14,13 20,8 26,6 30,2" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
+      <div class="kpi">
+        <div class="kpi-val">${totalOpps}</div>
+        <div class="kpi-label">JOGOS</div>
       </div>
-
-      <!-- Melhor Odd com bookmaker -->
-      <div class="card-premium" style="padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:8px">
-        <span style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Melhor Odd</span>
-        <div>
-          <span class="font-d fw7 fs-xl" style="font-variant-numeric:tabular-nums">${bestOddsOpp.bestOdds.toFixed(2)}</span>
-          <div style="font-size:.5625rem;color:var(--subtle);margin-top:1px">${bestOddsOpp.bestBook}</div>
-        </div>
+      <div class="kpi">
+        <div class="kpi-val">${bestScore}</div>
+        <div class="kpi-label">TOP SCORE</div>
       </div>
-
-      <!-- NoBlind Score com gauge centralizado -->
-      <div class="card-premium" style="padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
-        <span style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--primary)">Score</span>
-        ${gauge(bestScore,52,4)}
+      <div class="kpi">
+        <div class="kpi-val" style="color:var(--success)">${bestEdge.toFixed(1)}%</div>
+        <div class="kpi-label">MELHOR EDGE</div>
       </div>
     </div>
 
-    <!-- F. Top Oportunidades — layout 01 -->
-    <div>
-      <div class="section-head">
-        <h3 class="section-title">Top Oportunidades</h3>
-        <button class="c-primary fs-xs fw6 upper" onclick="navigate('oportunidades')" style="white-space:nowrap;letter-spacing:.04em">VER TODAS ></button>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-        ${top5.map(o=>`
-          <div class="opp-row interactive" onclick="openSheet(${o.id})">
-            <div class="opp-teams">
-              ${teamCircle(o.home,32)}
-              ${teamCircle(o.away,32,'away')}
-            </div>
-            <div class="opp-info">
-              <div class="opp-match">${o.home} vs ${o.away}</div>
-              <div class="opp-meta">${o.market} · ${o.sel} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
-            </div>
-            <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-              <div class="edge-badge">${fmtPct(o.edge)}</div>
-              <div class="opp-edge-label">Edge</div>
-            </div>
+    <!-- C. Section label — PATODesempenho ("INDICADORES") -->
+    <div class="section-label">DESTAQUES</div>
+
+    <!-- D. Indicator cards — estilo PATODesempenho com barra de progresso -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${sorted.slice(0,5).map(o=>{
+        const col=scoreColor(o.score);
+        return `<div class="ind-card" onclick="openSheet(${o.id})">
+          <div class="ind-header">
+            <span class="ind-title">${o.home} vs ${o.away}</span>
+            <span class="ind-weight">SCORE ${o.score}</span>
           </div>
-        `).join('')}
-      </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${o.score}%;background:${col}"></div>
+          </div>
+          <div class="ind-stats">
+            <span>${o.market} · ${o.sel}</span>
+            <span>${o.bestBook} @ ${o.bestOdds.toFixed(2)}</span>
+          </div>
+          <div>
+            <span class="badge-pill" style="background:${col==='var(--success)'?'var(--success-d)':col==='var(--warning)'?'rgba(255,170,31,.12)':'var(--primary-d)'};color:${col}">Edge: ${fmtPct(o.edge)}</span>
+          </div>
+        </div>`;
+      }).join('')}
     </div>
 
-    <!-- G. Movimento das Odds — layout 01 (chart + info lateral) -->
-    <div>
-      <div class="section-head">
-        <h3 class="section-title">Movimento das Odds</h3>
-      </div>
-      <div class="card-premium" style="margin-top:12px;padding:16px;overflow:hidden">
-        <div style="display:flex;gap:16px;align-items:center">
-          <div style="flex:1;min-width:0">
-            ${areaChart(oddsVals,oddsHistory.map(d=>d.t),260,112,'var(--primary)')}
-          </div>
-          <div style="flex-shrink:0;text-align:right;min-width:80px">
-            <p style="font-size:.6875rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--primary)">${hero.home} x ${hero.away}</p>
-            <p class="font-d fw7 fs-xl" style="margin-top:4px;font-variant-numeric:tabular-nums">${hero.bestOdds.toFixed(2)}</p>
-            <p class="fs-xs c-success fw5" style="margin-top:2px">${fmtPct(hero.edge)}</p>
-            <p style="font-size:.625rem;color:var(--subtle);margin-top:2px">${hero.bestBook}</p>
-          </div>
-        </div>
-      </div>
+    <!-- E. Total card — PATODesempenho ("FATOR DE PAGAMENTO TOTAL / 55.00%") -->
+    <div class="total-card">
+      <div class="total-label">MELHOR OPORTUNIDADE</div>
+      <div class="total-value">${hero.score}</div>
+      <div class="total-sub">${hero.home} vs ${hero.away} · Edge: ${fmtPct(hero.edge)} · ${hero.bestBook} @ ${hero.bestOdds.toFixed(2)}</div>
     </div>
 
-    <!-- H. Desempenho do Modelo — 4 MetricCards (layout 01) -->
-    <div>
-      <div class="section-head">
-        <h3 class="section-title">Desempenho do Modelo</h3>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-        <div class="card" style="padding:12px">
-          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Acertos</div>
-          <div class="font-d fw7 fs-xl" style="margin-top:6px">${KPIS.hitRate}%</div>
-          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Taxa de acerto</div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">ROI</div>
-          <div class="font-d fw7 fs-xl c-success" style="margin-top:6px">${fmtPct(KPIS.roi)}</div>
-          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Retorno sobre investimento</div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">CLV</div>
-          <div class="font-d fw7 fs-xl c-success" style="margin-top:6px">${fmtPct(KPIS.avgCLV)}</div>
-          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Valor capturado</div>
-        </div>
-        <div class="card" style="padding:12px">
-          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Confiança</div>
-          <div class="font-d fw7 fs-xl" style="margin-top:6px">72%</div>
-          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Base crescente</div>
-        </div>
-      </div>
-      <p style="margin-top:8px;text-align:center;font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">⚠️ Amostra ainda não significativa</p>
-    </div>
   </div>`;
 }
 
@@ -1115,9 +835,10 @@ function renderOportunidades(){
   const marketOpts=[...new Set(OPPS.map(o=>o.market))];
 
   return `<div class="page active fade-in">
-    <div class="section">
-      <h2 class="font-d fw8 fs-2xl upper">Oportunidades</h2>
-      <p class="c-subtle fs-sm mt-2">${filtered.length} oportunidade${filtered.length!==1?'s':''} encontrada${filtered.length!==1?'s':''}</p>
+    <!-- título centralizado -->
+    <div style="text-align:center;margin-bottom:16px">
+      <h2 class="font-d fw8" style="font-size:1.5rem">Todas as Oportunidades</h2>
+      <p style="color:var(--subtle);font-size:.8125rem;margin-top:4px">${filtered.length} oportunidade${filtered.length!==1?'s':''}</p>
     </div>
 
     <!-- filtros -->
@@ -1138,10 +859,10 @@ function renderOportunidades(){
       </select>
     </div>
 
-    <!-- lista -->
-    <div>
+    <!-- lista de oportunidades -->
+    <div style="display:flex;flex-direction:column;gap:8px">
       ${filtered.map(o=>`
-        <div class="opp-row interactive" onclick="openSheet(${o.id})">
+        <div class="opp-row" onclick="openSheet(${o.id})">
           <div class="opp-teams">
             ${teamCircle(o.home,32)}
             ${teamCircle(o.away,32,'away')}
@@ -1153,54 +874,48 @@ function renderOportunidades(){
           </div>
           <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
             ${gauge(o.score,44,3)}
-            <div class="edge-badge" style="font-size:.75rem;padding:2px 6px">${fmtPct(o.edge)}</div>
+            <div class="edge-badge" style="font-size:.75rem;padding:2px 8px">${fmtPct(o.edge)}</div>
           </div>
         </div>
       `).join('')}
-      ${filtered.length===0?'<div class="text-center p-4 c-subtle fs-sm">Nenhuma oportunidade encontrada com os filtros selecionados.</div>':''}
+      ${filtered.length===0?'<div style="text-align:center;padding:32px;color:var(--subtle);font-size:.875rem">Nenhuma oportunidade encontrada.</div>':''}
     </div>
   </div>`;
 }
 
 /* ===== ODDS ===== */
 function renderOdds(){
-  /* agrupar por jogo */
   const matches=[...new Map(OPPS.map(o=>[o.id,o])).values()].slice(0,6);
-  /* mostrar odds do primeiro match como exemplo */
   const selected=matches[0];
 
   return `<div class="page active fade-in">
-    <div class="section">
-      <h2 class="font-d fw8 fs-2xl upper">Comparação de Odds</h2>
-      <p class="c-subtle fs-sm mt-2">Odds ao vivo de ${BOOKS.length} casas</p>
+    <div style="text-align:center;margin-bottom:16px">
+      <h2 class="font-d fw8" style="font-size:1.5rem">Comparação de Odds</h2>
+      <p style="color:var(--subtle);font-size:.8125rem;margin-top:4px">Odds de ${BOOKS.length} casas</p>
     </div>
 
-    <!-- seletor de jogos (chips) -->
-    <div class="section" style="margin-bottom:12px">
-      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0" id="odds-match-chips">
-        ${matches.map((m,i)=>`<button class="chip${i===0?' active':''}" data-oidx="${i}" onclick="selectOddsMatch(this,${i})">
-          ${(TEAMS[m.home]||{abbr:'?'}).abbr} × ${(TEAMS[m.away]||{abbr:'?'}).abbr}
-        </button>`).join('')}
-      </div>
+    <!-- seletor de jogos -->
+    <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0;margin-bottom:16px" id="odds-match-chips">
+      ${matches.map((m,i)=>`<button class="chip${i===0?' active':''}" data-oidx="${i}" onclick="selectOddsMatch(this,${i})">
+        ${(TEAMS[m.home]||{abbr:'?'}).abbr} × ${(TEAMS[m.away]||{abbr:'?'}).abbr}
+      </button>`).join('')}
     </div>
 
-    <!-- info do jogo selecionado -->
-    <div class="card mb-2" id="odds-match-info">
+    <!-- info do jogo -->
+    <div class="card" style="margin-bottom:12px" id="odds-match-info">
       ${renderOddsMatchInfo(selected)}
     </div>
 
-    <!-- tabela de odds -->
-    <div style="overflow-x:auto;margin:0 -16px;padding:0 16px">
+    <!-- tabela -->
+    <div style="overflow-x:auto;margin:0 -20px;padding:0 20px">
       <table class="odds-table" id="odds-grid">
         ${renderOddsTable(selected)}
       </table>
     </div>
 
     <!-- fair probs -->
-    <div class="section mt-4">
-      <div class="section-head">
-        <h3 class="section-title">${icon('eye',15)} Fair Probabilities (Ensemble)</h3>
-      </div>
+    <div style="margin-top:16px">
+      <div class="section-label" style="margin-bottom:12px">PROBABILIDADES JUSTAS</div>
       <div class="card" id="odds-fair-section">
         ${renderFairProbs(selected)}
       </div>
@@ -1212,8 +927,8 @@ function renderOddsMatchInfo(o){
   return `<div class="flex items-center gap-3">
     <div class="opp-teams">${teamCircle(o.home,36)}${teamCircle(o.away,36,'away')}</div>
     <div style="flex:1;min-width:0">
-      <div class="fw6 fs-base">${o.home} vs ${o.away}</div>
-      <div class="fs-xs c-subtle">${o.league} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
+      <div style="font-weight:600;font-size:.875rem">${o.home} vs ${o.away}</div>
+      <div style="font-size:.75rem;color:var(--subtle)">${o.league} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
     </div>
     ${gauge(o.score,48,3)}
   </div>`;
@@ -1228,7 +943,6 @@ function renderOddsTable(o){
     const isBest=v===bestVal;
     h+=`<tr><td>${b}</td><td class="${isBest?'odds-best':''}">${v.toFixed(2)}${isBest?' ★':''}</td></tr>`;
   });
-  /* fair odds */
   const fairOdds=(1/o.fairProb).toFixed(2);
   h+=`<tr><td style="color:var(--muted);font-style:italic">Fair Odds</td><td class="odds-fair" style="color:var(--warning);font-weight:600">${fairOdds}</td></tr>`;
   h+='</tbody>';
@@ -1240,16 +954,16 @@ function renderFairProbs(o){
   const impliedPct=(100/o.bestOdds).toFixed(1);
   return `<div class="grid-2 gap-3">
     <div class="text-center">
-      <div class="font-d fw7 fs-xl c-primary">${fairPct}%</div>
-      <div class="fs-xs c-subtle mt-2">Prob. Modelo</div>
+      <div class="font-d fw7" style="font-size:1.25rem;color:var(--primary)">${fairPct}%</div>
+      <div style="font-size:.6875rem;color:var(--subtle);margin-top:4px">Prob. Modelo</div>
     </div>
     <div class="text-center">
-      <div class="font-d fw7 fs-xl c-muted">${impliedPct}%</div>
-      <div class="fs-xs c-subtle mt-2">Prob. Implícita</div>
+      <div class="font-d fw7" style="font-size:1.25rem;color:var(--muted)">${impliedPct}%</div>
+      <div style="font-size:.6875rem;color:var(--subtle);margin-top:4px">Prob. Implícita</div>
     </div>
   </div>
-  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-s)" class="flex items-center justify-between">
-    <span class="fs-sm c-muted">Edge detectado</span>
+  <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-s)" class="flex items-center justify-between">
+    <span style="font-size:.8125rem;color:var(--muted)">Edge detectado</span>
     <span class="edge-badge">${fmtPct(o.edge)}</span>
   </div>`;
 }
@@ -1257,12 +971,11 @@ function renderFairProbs(o){
 /* ===== ANÁLISES ===== */
 function renderAnalises(){
   return `<div class="page active fade-in">
-    <div class="section">
-      <h2 class="font-d fw8 fs-2xl upper">Centro de Inteligência</h2>
-      <p class="c-subtle fs-sm mt-2">Desempenho consolidado dos modelos</p>
+    <div style="text-align:center;margin-bottom:16px">
+      <h2 class="font-d fw8" style="font-size:1.5rem">Centro de Inteligência</h2>
+      <p style="color:var(--subtle);font-size:.8125rem;margin-top:4px">Desempenho consolidado dos modelos</p>
     </div>
 
-    <!-- tabs -->
     <div class="tabs" id="analise-tabs">
       <button class="tab${activeAnaliseTab==='desempenho'?' active':''}" onclick="setAnaliseTab('desempenho')">Desempenho</button>
       <button class="tab${activeAnaliseTab==='calibracao'?' active':''}" onclick="setAnaliseTab('calibracao')">Calibração</button>
@@ -1289,50 +1002,52 @@ function renderAnaliseTab(){
 function renderDesempenho(){
   return `
     <!-- KPIs resumo -->
-    <div class="kpi-grid mb-2" style="grid-template-columns:repeat(2,1fr)">
-      <div class="kpi"><div class="kpi-val c-success">${fmtPct(KPIS.roi)}</div><div class="kpi-label">ROI Total</div></div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px">
+      <div class="kpi"><div class="kpi-val" style="color:var(--success)">${fmtPct(KPIS.roi)}</div><div class="kpi-label">ROI Total</div></div>
       <div class="kpi"><div class="kpi-val">${KPIS.hitRate}%</div><div class="kpi-label">Hit Rate</div></div>
       <div class="kpi"><div class="kpi-val" style="color:var(--warning)">${KPIS.brierScore}</div><div class="kpi-label">Brier Score</div></div>
-      <div class="kpi"><div class="kpi-val c-success">${fmtPct(KPIS.avgCLV)}</div><div class="kpi-label">CLV Médio</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--success)">${fmtPct(KPIS.avgCLV)}</div><div class="kpi-label">CLV Médio</div></div>
     </div>
 
     <!-- equity curve -->
-    <div class="section mt-3">
-      <div class="section-head"><h3 class="section-title">Curva de Patrimônio</h3></div>
+    <div style="margin-bottom:16px">
+      <div class="section-label" style="margin-bottom:12px">CURVA DE PATRIMÔNIO</div>
       <div class="chart-wrap">
-        <div class="flex items-center justify-between mb-2">
-          <span class="fs-xs c-subtle">Base 100 · Últimos 12 meses</span>
-          <span class="font-d fw7 c-success">${EQUITY_MONTHS[EQUITY_MONTHS.length-1].v.toFixed(1)}</span>
+        <div class="flex items-center justify-between" style="margin-bottom:8px">
+          <span style="font-size:.6875rem;color:var(--subtle)">Base 100 · Últimos 12 meses</span>
+          <span class="font-d fw7" style="color:var(--success)">${EQUITY_MONTHS[EQUITY_MONTHS.length-1].v.toFixed(1)}</span>
         </div>
         ${areaChart(EQUITY_MONTHS.map(d=>d.v),EQUITY_MONTHS.map(d=>d.m),320,150,'var(--success)')}
       </div>
     </div>
 
-    <!-- performance recente -->
-    <div class="section">
-      <div class="section-head"><h3 class="section-title">Últimos 30 Dias</h3></div>
+    <!-- últimos 30 dias -->
+    <div>
+      <div class="section-label" style="margin-bottom:12px">ÚLTIMOS 30 DIAS</div>
       <div class="grid-2">
-        <div class="card text-center"><div class="font-d fw7 fs-xl c-success">+8.2%</div><div class="fs-xs c-subtle mt-2">ROI 30d</div></div>
-        <div class="card text-center"><div class="font-d fw7 fs-xl">62.1%</div><div class="fs-xs c-subtle mt-2">Hit Rate 30d</div></div>
+        <div class="card text-center"><div class="font-d fw7" style="font-size:1.25rem;color:var(--success)">+8.2%</div><div style="font-size:.6875rem;color:var(--subtle);margin-top:6px">ROI 30d</div></div>
+        <div class="card text-center"><div class="font-d fw7" style="font-size:1.25rem">62.1%</div><div style="font-size:.6875rem;color:var(--subtle);margin-top:6px">Hit Rate 30d</div></div>
       </div>
     </div>
+
+    <p style="margin-top:12px;text-align:center;font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">⚠️ Amostra ainda não significativa</p>
   `;
 }
 
 function renderCalibracao(){
   return `
-    <div class="section">
-      <div class="section-head"><h3 class="section-title">Tabela de Calibração</h3></div>
-      <p class="c-muted fs-xs mb-2">Previsão vs resultado real por faixa de probabilidade</p>
-      <div class="card" style="padding:8px;overflow-x:auto">
+    <div style="margin-bottom:16px">
+      <div class="section-label" style="margin-bottom:12px">TABELA DE CALIBRAÇÃO</div>
+      <p style="color:var(--muted);font-size:.75rem;margin-bottom:12px">Previsão vs resultado real por faixa de probabilidade</p>
+      <div class="card" style="padding:12px;overflow-x:auto">
         <table class="cal-table">
           <thead><tr><th>Faixa</th><th>Previsto</th><th>Real</th><th>N</th><th>Δ</th></tr></thead>
           <tbody>
             ${CALIBRATION.map(c=>`<tr>
-              <td class="fw6">${c.bin}</td>
+              <td style="font-weight:600">${c.bin}</td>
               <td>${c.pred.toFixed(1)}%</td>
               <td>${c.actual.toFixed(1)}%</td>
-              <td class="c-subtle">${c.n}</td>
+              <td style="color:var(--subtle)">${c.n}</td>
               <td class="${c.diff>=0?'val-positive':'val-negative'}">${c.diff>=0?'+':''}${c.diff.toFixed(1)}%</td>
             </tr>`).join('')}
           </tbody>
@@ -1340,11 +1055,11 @@ function renderCalibracao(){
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head"><h3 class="section-title">Métricas de Calibração</h3></div>
+    <div>
+      <div class="section-label" style="margin-bottom:12px">MÉTRICAS DE CALIBRAÇÃO</div>
       <div class="grid-2">
-        <div class="card text-center"><div class="font-d fw7 fs-xl" style="color:var(--warning)">1.18%</div><div class="fs-xs c-subtle mt-2">ECE</div></div>
-        <div class="card text-center"><div class="font-d fw7 fs-xl" style="color:var(--warning)">1.50%</div><div class="fs-xs c-subtle mt-2">MCE</div></div>
+        <div class="card text-center"><div class="font-d fw7" style="font-size:1.25rem;color:var(--warning)">1.18%</div><div style="font-size:.6875rem;color:var(--subtle);margin-top:6px">ECE</div></div>
+        <div class="card text-center"><div class="font-d fw7" style="font-size:1.25rem;color:var(--warning)">1.50%</div><div style="font-size:.6875rem;color:var(--subtle);margin-top:6px">MCE</div></div>
       </div>
     </div>
   `;
@@ -1352,22 +1067,22 @@ function renderCalibracao(){
 
 function renderLigas(){
   return `
-    <div class="section">
-      <div class="section-head"><h3 class="section-title">ROI por Liga</h3></div>
+    <div style="margin-bottom:16px">
+      <div class="section-label" style="margin-bottom:12px">ROI POR LIGA</div>
       <div class="chart-wrap">
         ${hBarChart(LEAGUE_PERF.map(l=>({label:l.league.replace('Brasileirão ','Br.').replace('Copa ','C.'),value:l.roi})))}
       </div>
     </div>
-    <div class="section">
+    <div style="display:flex;flex-direction:column;gap:10px">
       ${LEAGUE_PERF.map(l=>`
-        <div class="card mb-2">
+        <div class="card">
           <div class="flex items-center justify-between">
-            <div><div class="fw6 fs-sm">${l.league}</div><div class="fs-xs c-subtle">${l.bets} apostas</div></div>
-            <div class="text-center"><div class="font-d fw7 c-success">${fmtPct(l.roi)}</div><div class="fs-xs c-subtle">ROI</div></div>
+            <div><div style="font-weight:600;font-size:.875rem">${l.league}</div><div style="font-size:.75rem;color:var(--subtle)">${l.bets} apostas</div></div>
+            <div class="text-center"><div class="font-d fw7" style="color:var(--success)">${fmtPct(l.roi)}</div><div style="font-size:.6875rem;color:var(--subtle)">ROI</div></div>
           </div>
-          <div class="flex gap-3 mt-2" style="border-top:1px solid var(--border-s);padding-top:8px">
-            <div class="fs-xs"><span class="c-subtle">Hit:</span> <span class="fw6">${l.hitRate}%</span></div>
-            <div class="fs-xs"><span class="c-subtle">Brier:</span> <span class="fw6">${l.brier}</span></div>
+          <div class="flex gap-3" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-s)">
+            <div style="font-size:.75rem"><span style="color:var(--subtle)">Hit:</span> <span style="font-weight:600">${l.hitRate}%</span></div>
+            <div style="font-size:.75rem"><span style="color:var(--subtle)">Brier:</span> <span style="font-weight:600">${l.brier}</span></div>
           </div>
         </div>
       `).join('')}
@@ -1377,22 +1092,22 @@ function renderLigas(){
 
 function renderMercados(){
   return `
-    <div class="section">
-      <div class="section-head"><h3 class="section-title">ROI por Mercado</h3></div>
+    <div style="margin-bottom:16px">
+      <div class="section-label" style="margin-bottom:12px">ROI POR MERCADO</div>
       <div class="chart-wrap">
         ${hBarChart(MARKET_PERF.map(m=>({label:m.market,value:m.roi})))}
       </div>
     </div>
-    <div class="section">
+    <div style="display:flex;flex-direction:column;gap:10px">
       ${MARKET_PERF.map(m=>`
-        <div class="card mb-2">
+        <div class="card">
           <div class="flex items-center justify-between">
-            <div><div class="fw6 fs-sm">${m.market}</div><div class="fs-xs c-subtle">${m.bets} apostas</div></div>
-            <div class="text-center"><div class="font-d fw7 c-success">${fmtPct(m.roi)}</div><div class="fs-xs c-subtle">ROI</div></div>
+            <div><div style="font-weight:600;font-size:.875rem">${m.market}</div><div style="font-size:.75rem;color:var(--subtle)">${m.bets} apostas</div></div>
+            <div class="text-center"><div class="font-d fw7" style="color:var(--success)">${fmtPct(m.roi)}</div><div style="font-size:.6875rem;color:var(--subtle)">ROI</div></div>
           </div>
-          <div class="flex gap-3 mt-2" style="border-top:1px solid var(--border-s);padding-top:8px">
-            <div class="fs-xs"><span class="c-subtle">Hit:</span> <span class="fw6">${m.hitRate}%</span></div>
-            <div class="fs-xs"><span class="c-subtle">Brier:</span> <span class="fw6">${m.brier}</span></div>
+          <div class="flex gap-3" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-s)">
+            <div style="font-size:.75rem"><span style="color:var(--subtle)">Hit:</span> <span style="font-weight:600">${m.hitRate}%</span></div>
+            <div style="font-size:.75rem"><span style="color:var(--subtle)">Brier:</span> <span style="font-weight:600">${m.brier}</span></div>
           </div>
         </div>
       `).join('')}
@@ -1411,50 +1126,53 @@ function openSheet(id){
   $('#sheet-content').innerHTML=`
     <div class="sheet-handle"></div>
     <button class="sheet-close" onclick="closeSheet()">${icon('x',16)}</button>
-    <div style="padding:20px 16px 32px">
+    <div style="padding:20px 20px 36px">
       <!-- cabeçalho -->
-      <div class="flex items-center gap-3 mb-2">
+      <div class="flex items-center gap-3" style="margin-bottom:16px">
         <div class="opp-teams">${teamCircle(o.home,40)}${teamCircle(o.away,40,'away')}</div>
         <div style="flex:1">
-          <div class="font-d fw7 fs-lg">${o.home} vs ${o.away}</div>
-          <div class="fs-xs c-subtle">${o.league} · ${o.round}</div>
-          <div class="fs-xs c-subtle">${fmtDate(o.date)} ${fmtTime(o.date)}</div>
+          <div class="font-d fw7" style="font-size:1.0625rem">${o.home} vs ${o.away}</div>
+          <div style="font-size:.75rem;color:var(--subtle)">${o.league} · ${o.round}</div>
+          <div style="font-size:.75rem;color:var(--subtle)">${fmtDate(o.date)} ${fmtTime(o.date)}</div>
         </div>
       </div>
 
-      <!-- métricas principais -->
-      <div class="kpi-grid mt-3" style="grid-template-columns:repeat(4,1fr)">
-        <div class="kpi"><div class="kpi-val c-success" style="font-size:1rem">${fmtPct(o.edge)}</div><div class="kpi-label">Edge</div></div>
-        <div class="kpi"><div class="kpi-val c-success" style="font-size:1rem">${fmtPct(o.ev)}</div><div class="kpi-label">EV</div></div>
-        <div class="kpi"><div class="kpi-val" style="font-size:1rem;color:var(--warning)">${o.bestOdds.toFixed(2)}</div><div class="kpi-label">Melhor</div></div>
-        <div class="kpi"><div class="kpi-val" style="font-size:1rem">${(o.fairProb*100).toFixed(1)}%</div><div class="kpi-label">Fair %</div></div>
+      <!-- métricas principais — 4 KPIs -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="kpi" style="padding:10px 6px"><div class="kpi-val" style="font-size:1.125rem;color:var(--success)">${fmtPct(o.edge)}</div><div class="kpi-label" style="font-size:.5625rem">Edge</div></div>
+        <div class="kpi" style="padding:10px 6px"><div class="kpi-val" style="font-size:1.125rem;color:var(--success)">${fmtPct(o.ev)}</div><div class="kpi-label" style="font-size:.5625rem">EV</div></div>
+        <div class="kpi" style="padding:10px 6px"><div class="kpi-val" style="font-size:1.125rem;color:var(--warning)">${o.bestOdds.toFixed(2)}</div><div class="kpi-label" style="font-size:.5625rem">Melhor</div></div>
+        <div class="kpi" style="padding:10px 6px"><div class="kpi-val" style="font-size:1.125rem">${(o.fairProb*100).toFixed(1)}%</div><div class="kpi-label" style="font-size:.5625rem">Fair %</div></div>
       </div>
 
-      <!-- NoBlind Score -->
-      <div class="card mt-3 flex items-center justify-between">
+      <!-- NoBlind Score — card com gauge -->
+      <div class="card flex items-center justify-between" style="margin-bottom:16px">
         <div>
-          <div class="font-d fw7 fs-base upper">NoBlind Score</div>
-          <div class="fs-xs c-subtle mt-2">Índice composto de valor</div>
+          <div class="font-d fw7 upper" style="font-size:.9375rem">NoBlind Score</div>
+          <div style="font-size:.75rem;color:var(--subtle);margin-top:4px">Índice composto de valor</div>
         </div>
         ${gauge(o.score,72,5)}
       </div>
 
       <!-- mercado & seleção -->
-      <div class="card mt-2">
+      <div class="card" style="margin-bottom:16px">
+        <div class="flex items-center justify-between" style="margin-bottom:10px">
+          <span style="font-size:.8125rem;color:var(--muted)">Mercado</span>
+          <span style="font-weight:600;font-size:.8125rem">${o.market}</span>
+        </div>
+        <div class="flex items-center justify-between" style="margin-bottom:10px">
+          <span style="font-size:.8125rem;color:var(--muted)">Seleção</span>
+          <span style="font-weight:600;font-size:.8125rem;color:var(--primary)">${o.sel}</span>
+        </div>
         <div class="flex items-center justify-between">
-          <div class="fs-sm c-muted">Mercado</div><div class="fw6 fs-sm">${o.market}</div>
-        </div>
-        <div class="flex items-center justify-between mt-2">
-          <div class="fs-sm c-muted">Seleção</div><div class="fw6 fs-sm c-primary">${o.sel}</div>
-        </div>
-        <div class="flex items-center justify-between mt-2">
-          <div class="fs-sm c-muted">Melhor Casa</div><div class="fw6 fs-sm">${o.bestBook} @ ${o.bestOdds.toFixed(2)}</div>
+          <span style="font-size:.8125rem;color:var(--muted)">Melhor Casa</span>
+          <span style="font-weight:600;font-size:.8125rem">${o.bestBook} @ ${o.bestOdds.toFixed(2)}</span>
         </div>
       </div>
 
       <!-- probabilidades dos modelos -->
-      <div class="mt-3">
-        <h4 class="font-d fw7 fs-base upper mb-2">Probabilidades por Modelo</h4>
+      <div style="margin-bottom:16px">
+        <div class="section-label" style="margin-bottom:12px">PROBABILIDADES POR MODELO</div>
         ${modelEntries.map(([name,prob])=>{
           const pct=(prob*100).toFixed(1);
           const w=(prob/maxProb)*100;
@@ -1469,8 +1187,8 @@ function openSheet(id){
       </div>
 
       <!-- odds por casa -->
-      <div class="mt-3">
-        <h4 class="font-d fw7 fs-base upper mb-2">Odds por Casa</h4>
+      <div>
+        <div class="section-label" style="margin-bottom:12px">ODDS POR CASA</div>
         <div style="overflow-x:auto">
           <table class="odds-table" style="min-width:200px">
             ${renderOddsTable(o)}
@@ -1519,10 +1237,6 @@ function selectOddsMatch(btn,idx){
   $('#odds-fair-section').innerHTML=renderFairProbs(o);
 }
 
-function bindPageEvents(){
-  /* nada extra por enquanto */
-}
-
 /* ===== PWA: service worker ===== */
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
@@ -1545,7 +1259,6 @@ function init(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   init();
-  /* tenta conectar ao Supabase em background (não bloqueia o boot) */
   checkSupabase();
 });
 </script>
