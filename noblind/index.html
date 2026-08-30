@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#F5F3EE">
+<meta name="theme-color" content="#F8FAFC">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="NO.BLIND — Análise esportiva com modelos estatísticos">
@@ -11,21 +11,23 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* ===== reset & tokens ===== */
+/* ===== reset & design tokens ===== */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --lime:#C5F467;--lime-d:rgba(197,244,103,.15);--lime-dk:#9FCC3A;
-  --dark:#1E2026;--dark2:#272A32;--dark3:#32353E;
-  --bg:#F5F3EE;--bg2:#EDEAE4;--card:#FFFFFF;
-  --border:rgba(0,0,0,.06);--border-s:rgba(0,0,0,.08);
-  --success:#34C759;--success-d:rgba(52,199,89,.12);
-  --danger:#FF3B30;--danger-d:rgba(255,59,48,.1);
-  --warning:#FF9500;
-  --txt:#1A1A1E;--muted:#6E7179;--subtle:#A0A3AB;
-  --font:'Plus Jakarta Sans','Inter',system-ui,-apple-system,sans-serif;
-  --r:20px;--r-sm:14px;--r-lg:24px;--r-xl:28px;
+  /* paleta lime neon + preto profundo + cinza ultra-claro */
+  --lime:#A3E635;--lime-d:rgba(163,230,53,.10);--lime-dk:#65A30D;
+  --dark:#09090B;--dark2:#18181B;--dark3:#27272A;
+  --bg:#F8FAFC;--bg2:#F1F5F9;--card:#FFFFFF;
+  --border:rgba(0,0,0,.05);--border-s:rgba(0,0,0,.08);
+  --success:#22C55E;--success-d:rgba(34,197,94,.10);
+  --danger:#EF4444;--danger-d:rgba(239,68,68,.10);
+  --warning:#F59E0B;
+  --txt:#09090B;--muted:#71717A;--subtle:#A1A1AA;
+  --font:'Outfit',system-ui,-apple-system,sans-serif;
+  /* cantos extremamente arredondados */
+  --r:2rem;--r-sm:1.25rem;--r-lg:2.5rem;
   --safe-b:env(safe-area-inset-bottom,0px);
 }
 html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
@@ -34,197 +36,222 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);line-height:1
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-user-select:none}
 img{max-width:100%}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:4px}
+::-webkit-scrollbar{width:0;height:0}
 
-/* ===== layout ===== */
+/* ===== layout shell ===== */
 #app{display:flex;height:100dvh;width:100%}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
 #topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
   padding:0 20px;flex-shrink:0;background:var(--bg)}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(96px + var(--safe-b))}
-
-/* ===== bottom nav — dock flutuante premium ===== */
-#bottom-nav{position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(6px + var(--safe-b));
-  display:flex;align-items:center;justify-content:center;z-index:50}
-.bn-bar{display:flex;align-items:center;gap:4px;
-  background:linear-gradient(135deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 55%),rgba(24,26,28,.78);
-  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
-  border-radius:999px;padding:6px;
-  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.25),
-    0 14px 34px rgba(0,0,0,.45)}
-.bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-  padding:10px 18px;border-radius:999px;
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:rgba(255,255,255,.4);
-  transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;white-space:nowrap;cursor:pointer}
-.bn-item.active{background:var(--lime);color:var(--dark)}
-.bn-item svg{flex-shrink:0}
-.bn-item .ic{line-height:0}
+  padding-bottom:calc(100px + var(--safe-b))}
 
 /* ===== topbar ===== */
 .tb-brand{display:flex;align-items:center;gap:8px}
-.tb-logo{font-size:1.125rem;font-weight:800;letter-spacing:-.02em}
+.tb-logo{font-size:1.125rem;font-weight:900;letter-spacing:-.03em}
 .tb-dot{color:var(--lime-dk)}
 .tb-actions{display:flex;align-items:center;gap:8px}
 
-/* ===== card genérico ===== */
-.card{background:var(--card);border-radius:var(--r);padding:20px;
-  box-shadow:0 1px 3px rgba(0,0,0,.04)}
+/* ===== floating bottom nav — pílula preta ===== */
+#bottom-nav{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(12px + var(--safe-b));z-index:50}
+.bn-bar{display:flex;align-items:center;gap:2px;
+  background:var(--dark);border-radius:999px;padding:6px 8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.25),0 2px 8px rgba(0,0,0,.15)}
+.bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  width:64px;height:52px;border-radius:999px;
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);transition:all .25s ease;
+  -webkit-tap-highlight-color:transparent;cursor:pointer}
+.bn-item.active{color:var(--lime);background:rgba(163,230,53,.12)}
+.bn-item svg{flex-shrink:0}
+.bn-item .ic{line-height:0}
 
-/* ===== BILHETE DO DIA — card escuro hero ===== */
+/* ===== card — cantos extremamente arredondados, bordas finas ===== */
+.card{background:var(--card);border-radius:var(--r);padding:20px;
+  border:1px solid var(--border)}
+
+/* ===== BILHETE DO DIA — bloco preto de alto contraste ===== */
 .ticket-hero{background:var(--dark);border-radius:var(--r-lg);padding:0;color:#fff;
-  position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.15)}
-.ticket-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:160px;height:160px;
-  border-radius:50%;background:var(--lime);opacity:.08}
-.ticket-hero::after{content:'';position:absolute;bottom:-40px;left:-40px;width:100px;height:100px;
-  border-radius:50%;background:var(--lime);opacity:.05}
-.ticket-header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between}
+  position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.ticket-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
 .ticket-label{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
-  color:rgba(255,255,255,.4)}
-.ticket-type{font-size:.6875rem;font-weight:600;padding:4px 12px;border-radius:999px;
-  background:rgba(197,244,103,.15);color:var(--lime)}
-.ticket-odds-total{text-align:center;padding:20px 20px 16px}
-.ticket-odds-number{font-size:3.5rem;font-weight:800;line-height:1;letter-spacing:-.03em;color:var(--lime)}
-.ticket-odds-label{font-size:.6875rem;color:rgba(255,255,255,.4);margin-top:6px;text-transform:uppercase;
-  letter-spacing:.08em}
-/* linhas do bilhete */
-.ticket-legs{border-top:1px dashed rgba(255,255,255,.1);padding:16px 20px;
+  color:rgba(255,255,255,.35)}
+.ticket-type{font-size:.625rem;font-weight:700;padding:5px 12px;border-radius:999px;
+  background:rgba(163,230,53,.15);color:var(--lime);text-transform:uppercase;letter-spacing:.06em}
+.ticket-odds-total{text-align:center;padding:28px 24px 20px}
+.ticket-odds-number{font-size:4rem;font-weight:900;line-height:1;letter-spacing:-.04em;color:var(--lime)}
+.ticket-odds-label{font-size:.6875rem;color:rgba(255,255,255,.35);margin-top:8px;text-transform:uppercase;
+  letter-spacing:.08em;font-weight:600}
+.ticket-legs{border-top:1px solid rgba(255,255,255,.06);padding:16px 24px;
   display:flex;flex-direction:column;gap:14px}
 .ticket-leg{display:flex;align-items:center;gap:10px}
 .ticket-leg-teams{flex:1;min-width:0}
-.ticket-leg-match{font-size:.8125rem;font-weight:600;line-height:1.3}
-.ticket-leg-meta{font-size:.6875rem;color:rgba(255,255,255,.4)}
+.ticket-leg-match{font-size:.8125rem;font-weight:700;line-height:1.3}
+.ticket-leg-meta{font-size:.6875rem;color:rgba(255,255,255,.35);font-weight:500}
 .ticket-leg-pick{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.ticket-leg-sel{font-size:.6875rem;font-weight:600;color:var(--lime);text-transform:uppercase}
-.ticket-leg-odd{font-size:1.125rem;font-weight:800}
-.ticket-footer{border-top:1px dashed rgba(255,255,255,.1);padding:14px 20px;
+.ticket-leg-sel{font-size:.625rem;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.04em}
+.ticket-leg-odd{font-size:1.25rem;font-weight:900}
+.ticket-footer{border-top:1px solid rgba(255,255,255,.06);padding:16px 24px;
   display:flex;align-items:center;justify-content:space-between}
-.ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(255,255,255,.45)}
-.ticket-book{font-size:.75rem;font-weight:600;color:rgba(255,255,255,.6)}
+.ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(255,255,255,.35);font-weight:500}
 
-/* ===== bet card — card branco com odd grande ===== */
-.bet-card{background:var(--card);border-radius:var(--r);padding:16px;cursor:pointer;
-  box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .15s;-webkit-tap-highlight-color:transparent}
-.bet-card:active{transform:scale(.985)}
-.bet-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+/* ===== bet card — odd como protagonista visual ===== */
+.bet-card{background:var(--card);border-radius:var(--r);padding:18px;cursor:pointer;
+  border:1px solid var(--border);transition:transform .15s ease;
+  -webkit-tap-highlight-color:transparent}
+.bet-card:active{transform:scale(.98)}
+.bet-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .bet-teams-col{display:flex;align-items:center}
-.team-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--bg)}
-.team-circle.away{margin-left:-10px}
+.team-circle{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;
+  justify-content:center;font-size:.5625rem;font-weight:800;color:#fff;flex-shrink:0;
+  letter-spacing:.02em}
+.team-circle.away{margin-left:-8px;border:2px solid var(--bg)}
 .bet-info{flex:1;min-width:0}
-.bet-match{font-size:.875rem;font-weight:700;line-height:1.3}
-.bet-meta{font-size:.6875rem;color:var(--subtle);margin-top:2px}
+.bet-match{font-size:.875rem;font-weight:800;line-height:1.3;letter-spacing:-.01em}
+.bet-meta{font-size:.6875rem;color:var(--subtle);margin-top:2px;font-weight:500}
 .bet-right{display:flex;flex-direction:column;align-items:flex-end}
-/* odd BEM GRANDE — protagonista visual */
-.bet-odd{font-size:2rem;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--dark)}
-.bet-book{font-size:.625rem;color:var(--subtle);margin-top:2px;font-weight:500}
-/* seleção e edge */
+/* odd BEM GRANDE — número como protagonista */
+.bet-odd{font-size:2.25rem;font-weight:900;line-height:1;letter-spacing:-.03em;color:var(--dark)}
+.bet-book{font-size:.5625rem;color:var(--subtle);margin-top:2px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em}
 .bet-bottom{display:flex;align-items:center;justify-content:space-between;
-  padding-top:12px;border-top:1px solid var(--border)}
-.bet-sel{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:10px;
-  background:var(--lime-d);font-weight:700;font-size:.75rem;color:var(--lime-dk)}
+  padding-top:14px;border-top:1px solid var(--border)}
+.bet-sel{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;
+  background:var(--dark);color:#fff;font-weight:700;font-size:.6875rem}
 .bet-edge{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;font-weight:600;color:var(--muted)}
-.bet-edge-val{color:var(--lime-dk);font-weight:700}
+.bet-edge-val{color:var(--lime-dk);font-weight:800}
 
 /* ===== múltipla card ===== */
 .multi-card{background:var(--card);border-radius:var(--r);overflow:hidden;
-  box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer;transition:all .15s;
+  border:1px solid var(--border);cursor:pointer;transition:transform .15s ease;
   -webkit-tap-highlight-color:transparent}
-.multi-card:active{transform:scale(.985)}
-.multi-header{display:flex;align-items:center;justify-content:space-between;padding:16px;
+.multi-card:active{transform:scale(.98)}
+.multi-header{display:flex;align-items:center;justify-content:space-between;padding:18px;
   border-bottom:1px solid var(--border)}
-.multi-type{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-  padding:4px 10px;border-radius:999px}
-.multi-type--dupla{background:rgba(52,199,89,.1);color:var(--success)}
-.multi-type--tripla{background:rgba(255,149,0,.1);color:var(--warning)}
-.multi-type--quadra{background:rgba(197,244,103,.15);color:var(--lime-dk)}
-.multi-odd{font-size:1.75rem;font-weight:800;letter-spacing:-.02em}
+.multi-type{font-size:.625rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
+  padding:5px 12px;border-radius:999px}
+.multi-type--dupla{background:var(--success-d);color:var(--success)}
+.multi-type--tripla{background:rgba(245,158,11,.10);color:var(--warning)}
+.multi-type--quadra{background:var(--lime-d);color:var(--lime-dk)}
+.multi-odd{font-size:2rem;font-weight:900;letter-spacing:-.03em}
 .multi-legs{padding:0}
-.multi-leg{display:flex;align-items:center;gap:10px;padding:12px 16px;
+.multi-leg{display:flex;align-items:center;gap:10px;padding:14px 18px;
   border-bottom:1px solid var(--border)}
 .multi-leg:last-child{border-bottom:none}
 .multi-leg-info{flex:1;min-width:0}
-.multi-leg-match{font-size:.8125rem;font-weight:600}
-.multi-leg-pick{font-size:.6875rem;color:var(--lime-dk);font-weight:600}
-.multi-leg-odd{font-size:1rem;font-weight:800}
+.multi-leg-match{font-size:.8125rem;font-weight:700}
+.multi-leg-pick{font-size:.6875rem;color:var(--lime-dk);font-weight:700}
+.multi-leg-odd{font-size:1.125rem;font-weight:900}
 
-/* ===== section ===== */
-.section-label{font-size:.75rem;font-weight:700;text-transform:uppercase;
-  letter-spacing:.1em;color:var(--subtle);padding:0 4px}
+/* ===== section label ===== */
+.section-label{font-size:.6875rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--subtle)}
 
-/* ===== pill bar ===== */
+/* ===== pill bar — pílulas pretas ===== */
 .pill-bar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .pill-bar::-webkit-scrollbar{display:none}
-.pill{display:inline-flex;align-items:center;padding:8px 16px;border-radius:999px;
-  font-size:.8125rem;font-weight:600;background:var(--card);color:var(--muted);
-  border:1.5px solid var(--border);cursor:pointer;white-space:nowrap;
+.pill{display:inline-flex;align-items:center;padding:9px 18px;border-radius:999px;
+  font-size:.8125rem;font-weight:700;background:var(--card);color:var(--muted);
+  border:1px solid var(--border);cursor:pointer;white-space:nowrap;
   transition:all .2s;-webkit-tap-highlight-color:transparent}
 .pill:active{transform:scale(.96)}
 .pill.active{background:var(--dark);color:#fff;border-color:var(--dark)}
 
+/* ===== botão pílula preta / lime ===== */
+.btn-pill{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;
+  border-radius:999px;font-size:.8125rem;font-weight:700;transition:transform .15s;
+  -webkit-tap-highlight-color:transparent}
+.btn-pill:active{transform:scale(.96)}
+.btn-pill--dark{background:var(--dark);color:#fff}
+.btn-pill--lime{background:var(--lime);color:var(--dark)}
+.btn-pill .arrow{font-size:1rem;font-weight:400}
+
 /* ===== stat pills ===== */
 .stat-pill{display:inline-flex;align-items:center;gap:4px;
-  padding:4px 10px;border-radius:999px;font-size:.6875rem;font-weight:600}
+  padding:5px 12px;border-radius:999px;font-size:.6875rem;font-weight:700}
 .stat-pill--live{background:var(--success-d);color:var(--success)}
-.stat-pill--offline{background:var(--danger-d);color:var(--danger)}
 .stat-pill--demo{background:var(--lime-d);color:var(--lime-dk)}
 .stat-pill__dot{width:5px;height:5px;border-radius:50%;display:inline-block}
 .stat-pill--live .stat-pill__dot{background:var(--success);animation:pulse 2s ease-in-out infinite}
 
-/* ===== KPIs strip ===== */
+/* ===== bento grid — layout assimétrico ===== */
+.bento{display:grid;gap:12px}
+.bento--hero{grid-template-columns:1.3fr 1fr;grid-template-rows:1fr 1fr}
+.bento--hero .bento-tall{grid-row:span 2}
+.bento--trio{grid-template-columns:repeat(3,1fr)}
+.bento--duo{grid-template-columns:1fr 1fr}
+.bento-card{background:var(--card);border-radius:var(--r);padding:20px;
+  border:1px solid var(--border);display:flex;flex-direction:column;justify-content:center}
+.bento-card--lime{background:var(--lime);border-color:var(--lime);color:var(--dark)}
+.bento-card--dark{background:var(--dark);border-color:var(--dark);color:#fff}
+.bento-val{font-size:2rem;font-weight:900;line-height:1;letter-spacing:-.03em}
+.bento-val--xl{font-size:2.75rem}
+.bento-label{font-size:.5625rem;color:var(--subtle);margin-top:6px;text-transform:uppercase;
+  letter-spacing:.08em;font-weight:700}
+.bento-card--lime .bento-label{color:rgba(9,9,11,.5)}
+.bento-card--dark .bento-label{color:rgba(255,255,255,.4)}
+
+/* ===== KPIs strip horizontal ===== */
 .kpi-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .kpi-strip::-webkit-scrollbar{display:none}
-.kpi-chip{flex-shrink:0;background:var(--card);border-radius:var(--r-sm);padding:10px 14px;
-  text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.kpi-chip-val{font-weight:800;font-size:1rem;line-height:1.2}
-.kpi-chip-label{font-size:.5625rem;color:var(--subtle);margin-top:2px;text-transform:uppercase;
-  letter-spacing:.06em;font-weight:600}
+.kpi-chip{flex-shrink:0;background:var(--card);border-radius:var(--r-sm);padding:12px 16px;
+  text-align:center;border:1px solid var(--border)}
+.kpi-chip-val{font-weight:900;font-size:1rem;line-height:1.2;letter-spacing:-.02em}
+.kpi-chip-label{font-size:.5rem;color:var(--subtle);margin-top:3px;text-transform:uppercase;
+  letter-spacing:.08em;font-weight:700}
 
 /* ===== detail sheet ===== */
 #detail-sheet{position:fixed;inset:0;z-index:100;display:none;flex-direction:column}
 #detail-sheet.open{display:flex}
-.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .sheet-body{position:absolute;bottom:0;left:0;right:0;max-height:92dvh;background:var(--bg);
-  border-radius:var(--r-xl) var(--r-xl) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  animation:sheetUp .28s cubic-bezier(.22,1,.36,1)}
+  border-radius:var(--r-lg) var(--r-lg) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  animation:sheetUp .3s cubic-bezier(.22,1,.36,1)}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--border-s);margin:10px auto}
-.sheet-close{position:absolute;top:12px;right:12px;width:36px;height:36px;display:flex;
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--border-s);margin:12px auto}
+.sheet-close{position:absolute;top:14px;right:14px;width:36px;height:36px;display:flex;
   align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);
-  background:var(--card);z-index:1;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  background:var(--card);z-index:1;border:1px solid var(--border)}
 
-/* ===== odds table (no sheet) ===== */
+/* ===== odds table ===== */
 .odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
-.odds-table th{font-size:.625rem;font-weight:700;color:var(--subtle);text-transform:uppercase;
-  letter-spacing:.06em;padding:6px 8px;text-align:center}
+.odds-table th{font-size:.5625rem;font-weight:800;color:var(--subtle);text-transform:uppercase;
+  letter-spacing:.08em;padding:6px 8px;text-align:center}
 .odds-table th:first-child{text-align:left}
-.odds-table td{padding:10px;text-align:center;font-size:.8125rem;font-weight:500;
+.odds-table td{padding:10px;text-align:center;font-size:.8125rem;font-weight:600;
   background:var(--card);border:none}
-.odds-table td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);text-align:left;font-weight:600}
+.odds-table td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);text-align:left;font-weight:700}
 .odds-table td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
-.odds-best{color:var(--lime-dk);font-weight:700;background:var(--lime-d)!important}
+.odds-best{color:var(--lime-dk);font-weight:800;background:var(--lime-d)!important}
 
 /* ===== model bars ===== */
 .model-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.model-bar-name{font-size:.75rem;color:var(--muted);width:85px;flex-shrink:0;text-align:right;font-weight:500}
-.model-bar-track{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
-.model-bar-fill{height:100%;border-radius:4px;transition:width .6s ease-out}
-.model-bar-val{font-size:.75rem;font-weight:700;width:40px;flex-shrink:0}
+.model-bar-name{font-size:.75rem;color:var(--muted);width:90px;flex-shrink:0;text-align:right;font-weight:600}
+.model-bar-track{flex:1;height:8px;background:var(--bg2);border-radius:999px;overflow:hidden}
+.model-bar-fill{height:100%;border-radius:999px;transition:width .6s ease-out}
+.model-bar-val{font-size:.75rem;font-weight:800;width:42px;flex-shrink:0}
+
+/* ===== ROI por mercado/liga cards ===== */
+.roi-card{background:var(--card);border-radius:var(--r);padding:16px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  border:1px solid var(--border)}
+.roi-card-info{flex:1}
+.roi-card-name{font-weight:800;font-size:.875rem;letter-spacing:-.01em}
+.roi-card-sub{font-size:.6875rem;color:var(--subtle);font-weight:500;margin-top:1px}
+.roi-card-val{font-weight:900;font-size:1.125rem;letter-spacing:-.02em;color:var(--lime-dk)}
 
 /* ===== animações ===== */
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .35s ease-out both}
+.fade-in{animation:fadeIn .3s ease-out both}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* ===== page ===== */
 .page{display:none;padding:20px}
 .page.active{display:block}
 
-/* ===== util ===== */
+/* ===== utilities ===== */
 .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
 .gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
 .mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}
@@ -241,7 +268,6 @@ img{max-width:100%}
       </div>
       <div class="tb-actions">
         <div id="sb-status"></div>
-        <div id="mode-badge"></div>
       </div>
     </header>
     <div id="content"></div>
@@ -255,7 +281,7 @@ img{max-width:100%}
 </div>
 
 <script>
-/* ===== ícones SVG ===== */
+/* ===== ícones SVG — traços finos, minimalistas ===== */
 const IC={
 home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
 target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
@@ -263,14 +289,14 @@ layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22
 chart:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
 x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
 check:'<polyline points="20 6 9 17 4 12"/>',
-clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
 zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
 trending:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
 shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+arrowUR:'<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>',
 };
 function icon(n,s=20){return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]||''}</svg>`}
 
-/* ===== dados ===== */
+/* ===== times ===== */
 const TEAMS={
   'Flamengo':{a:'FLA',c:'#C62828'},'Palmeiras':{a:'PAL',c:'#2E7D32'},
   'Corinthians':{a:'COR',c:'#37474F'},'São Paulo':{a:'SAO',c:'#B71C1C'},
@@ -286,7 +312,7 @@ const TEAMS={
 /* ===== Supabase ===== */
 const SB_URL='https://fyybovmpzoxrpipfnbzk.supabase.co';
 const SB_KEY='sb_publishable__YBuks2J_MlwA8AzlE0fpg_seS2_iX-';
-let sbOnline=false,sbLeagues=[],liveMode=false;
+let sbOnline=false,sbLeagues=[];
 async function sbFetch(t,p=''){
   try{const r=await fetch(`${SB_URL}/rest/v1/${t}?${p}`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}});
     if(!r.ok)throw 0;return await r.json()}catch(e){return null}
@@ -301,9 +327,6 @@ function updateStatus(){
   el.innerHTML=sbOnline
     ?`<span class="stat-pill stat-pill--live"><span class="stat-pill__dot"></span>${sbLeagues.length} ligas</span>`
     :`<span class="stat-pill stat-pill--demo"><span class="stat-pill__dot"></span>Demo</span>`;
-  const b=$('#mode-badge');if(b){
-    b.className=liveMode?'stat-pill stat-pill--live':'stat-pill stat-pill--demo';
-    b.innerHTML=liveMode?'LIVE':'DEMO'}
 }
 
 /* ===== dados demo — apostas do dia ===== */
@@ -342,7 +365,7 @@ const SINGLES=[
  models:{Poisson:.60,'Dixon-Coles':.63,Elo:.61,'Grad.Boost':.65,'Consensus':.58,Ensemble:.62}},
 ];
 
-/* múltiplas pré-montadas — combinações com maior edge acumulado */
+/* múltiplas pré-montadas */
 const MULTIPLES=[
 {id:'m1',type:'Dupla',legs:[
   {home:'Corinthians',away:'São Paulo',sel:'Mais de 2.5',odd:1.82,book:'Bet365'},
@@ -371,9 +394,10 @@ const KPIS={roi:12.4,hitRate:58.3,brier:.198,edge:5.7};
 let currentPage='home';
 function $(s){return document.querySelector(s)}
 function $$(s){return document.querySelectorAll(s)}
+/* time badge — quadrado arredondado (ícone dentro de container rounded) */
 function tc(name,sz=32,extra=''){
   const t=TEAMS[name]||{a:name.slice(0,3).toUpperCase(),c:'#555'};
-  return `<div class="team-circle ${extra}" style="width:${sz}px;height:${sz}px;background:${t.c};font-size:${sz*.19}px">${t.a}</div>`;
+  return `<div class="team-circle ${extra}" style="width:${sz}px;height:${sz}px;background:${t.c};font-size:${sz*.18}px">${t.a}</div>`;
 }
 function multiOdd(legs){return legs.reduce((a,l)=>a*l.odd,1)}
 
@@ -392,7 +416,7 @@ function renderBottomNav(){
   PAGES.forEach(p=>{
     const on=p.id===currentPage;
     h+=`<button class="bn-item${on?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}')">
-      <span class="ic">${icon(p.icon,21)}</span><span>${p.label}</span></button>`;
+      <span class="ic">${icon(p.icon,20)}</span><span>${p.label}</span></button>`;
   });
   nav.innerHTML=h+'</div>';
 }
@@ -414,15 +438,15 @@ function renderPage(){
 function renderHome(){
   const today=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
   const best=[...SINGLES].sort((a,b)=>b.score-a.score);
-  /* bilhete do dia: top 3 com maior score */
+  /* bilhete do dia: top 3 */
   const ticketLegs=best.slice(0,3);
   const ticketOdd=multiOdd(ticketLegs);
 
-  return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:16px">
-    <!-- data -->
+  return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:20px">
+    <!-- cabeçalho -->
     <div>
-      <p style="font-size:.75rem;color:var(--subtle);text-transform:capitalize">${today}</p>
-      <h1 style="font-size:1.375rem;font-weight:800;letter-spacing:-.02em;margin-top:2px">Análises do Dia</h1>
+      <p style="font-size:.6875rem;color:var(--subtle);text-transform:capitalize;font-weight:500">${today}</p>
+      <h1 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em;margin-top:2px">Análises do Dia</h1>
     </div>
 
     <!-- KPIs rápidos -->
@@ -434,11 +458,11 @@ function renderHome(){
       <div class="kpi-chip"><div class="kpi-chip-val">${SINGLES.length}</div><div class="kpi-chip-label">Jogos</div></div>
     </div>
 
-    <!-- BILHETE DO DIA — card escuro grande -->
+    <!-- BILHETE DO DIA — bloco preto de alto contraste -->
     <div>
-      <div class="flex items-center justify-between" style="margin-bottom:10px">
+      <div class="flex items-center justify-between" style="margin-bottom:12px">
         <span class="section-label">${icon('zap',14)} BILHETE DO DIA</span>
-        <span class="ticket-type" style="font-size:.6rem;background:var(--lime-d);color:var(--lime-dk)">TRIPLA</span>
+        <span style="font-size:.625rem;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--dark);color:var(--lime);text-transform:uppercase;letter-spacing:.06em">Tripla</span>
       </div>
       <div class="ticket-hero">
         <div class="ticket-header">
@@ -447,12 +471,12 @@ function renderHome(){
         </div>
         <div class="ticket-odds-total">
           <div class="ticket-odds-number">${ticketOdd.toFixed(2)}</div>
-          <div class="ticket-odds-label">Odd Total · ${ticketLegs.length} seleções</div>
+          <div class="ticket-odds-label">${ticketLegs.length} seleções combinadas</div>
         </div>
         <div class="ticket-legs">
           ${ticketLegs.map(l=>`<div class="ticket-leg">
             <div class="ticket-leg-teams" style="display:flex;align-items:center;gap:8px">
-              ${tc(l.home,26)}${tc(l.away,26,'away')}
+              ${tc(l.home,24)}${tc(l.away,24,'away')}
               <div style="min-width:0">
                 <div class="ticket-leg-match">${l.home} vs ${l.away}</div>
                 <div class="ticket-leg-meta">${l.league} · ${l.time}</div>
@@ -466,24 +490,30 @@ function renderHome(){
         </div>
         <div class="ticket-footer">
           <div class="ticket-conf">${icon('shield',14)} Edge acumulado</div>
-          <div class="ticket-book" style="color:var(--lime)">Múltiplas casas</div>
+          <button class="btn-pill btn-pill--lime" style="padding:8px 16px;font-size:.75rem" onclick="openMultiSheet('ticket')">
+            Detalhes <span class="arrow">↗</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- TOP SINGLES -->
+    <!-- MELHORES SINGLES -->
     <div class="flex items-center justify-between">
       <span class="section-label">MELHORES SINGLES</span>
-      <button style="font-size:.75rem;font-weight:600;color:var(--lime-dk)" onclick="navigate('singles')">Ver todos →</button>
+      <button class="btn-pill btn-pill--dark" style="padding:6px 14px;font-size:.6875rem" onclick="navigate('singles')">
+        Ver todos <span class="arrow">↗</span>
+      </button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       ${best.slice(0,4).map(s=>renderBetCard(s)).join('')}
     </div>
 
     <!-- MÚLTIPLAS -->
-    <div class="flex items-center justify-between" style="margin-top:4px">
+    <div class="flex items-center justify-between">
       <span class="section-label">MÚLTIPLAS SUGERIDAS</span>
-      <button style="font-size:.75rem;font-weight:600;color:var(--lime-dk)" onclick="navigate('multiples')">Ver todas →</button>
+      <button class="btn-pill btn-pill--dark" style="padding:6px 14px;font-size:.6875rem" onclick="navigate('multiples')">
+        Ver todas <span class="arrow">↗</span>
+      </button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       ${MULTIPLES.slice(0,2).map(m=>renderMultiCard(m)).join('')}
@@ -491,7 +521,7 @@ function renderHome(){
   </div>`;
 }
 
-/* ===== bet card — odd BEM GRANDE ===== */
+/* ===== bet card — odd como protagonista ===== */
 function renderBetCard(s){
   return `<div class="bet-card" onclick="openSheet(${s.id})">
     <div class="bet-top">
@@ -521,7 +551,7 @@ function renderMultiCard(m){
       <span class="multi-type multi-type--${typeClass}">${m.type}</span>
       <div style="text-align:right">
         <div class="multi-odd">${total.toFixed(2)}</div>
-        <div style="font-size:.6875rem;color:var(--subtle)">${m.legs.length} seleções</div>
+        <div style="font-size:.6875rem;color:var(--subtle);font-weight:500">${m.legs.length} seleções</div>
       </div>
     </div>
     <div class="multi-legs">
@@ -540,14 +570,14 @@ function renderMultiCard(m){
 }
 
 /* ========================================================
-   TELA 2 — SINGLES (todos os jogos únicos)
+   TELA 2 — SINGLES
    ======================================================== */
 function renderSingles(){
   const sorted=[...SINGLES].sort((a,b)=>b.score-a.score);
   return `<div class="page active fade-in">
-    <div style="margin-bottom:16px">
-      <h2 style="font-size:1.375rem;font-weight:800;letter-spacing:-.02em">Singles</h2>
-      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px">${SINGLES.length} análises individuais · ordenadas por score</p>
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em">Singles</h2>
+      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">${SINGLES.length} análises · ordenadas por score</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       ${sorted.map(s=>renderBetCard(s)).join('')}
@@ -560,9 +590,9 @@ function renderSingles(){
    ======================================================== */
 function renderMultiples(){
   return `<div class="page active fade-in">
-    <div style="margin-bottom:16px">
-      <h2 style="font-size:1.375rem;font-weight:800;letter-spacing:-.02em">Múltiplas</h2>
-      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px">Combinações sugeridas pela análise</p>
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em">Múltiplas</h2>
+      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">Combinações sugeridas pela análise</p>
     </div>
     <div class="pill-bar" style="margin-bottom:16px">
       <button class="pill active" onclick="filterMulti(this,'')">Todas</button>
@@ -583,41 +613,66 @@ function filterMulti(btn,type){
   const list=$('#multi-list');if(!list)return;
   const filtered=type?MULTIPLES.filter(m=>m.type===type):MULTIPLES;
   list.innerHTML=filtered.map(m=>renderMultiCard(m)).join('')||
-    '<div style="text-align:center;padding:32px;color:var(--subtle)">Nenhuma múltipla deste tipo.</div>';
+    '<div style="text-align:center;padding:40px;color:var(--subtle);font-weight:500">Nenhuma múltipla deste tipo.</div>';
 }
 
 /* ========================================================
-   TELA 4 — STATS (resumido)
+   TELA 4 — STATS — grid assimétrico (bento)
    ======================================================== */
 function renderStats(){
   return `<div class="page active fade-in">
-    <div style="margin-bottom:16px">
-      <h2 style="font-size:1.375rem;font-weight:800;letter-spacing:-.02em">Estatísticas</h2>
-      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px">Performance dos modelos</p>
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em">Estatísticas</h2>
+      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">Performance geral dos modelos</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-      <div class="card text-center" style="padding:16px"><div style="font-size:1.5rem;font-weight:800;color:var(--lime-dk)">+${KPIS.roi}%</div><div style="font-size:.625rem;color:var(--subtle);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600">ROI Total</div></div>
-      <div class="card text-center" style="padding:16px"><div style="font-size:1.5rem;font-weight:800">${KPIS.hitRate}%</div><div style="font-size:.625rem;color:var(--subtle);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600">Hit Rate</div></div>
-      <div class="card text-center" style="padding:16px"><div style="font-size:1.5rem;font-weight:800;color:var(--warning)">${KPIS.brier}</div><div style="font-size:.625rem;color:var(--subtle);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600">Brier Score</div></div>
-      <div class="card text-center" style="padding:16px"><div style="font-size:1.5rem;font-weight:800;color:var(--lime-dk)">+${KPIS.edge}%</div><div style="font-size:.625rem;color:var(--subtle);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600">Edge Médio</div></div>
+
+    <!-- bento grid assimétrico — cards de tamanhos diferentes -->
+    <div class="bento bento--hero" style="margin-bottom:12px">
+      <div class="bento-card bento-card--lime bento-tall" style="padding:28px 24px">
+        <div class="bento-val bento-val--xl">+${KPIS.roi}%</div>
+        <div class="bento-label">ROI Total</div>
+      </div>
+      <div class="bento-card" style="padding:20px">
+        <div class="bento-val">${KPIS.hitRate}%</div>
+        <div class="bento-label">Hit Rate</div>
+      </div>
+      <div class="bento-card bento-card--dark" style="padding:20px">
+        <div class="bento-val" style="color:var(--lime)">+${KPIS.edge}%</div>
+        <div class="bento-label">Edge Médio</div>
+      </div>
     </div>
+    <div class="bento bento--duo" style="margin-bottom:24px">
+      <div class="bento-card" style="padding:20px">
+        <div class="bento-val" style="color:var(--warning)">${KPIS.brier}</div>
+        <div class="bento-label">Brier Score</div>
+      </div>
+      <div class="bento-card bento-card--dark" style="padding:20px">
+        <div class="bento-val">${SINGLES.length}</div>
+        <div class="bento-label">Jogos Analisados</div>
+      </div>
+    </div>
+
+    <!-- por mercado -->
     <div class="section-label" style="margin-bottom:12px">POR MERCADO</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
       ${[{m:'Resultado Final',n:152,roi:13.1},{m:'Gols (Over/Under)',n:88,roi:15.8},{m:'Ambas Marcam',n:50,roi:7.4}].map(x=>`
-        <div class="card" style="padding:14px;display:flex;align-items:center;justify-content:space-between">
-          <div><div style="font-weight:700;font-size:.875rem">${x.m}</div><div style="font-size:.6875rem;color:var(--subtle)">${x.n} análises</div></div>
-          <div style="font-weight:800;color:var(--lime-dk)">+${x.roi}%</div>
+        <div class="roi-card">
+          <div class="roi-card-info"><div class="roi-card-name">${x.m}</div><div class="roi-card-sub">${x.n} análises</div></div>
+          <div class="roi-card-val">+${x.roi}%</div>
         </div>`).join('')}
     </div>
+
+    <!-- por liga -->
     <div class="section-label" style="margin-bottom:12px">POR LIGA</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       ${[{l:'Brasileirão A',n:186,roi:14.2},{l:'Copa do Brasil',n:42,roi:8.7},{l:'Libertadores',n:38,roi:11.3}].map(x=>`
-        <div class="card" style="padding:14px;display:flex;align-items:center;justify-content:space-between">
-          <div><div style="font-weight:700;font-size:.875rem">${x.l}</div><div style="font-size:.6875rem;color:var(--subtle)">${x.n} análises</div></div>
-          <div style="font-weight:800;color:var(--lime-dk)">+${x.roi}%</div>
+        <div class="roi-card">
+          <div class="roi-card-info"><div class="roi-card-name">${x.l}</div><div class="roi-card-sub">${x.n} análises</div></div>
+          <div class="roi-card-val">+${x.roi}%</div>
         </div>`).join('')}
     </div>
-    <p style="margin-top:16px;text-align:center;font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">⚠️ Resultados passados não indicam resultados futuros</p>
+
+    <p style="margin-top:20px;text-align:center;font-size:.5625rem;text-transform:uppercase;letter-spacing:.08em;color:var(--subtle);font-weight:600">⚠️ Resultados passados não indicam resultados futuros</p>
   </div>`;
 }
 
@@ -634,41 +689,52 @@ function openSheet(id){
   $('#sheet-content').innerHTML=`
     <div class="sheet-handle"></div>
     <button class="sheet-close" onclick="closeSheet()">${icon('x',16)}</button>
-    <div style="padding:20px 20px 36px">
+    <div style="padding:20px 20px 40px">
       <!-- cabeçalho -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-        ${tc(s.home,38)}${tc(s.away,38,'away')}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
+        ${tc(s.home,40)}${tc(s.away,40,'away')}
         <div style="flex:1">
-          <div style="font-weight:800;font-size:1rem">${s.home} vs ${s.away}</div>
-          <div style="font-size:.75rem;color:var(--subtle)">${s.league} · Hoje ${s.time}</div>
+          <div style="font-weight:900;font-size:1.0625rem;letter-spacing:-.02em">${s.home} vs ${s.away}</div>
+          <div style="font-size:.75rem;color:var(--subtle);font-weight:500">${s.league} · Hoje ${s.time}</div>
         </div>
       </div>
 
-      <!-- ODD GIGANTE -->
-      <div class="card" style="text-align:center;padding:24px;margin-bottom:16px;border:2px solid var(--lime-d)">
-        <div style="font-size:.6875rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:8px">${s.market}</div>
-        <div style="font-size:3rem;font-weight:800;line-height:1;letter-spacing:-.03em;color:var(--dark)">${s.odd.toFixed(2)}</div>
-        <div style="margin-top:10px;display:inline-flex;align-items:center;gap:4px;padding:6px 16px;border-radius:999px;background:var(--lime-d);color:var(--lime-dk);font-weight:700;font-size:.8125rem">
-          ${icon('check',14)} ${s.sel}
+      <!-- ODD GIGANTE — centro do card -->
+      <div class="card" style="text-align:center;padding:28px;margin-bottom:16px;border:2px solid var(--lime)">
+        <div style="font-size:.625rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.1em;font-weight:800;margin-bottom:10px">${s.market}</div>
+        <div style="font-size:3.5rem;font-weight:900;line-height:1;letter-spacing:-.04em;color:var(--dark)">${s.odd.toFixed(2)}</div>
+        <div style="margin-top:14px">
+          <span class="btn-pill btn-pill--dark" style="padding:8px 20px;font-size:.8125rem;cursor:default">
+            ${icon('check',14)} ${s.sel}
+          </span>
         </div>
-        <div style="font-size:.75rem;color:var(--subtle);margin-top:8px">${s.book} · Melhor odd disponível</div>
+        <div style="font-size:.6875rem;color:var(--subtle);margin-top:10px;font-weight:500">${s.book} · Melhor odd disponível</div>
       </div>
 
       <!-- KPIs -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-        <div class="card text-center" style="padding:12px"><div style="font-size:1.125rem;font-weight:800;color:var(--lime-dk)">+${s.edge.toFixed(1)}%</div><div style="font-size:.5625rem;color:var(--subtle);margin-top:2px;text-transform:uppercase;font-weight:600">Edge</div></div>
-        <div class="card text-center" style="padding:12px"><div style="font-size:1.125rem;font-weight:800">${(s.fairP*100).toFixed(1)}%</div><div style="font-size:.5625rem;color:var(--subtle);margin-top:2px;text-transform:uppercase;font-weight:600">Prob. Justa</div></div>
-        <div class="card text-center" style="padding:12px"><div style="font-size:1.125rem;font-weight:800;color:var(--warning)">${s.score}</div><div style="font-size:.5625rem;color:var(--subtle);margin-top:2px;text-transform:uppercase;font-weight:600">Score</div></div>
+      <div class="bento bento--trio" style="margin-bottom:20px">
+        <div class="bento-card text-center" style="padding:14px">
+          <div style="font-size:1.25rem;font-weight:900;color:var(--lime-dk)">+${s.edge.toFixed(1)}%</div>
+          <div class="bento-label">Edge</div>
+        </div>
+        <div class="bento-card text-center" style="padding:14px">
+          <div style="font-size:1.25rem;font-weight:900">${(s.fairP*100).toFixed(1)}%</div>
+          <div class="bento-label">Prob. Justa</div>
+        </div>
+        <div class="bento-card bento-card--dark text-center" style="padding:14px">
+          <div style="font-size:1.25rem;font-weight:900;color:var(--lime)">${s.score}</div>
+          <div class="bento-label">Score</div>
+        </div>
       </div>
 
       <!-- modelos -->
-      <div class="section-label" style="margin-bottom:10px">PROBABILIDADE POR MODELO</div>
-      <div style="margin-bottom:16px">
+      <div class="section-label" style="margin-bottom:12px">PROBABILIDADE POR MODELO</div>
+      <div style="margin-bottom:20px">
         ${models.map(([name,prob])=>{
           const pct=(prob*100).toFixed(1);const w=(prob/maxP)*100;
           const isE=name==='Ensemble';
           return `<div class="model-bar">
-            <div class="model-bar-name" style="font-weight:${isE?'700':'500'}">${name}</div>
+            <div class="model-bar-name" style="font-weight:${isE?'800':'600'}">${name}</div>
             <div class="model-bar-track"><div class="model-bar-fill" style="width:${w}%;background:${isE?'var(--lime)':'var(--subtle)'}"></div></div>
             <div class="model-bar-val" style="color:${isE?'var(--lime-dk)':'var(--txt)'}">${pct}%</div>
           </div>`;
@@ -676,7 +742,7 @@ function openSheet(id){
       </div>
 
       <!-- odds por casa -->
-      <div class="section-label" style="margin-bottom:10px">ODDS POR CASA</div>
+      <div class="section-label" style="margin-bottom:12px">ODDS POR CASA</div>
       <div style="overflow-x:auto">
         <table class="odds-table">
           <thead><tr><th>Casa</th><th>Odd</th></tr></thead>
@@ -691,33 +757,42 @@ function openSheet(id){
   document.body.style.overflow='hidden';
 }
 
-/* sheet da múltipla */
+/* sheet da múltipla (e do bilhete do dia) */
 function openMultiSheet(id){
-  const m=MULTIPLES.find(x=>x.id===id);if(!m)return;
+  let m;
+  if(id==='ticket'){
+    /* bilhete do dia = top 3 */
+    const best=[...SINGLES].sort((a,b)=>b.score-a.score).slice(0,3);
+    m={id:'ticket',type:'Tripla',legs:best.map(s=>({home:s.home,away:s.away,sel:s.sel,odd:s.odd,book:s.book})),
+       score:Math.round(best.reduce((s,l)=>s+l.score,0)/best.length)};
+  } else {
+    m=MULTIPLES.find(x=>x.id===id);
+  }
+  if(!m)return;
   const total=multiOdd(m.legs);
   $('#sheet-content').innerHTML=`
     <div class="sheet-handle"></div>
     <button class="sheet-close" onclick="closeSheet()">${icon('x',16)}</button>
-    <div style="padding:20px 20px 36px">
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:.6875rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:8px">${m.type} · ${m.legs.length} seleções</div>
-        <div style="font-size:4rem;font-weight:800;line-height:1;letter-spacing:-.03em;color:var(--dark)">${total.toFixed(2)}</div>
-        <div style="font-size:.75rem;color:var(--subtle);margin-top:6px">Odd Combinada</div>
+    <div style="padding:20px 20px 40px">
+      <div style="text-align:center;margin-bottom:24px">
+        <span style="display:inline-block;font-size:.625rem;font-weight:800;padding:5px 14px;border-radius:999px;background:var(--dark);color:var(--lime);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">${m.type} · ${m.legs.length} seleções</span>
+        <div style="font-size:4.5rem;font-weight:900;line-height:1;letter-spacing:-.04em;color:var(--dark)">${total.toFixed(2)}</div>
+        <div style="font-size:.75rem;color:var(--subtle);margin-top:8px;font-weight:500">Odd Combinada</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:0">
-        ${m.legs.map((l,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:14px 0;${i<m.legs.length-1?'border-bottom:1px solid var(--border)':''}">
-          <div style="width:24px;height:24px;border-radius:50%;background:var(--lime-d);color:var(--lime-dk);display:flex;align-items:center;justify-content:center;font-size:.6875rem;font-weight:800;flex-shrink:0">${i+1}</div>
+        ${m.legs.map((l,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:16px 0;${i<m.legs.length-1?'border-bottom:1px solid var(--border)':''}">
+          <div style="width:28px;height:28px;border-radius:var(--r-sm);background:var(--dark);color:var(--lime);display:flex;align-items:center;justify-content:center;font-size:.6875rem;font-weight:900;flex-shrink:0">${i+1}</div>
           <div style="display:flex;align-items:center;gap:6px">${tc(l.home,24)}${tc(l.away,24,'away')}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:.8125rem">${l.home} vs ${l.away}</div>
-            <div style="font-size:.6875rem;color:var(--lime-dk);font-weight:600">${l.sel}</div>
+            <div style="font-weight:800;font-size:.8125rem;letter-spacing:-.01em">${l.home} vs ${l.away}</div>
+            <div style="font-size:.6875rem;color:var(--lime-dk);font-weight:700">${l.sel}</div>
           </div>
-          <div style="font-size:1.25rem;font-weight:800;flex-shrink:0">${l.odd.toFixed(2)}</div>
+          <div style="font-size:1.375rem;font-weight:900;flex-shrink:0;letter-spacing:-.02em">${l.odd.toFixed(2)}</div>
         </div>`).join('')}
       </div>
-      <div class="card" style="margin-top:16px;text-align:center;padding:16px;border:2px solid var(--lime-d)">
-        <div style="font-size:.6875rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em;font-weight:600">Score Médio</div>
-        <div style="font-size:2rem;font-weight:800;color:var(--lime-dk);margin-top:4px">${m.score}</div>
+      <div class="card bento-card--lime" style="margin-top:20px;text-align:center;padding:20px;border:none">
+        <div style="font-size:.625rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;opacity:.6">Score Médio</div>
+        <div style="font-size:2.5rem;font-weight:900;line-height:1;margin-top:4px">${m.score}</div>
       </div>
     </div>`;
   $('#detail-sheet').classList.add('open');
@@ -732,6 +807,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').cat
 /* ===== boot ===== */
 function init(){
   renderPage();updateStatus();
+  /* swipe pra fechar sheet */
   const sb=$('#sheet-content');let sy=0;
   sb.addEventListener('touchstart',e=>{sy=e.touches[0].clientY},{passive:true});
   sb.addEventListener('touchmove',e=>{if(sb.scrollTop<=0&&e.touches[0].clientY-sy>60)closeSheet()},{passive:true});
