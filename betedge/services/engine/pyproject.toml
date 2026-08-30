@@ -1,0 +1,47 @@
+[project]
+name = "betedge-engine"
+version = "0.1.0"
+description = "Motor estatístico do BetEdge — geração de predições, cálculo de value bets e backtesting."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "BetEdge" }]
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-settings",
+    "sqlalchemy",
+    "asyncpg",
+    "psycopg2-binary",
+    "pandas",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "xgboost",
+    "lightgbm",
+    "redis",
+    "celery",
+    "httpx",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "httpx",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

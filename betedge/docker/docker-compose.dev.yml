@@ -1,0 +1,73 @@
+# =============================================================================
+# docker-compose.dev.yml — BetEdge, ambiente de desenvolvimento local
+#
+# Sobe SOMENTE as dependências de infraestrutura (Postgres + Redis). Os
+# processos de aplicação rodam fora de container para melhor DX:
+#   - apps/web (Next.js)     → `pnpm --filter @betedge/web dev`
+#   - services/engine        → `uvicorn app.main:app --reload` (FastAPI local)
+#   - services/workers/node  → `pnpm --filter @betedge/workers-node dev`
+#   - services/workers/python→ `celery -A celery_app worker --loglevel=info`
+#
+# Este arquivo é INDEPENDENTE de docker-compose.yml (não é um override a ser
+# combinado com `-f docker-compose.yml -f docker-compose.dev.yml`) — os dois
+# não devem rodar ao mesmo tempo, pois disputariam as mesmas portas de
+# Postgres/Redis. Use este para o dia a dia; use o outro só para validar o
+# build final "produção-like" da stack completa.
+#
+# Uso:
+#   cd betedge/docker
+#   docker compose -f docker-compose.dev.yml up -d
+# =============================================================================
+
+name: betedge-dev
+
+networks:
+  betedge-dev-network:
+    driver: bridge
+
+volumes:
+  betedge-dev-postgres-data:
+  betedge-dev-redis-data:
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: betedge-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-betedge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-betedge}
+      POSTGRES_DB: ${POSTGRES_DB:-betedge}
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    ports:
+      # Porta exposta ao host para que o Next.js/FastAPI/Supabase CLI locais
+      # (rodando fora de container) se conectem normalmente em localhost.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - betedge-dev-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-betedge} -d $${POSTGRES_DB:-betedge}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - betedge-dev-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: betedge-dev-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - betedge-dev-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - betedge-dev-network
