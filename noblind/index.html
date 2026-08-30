@@ -33,7 +33,10 @@
 }
 html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--font-b);background:var(--bg);color:var(--txt);line-height:1.5;
-  overflow:hidden;height:100dvh;position:fixed;width:100%;top:0;left:0}
+  overflow:hidden;height:100dvh;position:fixed;width:100%;top:0;left:0;
+  background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(255,31,45,.05),transparent),
+    radial-gradient(ellipse 50% 30% at 100% 0%,rgba(255,31,45,.02),transparent);
+  background-attachment:fixed}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-user-select:none}
 img{max-width:100%}
@@ -57,14 +60,16 @@ img{max-width:100%}
   border-right:1px solid var(--border-s);background:var(--bg2);transition:width .2s}
 #sidebar.collapsed{width:72px}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-#topbar{display:flex;align-items:center;justify-content:space-between;height:52px;
-  padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border-s);
-  background:rgba(5,5,5,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+/* topbar — layout 01: h-14 (56px), sem hambúrguer */
+#topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
+  padding:0 16px;flex-shrink:0;border-bottom:1px solid rgba(30,32,36,.3);
+  background:rgba(5,5,5,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
   padding-bottom:calc(76px + var(--safe-b))}
-#bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(68px + var(--safe-b));
-  padding-bottom:var(--safe-b);display:flex;align-items:center;justify-content:space-around;
-  background:rgba(9,10,12,.92);border-top:1px solid var(--border-s);z-index:50;
+/* bottom nav — layout 01: borda sutil, backdrop blur */
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;
+  padding-bottom:var(--safe-b);display:flex;align-items:center;
+  background:rgba(9,10,12,.95);border-top:1px solid rgba(30,32,36,.4);z-index:50;
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 
 /* ===== sidebar ===== */
@@ -72,7 +77,6 @@ img{max-width:100%}
   #sidebar{display:flex}
   #bottom-nav{display:none}
   #content{padding-bottom:0}
-  #btn-menu{display:none}
 }
 .sb-logo{display:flex;align-items:center;gap:8px;height:56px;padding:0 16px;flex-shrink:0}
 .sb-logo .icon-box{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
@@ -96,60 +100,57 @@ img{max-width:100%}
 #sidebar.collapsed .sb-logo{justify-content:center;padding:0}
 #sidebar.collapsed .sb-footer{flex-direction:column;gap:6px}
 
-/* ===== bottom nav — redesign premium com 5 itens ===== */
-.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;
-  font-size:.5625rem;font-weight:600;color:var(--subtle);transition:all .2s;
-  -webkit-tap-highlight-color:transparent;min-width:52px;position:relative;
-  letter-spacing:.04em;text-transform:uppercase}
-.bn-item svg{transition:all .2s}
+/* ===== bottom nav — layout 01: ícone ativo com fundo sutil, sem barra superior ===== */
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;flex:1;
+  font-size:.625rem;font-weight:500;color:var(--subtle);transition:color .2s;
+  -webkit-tap-highlight-color:transparent;text-transform:uppercase}
 .bn-item.active{color:var(--primary)}
-.bn-item.active svg{filter:drop-shadow(0 0 6px var(--primary-glow))}
-.bn-item.active::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);
-  width:24px;height:3px;border-radius:0 0 3px 3px;background:var(--primary);
-  box-shadow:0 2px 8px var(--primary-glow)}
+.bn-item.disabled{color:rgba(101,104,110,.5);pointer-events:none}
+.bn-icon-wrap{display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+  border-radius:8px;transition:background .2s}
+.bn-item.active .bn-icon-wrap{background:rgba(255,31,45,.1)}
 
-/* ===== topbar ===== */
+/* ===== topbar — layout 01: logo tipográfico, PRO badge, bookmark + sino ===== */
 .tb-brand{display:flex;align-items:center;gap:8px}
-.tb-brand .icon-box{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border-radius:6px;background:var(--primary-d)}
-.tb-badge{font-size:.5rem;font-weight:700;background:var(--primary);color:#fff;
-  padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em}
-.tb-actions{display:flex;gap:4px}
-.tb-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+.tb-logo{font-family:var(--font-d);font-size:1.125rem;font-weight:700;text-transform:uppercase;letter-spacing:-.01em}
+.tb-badge{font-size:.625rem;font-weight:700;background:var(--primary);color:#fff;
+  padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;margin-left:2px}
+.tb-actions{display:flex;align-items:center;gap:4px}
+.tb-btn{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
   border-radius:var(--r-sm);color:var(--muted);transition:all .15s}
-.tb-btn:hover{background:rgba(255,255,255,.06);color:var(--txt)}
+.tb-btn:hover,.tb-btn:active{background:rgba(255,255,255,.06);color:var(--txt)}
+.tb-notif-dot{position:absolute;right:8px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
 
 /* ===== cards — sistema de elevação ===== */
 .card{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:16px;
   transition:border-color .2s}
-.card-premium{background:linear-gradient(135deg,var(--card) 0%,rgba(255,31,45,.04) 100%);
-  border:1px solid rgba(255,31,45,.18);border-radius:var(--r-lg);
+/* card-premium — layout 01: fundo superfície, borda vermelha sutil, raio xl */
+.card-premium{background:var(--surface);border:1px solid rgba(30,32,36,.4);border-radius:var(--r-lg);
   padding:16px;position:relative;overflow:hidden;
-  box-shadow:0 0 40px -12px rgba(255,31,45,.12),inset 0 1px 0 rgba(255,255,255,.03)}
+  box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .card-accent{background:var(--card);border:1px solid rgba(141,255,31,.12);border-radius:var(--r);padding:16px;
   box-shadow:0 0 20px -8px var(--success-glow)}
 
-/* ===== chips ===== */
-.chip{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;
-  font-size:.75rem;font-weight:600;background:var(--surface);color:var(--muted);
-  border:1px solid transparent;transition:all .2s;cursor:pointer;white-space:nowrap;
+/* ===== chips — layout 01: ativo = fundo vermelho sólido ===== */
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9999px;
+  font-size:.875rem;font-weight:500;background:var(--surface);color:var(--muted);
+  border:1px solid rgba(30,32,36,.4);transition:all .2s;cursor:pointer;white-space:nowrap;
   -webkit-tap-highlight-color:transparent}
-.chip:active{transform:scale(.96)}
-.chip.active{background:var(--primary-d);color:var(--primary);border-color:rgba(255,31,45,.3);
-  box-shadow:0 0 12px -4px var(--primary-glow)}
+.chip:active{transform:scale(.98)}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary);
+  box-shadow:0 0 24px rgba(255,31,45,.25)}
 
 /* ===== page ===== */
 .page{display:none;padding:16px;padding-top:14px}
 .page.active{display:block}
 .section{margin-bottom:20px}
 
-/* seção com barra vermelha — identidade visual do layout 01 */
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.section-title{font-family:var(--font-d);font-weight:700;font-size:.9375rem;text-transform:uppercase;
-  letter-spacing:.04em;display:flex;align-items:center;gap:8px}
-.section-title::before{content:'';display:inline-block;width:3px;height:16px;border-radius:2px;
+/* seção com barra vermelha — layout 01: 4px × 20px, totalmente arredondada */
+.section-head{display:flex;align-items:center;justify-content:space-between}
+.section-title{font-family:var(--font-d);font-weight:700;font-size:.875rem;text-transform:uppercase;
+  letter-spacing:.05em;display:flex;align-items:center;gap:12px}
+.section-title::before{content:'';display:inline-block;width:4px;height:20px;border-radius:9999px;
   background:var(--primary);flex-shrink:0}
-.section-title svg{color:var(--primary);flex-shrink:0}
 
 /* ===== kpi card — redesign com gradientes ===== */
 .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -160,11 +161,12 @@ img{max-width:100%}
 .kpi-label{font-size:.625rem;color:var(--subtle);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
 .kpi-trend{font-size:.5625rem;font-weight:600;margin-top:2px}
 
-/* ===== opportunity row — visual premium ===== */
-.opp-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);
-  border:1px solid var(--border-s);border-radius:var(--r);margin-bottom:8px;
-  transition:all .15s;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.opp-row:active{transform:scale(.985);border-color:rgba(255,255,255,.08)}
+/* ===== opportunity row — layout 01: sem borda, hover sutil ===== */
+.opp-row{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-radius:var(--r);transition:all .2s;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.opp-row:hover,.opp-row:active{background:rgba(255,255,255,.04)}
+.opp-row:active{transform:scale(.98)}
 .opp-teams{display:flex;align-items:center}
 .team-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--card);
@@ -180,12 +182,9 @@ img{max-width:100%}
   font-family:var(--font-d);font-weight:700;font-size:.875rem;color:var(--success)}
 .opp-edge-label{font-size:.5625rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 
-/* ===== hero card — layout 01 premium ===== */
-.hero{position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-20px;right:-20px;width:160px;height:160px;
-  background:radial-gradient(circle,rgba(255,31,45,.2),transparent 65%);pointer-events:none}
-.hero::after{content:'';position:absolute;bottom:-40px;left:-40px;width:120px;height:120px;
-  background:radial-gradient(circle,rgba(255,31,45,.08),transparent 65%);pointer-events:none}
+/* ===== hero card — layout 01: borda primary/20, sombra glass ===== */
+.hero{position:relative;overflow:hidden;border-color:rgba(255,31,45,.2)!important;
+  box-shadow:0 8px 32px rgba(0,0,0,.55)!important}
 .hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
 .hero-badge{display:inline-flex;align-items:center;gap:4px;font-size:.625rem;font-weight:700;
   background:var(--primary);color:#fff;padding:4px 10px;border-radius:6px;
@@ -207,21 +206,22 @@ img{max-width:100%}
 .gauge{display:inline-flex;align-items:center;justify-content:center;position:relative}
 .gauge-text{position:absolute;font-family:var(--font-d);font-weight:700;text-align:center}
 
-/* ===== date scroll — pílulas com glow ativo ===== */
-.date-scroll{display:flex;gap:6px;overflow-x:auto;padding:4px 0;-webkit-overflow-scrolling:touch;
+/* ===== date selector — layout 01: setas + pílulas sem mês ===== */
+.date-wrap{display:flex;align-items:center;gap:8px}
+.date-arrow{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;
+  border-radius:var(--r-sm);color:var(--muted);transition:all .15s}
+.date-arrow:active{background:rgba(16,17,20,.6);color:var(--txt)}
+.date-scroll{display:flex;flex:1;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;-ms-overflow-style:none}
 .date-scroll::-webkit-scrollbar{display:none}
-.date-pill{display:flex;flex-direction:column;align-items:center;padding:8px 10px;
-  border-radius:var(--r);background:var(--surface);min-width:46px;cursor:pointer;
-  transition:all .2s;flex-shrink:0;-webkit-tap-highlight-color:transparent;
-  border:1px solid transparent}
-.date-pill.active{background:var(--primary);color:#fff;border-color:rgba(255,31,45,.5);
-  box-shadow:0 0 16px -4px var(--primary-glow)}
-.date-pill .dow{font-size:.5625rem;font-weight:600;text-transform:uppercase;color:var(--subtle)}
-.date-pill.active .dow{color:rgba(255,255,255,.75)}
-.date-pill .day{font-family:var(--font-d);font-weight:700;font-size:1.125rem;line-height:1.2}
-.date-pill .month{font-size:.5rem;font-weight:500;color:var(--subtle);text-transform:uppercase}
-.date-pill.active .month{color:rgba(255,255,255,.6)}
+.date-pill{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;
+  border-radius:var(--r);background:var(--surface);min-width:3rem;flex:1;cursor:pointer;
+  transition:all .2s;-webkit-tap-highlight-color:transparent}
+.date-pill:active{transform:scale(.98)}
+.date-pill.active{background:var(--primary);color:#fff;box-shadow:0 0 24px rgba(255,31,45,.25)}
+.date-pill .dow{font-size:.625rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.date-pill.active .dow{color:rgba(255,255,255,.8)}
+.date-pill .day{font-size:.875rem;font-weight:700;font-variant-numeric:tabular-nums}
 
 /* ===== odds grid ===== */
 .odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
@@ -344,18 +344,17 @@ img{max-width:100%}
   </aside>
 
   <div id="main" style="display:flex;flex-direction:column;flex:1;min-width:0">
-    <!-- topbar -->
+    <!-- topbar — layout 01: tipografia display, sem hambúrguer -->
     <header id="topbar">
       <div class="tb-brand">
-        <button id="btn-menu" class="tb-btn" style="margin-right:4px" aria-label="Menu"></button>
-        <div class="icon-box tb-icon-box" id="tb-icon"></div>
-        <span class="font-d fw7 upper" style="font-size:.8125rem">
-          <span>NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span>
+        <span class="tb-logo">
+          <span style="color:var(--txt)">NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span>
         </span>
         <span class="tb-badge">PRO</span>
       </div>
-      <div class="tb-actions" style="display:flex;align-items:center;gap:6px">
+      <div class="tb-actions">
         <div id="sb-status"></div>
+        <button class="tb-btn" id="tb-bookmark" aria-label="Favoritos"></button>
         <button class="tb-btn" id="tb-bell" aria-label="Notificações"></button>
       </div>
     </header>
@@ -768,7 +767,7 @@ function updateNav(){
   });
 }
 
-/* ===== render bottom nav — 5 itens, layout 01 ===== */
+/* ===== render bottom nav — layout 01: ícone com fundo sutil quando ativo ===== */
 function renderBottomNav(){
   const nav=$('#bottom-nav');
   const items=[...PAGES,{id:'perfil',label:'Perfil',icon:'user'}];
@@ -776,11 +775,18 @@ function renderBottomNav(){
   items.forEach(p=>{
     const isActive=p.id===currentPage;
     const isPerfil=p.id==='perfil';
-    h+=`<button class="bn-item${isActive?' active':''}" data-page="${p.id}"
-      onclick="${isPerfil?'':`navigate('${p.id}')`}">
-      ${icon(p.icon,21)}
-      <span>${p.label}</span>
-    </button>`;
+    const cls=isPerfil?'bn-item disabled':`bn-item${isActive?' active':''}`;
+    if(isPerfil){
+      h+=`<div class="${cls}">
+        <div class="bn-icon-wrap">${icon(p.icon,20)}</div>
+        <span>${p.label}</span>
+      </div>`;
+    }else{
+      h+=`<button class="${cls}" data-page="${p.id}" onclick="navigate('${p.id}')">
+        <div class="bn-icon-wrap">${icon(p.icon,20)}</div>
+        <span>${p.label}</span>
+      </button>`;
+    }
   });
   nav.innerHTML=h;
 }
@@ -814,13 +820,12 @@ function renderSidebar(){
   `;
 }
 
-/* ===== render topbar ===== */
+/* ===== render topbar — layout 01: bookmark + sino com dot ===== */
 function renderTopbar(){
-  $('#btn-menu').innerHTML=icon('menu',20);
-  $('#btn-menu').onclick=openDrawer;
-  $('#tb-icon').innerHTML=icon('trending',16,'');
-  $('#tb-icon').style.cssText='width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--primary-d);color:var(--primary)';
-  $('#tb-bell').innerHTML=icon('bell',18);
+  const bm=$('#tb-bookmark');
+  if(bm) bm.innerHTML=icon('bookmark',18);
+  const bell=$('#tb-bell');
+  if(bell) bell.innerHTML=`${icon('bell',18)}<span class="tb-notif-dot"></span>`;
 }
 
 /* ===== drawer mobile ===== */
@@ -876,7 +881,7 @@ function renderPlaceholder(title,desc,ic){
   </div>`;
 }
 
-/* ===== DASHBOARD ===== */
+/* ===== DASHBOARD — layout 01 fiel ao Next.js ===== */
 function renderDashboard(){
   /* datas para o scroll horizontal */
   const today=new Date();
@@ -896,24 +901,33 @@ function renderDashboard(){
   /* melhor oportunidade (hero) */
   const hero=OPPS.reduce((a,b)=>b.score>a.score?b:a,OPPS[0]);
 
-  /* top 5 por score */
-  const top5=[...OPPS].sort((a,b)=>b.score-a.score).slice(0,5);
+  /* top 5 por score (excluindo hero) */
+  const top5=[...OPPS].sort((a,b)=>b.score-a.score).filter(o=>o.id!==hero.id).slice(0,5);
 
-  /* odds movement sparkline data (simulado) */
-  const oddsMovement=[2.05,2.08,2.12,2.10,2.15,2.18,2.20,2.25];
+  /* KPIs derivados das oportunidades */
+  const bestEv=Math.max(...OPPS.map(o=>o.ev));
+  const bestOddsOpp=OPPS.reduce((a,b)=>a.bestOdds>b.bestOdds?a:b);
+  const bestScore=Math.max(...OPPS.map(o=>o.score));
 
-  return `<div class="page active fade-in">
-    <!-- saudação -->
-    <div class="section" style="margin-bottom:14px">
-      <div class="flex items-center gap-2">
-        <h1 class="font-d fw8 fs-hero" style="line-height:1.1">${greeting()}, Wagner</h1>
-        <span id="mode-badge" class="stat-pill stat-pill--demo">DEMO</span>
-      </div>
-      <p class="c-subtle fs-sm" style="margin-top:6px">${OPPS.length} oportunidades ativas · <span style="color:var(--success)">${OPPS.filter(o=>o.score>=80).length} score alto</span></p>
+  /* odds movement (simulado — 8 pontos com tendência de alta) */
+  const baseOdd=hero.bestOdds;
+  const oddsHistory=['12h','14h','16h','18h','20h','22h','00h','Agora'].map((t,i)=>{
+    const v=+(baseOdd-0.12+i*0.025+Math.sin(i*0.8)*0.03).toFixed(2);
+    return {t,v};
+  });
+  const oddsVals=oddsHistory.map(d=>d.v);
+
+  return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:20px">
+
+    <!-- A. Saudação + título grande "OPORTUNIDADES" — layout 01 -->
+    <div style="padding-top:4px">
+      <p class="fs-sm c-muted">${greeting()}, Analista</p>
+      <h1 class="font-d fw8 upper" style="font-size:2.75rem;line-height:1;letter-spacing:-.01em;margin-top:2px">Oportunidades</h1>
+      <p class="c-subtle fs-sm" style="margin-top:4px">As melhores leituras quantitativas para hoje.</p>
     </div>
 
-    <!-- filtro de esporte — chips com ícones -->
-    <div class="section" style="margin-bottom:14px">
+    <!-- B. Filtros de esporte — chips -->
+    <div>
       <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none">
         <button class="chip active" data-sport="futebol" onclick="setSport(this)">⚽ Futebol</button>
         <button class="chip" data-sport="basquete" onclick="setSport(this)">🏀 Basquete</button>
@@ -922,18 +936,26 @@ function renderDashboard(){
       </div>
     </div>
 
-    <!-- calendário horizontal com mês -->
-    <div class="section" style="margin-bottom:16px">
-      <div class="date-scroll">
-        ${dates.map((d,i)=>`<button class="date-pill${d.isToday?' active':''}" data-idx="${i}" onclick="setDate(this)">
-          <span class="dow">${d.dow}</span><span class="day">${d.day}</span><span class="month">${d.month}</span>
-        </button>`).join('')}
+    <!-- C. Calendário horizontal — layout 01: setas + dia da semana + número -->
+    <div>
+      <div class="date-wrap">
+        <button class="date-arrow" aria-label="Semana anterior">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="date-scroll">
+          ${dates.map((d,i)=>`<button class="date-pill${d.isToday?' active':''}" data-idx="${i}" onclick="setDate(this)">
+            <span class="dow">${d.dow}</span><span class="day">${d.day}</span>
+          </button>`).join('')}
+        </div>
+        <button class="date-arrow" aria-label="Próxima semana">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
     </div>
 
-    <!-- hero card — melhor oportunidade, design premium -->
-    <div class="section">
-      <div class="card-premium hero">
+    <!-- D. Hero — oportunidade em destaque -->
+    <div>
+      <div class="card-premium hero" onclick="openSheet(${hero.id})" style="cursor:pointer">
         <div class="hero-top">
           <div>
             <span class="hero-badge">${icon('zap',10)} MELHOR OPORTUNIDADE</span>
@@ -941,7 +963,7 @@ function renderDashboard(){
           </div>
           ${gauge(hero.score,58,4)}
         </div>
-        <div class="hero-teams" onclick="openSheet(${hero.id})" style="cursor:pointer">
+        <div class="hero-teams">
           <div class="hero-team">
             ${teamCircle(hero.home,42)}
             <div>
@@ -975,86 +997,109 @@ function renderDashboard(){
       </div>
     </div>
 
-    <!-- KPIs — grid refinado -->
-    <div class="section">
-      <div class="kpi-grid">
-        <div class="kpi">
-          <div class="kpi-val c-success">${fmtPct(KPIS.roi)}</div>
-          <div class="kpi-label">ROI</div>
-          <div class="kpi-trend" style="color:var(--success)">▲ 2.1% 30d</div>
+    <!-- E. KPIs — 3 cards layout 01 (Valor Esperado, Melhor Odd, Score) -->
+    <div class="kpi-grid">
+      <!-- Valor Esperado com mini sparkline -->
+      <div class="card-premium" style="padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:8px">
+        <span style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Valor Esperado</span>
+        <div class="flex items-center justify-between">
+          <span class="font-d fw7 fs-xl c-success" style="font-variant-numeric:tabular-nums">${fmtPct(bestEv)}</span>
+          <svg width="32" height="18" viewBox="0 0 32 18" fill="none" style="opacity:.4;flex-shrink:0" aria-hidden="true">
+            <polyline points="2,16 8,12 14,13 20,8 26,6 30,2" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="kpi">
-          <div class="kpi-val">${KPIS.hitRate}%</div>
-          <div class="kpi-label">Hit Rate</div>
-          <div class="kpi-trend" style="color:var(--success)">▲ 3.8%</div>
+      </div>
+
+      <!-- Melhor Odd com bookmaker -->
+      <div class="card-premium" style="padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:8px">
+        <span style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Melhor Odd</span>
+        <div>
+          <span class="font-d fw7 fs-xl" style="font-variant-numeric:tabular-nums">${bestOddsOpp.bestOdds.toFixed(2)}</span>
+          <div style="font-size:.5625rem;color:var(--subtle);margin-top:1px">${bestOddsOpp.bestBook}</div>
         </div>
-        <div class="kpi">
-          <div class="kpi-val c-primary">${KPIS.activeBets}</div>
-          <div class="kpi-label">Ativas</div>
-          <div class="kpi-trend c-subtle">+4 hoje</div>
+      </div>
+
+      <!-- NoBlind Score com gauge centralizado -->
+      <div class="card-premium" style="padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+        <span style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--primary)">Score</span>
+        ${gauge(bestScore,52,4)}
+      </div>
+    </div>
+
+    <!-- F. Top Oportunidades — layout 01 -->
+    <div>
+      <div class="section-head">
+        <h3 class="section-title">Top Oportunidades</h3>
+        <button class="c-primary fs-xs fw6 upper" onclick="navigate('oportunidades')" style="white-space:nowrap;letter-spacing:.04em">VER TODAS ></button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        ${top5.map(o=>`
+          <div class="opp-row interactive" onclick="openSheet(${o.id})">
+            <div class="opp-teams">
+              ${teamCircle(o.home,32)}
+              ${teamCircle(o.away,32,'away')}
+            </div>
+            <div class="opp-info">
+              <div class="opp-match">${o.home} vs ${o.away}</div>
+              <div class="opp-meta">${o.market} · ${o.sel} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
+            </div>
+            <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+              <div class="edge-badge">${fmtPct(o.edge)}</div>
+              <div class="opp-edge-label">Edge</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- G. Movimento das Odds — layout 01 (chart + info lateral) -->
+    <div>
+      <div class="section-head">
+        <h3 class="section-title">Movimento das Odds</h3>
+      </div>
+      <div class="card-premium" style="margin-top:12px;padding:16px;overflow:hidden">
+        <div style="display:flex;gap:16px;align-items:center">
+          <div style="flex:1;min-width:0">
+            ${areaChart(oddsVals,oddsHistory.map(d=>d.t),260,112,'var(--primary)')}
+          </div>
+          <div style="flex-shrink:0;text-align:right;min-width:80px">
+            <p style="font-size:.6875rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--primary)">${hero.home} x ${hero.away}</p>
+            <p class="font-d fw7 fs-xl" style="margin-top:4px;font-variant-numeric:tabular-nums">${hero.bestOdds.toFixed(2)}</p>
+            <p class="fs-xs c-success fw5" style="margin-top:2px">${fmtPct(hero.edge)}</p>
+            <p style="font-size:.625rem;color:var(--subtle);margin-top:2px">${hero.bestBook}</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- top oportunidades — com barra vermelha no título -->
-    <div class="section">
+    <!-- H. Desempenho do Modelo — 4 MetricCards (layout 01) -->
+    <div>
       <div class="section-head">
-        <h3 class="section-title">${icon('target',15)} Top Oportunidades</h3>
-        <button class="c-primary fs-xs fw6" onclick="navigate('oportunidades')" style="white-space:nowrap">Ver todas →</button>
+        <h3 class="section-title">Desempenho do Modelo</h3>
       </div>
-      ${top5.map(o=>`
-        <div class="opp-row interactive" onclick="openSheet(${o.id})">
-          <div class="opp-teams">
-            ${teamCircle(o.home,32)}
-            ${teamCircle(o.away,32,'away')}
-          </div>
-          <div class="opp-info">
-            <div class="opp-match">${o.home} vs ${o.away}</div>
-            <div class="opp-meta">${o.market} · ${o.sel} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
-          </div>
-          <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-            <div class="edge-badge">${fmtPct(o.edge)}</div>
-            <div class="opp-edge-label">Edge</div>
-          </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="card" style="padding:12px">
+          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Acertos</div>
+          <div class="font-d fw7 fs-xl" style="margin-top:6px">${KPIS.hitRate}%</div>
+          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Taxa de acerto</div>
         </div>
-      `).join('')}
-    </div>
-
-    <!-- movimento de odds (mini chart) -->
-    <div class="section">
-      <div class="section-head">
-        <h3 class="section-title">${icon('trending',15)} Movimento de Odds</h3>
-      </div>
-      <div class="chart-wrap">
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <div class="fs-sm fw6">${hero.home} vs ${hero.away}</div>
-            <div class="fs-xs c-subtle">${hero.market} · ${hero.sel}</div>
-          </div>
-          <div class="text-center">
-            <div class="font-d fw7 fs-lg c-success">${hero.bestOdds.toFixed(2)}</div>
-            <div class="fs-xs c-subtle">Atual</div>
-          </div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">ROI</div>
+          <div class="font-d fw7 fs-xl c-success" style="margin-top:6px">${fmtPct(KPIS.roi)}</div>
+          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Retorno sobre investimento</div>
         </div>
-        ${sparkline(oddsMovement,280,44,'var(--success)')}
-      </div>
-    </div>
-
-    <!-- performance do modelo -->
-    <div class="section">
-      <div class="section-head">
-        <h3 class="section-title">${icon('chart',15)} Modelo</h3>
-      </div>
-      <div class="grid-2">
-        <div class="kpi">
-          <div class="kpi-val" style="color:var(--warning)">${KPIS.brierScore}</div>
-          <div class="kpi-label">Brier Score</div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">CLV</div>
+          <div class="font-d fw7 fs-xl c-success" style="margin-top:6px">${fmtPct(KPIS.avgCLV)}</div>
+          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Valor capturado</div>
         </div>
-        <div class="kpi">
-          <div class="kpi-val c-success">${fmtPct(KPIS.avgCLV)}</div>
-          <div class="kpi-label">CLV Médio</div>
+        <div class="card" style="padding:12px">
+          <div style="font-size:.625rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">Confiança</div>
+          <div class="font-d fw7 fs-xl" style="margin-top:6px">72%</div>
+          <div style="font-size:.5625rem;color:var(--subtle);margin-top:2px">Base crescente</div>
         </div>
       </div>
+      <p style="margin-top:8px;text-align:center;font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle)">⚠️ Amostra ainda não significativa</p>
     </div>
   </div>`;
 }
