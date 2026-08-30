@@ -12,7 +12,7 @@ FROM node:20-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --no-frozen-lockfile --prod=false
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder
@@ -29,7 +29,7 @@ WORKDIR /app
 
 # Apenas dependências de produção
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --no-frozen-lockfile --prod
 
 # Copiar artefatos compilados
 COPY --from=builder /app/dist ./dist
