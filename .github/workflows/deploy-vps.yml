@@ -18,6 +18,7 @@ on:
     paths:
       - 'betedge/**'
       - 'deploy.sh'
+      - '.github/workflows/deploy-vps.yml'
   workflow_dispatch:   # botão manual no GitHub
 
 jobs:
@@ -44,12 +45,28 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "═══ 2. Rebuild dos serviços alterados ═══"
+            echo "═══ 2. Preparando .env ═══"
+            # Garantir que o .env exista (criado no setup inicial)
+            if [ ! -f "$APP_DIR/betedge/.env" ]; then
+              echo "⚠️ .env não encontrado em betedge/ — crie com deploy.sh primeiro"
+              exit 1
+            fi
+            # Garantir POSTGRES_PORT=5433 (VPS tem Postgres local na 5432)
+            grep -q POSTGRES_PORT "$APP_DIR/betedge/.env" || echo "POSTGRES_PORT=5433" >> "$APP_DIR/betedge/.env"
+            # Corrigir CORS_ORIGINS para formato JSON se necessário
+            if grep -q '^CORS_ORIGINS=https' "$APP_DIR/betedge/.env"; then
+              sed -i 's|^CORS_ORIGINS=\(.*\)|CORS_ORIGINS=["\1"]|' "$APP_DIR/betedge/.env"
+            fi
+            # Symlink para docker compose enxergar o .env
+            ln -sf "$APP_DIR/betedge/.env" "$APP_DIR/betedge/docker/.env"
+
+            echo "═══ 3. Rebuild dos serviços ═══"
             cd "$APP_DIR/betedge/docker"
             docker compose build
-            docker compose up -d --force-recreate --remove-orphans
+            docker compose down
+            docker compose up -d
 
-            echo "═══ 3. Verificação ═══"
+            echo "═══ 4. Verificação ═══"
             sleep 15
             docker compose ps
 
