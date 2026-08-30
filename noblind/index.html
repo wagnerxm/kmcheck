@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#050505">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="NO.BLIND — Plataforma de análise esportiva com modelos estatísticos">
+<title>NO.BLIND</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== reset & tokens ===== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505;--bg2:#090A0C;--card:#101114;--surface:#17191D;--elevated:#1C1E22;
+  --border:#1E2024;--border-s:rgba(30,32,36,.4);
+  --primary:#FF1F2D;--primary-h:#E6101E;--primary-d:rgba(255,31,45,.1);--primary-g:rgba(255,31,45,.15);
+  --success:#8DFF1F;--success-d:rgba(141,255,31,.1);
+  --danger:#FF4757;--warning:#FFAA1F;
+  --txt:#FFFFFF;--muted:#A7A9AD;--subtle:#65686E;
+  --font-d:'Barlow Condensed',system-ui,sans-serif;
+  --font-b:'Inter',system-ui,sans-serif;
+  --r:12px;--r-sm:8px;--r-lg:16px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-b);background:var(--bg);color:var(--txt);line-height:1.5;
+  overflow:hidden;height:100dvh;position:fixed;width:100%;top:0;left:0}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-user-select:none}
+img{max-width:100%}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ===== tipografia ===== */
+.font-d{font-family:var(--font-d)}
+.fw6{font-weight:600}.fw7{font-weight:700}.fw8{font-weight:800}
+.fs-xs{font-size:.6875rem}.fs-sm{font-size:.75rem}.fs-base{font-size:.875rem}
+.fs-lg{font-size:1rem}.fs-xl{font-size:1.125rem}.fs-2xl{font-size:1.25rem}
+.fs-3xl{font-size:1.5rem}.fs-hero{font-size:1.75rem}
+.upper{text-transform:uppercase;letter-spacing:.05em}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-muted{color:var(--muted)}.c-subtle{color:var(--subtle)}.c-primary{color:var(--primary)}.c-success{color:var(--success)}
+
+/* ===== layout ===== */
+#app{display:flex;height:100dvh;width:100%}
+#sidebar{display:none;flex-direction:column;width:240px;flex-shrink:0;
+  border-right:1px solid var(--border-s);background:var(--bg2);transition:width .2s}
+#sidebar.collapsed{width:72px}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
+  padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border-s)}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(72px + var(--safe-b))}
+#bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(64px + var(--safe-b));
+  padding-bottom:var(--safe-b);display:flex;align-items:center;justify-content:space-around;
+  background:var(--bg2);border-top:1px solid var(--border-s);z-index:50;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+
+/* ===== sidebar ===== */
+@media(min-width:1024px){
+  #sidebar{display:flex}
+  #bottom-nav{display:none}
+  #content{padding-bottom:0}
+  #btn-menu{display:none}
+}
+.sb-logo{display:flex;align-items:center;gap:8px;height:56px;padding:0 16px;flex-shrink:0}
+.sb-logo .icon-box{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-sm);background:var(--primary-d)}
+.sb-nav{flex:1;overflow-y:auto;padding:12px}
+.sb-section-title{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--subtle);padding:0 12px;margin-bottom:4px}
+.sb-link{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-sm);
+  font-size:.875rem;font-weight:500;color:var(--muted);transition:all .15s;margin-bottom:2px}
+.sb-link:hover,.sb-link:active{background:rgba(255,255,255,.04);color:var(--txt)}
+.sb-link.active{background:var(--primary-d);color:var(--primary);
+  box-shadow:inset 3px 0 0 0 var(--primary)}
+.sb-link svg{flex-shrink:0}
+.sb-sep{height:1px;background:var(--border-s);margin:12px 0}
+.sb-footer{padding:12px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border-s)}
+.sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-d);
+  display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:600;color:var(--primary);flex-shrink:0}
+#sidebar.collapsed .sb-label,#sidebar.collapsed .sb-section-title,#sidebar.collapsed .sb-footer-info,
+#sidebar.collapsed .sb-logo-text{display:none}
+#sidebar.collapsed .sb-link{justify-content:center;padding:8px}
+#sidebar.collapsed .sb-logo{justify-content:center;padding:0}
+#sidebar.collapsed .sb-footer{flex-direction:column;gap:6px}
+
+/* ===== bottom nav ===== */
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;
+  font-size:.625rem;font-weight:600;color:var(--subtle);transition:color .15s;
+  -webkit-tap-highlight-color:transparent;min-width:56px}
+.bn-item.active{color:var(--primary)}
+.bn-item.active .bn-dot{opacity:1;transform:scaleX(1)}
+.bn-dot{width:4px;height:4px;border-radius:50%;background:var(--primary);opacity:0;
+  transform:scaleX(0);transition:all .2s}
+.bn-item.disabled{color:var(--border);pointer-events:none}
+
+/* ===== topbar ===== */
+.tb-brand{display:flex;align-items:center;gap:8px}
+.tb-brand .icon-box{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border-radius:6px;background:var(--primary-d)}
+.tb-badge{font-size:.5625rem;font-weight:700;background:var(--primary);color:#fff;
+  padding:1px 5px;border-radius:4px;text-transform:uppercase;letter-spacing:.06em}
+.tb-actions{display:flex;gap:4px}
+.tb-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-sm);color:var(--muted);transition:all .15s}
+.tb-btn:hover{background:rgba(255,255,255,.06);color:var(--txt)}
+
+/* ===== cards ===== */
+.card{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:16px}
+.card-premium{background:var(--card);border:1px solid rgba(255,31,45,.2);border-radius:var(--r-lg);
+  padding:16px;box-shadow:0 0 30px -10px rgba(255,31,45,.12)}
+.card-accent{background:var(--card);border:1px solid rgba(141,255,31,.15);border-radius:var(--r);padding:16px}
+
+/* ===== chips ===== */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:20px;
+  font-size:.75rem;font-weight:600;background:var(--surface);color:var(--muted);
+  border:1px solid transparent;transition:all .15s;cursor:pointer;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent}
+.chip:active{transform:scale(.97)}
+.chip.active{background:var(--primary-d);color:var(--primary);border-color:rgba(255,31,45,.25)}
+
+/* ===== page ===== */
+.page{display:none;padding:16px;padding-top:12px}
+.page.active{display:block}
+.section{margin-bottom:24px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-family:var(--font-d);font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:.03em}
+
+/* ===== kpi card ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:12px;text-align:center}
+.kpi-val{font-family:var(--font-d);font-weight:800;font-size:1.25rem;line-height:1.2}
+.kpi-label{font-size:.6875rem;color:var(--muted);margin-top:2px}
+
+/* ===== opportunity row ===== */
+.opp-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);
+  border:1px solid var(--border-s);border-radius:var(--r);margin-bottom:8px;
+  transition:border-color .15s;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.opp-row:active{transform:scale(.985);border-color:var(--border)}
+.opp-teams{display:flex;align-items:center}
+.team-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.625rem;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--card)}
+.team-circle.away{margin-left:-10px}
+.opp-info{flex:1;min-width:0}
+.opp-match{font-size:.8125rem;font-weight:600;line-height:1.3}
+.opp-meta{font-size:.6875rem;color:var(--subtle)}
+.opp-edge{text-align:right;flex-shrink:0}
+.opp-edge-val{font-family:var(--font-d);font-weight:700;font-size:1rem;color:var(--success)}
+.opp-edge-label{font-size:.625rem;color:var(--subtle)}
+
+/* ===== hero card ===== */
+.hero{position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;right:0;width:120px;height:120px;
+  background:radial-gradient(circle,var(--primary-g),transparent 70%);pointer-events:none}
+.hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hero-badge{font-size:.625rem;font-weight:700;background:var(--primary);color:#fff;
+  padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.05em}
+.hero-teams{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.hero-team{display:flex;align-items:center;gap:8px}
+.hero-team-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.75rem;font-weight:700;color:#fff}
+.hero-vs{font-family:var(--font-d);font-weight:700;color:var(--subtle);font-size:.875rem}
+.hero-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.hero-metric{text-align:center}
+.hero-metric-val{font-family:var(--font-d);font-weight:800;font-size:1.125rem}
+.hero-metric-label{font-size:.625rem;color:var(--subtle);margin-top:1px}
+
+/* ===== gauge ===== */
+.gauge{display:inline-flex;align-items:center;justify-content:center;position:relative}
+.gauge-text{position:absolute;font-family:var(--font-d);font-weight:700;text-align:center}
+
+/* ===== date scroll ===== */
+.date-scroll{display:flex;gap:6px;overflow-x:auto;padding:4px 0;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none}
+.date-scroll::-webkit-scrollbar{display:none}
+.date-pill{display:flex;flex-direction:column;align-items:center;padding:6px 10px;
+  border-radius:var(--r-sm);background:var(--surface);min-width:44px;cursor:pointer;
+  transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.date-pill.active{background:var(--primary);color:#fff}
+.date-pill .dow{font-size:.5625rem;font-weight:600;text-transform:uppercase;color:var(--subtle)}
+.date-pill.active .dow{color:rgba(255,255,255,.7)}
+.date-pill .day{font-family:var(--font-d);font-weight:700;font-size:1rem;line-height:1.2}
+
+/* ===== odds grid ===== */
+.odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
+.odds-table th{font-size:.625rem;font-weight:600;color:var(--subtle);text-transform:uppercase;
+  letter-spacing:.06em;padding:4px 8px;text-align:center;position:sticky;top:0;background:var(--bg)}
+.odds-table th:first-child{text-align:left}
+.odds-table td{padding:8px;text-align:center;font-size:.8125rem;font-weight:500;
+  background:var(--card);border-top:1px solid var(--border-s);border-bottom:1px solid var(--border-s)}
+.odds-table td:first-child{border-left:1px solid var(--border-s);border-radius:var(--r-sm) 0 0 var(--r-sm);
+  text-align:left;font-weight:600}
+.odds-table td:last-child{border-right:1px solid var(--border-s);border-radius:0 var(--r-sm) var(--r-sm) 0}
+.odds-best{color:var(--success);font-weight:700}
+.odds-fair{background:var(--surface)!important}
+
+/* ===== tabs ===== */
+.tabs{display:flex;gap:0;background:var(--surface);border-radius:var(--r);padding:3px;margin-bottom:16px;
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;padding:8px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:600;
+  text-align:center;color:var(--muted);transition:all .15s;cursor:pointer;white-space:nowrap;
+  min-width:0;-webkit-tap-highlight-color:transparent}
+.tab.active{background:var(--card);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+
+/* ===== filter bar ===== */
+.filter-bar{display:flex;gap:6px;overflow-x:auto;padding:4px 0;margin-bottom:12px;
+  scrollbar-width:none;-ms-overflow-style:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-select{appearance:none;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2365686E'/%3E%3C/svg%3E") no-repeat right 8px center;
+  border:1px solid var(--border-s);border-radius:var(--r-sm);padding:7px 24px 7px 10px;
+  font-size:.75rem;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.filter-select:focus{outline:none;border-color:var(--primary)}
+
+/* ===== chart ===== */
+.chart-wrap{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);
+  padding:12px;overflow:hidden}
+.chart-wrap svg{display:block}
+
+/* ===== detail sheet ===== */
+#detail-sheet{position:fixed;inset:0;z-index:100;display:none;flex-direction:column}
+#detail-sheet.open{display:flex}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+.sheet-body{position:absolute;bottom:0;left:0;right:0;max-height:92dvh;background:var(--bg2);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  animation:sheetUp .25s ease-out}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto}
+.sheet-close{position:absolute;top:12px;right:12px;width:32px;height:32px;display:flex;
+  align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--muted);
+  background:var(--surface);z-index:1}
+
+/* ===== model probs ===== */
+.model-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.model-bar-name{font-size:.75rem;color:var(--muted);width:90px;flex-shrink:0;text-align:right}
+.model-bar-track{flex:1;height:6px;background:var(--surface);border-radius:3px;overflow:hidden}
+.model-bar-fill{height:100%;border-radius:3px;transition:width .6s ease-out}
+.model-bar-val{font-size:.75rem;font-weight:600;width:42px;flex-shrink:0}
+
+/* ===== mobile drawer ===== */
+#mobile-drawer{position:fixed;inset:0;z-index:60;display:none}
+#mobile-drawer.open{display:block}
+.drawer-bg{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+.drawer-body{position:absolute;inset:0;right:auto;width:260px;background:var(--bg2);
+  border-right:1px solid var(--border-s);animation:drawerIn .2s ease-out}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+
+/* ===== animações ===== */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .35s ease-out both}
+.skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--elevated) 50%,var(--surface) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r-sm)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.interactive{transition:transform .1s}
+.interactive:active{transform:scale(.98)}
+
+/* ===== calibration table ===== */
+.cal-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.cal-table th{color:var(--subtle);font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+  padding:6px 8px;text-align:center;border-bottom:1px solid var(--border-s);font-size:.625rem}
+.cal-table td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--border-s)}
+.cal-table tr:last-child td{border-bottom:none}
+.cal-table .val-positive{color:var(--success)}.cal-table .val-negative{color:var(--danger)}
+
+/* ===== util ===== */
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mb-2{margin-bottom:8px}
+.p-3{padding:12px}.p-4{padding:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.text-center{text-align:center}
+.w-full{width:100%}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<!-- ===== app shell ===== -->
+<div id="app">
+  <!-- sidebar (desktop) -->
+  <aside id="sidebar">
+    <div class="sb-logo">
+      <div class="icon-box" id="sb-icon"></div>
+      <span class="sb-logo-text font-d fw7 upper" style="font-size:.9375rem">
+        <span style="color:var(--txt)">NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span>
+      </span>
+    </div>
+    <div class="sb-sep" style="height:1px;background:var(--border-s);margin:0 12px"></div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-footer" id="sb-footer"></div>
+  </aside>
+
+  <div id="main" style="display:flex;flex-direction:column;flex:1;min-width:0">
+    <!-- topbar -->
+    <header id="topbar">
+      <div class="tb-brand">
+        <button id="btn-menu" class="tb-btn" style="margin-right:4px" aria-label="Menu"></button>
+        <div class="icon-box tb-icon-box" id="tb-icon"></div>
+        <span class="font-d fw7 upper" style="font-size:.8125rem">
+          <span>NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span>
+        </span>
+        <span class="tb-badge">PRO</span>
+      </div>
+      <div class="tb-actions">
+        <button class="tb-btn" id="tb-bell" aria-label="Notificações"></button>
+      </div>
+    </header>
+
+    <!-- conteúdo das páginas -->
+    <div id="content"></div>
+  </div>
+
+  <!-- bottom nav (mobile) -->
+  <nav id="bottom-nav"></nav>
+</div>
+
+<!-- detail sheet (detalhe da oportunidade) -->
+<div id="detail-sheet">
+  <div class="sheet-backdrop" onclick="closeSheet()"></div>
+  <div class="sheet-body" id="sheet-content"></div>
+</div>
+
+<!-- mobile drawer -->
+<div id="mobile-drawer">
+  <div class="drawer-bg" onclick="closeDrawer()"></div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<script>
+/* ===== ícones SVG (Lucide-based, MIT) ===== */
+const IC={
+home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+trending:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+chart:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+filter:'<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+bookmark:'<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+chevronsL:'<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>',
+chevronsR:'<polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/>',
+x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+arrowUp:'<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+arrowDown:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+testTubes:'<path d="M9 2v17.5A2.5 2.5 0 0 1 6.5 22 2.5 2.5 0 0 1 4 19.5V2"/><path d="M20 2v17.5a2.5 2.5 0 0 1-2.5 2.5 2.5 2.5 0 0 1-2.5-2.5V2"/><path d="M3 2h7"/><path d="M14 2h7"/><path d="M9 16H4"/><path d="M20 16h-5"/>',
+shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+menu:'<line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>',
+zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+check:'<polyline points="20 6 9 17 4 12"/>',
+clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+sort:'<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+};
+function icon(name,size=20,cls=''){
+  return `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[name]||''}</svg>`;
+}
+
+/* ===== dados demo ===== */
+const TEAMS={
+  'Flamengo':    {abbr:'FLA',color:'#C62828'},
+  'Palmeiras':   {abbr:'PAL',color:'#2E7D32'},
+  'Corinthians': {abbr:'COR',color:'#37474F'},
+  'São Paulo':   {abbr:'SAO',color:'#B71C1C'},
+  'Atlético-MG': {abbr:'CAM',color:'#212121'},
+  'Botafogo':    {abbr:'BOT',color:'#263238'},
+  'Fluminense':  {abbr:'FLU',color:'#880E4F'},
+  'Grêmio':      {abbr:'GRE',color:'#1565C0'},
+  'Internacional':{abbr:'INT',color:'#D32F2F'},
+  'Cruzeiro':    {abbr:'CRU',color:'#0D47A1'},
+  'Vasco':       {abbr:'VAS',color:'#1A1A1A'},
+  'Santos':      {abbr:'SAN',color:'#424242'},
+  'Bahia':       {abbr:'BAH',color:'#1565C0'},
+  'Fortaleza':   {abbr:'FOR',color:'#C62828'},
+  'Athletico-PR':{abbr:'CAP',color:'#B71C1C'},
+  'Bragantino':  {abbr:'RBB',color:'#C62828'},
+  'Peñarol':     {abbr:'PEÑ',color:'#F9A825'},
+  'River Plate': {abbr:'RIV',color:'#C62828'},
+};
+const BOOKS=['Bet365','Betano','Pinnacle','1xBet','Sportingbet','KTO','Betfair'];
+const LEAGUES=['Brasileirão Série A','Copa do Brasil','Copa Libertadores'];
+const MARKETS=['1X2','Over/Under 2.5','Ambas Marcam'];
+
+/* oportunidades demo — dados realistas de futebol brasileiro */
+const OPPS=[
+{id:1,home:'Flamengo',away:'Palmeiras',league:'Brasileirão Série A',round:'Rodada 23',
+ date:'2026-08-31T20:00',market:'1X2',sel:'Casa',
+ fairProb:.482,bestOdds:2.25,bestBook:'Pinnacle',edge:8.5,ev:7.2,score:82,
+ odds:{Bet365:2.20,Betano:2.15,Pinnacle:2.25,'1xBet':2.22,Sportingbet:2.10,KTO:2.18,Betfair:2.28},
+ models:{Poisson:.46,'Dixon-Coles':.49,Elo:.48,'Grad.Boost':.51,'Mkt.Consensus':.44,Ensemble:.482}},
+{id:2,home:'Corinthians',away:'São Paulo',league:'Brasileirão Série A',round:'Rodada 23',
+ date:'2026-08-31T16:00',market:'Over/Under 2.5',sel:'Over 2.5',
+ fairProb:.61,bestOdds:1.82,bestBook:'Bet365',edge:10.2,ev:9.1,score:86,
+ odds:{Bet365:1.82,Betano:1.78,Pinnacle:1.80,'1xBet':1.79,Sportingbet:1.75,KTO:1.77,Betfair:1.81},
+ models:{Poisson:.59,'Dixon-Coles':.62,Elo:.58,'Grad.Boost':.64,'Mkt.Consensus':.56,Ensemble:.61}},
+{id:3,home:'Atlético-MG',away:'Botafogo',league:'Brasileirão Série A',round:'Rodada 23',
+ date:'2026-08-31T18:30',market:'1X2',sel:'Empate',
+ fairProb:.29,bestOdds:3.80,bestBook:'1xBet',edge:10.2,ev:8.8,score:79,
+ odds:{Bet365:3.60,Betano:3.55,'1xBet':3.80,Pinnacle:3.70,Sportingbet:3.50,KTO:3.65,Betfair:3.75},
+ models:{Poisson:.27,'Dixon-Coles':.30,Elo:.28,'Grad.Boost':.31,'Mkt.Consensus':.26,Ensemble:.29}},
+{id:4,home:'Grêmio',away:'Internacional',league:'Brasileirão Série A',round:'Rodada 24',
+ date:'2026-09-01T16:00',market:'Ambas Marcam',sel:'Sim',
+ fairProb:.58,bestOdds:1.90,bestBook:'Betfair',edge:10.2,ev:9.3,score:84,
+ odds:{Bet365:1.85,Betano:1.82,Pinnacle:1.88,'1xBet':1.84,Sportingbet:1.80,KTO:1.83,Betfair:1.90},
+ models:{Poisson:.55,'Dixon-Coles':.59,Elo:.57,'Grad.Boost':.61,'Mkt.Consensus':.54,Ensemble:.58}},
+{id:5,home:'Cruzeiro',away:'Fortaleza',league:'Brasileirão Série A',round:'Rodada 24',
+ date:'2026-09-01T18:30',market:'1X2',sel:'Casa',
+ fairProb:.45,bestOdds:2.40,bestBook:'Pinnacle',edge:8.0,ev:6.9,score:75,
+ odds:{Bet365:2.35,Betano:2.30,Pinnacle:2.40,'1xBet':2.38,Sportingbet:2.28,KTO:2.32,Betfair:2.36},
+ models:{Poisson:.43,'Dixon-Coles':.46,Elo:.44,'Grad.Boost':.48,'Mkt.Consensus':.42,Ensemble:.45}},
+{id:6,home:'Fluminense',away:'Vasco',league:'Brasileirão Série A',round:'Rodada 24',
+ date:'2026-09-01T20:00',market:'Over/Under 2.5',sel:'Under 2.5',
+ fairProb:.56,bestOdds:1.95,bestBook:'Bet365',edge:9.2,ev:8.0,score:77,
+ odds:{Bet365:1.95,Betano:1.90,Pinnacle:1.92,'1xBet':1.88,Sportingbet:1.85,KTO:1.87,Betfair:1.93},
+ models:{Poisson:.54,'Dixon-Coles':.57,Elo:.55,'Grad.Boost':.58,'Mkt.Consensus':.52,Ensemble:.56}},
+{id:7,home:'Santos',away:'Bahia',league:'Brasileirão Série A',round:'Rodada 25',
+ date:'2026-09-02T20:00',market:'1X2',sel:'Visitante',
+ fairProb:.38,bestOdds:3.10,bestBook:'Betfair',edge:17.8,ev:14.5,score:91,
+ odds:{Bet365:2.95,Betano:2.90,Pinnacle:3.05,'1xBet':3.00,Sportingbet:2.85,KTO:2.92,Betfair:3.10},
+ models:{Poisson:.36,'Dixon-Coles':.39,Elo:.37,'Grad.Boost':.41,'Mkt.Consensus':.35,Ensemble:.38}},
+{id:8,home:'Athletico-PR',away:'Bragantino',league:'Brasileirão Série A',round:'Rodada 25',
+ date:'2026-09-02T18:30',market:'Ambas Marcam',sel:'Não',
+ fairProb:.52,bestOdds:2.05,bestBook:'Pinnacle',edge:6.5,ev:5.8,score:68,
+ odds:{Bet365:2.00,Betano:1.95,Pinnacle:2.05,'1xBet':1.98,Sportingbet:1.92,KTO:1.97,Betfair:2.02},
+ models:{Poisson:.50,'Dixon-Coles':.53,Elo:.51,'Grad.Boost':.54,'Mkt.Consensus':.49,Ensemble:.52}},
+{id:9,home:'Flamengo',away:'Peñarol',league:'Copa Libertadores',round:'Quartas — Ida',
+ date:'2026-09-03T21:30',market:'1X2',sel:'Casa',
+ fairProb:.62,bestOdds:1.72,bestBook:'Pinnacle',edge:6.6,ev:5.9,score:73,
+ odds:{Bet365:1.68,Betano:1.65,Pinnacle:1.72,'1xBet':1.70,Sportingbet:1.63,KTO:1.66,Betfair:1.71},
+ models:{Poisson:.60,'Dixon-Coles':.63,Elo:.61,'Grad.Boost':.65,'Mkt.Consensus':.58,Ensemble:.62}},
+{id:10,home:'Palmeiras',away:'River Plate',league:'Copa Libertadores',round:'Quartas — Ida',
+ date:'2026-09-03T21:30',market:'Over/Under 2.5',sel:'Over 2.5',
+ fairProb:.55,bestOdds:2.00,bestBook:'Bet365',edge:10.0,ev:8.7,score:80,
+ odds:{Bet365:2.00,Betano:1.95,Pinnacle:1.98,'1xBet':1.93,Sportingbet:1.90,KTO:1.92,Betfair:1.97},
+ models:{Poisson:.53,'Dixon-Coles':.56,Elo:.54,'Grad.Boost':.58,'Mkt.Consensus':.52,Ensemble:.55}},
+{id:11,home:'Botafogo',away:'São Paulo',league:'Copa do Brasil',round:'Semifinal — Ida',
+ date:'2026-09-04T21:30',market:'1X2',sel:'Casa',
+ fairProb:.51,bestOdds:2.15,bestBook:'1xBet',edge:9.7,ev:8.3,score:81,
+ odds:{Bet365:2.10,Betano:2.05,'1xBet':2.15,Pinnacle:2.12,Sportingbet:2.00,KTO:2.08,Betfair:2.14},
+ models:{Poisson:.49,'Dixon-Coles':.52,Elo:.50,'Grad.Boost':.54,'Mkt.Consensus':.47,Ensemble:.51}},
+{id:12,home:'Fortaleza',away:'Fluminense',league:'Copa do Brasil',round:'Semifinal — Ida',
+ date:'2026-09-04T19:00',market:'1X2',sel:'Casa',
+ fairProb:.54,bestOdds:2.00,bestBook:'Pinnacle',edge:8.0,ev:7.1,score:76,
+ odds:{Bet365:1.95,Betano:1.92,Pinnacle:2.00,'1xBet':1.97,Sportingbet:1.88,KTO:1.93,Betfair:1.98},
+ models:{Poisson:.52,'Dixon-Coles':.55,Elo:.53,'Grad.Boost':.57,'Mkt.Consensus':.50,Ensemble:.54}},
+];
+
+/* KPIs globais */
+const KPIS={roi:12.4,hitRate:58.3,activeBets:24,avgCLV:3.2,brierScore:.198,avgEdge:5.7};
+
+/* dados de performance mensal (equity curve) */
+const EQUITY_MONTHS=[
+  {m:'Mar',v:100},{m:'Abr',v:103.2},{m:'Mai',v:98.5},{m:'Jun',v:106.8},
+  {m:'Jul',v:112.1},{m:'Ago',v:108.4},{m:'Set',v:115.7},{m:'Out',v:120.3},
+  {m:'Nov',v:118.9},{m:'Dez',v:125.6},{m:'Jan',v:131.2},{m:'Fev',v:128.8},
+];
+
+/* calibração */
+const CALIBRATION=[
+  {bin:'0–10%',pred:5.2,actual:4.8,n:62,diff:-0.4},
+  {bin:'10–20%',pred:15.1,actual:14.2,n:85,diff:-0.9},
+  {bin:'20–30%',pred:24.8,actual:26.1,n:93,diff:1.3},
+  {bin:'30–40%',pred:35.2,actual:33.9,n:108,diff:-1.3},
+  {bin:'40–50%',pred:44.9,actual:46.2,n:124,diff:1.3},
+  {bin:'50–60%',pred:55.1,actual:53.8,n:117,diff:-1.3},
+  {bin:'60–70%',pred:64.7,actual:66.1,n:98,diff:1.4},
+  {bin:'70–80%',pred:75.3,actual:73.9,n:76,diff:-1.4},
+  {bin:'80–90%',pred:84.8,actual:86.2,n:54,diff:1.4},
+  {bin:'90–100%',pred:94.6,actual:93.1,n:31,diff:-1.5},
+];
+
+/* performance por liga */
+const LEAGUE_PERF=[
+  {league:'Brasileirão A',bets:186,roi:14.2,hitRate:59.1,brier:.192},
+  {league:'Copa do Brasil',bets:42,roi:8.7,hitRate:54.8,brier:.211},
+  {league:'Libertadores',bets:38,roi:11.3,hitRate:57.9,brier:.198},
+  {league:'Sul-Americana',bets:24,roi:6.1,hitRate:52.3,brier:.224},
+];
+
+/* performance por mercado */
+const MARKET_PERF=[
+  {market:'1X2',bets:152,roi:13.1,hitRate:56.2,brier:.201},
+  {market:'Over/Under 2.5',bets:88,roi:15.8,hitRate:62.5,brier:.185},
+  {market:'Ambas Marcam',bets:50,roi:7.4,hitRate:54.0,brier:.218},
+];
+
+/* ===== estado ===== */
+let currentPage='dashboard';
+let selectedDate=0; /* índice no date-scroll */
+let sidebarCollapsed=false;
+let activeAnaliseTab='desempenho';
+let activeSport='futebol';
+let filterLeague='';
+let filterMarket='';
+let sortField='score';
+
+/* ===== utilidades ===== */
+function $(sel){return document.querySelector(sel)}
+function $$(sel){return document.querySelectorAll(sel)}
+function el(tag,attrs={},html=''){
+  const e=document.createElement(tag);
+  Object.entries(attrs).forEach(([k,v])=>{if(k==='class')e.className=v;else e.setAttribute(k,v)});
+  if(html)e.innerHTML=html;return e;
+}
+
+function teamCircle(name,size=32,extra=''){
+  const t=TEAMS[name]||{abbr:name.slice(0,3).toUpperCase(),color:'#555'};
+  return `<div class="team-circle ${extra}" style="width:${size}px;height:${size}px;background:${t.color};font-size:${size*.2}px">${t.abbr}</div>`;
+}
+
+function fmtDate(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).replace('.','');
+}
+function fmtTime(iso){
+  const d=new Date(iso);
+  return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtPct(v,dec=1){return (v>=0?'+':'')+v.toFixed(dec)+'%'}
+function scoreColor(s){return s>=80?'var(--success)':s>=60?'var(--warning)':'var(--primary)'}
+
+/* gauge SVG circular */
+function gauge(value,size=72,strokeW=5){
+  const r=(size-strokeW*2)/2, circ=2*Math.PI*r;
+  const offset=circ*(1-value/100);
+  const col=scoreColor(value);
+  return `<div class="gauge" style="width:${size}px;height:${size}px">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${strokeW}"
+        stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+        transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dashoffset .8s ease-out"/>
+    </svg>
+    <span class="gauge-text" style="font-size:${size*.28}px;color:${col}">${value}</span>
+  </div>`;
+}
+
+/* mini sparkline SVG */
+function sparkline(data,w=100,h=32,color='var(--success)'){
+  if(!data.length)return '';
+  const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-min)/range)*h*.85-h*.075}`).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+/* area chart SVG */
+function areaChart(data,labels,w=300,h=140,color='var(--primary)'){
+  if(!data.length)return '';
+  const pad={t:10,r:10,b:24,l:36};
+  const cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+  const min=Math.min(...data)*.98,max=Math.max(...data)*1.02,range=max-min||1;
+  const pts=data.map((v,i)=>{
+    const x=pad.l+(i/(data.length-1))*cw;
+    const y=pad.t+ch-((v-min)/range)*ch;
+    return `${x},${y}`;
+  });
+  const linePath=pts.join(' ');
+  const areaPath=`${pts.join(' ')} ${pad.l+cw},${pad.t+ch} ${pad.l},${pad.t+ch}`;
+  /* grid lines */
+  const gridY=4;
+  let gridLines='';
+  for(let i=0;i<=gridY;i++){
+    const y=pad.t+(ch/gridY)*i;
+    const val=max-((max-min)/gridY)*i;
+    gridLines+=`<line x1="${pad.l}" y1="${y}" x2="${w-pad.r}" y2="${y}" stroke="var(--border-s)" stroke-width="1"/>`;
+    gridLines+=`<text x="${pad.l-4}" y="${y+3}" text-anchor="end" fill="var(--subtle)" font-size="9" font-family="var(--font-b)">${val.toFixed(1)}</text>`;
+  }
+  /* labels x */
+  let xLabels='';
+  const step=Math.max(1,Math.floor(data.length/5));
+  for(let i=0;i<data.length;i+=step){
+    const x=pad.l+(i/(data.length-1))*cw;
+    xLabels+=`<text x="${x}" y="${h-4}" text-anchor="middle" fill="var(--subtle)" font-size="9" font-family="var(--font-b)">${labels[i]||''}</text>`;
+  }
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+    ${gridLines}${xLabels}
+    <polygon points="${areaPath}" fill="url(#areaGrad)" opacity=".3"/>
+    <polyline points="${linePath}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${pts[pts.length-1].split(',')[0]}" cy="${pts[pts.length-1].split(',')[1]}" r="4" fill="${color}"/>
+    <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity=".4"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+  </svg>`;
+}
+
+/* bar chart horizontal SVG */
+function hBarChart(items,w=300,barH=24,gap=6){
+  const maxVal=Math.max(...items.map(d=>Math.abs(d.value)));
+  const h=items.length*(barH+gap);
+  const pad={l:80,r:40};
+  const cw=w-pad.l-pad.r;
+  let bars='';
+  items.forEach((d,i)=>{
+    const y=i*(barH+gap);
+    const bw=Math.max(2,(Math.abs(d.value)/maxVal)*cw);
+    const col=d.value>=0?'var(--success)':'var(--danger)';
+    bars+=`<text x="${pad.l-6}" y="${y+barH/2+4}" text-anchor="end" fill="var(--muted)" font-size="11" font-family="var(--font-b)">${d.label}</text>`;
+    bars+=`<rect x="${pad.l}" y="${y+2}" width="${bw}" height="${barH-4}" rx="4" fill="${col}" opacity=".8"/>`;
+    bars+=`<text x="${pad.l+bw+6}" y="${y+barH/2+4}" fill="var(--txt)" font-size="11" font-weight="600" font-family="var(--font-d)">${d.value>=0?'+':''}${d.value}%</text>`;
+  });
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">${bars}</svg>`;
+}
+
+/* ===== saudação ===== */
+function greeting(){
+  const h=new Date().getHours();
+  if(h<12) return 'Bom dia';
+  if(h<18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+/* ===== navegação ===== */
+const PAGES=[
+  {id:'dashboard',label:'Início',icon:'home'},
+  {id:'oportunidades',label:'Oportunidades',icon:'target'},
+  {id:'odds',label:'Odds',icon:'trending'},
+  {id:'analises',label:'Análises',icon:'chart'},
+];
+const SB_EXTRA=[
+  {id:'shadow-lab',label:'Shadow Lab',icon:'testTubes'},
+  {id:'model-audit',label:'Model Audit',icon:'shield'},
+];
+
+function navigate(page){
+  currentPage=page;
+  renderPage();
+  updateNav();
+  $('#content').scrollTop=0;
+}
+
+function updateNav(){
+  /* bottom nav */
+  $$('.bn-item').forEach(b=>{
+    b.classList.toggle('active',b.dataset.page===currentPage);
+  });
+  /* sidebar */
+  $$('.sb-link').forEach(l=>{
+    l.classList.toggle('active',l.dataset.page===currentPage);
+  });
+}
+
+/* ===== render bottom nav ===== */
+function renderBottomNav(){
+  const nav=$('#bottom-nav');
+  let h='';
+  PAGES.forEach(p=>{
+    h+=`<button class="bn-item${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}')">
+      ${icon(p.icon,22)}
+      <span class="upper" style="font-size:.5625rem">${p.label}</span>
+      <div class="bn-dot"></div>
+    </button>`;
+  });
+  /* perfil desabilitado */
+  h+=`<button class="bn-item disabled">
+    ${icon('user',22)}<span class="upper" style="font-size:.5625rem">Perfil</span><div class="bn-dot"></div>
+  </button>`;
+  nav.innerHTML=h;
+}
+
+/* ===== render sidebar ===== */
+function renderSidebar(){
+  /* ícone do logo */
+  $('#sb-icon').innerHTML=icon('trending',18,'');
+  $('#sb-icon').style.cssText='width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--primary-d);color:var(--primary)';
+  /* nav links */
+  let h='<div style="margin-bottom:16px"><p class="sb-section-title">Principal</p>';
+  PAGES.forEach(p=>{
+    h+=`<a class="sb-link${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}');event.preventDefault()" href="#">
+      ${icon(p.icon,18)}<span class="sb-label">${p.label}</span></a>`;
+  });
+  h+='</div><div class="sb-sep"></div><div><p class="sb-section-title">Laboratório</p>';
+  SB_EXTRA.forEach(p=>{
+    h+=`<a class="sb-link${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}');event.preventDefault()" href="#">
+      ${icon(p.icon,18)}<span class="sb-label">${p.label}</span></a>`;
+  });
+  h+='</div>';
+  $('#sb-nav').innerHTML=h;
+  /* footer */
+  $('#sb-footer').innerHTML=`
+    <div class="sb-avatar">W</div>
+    <div class="sb-footer-info" style="flex:1;min-width:0">
+      <div class="truncate fs-sm fw5" style="color:var(--txt)">Wagner</div>
+      <div class="fs-xs c-subtle">Plano PRO</div>
+    </div>
+    <button onclick="alert('Logout')" title="Sair" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--subtle)">${icon('logout',16)}</button>
+  `;
+}
+
+/* ===== render topbar ===== */
+function renderTopbar(){
+  $('#btn-menu').innerHTML=icon('menu',20);
+  $('#btn-menu').onclick=openDrawer;
+  $('#tb-icon').innerHTML=icon('trending',16,'');
+  $('#tb-icon').style.cssText='width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--primary-d);color:var(--primary)';
+  $('#tb-bell').innerHTML=icon('bell',18);
+}
+
+/* ===== drawer mobile ===== */
+function openDrawer(){
+  const d=$('#mobile-drawer');
+  d.classList.add('open');
+  /* reutiliza sidebar content */
+  let h=`<div style="padding:12px">
+    <div class="flex items-center justify-between" style="height:44px;margin-bottom:8px">
+      <div class="flex items-center gap-2">
+        <div style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--primary-d);color:var(--primary)">${icon('trending',16)}</div>
+        <span class="font-d fw7 upper" style="font-size:.8125rem"><span>NO</span><span style="color:var(--primary)">.</span><span style="color:var(--muted)">BLIND</span></span>
+      </div>
+      <button onclick="closeDrawer()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--muted)">${icon('x',18)}</button>
+    </div>
+    <div style="height:1px;background:var(--border-s);margin:8px 0"></div>
+    <p class="sb-section-title" style="margin-top:12px">Principal</p>`;
+  PAGES.forEach(p=>{
+    h+=`<a class="sb-link${p.id===currentPage?' active':''}" data-page="${p.id}" onclick="navigate('${p.id}');closeDrawer();event.preventDefault()" href="#">
+      ${icon(p.icon,18)}<span>${p.label}</span></a>`;
+  });
+  h+='<div style="height:1px;background:var(--border-s);margin:12px 0"></div><p class="sb-section-title">Laboratório</p>';
+  SB_EXTRA.forEach(p=>{
+    h+=`<a class="sb-link" data-page="${p.id}" onclick="navigate('${p.id}');closeDrawer();event.preventDefault()" href="#">
+      ${icon(p.icon,18)}<span>${p.label}</span></a>`;
+  });
+  h+='</div>';
+  $('#drawer-body').innerHTML=h;
+}
+function closeDrawer(){$('#mobile-drawer').classList.remove('open')}
+
+/* ===== render páginas ===== */
+function renderPage(){
+  const c=$('#content');
+  switch(currentPage){
+    case 'dashboard': c.innerHTML=renderDashboard();break;
+    case 'oportunidades': c.innerHTML=renderOportunidades();break;
+    case 'odds': c.innerHTML=renderOdds();break;
+    case 'analises': c.innerHTML=renderAnalises();break;
+    case 'shadow-lab': c.innerHTML=renderPlaceholder('Shadow Lab','Painel do Shadow Mode — paper trading sem risco real.','testTubes');break;
+    case 'model-audit': c.innerHTML=renderPlaceholder('Model Audit','Trilha de auditoria completa dos modelos estatísticos.','shield');break;
+    default: c.innerHTML=renderDashboard();
+  }
+  /* re-bind eventos específicos */
+  bindPageEvents();
+}
+
+function renderPlaceholder(title,desc,ic){
+  return `<div class="page active" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:32px">
+    <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:var(--primary-d);color:var(--primary);margin-bottom:16px">${icon(ic,28)}</div>
+    <h2 class="font-d fw7 fs-xl upper">${title}</h2>
+    <p class="c-muted fs-sm" style="margin-top:8px;max-width:280px">${desc}</p>
+  </div>`;
+}
+
+/* ===== DASHBOARD ===== */
+function renderDashboard(){
+  /* datas para o scroll horizontal */
+  const today=new Date();
+  const dates=[];
+  for(let i=-2;i<=5;i++){
+    const d=new Date(today);d.setDate(d.getDate()+i);
+    dates.push({
+      dow:d.toLocaleDateString('pt-BR',{weekday:'short'}).slice(0,3).toUpperCase(),
+      day:d.getDate(),
+      full:d.toISOString().slice(0,10),
+      isToday:i===0
+    });
+  }
+
+  /* melhor oportunidade (hero) */
+  const hero=OPPS.reduce((a,b)=>b.score>a.score?b:a,OPPS[0]);
+
+  /* top 5 por score */
+  const top5=[...OPPS].sort((a,b)=>b.score-a.score).slice(0,5);
+
+  /* odds movement sparkline data (simulado) */
+  const oddsMovement=[2.05,2.08,2.12,2.10,2.15,2.18,2.20,2.25];
+
+  return `<div class="page active fade-in">
+    <!-- saudação -->
+    <div class="section">
+      <h1 class="font-d fw8 fs-hero">${greeting()}, Wagner</h1>
+      <p class="c-muted fs-sm mt-2">${OPPS.length} oportunidades ativas · ${OPPS.filter(o=>o.score>=80).length} com score alto</p>
+    </div>
+
+    <!-- filtro de esporte -->
+    <div class="section" style="margin-bottom:16px">
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none">
+        <button class="chip active" data-sport="futebol" onclick="setSport(this)">⚽ Futebol</button>
+        <button class="chip" data-sport="basquete" onclick="setSport(this)">🏀 Basquete</button>
+        <button class="chip" data-sport="tenis" onclick="setSport(this)">🎾 Tênis</button>
+        <button class="chip" data-sport="mma" onclick="setSport(this)">🥊 MMA</button>
+      </div>
+    </div>
+
+    <!-- calendário horizontal -->
+    <div class="section" style="margin-bottom:16px">
+      <div class="date-scroll">
+        ${dates.map((d,i)=>`<button class="date-pill${d.isToday?' active':''}" data-idx="${i}" onclick="setDate(this)">
+          <span class="dow">${d.dow}</span><span class="day">${d.day}</span>
+        </button>`).join('')}
+      </div>
+    </div>
+
+    <!-- hero card -->
+    <div class="section">
+      <div class="card-premium hero">
+        <div class="hero-top">
+          <div>
+            <span class="hero-badge">${icon('zap',10)} Melhor Oportunidade</span>
+            <p class="c-subtle fs-xs mt-2">${hero.league} · ${hero.round}</p>
+          </div>
+          ${gauge(hero.score,56,4)}
+        </div>
+        <div class="hero-teams" onclick="openSheet(${hero.id})" style="cursor:pointer">
+          <div class="hero-team">
+            ${teamCircle(hero.home,40)}
+            <span class="fw6 fs-base">${hero.home}</span>
+          </div>
+          <span class="hero-vs">vs</span>
+          <div class="hero-team">
+            <span class="fw6 fs-base">${hero.away}</span>
+            ${teamCircle(hero.away,40)}
+          </div>
+        </div>
+        <p class="c-muted fs-xs">${hero.market} · ${hero.sel} · ${fmtDate(hero.date)} ${fmtTime(hero.date)}</p>
+        <div class="hero-metrics">
+          <div class="hero-metric">
+            <div class="hero-metric-val c-success">${fmtPct(hero.edge)}</div>
+            <div class="hero-metric-label">EDGE</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hero-metric-val c-success">${fmtPct(hero.ev)}</div>
+            <div class="hero-metric-label">EV</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hero-metric-val" style="color:var(--warning)">${hero.bestOdds.toFixed(2)}</div>
+            <div class="hero-metric-label">${hero.bestBook}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="section">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-val c-success">${fmtPct(KPIS.roi)}</div>
+          <div class="kpi-label">ROI</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val">${KPIS.hitRate}%</div>
+          <div class="kpi-label">Hit Rate</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val c-primary">${KPIS.activeBets}</div>
+          <div class="kpi-label">Ativas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- top oportunidades -->
+    <div class="section">
+      <div class="section-head">
+        <h3 class="section-title">${icon('target',16)} Top Oportunidades</h3>
+        <button class="c-primary fs-xs fw6" onclick="navigate('oportunidades')">Ver todas →</button>
+      </div>
+      ${top5.map(o=>`
+        <div class="opp-row interactive" onclick="openSheet(${o.id})">
+          <div class="opp-teams">
+            ${teamCircle(o.home,32)}
+            ${teamCircle(o.away,32,'away')}
+          </div>
+          <div class="opp-info">
+            <div class="opp-match">${o.home} vs ${o.away}</div>
+            <div class="opp-meta">${o.market} · ${o.sel} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
+          </div>
+          <div class="opp-edge">
+            <div class="opp-edge-val">${fmtPct(o.edge)}</div>
+            <div class="opp-edge-label">Edge</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- movimento de odds (mini chart) -->
+    <div class="section">
+      <div class="section-head">
+        <h3 class="section-title">${icon('trending',16)} Movimento de Odds</h3>
+      </div>
+      <div class="chart-wrap">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <div class="fs-sm fw6">${hero.home} vs ${hero.away}</div>
+            <div class="fs-xs c-subtle">${hero.market} · ${hero.sel}</div>
+          </div>
+          <div class="text-center">
+            <div class="font-d fw7 fs-lg c-success">${hero.bestOdds.toFixed(2)}</div>
+            <div class="fs-xs c-subtle">Atual</div>
+          </div>
+        </div>
+        ${sparkline(oddsMovement,280,40,'var(--success)')}
+      </div>
+    </div>
+
+    <!-- performance do modelo -->
+    <div class="section">
+      <div class="section-head">
+        <h3 class="section-title">${icon('chart',16)} Modelo</h3>
+      </div>
+      <div class="grid-2">
+        <div class="kpi">
+          <div class="kpi-val" style="color:var(--warning)">${KPIS.brierScore}</div>
+          <div class="kpi-label">Brier Score</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val c-success">${fmtPct(KPIS.avgCLV)}</div>
+          <div class="kpi-label">CLV Médio</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ===== OPORTUNIDADES ===== */
+function renderOportunidades(){
+  let filtered=[...OPPS];
+  if(filterLeague) filtered=filtered.filter(o=>o.league===filterLeague);
+  if(filterMarket) filtered=filtered.filter(o=>o.market===filterMarket);
+  filtered.sort((a,b)=>b[sortField]-a[sortField]);
+
+  const leagueOpts=[...new Set(OPPS.map(o=>o.league))];
+  const marketOpts=[...new Set(OPPS.map(o=>o.market))];
+
+  return `<div class="page active fade-in">
+    <div class="section">
+      <h2 class="font-d fw8 fs-2xl upper">Oportunidades</h2>
+      <p class="c-muted fs-sm mt-2">${filtered.length} oportunidade${filtered.length!==1?'s':''} encontrada${filtered.length!==1?'s':''}</p>
+    </div>
+
+    <!-- filtros -->
+    <div class="filter-bar">
+      <select class="filter-select" onchange="filterLeague=this.value;renderPage()">
+        <option value="">Todas as ligas</option>
+        ${leagueOpts.map(l=>`<option value="${l}"${filterLeague===l?' selected':''}>${l}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="filterMarket=this.value;renderPage()">
+        <option value="">Todos os mercados</option>
+        ${marketOpts.map(m=>`<option value="${m}"${filterMarket===m?' selected':''}>${m}</option>`).join('')}
+      </select>
+      <select class="filter-select" onchange="sortField=this.value;renderPage()">
+        <option value="score"${sortField==='score'?' selected':''}>Score ↓</option>
+        <option value="edge"${sortField==='edge'?' selected':''}>Edge ↓</option>
+        <option value="ev"${sortField==='ev'?' selected':''}>EV ↓</option>
+        <option value="bestOdds"${sortField==='bestOdds'?' selected':''}>Odds ↓</option>
+      </select>
+    </div>
+
+    <!-- lista -->
+    <div>
+      ${filtered.map(o=>`
+        <div class="opp-row interactive" onclick="openSheet(${o.id})">
+          <div class="opp-teams">
+            ${teamCircle(o.home,32)}
+            ${teamCircle(o.away,32,'away')}
+          </div>
+          <div class="opp-info">
+            <div class="opp-match">${o.home} vs ${o.away}</div>
+            <div class="opp-meta">${o.league} · ${o.market} · ${o.sel}</div>
+            <div class="opp-meta">${fmtDate(o.date)} ${fmtTime(o.date)} · ${o.bestBook} @ ${o.bestOdds.toFixed(2)}</div>
+          </div>
+          <div class="opp-edge" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            ${gauge(o.score,44,3)}
+          </div>
+        </div>
+      `).join('')}
+      ${filtered.length===0?'<div class="text-center p-4 c-subtle fs-sm">Nenhuma oportunidade encontrada com os filtros selecionados.</div>':''}
+    </div>
+  </div>`;
+}
+
+/* ===== ODDS ===== */
+function renderOdds(){
+  /* agrupar por jogo */
+  const matches=[...new Map(OPPS.map(o=>[o.id,o])).values()].slice(0,6);
+  /* mostrar odds do primeiro match como exemplo */
+  const selected=matches[0];
+
+  return `<div class="page active fade-in">
+    <div class="section">
+      <h2 class="font-d fw8 fs-2xl upper">Comparação de Odds</h2>
+      <p class="c-muted fs-sm mt-2">Odds ao vivo de ${BOOKS.length} casas</p>
+    </div>
+
+    <!-- seletor de jogos (chips) -->
+    <div class="section" style="margin-bottom:12px">
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0" id="odds-match-chips">
+        ${matches.map((m,i)=>`<button class="chip${i===0?' active':''}" data-oidx="${i}" onclick="selectOddsMatch(this,${i})">
+          ${(TEAMS[m.home]||{abbr:'?'}).abbr} × ${(TEAMS[m.away]||{abbr:'?'}).abbr}
+        </button>`).join('')}
+      </div>
+    </div>
+
+    <!-- info do jogo selecionado -->
+    <div class="card mb-2" id="odds-match-info">
+      ${renderOddsMatchInfo(selected)}
+    </div>
+
+    <!-- tabela de odds -->
+    <div style="overflow-x:auto;margin:0 -16px;padding:0 16px">
+      <table class="odds-table" id="odds-grid">
+        ${renderOddsTable(selected)}
+      </table>
+    </div>
+
+    <!-- fair probs -->
+    <div class="section mt-4">
+      <div class="section-head">
+        <h3 class="section-title">${icon('eye',16)} Fair Probabilities (Ensemble)</h3>
+      </div>
+      <div class="card" id="odds-fair-section">
+        ${renderFairProbs(selected)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderOddsMatchInfo(o){
+  return `<div class="flex items-center gap-3">
+    <div class="opp-teams">${teamCircle(o.home,36)}${teamCircle(o.away,36,'away')}</div>
+    <div style="flex:1;min-width:0">
+      <div class="fw6 fs-base">${o.home} vs ${o.away}</div>
+      <div class="fs-xs c-subtle">${o.league} · ${fmtDate(o.date)} ${fmtTime(o.date)}</div>
+    </div>
+    ${gauge(o.score,48,3)}
+  </div>`;
+}
+
+function renderOddsTable(o){
+  const bookNames=Object.keys(o.odds);
+  const bestVal=Math.max(...Object.values(o.odds));
+  let h=`<thead><tr><th>Casa</th><th>${o.sel}</th></tr></thead><tbody>`;
+  bookNames.forEach(b=>{
+    const v=o.odds[b];
+    const isBest=v===bestVal;
+    h+=`<tr><td>${b}</td><td class="${isBest?'odds-best':''}">${v.toFixed(2)}${isBest?' ★':''}</td></tr>`;
+  });
+  /* fair odds */
+  const fairOdds=(1/o.fairProb).toFixed(2);
+  h+=`<tr><td style="color:var(--muted);font-style:italic">Fair Odds</td><td class="odds-fair" style="color:var(--warning);font-weight:600">${fairOdds}</td></tr>`;
+  h+='</tbody>';
+  return h;
+}
+
+function renderFairProbs(o){
+  const fairPct=(o.fairProb*100).toFixed(1);
+  const impliedPct=(100/o.bestOdds).toFixed(1);
+  return `<div class="grid-2 gap-3">
+    <div class="text-center">
+      <div class="font-d fw7 fs-xl c-primary">${fairPct}%</div>
+      <div class="fs-xs c-subtle mt-2">Prob. Modelo</div>
+    </div>
+    <div class="text-center">
+      <div class="font-d fw7 fs-xl c-muted">${impliedPct}%</div>
+      <div class="fs-xs c-subtle mt-2">Prob. Implícita</div>
+    </div>
+  </div>
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-s)" class="flex items-center justify-between">
+    <span class="fs-sm c-muted">Edge detectado</span>
+    <span class="font-d fw7 fs-lg c-success">${fmtPct(o.edge)}</span>
+  </div>`;
+}
+
+/* ===== ANÁLISES ===== */
+function renderAnalises(){
+  return `<div class="page active fade-in">
+    <div class="section">
+      <h2 class="font-d fw8 fs-2xl upper">Centro de Inteligência</h2>
+      <p class="c-muted fs-sm mt-2">Desempenho consolidado dos modelos</p>
+    </div>
+
+    <!-- tabs -->
+    <div class="tabs" id="analise-tabs">
+      <button class="tab${activeAnaliseTab==='desempenho'?' active':''}" onclick="setAnaliseTab('desempenho')">Desempenho</button>
+      <button class="tab${activeAnaliseTab==='calibracao'?' active':''}" onclick="setAnaliseTab('calibracao')">Calibração</button>
+      <button class="tab${activeAnaliseTab==='ligas'?' active':''}" onclick="setAnaliseTab('ligas')">Ligas</button>
+      <button class="tab${activeAnaliseTab==='mercados'?' active':''}" onclick="setAnaliseTab('mercados')">Mercados</button>
+    </div>
+
+    <div id="analise-content">
+      ${renderAnaliseTab()}
+    </div>
+  </div>`;
+}
+
+function renderAnaliseTab(){
+  switch(activeAnaliseTab){
+    case 'desempenho': return renderDesempenho();
+    case 'calibracao': return renderCalibracao();
+    case 'ligas': return renderLigas();
+    case 'mercados': return renderMercados();
+    default: return renderDesempenho();
+  }
+}
+
+function renderDesempenho(){
+  return `
+    <!-- KPIs resumo -->
+    <div class="kpi-grid mb-2" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi"><div class="kpi-val c-success">${fmtPct(KPIS.roi)}</div><div class="kpi-label">ROI Total</div></div>
+      <div class="kpi"><div class="kpi-val">${KPIS.hitRate}%</div><div class="kpi-label">Hit Rate</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--warning)">${KPIS.brierScore}</div><div class="kpi-label">Brier Score</div></div>
+      <div class="kpi"><div class="kpi-val c-success">${fmtPct(KPIS.avgCLV)}</div><div class="kpi-label">CLV Médio</div></div>
+    </div>
+
+    <!-- equity curve -->
+    <div class="section mt-3">
+      <div class="section-head"><h3 class="section-title">Curva de Patrimônio</h3></div>
+      <div class="chart-wrap">
+        <div class="flex items-center justify-between mb-2">
+          <span class="fs-xs c-subtle">Base 100 · Últimos 12 meses</span>
+          <span class="font-d fw7 c-success">${EQUITY_MONTHS[EQUITY_MONTHS.length-1].v.toFixed(1)}</span>
+        </div>
+        ${areaChart(EQUITY_MONTHS.map(d=>d.v),EQUITY_MONTHS.map(d=>d.m),320,150,'var(--success)')}
+      </div>
+    </div>
+
+    <!-- performance recente -->
+    <div class="section">
+      <div class="section-head"><h3 class="section-title">Últimos 30 Dias</h3></div>
+      <div class="grid-2">
+        <div class="card text-center"><div class="font-d fw7 fs-xl c-success">+8.2%</div><div class="fs-xs c-subtle mt-2">ROI 30d</div></div>
+        <div class="card text-center"><div class="font-d fw7 fs-xl">62.1%</div><div class="fs-xs c-subtle mt-2">Hit Rate 30d</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCalibracao(){
+  return `
+    <div class="section">
+      <div class="section-head"><h3 class="section-title">Tabela de Calibração</h3></div>
+      <p class="c-muted fs-xs mb-2">Previsão vs resultado real por faixa de probabilidade</p>
+      <div class="card" style="padding:8px;overflow-x:auto">
+        <table class="cal-table">
+          <thead><tr><th>Faixa</th><th>Previsto</th><th>Real</th><th>N</th><th>Δ</th></tr></thead>
+          <tbody>
+            ${CALIBRATION.map(c=>`<tr>
+              <td class="fw6">${c.bin}</td>
+              <td>${c.pred.toFixed(1)}%</td>
+              <td>${c.actual.toFixed(1)}%</td>
+              <td class="c-subtle">${c.n}</td>
+              <td class="${c.diff>=0?'val-positive':'val-negative'}">${c.diff>=0?'+':''}${c.diff.toFixed(1)}%</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3 class="section-title">Métricas de Calibração</h3></div>
+      <div class="grid-2">
+        <div class="card text-center"><div class="font-d fw7 fs-xl" style="color:var(--warning)">1.18%</div><div class="fs-xs c-subtle mt-2">ECE</div></div>
+        <div class="card text-center"><div class="font-d fw7 fs-xl" style="color:var(--warning)">1.50%</div><div class="fs-xs c-subtle mt-2">MCE</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLigas(){
+  return `
+    <div class="section">
+      <div class="section-head"><h3 class="section-title">ROI por Liga</h3></div>
+      <div class="chart-wrap">
+        ${hBarChart(LEAGUE_PERF.map(l=>({label:l.league.replace('Brasileirão ','Br.').replace('Copa ','C.'),value:l.roi})))}
+      </div>
+    </div>
+    <div class="section">
+      ${LEAGUE_PERF.map(l=>`
+        <div class="card mb-2">
+          <div class="flex items-center justify-between">
+            <div><div class="fw6 fs-sm">${l.league}</div><div class="fs-xs c-subtle">${l.bets} apostas</div></div>
+            <div class="text-center"><div class="font-d fw7 c-success">${fmtPct(l.roi)}</div><div class="fs-xs c-subtle">ROI</div></div>
+          </div>
+          <div class="flex gap-3 mt-2" style="border-top:1px solid var(--border-s);padding-top:8px">
+            <div class="fs-xs"><span class="c-subtle">Hit:</span> <span class="fw6">${l.hitRate}%</span></div>
+            <div class="fs-xs"><span class="c-subtle">Brier:</span> <span class="fw6">${l.brier}</span></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderMercados(){
+  return `
+    <div class="section">
+      <div class="section-head"><h3 class="section-title">ROI por Mercado</h3></div>
+      <div class="chart-wrap">
+        ${hBarChart(MARKET_PERF.map(m=>({label:m.market,value:m.roi})))}
+      </div>
+    </div>
+    <div class="section">
+      ${MARKET_PERF.map(m=>`
+        <div class="card mb-2">
+          <div class="flex items-center justify-between">
+            <div><div class="fw6 fs-sm">${m.market}</div><div class="fs-xs c-subtle">${m.bets} apostas</div></div>
+            <div class="text-center"><div class="font-d fw7 c-success">${fmtPct(m.roi)}</div><div class="fs-xs c-subtle">ROI</div></div>
+          </div>
+          <div class="flex gap-3 mt-2" style="border-top:1px solid var(--border-s);padding-top:8px">
+            <div class="fs-xs"><span class="c-subtle">Hit:</span> <span class="fw6">${m.hitRate}%</span></div>
+            <div class="fs-xs"><span class="c-subtle">Brier:</span> <span class="fw6">${m.brier}</span></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ===== DETALHE (sheet) ===== */
+function openSheet(id){
+  const o=OPPS.find(x=>x.id===id);
+  if(!o)return;
+  const sheet=$('#detail-sheet');
+  const modelEntries=Object.entries(o.models);
+  const maxProb=Math.max(...modelEntries.map(m=>m[1]));
+
+  $('#sheet-content').innerHTML=`
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeSheet()">${icon('x',16)}</button>
+    <div style="padding:20px 16px 32px">
+      <!-- cabeçalho -->
+      <div class="flex items-center gap-3 mb-2">
+        <div class="opp-teams">${teamCircle(o.home,40)}${teamCircle(o.away,40,'away')}</div>
+        <div style="flex:1">
+          <div class="font-d fw7 fs-lg">${o.home} vs ${o.away}</div>
+          <div class="fs-xs c-subtle">${o.league} · ${o.round}</div>
+          <div class="fs-xs c-subtle">${fmtDate(o.date)} ${fmtTime(o.date)}</div>
+        </div>
+      </div>
+
+      <!-- métricas principais -->
+      <div class="kpi-grid mt-3" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi"><div class="kpi-val c-success" style="font-size:1rem">${fmtPct(o.edge)}</div><div class="kpi-label">Edge</div></div>
+        <div class="kpi"><div class="kpi-val c-success" style="font-size:1rem">${fmtPct(o.ev)}</div><div class="kpi-label">EV</div></div>
+        <div class="kpi"><div class="kpi-val" style="font-size:1rem;color:var(--warning)">${o.bestOdds.toFixed(2)}</div><div class="kpi-label">Melhor</div></div>
+        <div class="kpi"><div class="kpi-val" style="font-size:1rem">${(o.fairProb*100).toFixed(1)}%</div><div class="kpi-label">Fair %</div></div>
+      </div>
+
+      <!-- NoBlind Score -->
+      <div class="card mt-3 flex items-center justify-between">
+        <div>
+          <div class="font-d fw7 fs-base upper">NoBlind Score</div>
+          <div class="fs-xs c-subtle mt-2">Índice composto de valor</div>
+        </div>
+        ${gauge(o.score,72,5)}
+      </div>
+
+      <!-- mercado & seleção -->
+      <div class="card mt-2">
+        <div class="flex items-center justify-between">
+          <div class="fs-sm c-muted">Mercado</div><div class="fw6 fs-sm">${o.market}</div>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <div class="fs-sm c-muted">Seleção</div><div class="fw6 fs-sm c-primary">${o.sel}</div>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <div class="fs-sm c-muted">Melhor Casa</div><div class="fw6 fs-sm">${o.bestBook} @ ${o.bestOdds.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <!-- probabilidades dos modelos -->
+      <div class="mt-3">
+        <h4 class="font-d fw7 fs-base upper mb-2">Probabilidades por Modelo</h4>
+        ${modelEntries.map(([name,prob])=>{
+          const pct=(prob*100).toFixed(1);
+          const w=(prob/maxProb)*100;
+          const col=name==='Ensemble'?'var(--primary)':'var(--muted)';
+          const fw=name==='Ensemble'?'700':'500';
+          return `<div class="model-bar">
+            <div class="model-bar-name" style="font-weight:${fw}">${name}</div>
+            <div class="model-bar-track"><div class="model-bar-fill" style="width:${w}%;background:${col}"></div></div>
+            <div class="model-bar-val" style="font-weight:${fw};color:${name==='Ensemble'?'var(--primary)':'var(--txt)'}">${pct}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- odds por casa -->
+      <div class="mt-3">
+        <h4 class="font-d fw7 fs-base upper mb-2">Odds por Casa</h4>
+        <div style="overflow-x:auto">
+          <table class="odds-table" style="min-width:200px">
+            ${renderOddsTable(o)}
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  sheet.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeSheet(){
+  $('#detail-sheet').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+/* ===== event handlers ===== */
+function setSport(btn){
+  $$('.chip[data-sport]').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  activeSport=btn.dataset.sport;
+}
+
+function setDate(btn){
+  $$('.date-pill').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  selectedDate=+btn.dataset.idx;
+}
+
+function setAnaliseTab(tab){
+  activeAnaliseTab=tab;
+  $$('#analise-tabs .tab').forEach(t=>t.classList.toggle('active',t.textContent.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').startsWith(tab.slice(0,4))));
+  const c=$('#analise-content');
+  if(c) c.innerHTML=renderAnaliseTab();
+}
+
+function selectOddsMatch(btn,idx){
+  $$('#odds-match-chips .chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  const matches=[...new Map(OPPS.map(o=>[o.id,o])).values()].slice(0,6);
+  const o=matches[idx];
+  if(!o)return;
+  $('#odds-match-info').innerHTML=renderOddsMatchInfo(o);
+  $('#odds-grid').innerHTML=renderOddsTable(o);
+  $('#odds-fair-section').innerHTML=renderFairProbs(o);
+}
+
+function bindPageEvents(){
+  /* nada extra por enquanto */
+}
+
+/* ===== PWA: service worker ===== */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+/* ===== boot ===== */
+function init(){
+  renderBottomNav();
+  renderSidebar();
+  renderTopbar();
+  renderPage();
+  /* swipe para fechar sheet */
+  let touchStartY=0;
+  const sheetBody=$('#sheet-content');
+  sheetBody.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY},{passive:true});
+  sheetBody.addEventListener('touchmove',e=>{
+    if(sheetBody.scrollTop<=0&&e.touches[0].clientY-touchStartY>60)closeSheet();
+  },{passive:true});
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
