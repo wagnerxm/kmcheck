@@ -48,6 +48,16 @@ jobs:
 
             echo "═══ 2. Nginx (frontend + reverse proxy) ═══"
 
+            # Parar Apache ou qualquer serviço na porta 80 (Contabo vem com Apache)
+            if ss -tlnp 2>/dev/null | grep -q ':80 '; then
+              echo "→ Porta 80 ocupada, parando serviço conflitante..."
+              systemctl stop apache2 2>/dev/null || true
+              systemctl disable apache2 2>/dev/null || true
+              # Se ainda ocupada, liberar à força
+              fuser -k 80/tcp 2>/dev/null || true
+              sleep 1
+            fi
+
             # Instalar nginx se não existir (idempotente)
             if ! command -v nginx &>/dev/null; then
               echo "→ Instalando nginx..."
@@ -119,9 +129,13 @@ jobs:
             ln -sf /etc/nginx/sites-available/noblind /etc/nginx/sites-enabled/noblind
             rm -f /etc/nginx/sites-enabled/default
 
-            # Testar config e recarregar
+            # Testar config e iniciar/recarregar
             nginx -t
-            systemctl reload nginx || systemctl start nginx
+            if systemctl is-active --quiet nginx; then
+              systemctl reload nginx
+            else
+              systemctl start nginx
+            fi
             echo "✅ Nginx configurado"
 
             echo "═══ 3. Preparando .env ═══"
