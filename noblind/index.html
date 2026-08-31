@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ===== reset & design tokens ===== */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -28,6 +28,7 @@
   --warning:#F59E0B;
   --txt:#F4F4F5;--muted:#9CA3AF;--subtle:#A1A1AA;
   --font:'Outfit',system-ui,-apple-system,sans-serif;
+  --font-display:'Bebas Neue','Impact','Arial Narrow',sans-serif;
   --r:2rem;--r-sm:1.25rem;--r-lg:2.5rem;
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -55,7 +56,7 @@ img{max-width:100%}
 /* ===== topbar ===== */
 .tb-brand{display:flex;align-items:center;gap:8px}
 .tb-logo{font-size:1.125rem;font-weight:900;letter-spacing:-.03em}
-.tb-dot{color:var(--lime)}
+.tb-dot{color:var(--lime);text-shadow:0 0 8px rgba(163,230,53,.4)}
 .tb-actions{display:flex;align-items:center;gap:8px}
 
 /* ===== floating bottom nav — pílula preta ===== */
@@ -69,7 +70,8 @@ img{max-width:100%}
   font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:rgba(255,255,255,.35);transition:all .25s ease;
   -webkit-tap-highlight-color:transparent;cursor:pointer}
-.bn-item.active{color:var(--dark);background:var(--lime)}
+.bn-item.active{color:var(--lime);background:var(--lime-d);
+  box-shadow:0 0 16px rgba(163,230,53,.10)}
 .bn-item svg{flex-shrink:0}
 .bn-item .ic{line-height:0}
 
@@ -84,14 +86,17 @@ img{max-width:100%}
   position:relative;overflow:hidden;
   border:1px solid rgba(255,255,255,.20);border-top-color:rgba(255,255,255,.40);border-bottom-color:rgba(0,0,0,.25);
   box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 -2px 0 rgba(0,0,0,.12) inset,
-    0 4px 16px rgba(163,230,53,.18),0 12px 40px rgba(0,0,0,.30)}
+    0 4px 16px rgba(163,230,53,.25),0 12px 40px rgba(0,0,0,.30),
+    0 0 60px rgba(163,230,53,.12)}
 .ticket-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
 .ticket-label{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
   color:rgba(9,9,11,.5)}
 .ticket-type{font-size:.625rem;font-weight:700;padding:5px 12px;border-radius:999px;
   background:rgba(9,9,11,.15);color:var(--dark);text-transform:uppercase;letter-spacing:.06em}
 .ticket-odds-total{text-align:center;padding:28px 24px 20px}
-.ticket-odds-number{font-size:4rem;font-weight:900;line-height:1;letter-spacing:-.04em;color:var(--dark)}
+.ticket-odds-number{font-family:var(--font-display);font-size:5rem;font-weight:400;line-height:.85;
+  letter-spacing:.02em;color:var(--dark);
+  text-shadow:0 2px 12px rgba(9,9,11,.15)}
 .ticket-odds-label{font-size:.6875rem;color:rgba(9,9,11,.45);margin-top:8px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:600}
 .ticket-legs{border-top:1px solid rgba(9,9,11,.12);padding:16px 24px;
@@ -102,7 +107,7 @@ img{max-width:100%}
 .ticket-leg-meta{font-size:.6875rem;color:rgba(9,9,11,.4);font-weight:500}
 .ticket-leg-pick{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .ticket-leg-sel{font-size:.625rem;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.04em}
-.ticket-leg-odd{font-size:1.25rem;font-weight:900}
+.ticket-leg-odd{font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:.02em}
 .ticket-footer{border-top:1px solid rgba(9,9,11,.12);padding:16px 24px;
   display:flex;align-items:center;justify-content:space-between}
 .ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(9,9,11,.45);font-weight:500}
@@ -124,7 +129,9 @@ img{max-width:100%}
 .bet-match{font-size:.875rem;font-weight:800;line-height:1.3;letter-spacing:-.01em}
 .bet-meta{font-size:.6875rem;color:rgba(255,255,255,.45);margin-top:2px;font-weight:500}
 .bet-right{display:flex;flex-direction:column;align-items:flex-end}
-.bet-odd{font-size:2.25rem;font-weight:900;line-height:1;letter-spacing:-.03em;color:#fff}
+.bet-odd{font-family:var(--font-display);font-size:2.5rem;font-weight:400;line-height:1;
+  letter-spacing:.02em;color:#fff;
+  text-shadow:0 0 20px rgba(163,230,53,.15)}
 .bet-book{font-size:.5625rem;color:rgba(255,255,255,.4);margin-top:2px;font-weight:600;text-transform:uppercase;
   letter-spacing:.04em}
 .bet-bottom{display:flex;align-items:center;justify-content:space-between;
@@ -148,7 +155,7 @@ img{max-width:100%}
 .multi-type--dupla{background:var(--success-d);color:var(--success)}
 .multi-type--tripla{background:rgba(245,158,11,.10);color:var(--warning)}
 .multi-type--quadra{background:var(--lime-d);color:var(--lime-dk)}
-.multi-odd{font-size:2rem;font-weight:900;letter-spacing:-.03em}
+.multi-odd{font-family:var(--font-display);font-size:2.25rem;font-weight:400;letter-spacing:.02em}
 .multi-legs{padding:0}
 .multi-leg{display:flex;align-items:center;gap:10px;padding:14px 18px;
   border-bottom:1px solid rgba(255,255,255,.06)}
@@ -156,11 +163,11 @@ img{max-width:100%}
 .multi-leg-info{flex:1;min-width:0}
 .multi-leg-match{font-size:.8125rem;font-weight:700}
 .multi-leg-pick{font-size:.6875rem;color:var(--lime);font-weight:700}
-.multi-leg-odd{font-size:1.125rem;font-weight:900}
+.multi-leg-odd{font-family:var(--font-display);font-size:1.25rem;font-weight:400;letter-spacing:.02em}
 
 /* ===== section label ===== */
-.section-label{font-size:.6875rem;font-weight:800;text-transform:uppercase;
-  letter-spacing:.12em;color:var(--subtle)}
+.section-label{font-family:var(--font-display);font-size:1rem;font-weight:400;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--subtle)}
 #detail-sheet .section-label{color:rgba(255,255,255,.4)}
 
 /* ===== pill bar — pílulas pretas ===== */
@@ -206,8 +213,8 @@ img{max-width:100%}
     0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20)}
 .bento-card--lime{background:var(--lime);border-color:var(--lime);color:var(--dark)}
 .bento-card--dark{background:var(--dark);border-color:var(--dark);color:#fff}
-.bento-val{font-size:2rem;font-weight:900;line-height:1;letter-spacing:-.03em}
-.bento-val--xl{font-size:2.75rem}
+.bento-val{font-family:var(--font-display);font-size:2.25rem;font-weight:400;line-height:.9;letter-spacing:.02em}
+.bento-val--xl{font-size:3.25rem}
 .bento-label{font-size:.5625rem;color:rgba(255,255,255,.4);margin-top:6px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:700}
 .bento-card--lime .bento-label{color:rgba(9,9,11,.5)}
@@ -221,7 +228,7 @@ img{max-width:100%}
   border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
   box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
     0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20)}
-.kpi-chip-val{font-weight:900;font-size:1rem;line-height:1.2;letter-spacing:-.02em}
+.kpi-chip-val{font-family:var(--font-display);font-weight:400;font-size:1.25rem;line-height:1;letter-spacing:.02em}
 .kpi-chip-label{font-size:.5rem;color:rgba(255,255,255,.4);margin-top:3px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:700}
 
@@ -268,7 +275,7 @@ img{max-width:100%}
 .roi-card-info{flex:1}
 .roi-card-name{font-weight:800;font-size:.875rem;letter-spacing:-.01em}
 .roi-card-sub{font-size:.6875rem;color:rgba(255,255,255,.45);font-weight:500;margin-top:1px}
-.roi-card-val{font-weight:900;font-size:1.125rem;letter-spacing:-.02em;color:var(--lime)}
+.roi-card-val{font-family:var(--font-display);font-weight:400;font-size:1.375rem;letter-spacing:.02em;color:var(--lime)}
 
 /* ===== animações ===== */
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -494,7 +501,7 @@ function renderHome(){
   return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:20px">
     <div>
       <p style="font-size:.6875rem;color:var(--subtle);text-transform:capitalize;font-weight:500">${today}</p>
-      <h1 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em;margin-top:2px">Análises do Dia</h1>
+      <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:400;letter-spacing:.04em;margin-top:2px">ANÁLISES DO DIA</h1>
     </div>
 
     <div class="kpi-strip">
@@ -623,7 +630,7 @@ function renderSingles(){
   const sorted=[...SINGLES].sort((a,b)=>b.score-a.score);
   return `<div class="page active fade-in">
     <div style="margin-bottom:20px">
-      <h2 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em">Singles</h2>
+      <h2 style="font-family:var(--font-display);font-size:2rem;font-weight:400;letter-spacing:.04em;text-transform:uppercase">Singles</h2>
       <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">${SINGLES.length} análises · ordenadas por score</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -638,7 +645,7 @@ function renderSingles(){
 function renderMultiples(){
   return `<div class="page active fade-in">
     <div style="margin-bottom:20px">
-      <h2 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em">Múltiplas</h2>
+      <h2 style="font-family:var(--font-display);font-size:2rem;font-weight:400;letter-spacing:.04em;text-transform:uppercase">Múltiplas</h2>
       <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">Combinações sugeridas pela análise</p>
     </div>
     <div class="pill-bar" style="margin-bottom:16px">
@@ -669,7 +676,7 @@ function filterMulti(btn,type){
 function renderStats(){
   return `<div class="page active fade-in">
     <div style="margin-bottom:20px">
-      <h2 style="font-size:1.625rem;font-weight:900;letter-spacing:-.03em">Estatísticas</h2>
+      <h2 style="font-family:var(--font-display);font-size:2rem;font-weight:400;letter-spacing:.04em;text-transform:uppercase">Estatísticas</h2>
       <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">Performance geral dos modelos</p>
     </div>
 
