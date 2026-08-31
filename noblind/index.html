@@ -123,34 +123,34 @@ img{max-width:100%}
   transition:transform var(--transition-fast),box-shadow var(--transition-fast)}
 
 /* ===== BILHETE DO DIA — card destaque verde 3D biselado ===== */
-.ticket-hero{background:linear-gradient(180deg,#8FCC2A 0%,#6BA31E 40%,#4D8216 80%,#3A6B10 100%);border-radius:var(--r-lg);padding:0;color:#fff;
+.ticket-hero{background:linear-gradient(180deg,#8FCC2A 0%,#6BA31E 40%,#4D8216 80%,#3A6B10 100%);border-radius:var(--r-lg);padding:0;color:var(--dark);
   position:relative;overflow:hidden;
-  border:1px solid rgba(163,230,53,.35);border-top-color:rgba(163,230,53,.50);border-bottom-color:rgba(0,0,0,.30);
-  box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -2px 0 rgba(0,0,0,.15) inset,
-    0 4px 24px rgba(163,230,53,.35),0 8px 36px rgba(163,230,53,.18),0 16px 48px rgba(0,0,0,.25)}
+  border:1px solid rgba(255,255,255,.12);border-top-color:rgba(255,255,255,.20);border-bottom-color:rgba(0,0,0,.25);
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 -2px 0 rgba(0,0,0,.10) inset,
+    0 4px 12px rgba(0,0,0,.20),0 12px 32px rgba(0,0,0,.15)}
 .ticket-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
 .ticket-label{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
-  color:rgba(255,255,255,.55)}
+  color:rgba(9,9,11,.5)}
 .ticket-type{font-size:.625rem;font-weight:700;padding:5px 12px;border-radius:999px;
-  background:rgba(0,0,0,.20);color:#fff;text-transform:uppercase;letter-spacing:.06em}
+  background:rgba(9,9,11,.15);color:var(--dark);text-transform:uppercase;letter-spacing:.06em}
 .ticket-odds-total{text-align:center;padding:28px 24px 20px}
 .ticket-odds-number{font-family:var(--font-display);font-size:5rem;font-weight:400;line-height:.85;
-  letter-spacing:.02em;color:#fff;
-  text-shadow:0 2px 16px rgba(163,230,53,.30)}
-.ticket-odds-label{font-size:.6875rem;color:rgba(255,255,255,.55);margin-top:8px;text-transform:uppercase;
+  letter-spacing:.02em;color:var(--dark);
+  text-shadow:0 2px 12px rgba(9,9,11,.15)}
+.ticket-odds-label{font-size:.6875rem;color:rgba(9,9,11,.45);margin-top:8px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:600}
-.ticket-legs{border-top:1px solid rgba(255,255,255,.12);padding:16px 24px;
+.ticket-legs{border-top:1px solid rgba(9,9,11,.12);padding:16px 24px;
   display:flex;flex-direction:column;gap:14px}
 .ticket-leg{display:flex;align-items:center;gap:10px}
 .ticket-leg-teams{flex:1;min-width:0}
-.ticket-leg-match{font-size:.8125rem;font-weight:700;line-height:1.3;color:#fff}
-.ticket-leg-meta{font-size:.6875rem;color:rgba(255,255,255,.50);font-weight:500}
+.ticket-leg-match{font-size:.8125rem;font-weight:700;line-height:1.3}
+.ticket-leg-meta{font-size:.6875rem;color:rgba(9,9,11,.4);font-weight:500}
 .ticket-leg-pick{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.ticket-leg-sel{font-size:.625rem;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.04em}
-.ticket-leg-odd{font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:.02em;color:#fff}
-.ticket-footer{border-top:1px solid rgba(255,255,255,.12);padding:16px 24px;
+.ticket-leg-sel{font-size:.625rem;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.04em}
+.ticket-leg-odd{font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:.02em}
+.ticket-footer{border-top:1px solid rgba(9,9,11,.12);padding:16px 24px;
   display:flex;align-items:center;justify-content:space-between}
-.ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(255,255,255,.55);font-weight:500}
+.ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(9,9,11,.45);font-weight:500}
 
 /* ===== escudo do time — formato de shield SVG ===== */
 .team-shield{flex-shrink:0;line-height:0}
@@ -267,11 +267,14 @@ img{max-width:100%}
 .bento-card--lime .bento-label{color:rgba(9,9,11,.5)}
 .bento-card--dark .bento-label{color:var(--subtle)}
 
-/* ===== Hero banner — fixo entre topbar e scroll, bordas arredondadas, flutuante ===== */
-#hero-banner-wrap{flex-shrink:0;padding:var(--sp-3) var(--sp-5) 0}
-#hero-banner-wrap[hidden]{display:none!important}
-#hero-banner{position:relative;width:100%;height:100px;overflow:hidden;border-radius:var(--r-sm)}
-#hero-banner img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+/* ===== Hero banner — position:fixed flutuante, espelha a bottom nav ===== */
+#hero-banner{position:fixed;left:var(--sp-4);right:var(--sp-4);
+  top:calc(56px + 10px);z-index:9;height:100px;overflow:hidden;
+  border-radius:var(--r);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 8px 32px rgba(0,0,0,.40)}
+#hero-banner[hidden]{display:none!important}
+#hero-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
 #hero-banner .hero-overlay{position:absolute;inset:0;
   background:linear-gradient(135deg,rgba(10,10,12,.88) 0%,rgba(10,10,12,.5) 45%,rgba(10,10,12,.2) 100%)}
 #hero-banner .hero-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--sp-4);gap:10px}
@@ -414,7 +417,7 @@ img{max-width:100%}
 
 /* ===== ticket reflexo — brilho radial no topo do bilhete ===== */
 .ticket-hero::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 25% 0%,rgba(163,230,53,.30),transparent 55%);
+  background:radial-gradient(ellipse at 25% 0%,rgba(255,255,255,.14),transparent 55%);
   pointer-events:none;z-index:0}
 .ticket-hero>*{position:relative;z-index:1}
 
@@ -440,24 +443,22 @@ img{max-width:100%}
         <div id="sb-status" role="status" aria-live="polite"></div>
       </div>
     </header>
-    <!-- hero banner fixo entre topbar e scroll — bordas arredondadas, flutuante, não scrolla -->
-    <div id="hero-banner-wrap" hidden>
-      <div id="hero-banner">
-        <img src="banner-hero.jpg" alt="Análises esportivas" loading="eager">
-        <div class="hero-overlay"></div>
-        <div class="hero-glow"></div>
-        <div class="hero-content">
-          <div class="hero-divider"></div>
-          <div>
-            <div class="hero-title" id="hero-title">ANÁLISES<br>DE HOJE</div>
-            <div class="hero-sub" id="hero-sub"></div>
-          </div>
-        </div>
-      </div>
-    </div>
     <main id="content" role="main"></main>
   </div>
   <nav id="bottom-nav" aria-label="Navegação principal"></nav>
+  <!-- hero banner flutuante fixed — espelha a bottom nav, mas no topo -->
+  <div id="hero-banner" hidden>
+    <img src="banner-hero.jpg" alt="Análises esportivas" loading="eager">
+    <div class="hero-overlay"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-divider"></div>
+      <div>
+        <div class="hero-title" id="hero-title">ANÁLISES<br>DE HOJE</div>
+        <div class="hero-sub" id="hero-sub"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="detail-sheet" role="dialog" aria-modal="true" aria-label="Detalhes">
@@ -669,9 +670,10 @@ function renderBottomNav(){
 }
 function renderPage(){
   const c=$('#content');
-  /* banner fixo só aparece na home */
-  const hbw=$('#hero-banner-wrap');
-  if(hbw)hbw.hidden=currentPage!=='home';
+  /* banner flutuante fixed só aparece na home; padding-top pra conteúdo não ficar atrás */
+  const hb=$('#hero-banner');
+  if(hb)hb.hidden=currentPage!=='home';
+  c.style.paddingTop=currentPage==='home'?'120px':'';
   switch(currentPage){
     case 'home':c.innerHTML=renderHome();break;
     case 'singles':c.innerHTML=renderSingles();break;
