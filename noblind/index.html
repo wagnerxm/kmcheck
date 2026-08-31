@@ -72,15 +72,18 @@ img{max-width:100%}
 .bn-item svg{flex-shrink:0}
 .bn-item .ic{line-height:0}
 
-/* ===== card matte escuro ===== */
-.card{background:var(--card);border-radius:var(--r);padding:20px;color:#fff;position:relative;
-  border:1px solid var(--card-border);
-  box-shadow:0 2px 8px rgba(0,0,0,.20)}
+/* ===== card 3D biselado — borda-top clara, borda-bottom escura, sombra em camadas ===== */
+.card{background:linear-gradient(180deg,#1D2028 0%,#161920 100%);border-radius:var(--r);padding:20px;color:#fff;position:relative;
+  border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20)}
 
-/* ===== BILHETE DO DIA — card destaque verde (ref: Champions League card) ===== */
-.ticket-hero{background:linear-gradient(145deg,#A3E635 0%,#65A30D 100%);border-radius:var(--r-lg);padding:0;color:var(--dark);
-  position:relative;overflow:hidden;border:none;
-  box-shadow:0 4px 24px rgba(163,230,53,.20),0 8px 32px rgba(0,0,0,.25)}
+/* ===== BILHETE DO DIA — card destaque verde 3D biselado ===== */
+.ticket-hero{background:linear-gradient(180deg,#B5ED5A 0%,#7FB82E 50%,#65A30D 100%);border-radius:var(--r-lg);padding:0;color:var(--dark);
+  position:relative;overflow:hidden;
+  border:1px solid rgba(255,255,255,.20);border-top-color:rgba(255,255,255,.40);border-bottom-color:rgba(0,0,0,.25);
+  box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 -2px 0 rgba(0,0,0,.12) inset,
+    0 4px 16px rgba(163,230,53,.18),0 12px 40px rgba(0,0,0,.30)}
 .ticket-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
 .ticket-label{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
   color:rgba(9,9,11,.5)}
@@ -107,12 +110,13 @@ img{max-width:100%}
 .team-shield{flex-shrink:0;line-height:0}
 .team-shield.away{margin-left:-8px;position:relative;z-index:1}
 
-/* ===== bet card — matte escuro ===== */
-.bet-card{background:var(--card);border-radius:var(--r);padding:18px;cursor:pointer;color:#fff;position:relative;
-  border:1px solid var(--card-border);
-  box-shadow:0 2px 8px rgba(0,0,0,.20);
+/* ===== bet card — 3D biselado ===== */
+.bet-card{background:linear-gradient(180deg,#1D2028 0%,#161920 100%);border-radius:var(--r);padding:18px;cursor:pointer;color:#fff;position:relative;
+  border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20);
   transition:transform .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
-.bet-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.bet-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.30)}
 .bet-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .bet-teams-col{display:flex;align-items:center}
 .bet-info{flex:1;min-width:0}
@@ -129,12 +133,13 @@ img{max-width:100%}
 .bet-edge{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;font-weight:600;color:rgba(255,255,255,.45)}
 .bet-edge-val{color:var(--lime);font-weight:800}
 
-/* ===== múltipla card — matte escuro ===== */
-.multi-card{background:var(--card);border-radius:var(--r);overflow:hidden;color:#fff;position:relative;
-  border:1px solid var(--card-border);
-  box-shadow:0 2px 8px rgba(0,0,0,.20);
+/* ===== múltipla card — 3D biselado ===== */
+.multi-card{background:linear-gradient(180deg,#1D2028 0%,#161920 100%);border-radius:var(--r);overflow:hidden;color:#fff;position:relative;
+  border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20);
   cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
-.multi-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.multi-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.30)}
 .multi-header{display:flex;align-items:center;justify-content:space-between;padding:18px;
   border-bottom:1px solid rgba(255,255,255,.06)}
 .multi-type{font-size:.625rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
@@ -161,10 +166,12 @@ img{max-width:100%}
 .pill-bar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .pill-bar::-webkit-scrollbar{display:none}
 .pill{display:inline-flex;align-items:center;padding:9px 18px;border-radius:999px;
-  font-size:.8125rem;font-weight:700;background:var(--card-elevated);color:rgba(255,255,255,.6);
-  border:1px solid var(--card-border);cursor:pointer;white-space:nowrap;
+  font-size:.8125rem;font-weight:700;background:linear-gradient(180deg,#22252C 0%,#1C1F26 100%);color:rgba(255,255,255,.6);
+  border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.14);border-bottom-color:rgba(0,0,0,.25);
+  cursor:pointer;white-space:nowrap;
   transition:all .2s;-webkit-tap-highlight-color:transparent;
-  box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 -1px 0 rgba(0,0,0,.15) inset,
+    0 2px 6px rgba(0,0,0,.20)}
 .pill:active{transform:scale(.96)}
 .pill.active{background:var(--lime);color:var(--dark);border-color:var(--lime);font-weight:800}
 
@@ -191,10 +198,11 @@ img{max-width:100%}
 .bento--hero .bento-tall{grid-row:span 2}
 .bento--trio{grid-template-columns:repeat(3,1fr)}
 .bento--duo{grid-template-columns:1fr 1fr}
-.bento-card{background:var(--card);border-radius:var(--r);padding:20px;
-  border:1px solid var(--card-border);
+.bento-card{background:linear-gradient(180deg,#1D2028 0%,#161920 100%);border-radius:var(--r);padding:20px;
+  border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
   display:flex;flex-direction:column;justify-content:center;color:#fff;position:relative;
-  box-shadow:0 2px 8px rgba(0,0,0,.20)}
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20)}
 .bento-card--lime{background:var(--lime);border-color:var(--lime);color:var(--dark)}
 .bento-card--dark{background:var(--dark);border-color:var(--dark);color:#fff}
 .bento-val{font-size:2rem;font-weight:900;line-height:1;letter-spacing:-.03em}
@@ -207,10 +215,11 @@ img{max-width:100%}
 /* ===== KPI strip horizontal — glass chips ===== */
 .kpi-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .kpi-strip::-webkit-scrollbar{display:none}
-.kpi-chip{flex-shrink:0;background:var(--card);
+.kpi-chip{flex-shrink:0;background:linear-gradient(180deg,#1D2028 0%,#161920 100%);
   color:#fff;border-radius:var(--r-sm);padding:12px 16px;text-align:center;position:relative;
-  border:1px solid var(--card-border);
-  box-shadow:0 2px 8px rgba(0,0,0,.20)}
+  border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20)}
 .kpi-chip-val{font-weight:900;font-size:1rem;line-height:1.2;letter-spacing:-.02em}
 .kpi-chip-label{font-size:.5rem;color:rgba(255,255,255,.4);margin-top:3px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:700}
@@ -250,10 +259,11 @@ img{max-width:100%}
 .model-bar-val{font-size:.75rem;font-weight:800;width:42px;flex-shrink:0}
 
 /* ===== ROI cards — matte ===== */
-.roi-card{background:var(--card);border-radius:var(--r);padding:16px 18px;
+.roi-card{background:linear-gradient(180deg,#1D2028 0%,#161920 100%);border-radius:var(--r);padding:16px 18px;
   display:flex;align-items:center;color:#fff;position:relative;
-  justify-content:space-between;border:1px solid var(--card-border);
-  box-shadow:0 2px 8px rgba(0,0,0,.20)}
+  justify-content:space-between;border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.18);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 12px rgba(0,0,0,.25),0 12px 32px rgba(0,0,0,.20)}
 .roi-card-info{flex:1}
 .roi-card-name{font-weight:800;font-size:.875rem;letter-spacing:-.01em}
 .roi-card-sub{font-size:.6875rem;color:rgba(255,255,255,.45);font-weight:500;margin-top:1px}
