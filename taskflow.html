@@ -733,7 +733,7 @@ document.getElementById('themeBtn').onclick=()=>{
   r.setAttribute('data-theme',next);
   try{localStorage.setItem('painel-theme-v3',next)}catch(e){}
 };
-try{const t=localStorage.getItem('painel-theme-v3');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+try{const t=localStorage.getItem('painel-theme-v3');document.documentElement.setAttribute('data-theme',t||'light')}catch(e){document.documentElement.setAttribute('data-theme','light')}
 
 /* ── Keyboard ── */
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDd()});
