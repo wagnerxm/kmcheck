@@ -669,10 +669,10 @@ function renderHome(){
     </div>
 
     <div class="kpi-strip">
-      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--lime)">+${KPIS.roi}%</div><div class="kpi-chip-label">ROI</div></div>
-      <div class="kpi-chip"><div class="kpi-chip-val">${KPIS.hitRate}%</div><div class="kpi-chip-label">Hit Rate</div></div>
-      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--lime)">+${KPIS.edge}%</div><div class="kpi-chip-label">Edge Médio</div></div>
-      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--warning)">${KPIS.brier}</div><div class="kpi-chip-label">Brier</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--lime)">+${KPIS.roi}%</div><div class="kpi-chip-label">Retorno</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val">${KPIS.hitRate}%</div><div class="kpi-chip-label">Acerto</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--lime)">+${KPIS.edge}%</div><div class="kpi-chip-label">Vantagem</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--warning)">${KPIS.brier}</div><div class="kpi-chip-label">Precisão</div></div>
       <div class="kpi-chip"><div class="kpi-chip-val">${filtered.length}</div><div class="kpi-chip-label">Jogos</div></div>
     </div>
 
@@ -852,21 +852,21 @@ function renderStats(){
     <div class="bento bento--hero" style="margin-bottom:12px">
       <div class="bento-card bento-card--lime bento-tall" style="padding:28px 24px">
         <div class="bento-val bento-val--xl">+${KPIS.roi}%</div>
-        <div class="bento-label">ROI Total</div>
+        <div class="bento-label">Retorno Total</div>
       </div>
       <div class="bento-card" style="padding:20px">
         <div class="bento-val">${KPIS.hitRate}%</div>
-        <div class="bento-label">Hit Rate</div>
+        <div class="bento-label">Taxa de Acerto</div>
       </div>
       <div class="bento-card bento-card--dark" style="padding:20px">
         <div class="bento-val" style="color:var(--lime)">+${KPIS.edge}%</div>
-        <div class="bento-label">Edge Médio</div>
+        <div class="bento-label">Vantagem Média</div>
       </div>
     </div>
     <div class="bento bento--duo" style="margin-bottom:24px">
       <div class="bento-card" style="padding:20px">
         <div class="bento-val" style="color:var(--warning)">${KPIS.brier}</div>
-        <div class="bento-label">Brier Score</div>
+        <div class="bento-label">Índice de Precisão</div>
       </div>
       <div class="bento-card bento-card--dark" style="padding:20px">
         <div class="bento-val">${SINGLES.length}</div>
