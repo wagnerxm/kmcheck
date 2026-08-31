@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#111418">
+<meta name="theme-color" content="#0C0D0F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="NO.BLIND — Análise esportiva com modelos estatísticos">
@@ -18,10 +18,10 @@
 :root{
   --lime:#A3E635;--lime-d:rgba(163,230,53,.10);--lime-dk:#65A30D;
   --dark:#09090B;--dark2:#18181B;--dark3:#27272A;
-  --bg:#111418;--bg2:#161a1e;
-  /* card grafite escuro — sólido com leve translucidez */
-  --glass:rgba(30,33,40,.92);--glass-border:rgba(255,255,255,.08);
-  --glass-solid:rgba(36,39,46,.96);
+  --bg:#0C0D0F;--bg2:#111215;
+  /* card matte escuro — sólido, sem blur */
+  --card:#181A1F;--card-border:rgba(255,255,255,.06);
+  --card-elevated:#1E2025;
   --border:rgba(255,255,255,.06);--border-s:rgba(255,255,255,.10);
   --success:#22C55E;--success-d:rgba(34,197,94,.10);
   --danger:#EF4444;--danger-d:rgba(239,68,68,.10);
@@ -39,16 +39,15 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
 img{max-width:100%}
 ::-webkit-scrollbar{width:0;height:0}
 
-/* ===== fundo campo de futebol ===== */
-#bg-art{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-#bg-art svg{width:100%;height:100%}
+/* ===== fundo removido — matte black sólido ===== */
+#bg-art{display:none}
 
 /* ===== layout shell ===== */
 #app{display:flex;height:100dvh;width:100%;position:relative;z-index:1}
 #main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
 #topbar{display:flex;align-items:center;justify-content:space-between;height:56px;
   padding:0 20px;flex-shrink:0;
-  background:rgba(17,20,24,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  background:#0C0D0F}
 #content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
   padding-bottom:calc(100px + var(--safe-b))}
 
@@ -63,7 +62,7 @@ img{max-width:100%}
   bottom:calc(10px + var(--safe-b));z-index:50}
 .bn-bar{display:flex;align-items:center;gap:0;
   background:var(--dark);border-radius:var(--r);padding:4px;
-  border:1px solid rgba(255,255,255,.06);border-top-color:rgba(255,255,255,.08)}
+  border:1px solid rgba(255,255,255,.05)}
 .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   flex:1;height:52px;border-radius:calc(var(--r) - 4px);
   font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -73,20 +72,15 @@ img{max-width:100%}
 .bn-item svg{flex-shrink:0}
 .bn-item .ic{line-height:0}
 
-/* ===== card glass escuro 3D — vidro fumê ===== */
-.card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:20px;color:#fff;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.14);
-  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.16),0 20px 48px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
+/* ===== card matte escuro ===== */
+.card{background:var(--card);border-radius:var(--r);padding:20px;color:#fff;position:relative;
+  border:1px solid var(--card-border);
+  box-shadow:0 2px 8px rgba(0,0,0,.20)}
 
 /* ===== BILHETE DO DIA — bloco preto sólido de alto contraste ===== */
 .ticket-hero{background:var(--dark);border-radius:var(--r-lg);padding:0;color:#fff;
-  position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.14);
-  box-shadow:0 2px 4px rgba(0,0,0,.10),0 8px 20px rgba(0,0,0,.15),0 20px 48px rgba(0,0,0,.20),
-    inset 0 1px 0 rgba(255,255,255,.06);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
+  position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 4px 16px rgba(0,0,0,.30)}
 .ticket-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
 .ticket-label{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
   color:rgba(255,255,255,.35)}
@@ -113,16 +107,12 @@ img{max-width:100%}
 .team-shield{flex-shrink:0;line-height:0}
 .team-shield.away{margin-left:-8px;position:relative;z-index:1}
 
-/* ===== bet card — glass escuro 3D ===== */
-.bet-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:18px;cursor:pointer;color:#fff;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.14);
-  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.16),0 20px 48px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d;
+/* ===== bet card — matte escuro ===== */
+.bet-card{background:var(--card);border-radius:var(--r);padding:18px;cursor:pointer;color:#fff;position:relative;
+  border:1px solid var(--card-border);
+  box-shadow:0 2px 8px rgba(0,0,0,.20);
   transition:transform .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
-.bet-card:active{transform:perspective(800px) translateZ(-3px) scale(.97);
-  box-shadow:0 1px 3px rgba(0,0,0,.15),0 4px 8px rgba(0,0,0,.10)}
+.bet-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .bet-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .bet-teams-col{display:flex;align-items:center}
 .bet-info{flex:1;min-width:0}
@@ -139,16 +129,12 @@ img{max-width:100%}
 .bet-edge{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;font-weight:600;color:rgba(255,255,255,.45)}
 .bet-edge-val{color:var(--lime);font-weight:800}
 
-/* ===== múltipla card — glass escuro 3D ===== */
-.multi-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);overflow:hidden;color:#fff;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.14);
-  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.16),0 20px 48px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d;
+/* ===== múltipla card — matte escuro ===== */
+.multi-card{background:var(--card);border-radius:var(--r);overflow:hidden;color:#fff;position:relative;
+  border:1px solid var(--card-border);
+  box-shadow:0 2px 8px rgba(0,0,0,.20);
   cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
-.multi-card:active{transform:perspective(800px) translateZ(-3px) scale(.97);
-  box-shadow:0 1px 3px rgba(0,0,0,.15),0 4px 8px rgba(0,0,0,.10)}
+.multi-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .multi-header{display:flex;align-items:center;justify-content:space-between;padding:18px;
   border-bottom:1px solid rgba(255,255,255,.06)}
 .multi-type{font-size:.625rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
@@ -175,14 +161,12 @@ img{max-width:100%}
 .pill-bar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .pill-bar::-webkit-scrollbar{display:none}
 .pill{display:inline-flex;align-items:center;padding:9px 18px;border-radius:999px;
-  font-size:.8125rem;font-weight:700;background:var(--glass-solid);color:rgba(255,255,255,.6);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);cursor:pointer;white-space:nowrap;
+  font-size:.8125rem;font-weight:700;background:var(--card-elevated);color:rgba(255,255,255,.6);
+  border:1px solid var(--card-border);cursor:pointer;white-space:nowrap;
   transition:all .2s;-webkit-tap-highlight-color:transparent;
-  box-shadow:0 2px 6px rgba(0,0,0,.12),0 8px 20px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.06)}
+  box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .pill:active{transform:scale(.96)}
-.pill.active{background:var(--dark);color:var(--lime);border-color:var(--dark);
-  backdrop-filter:none;-webkit-backdrop-filter:none}
+.pill.active{background:var(--dark);color:var(--lime);border-color:var(--dark)}
 
 /* ===== botão pílula preta / lime ===== */
 .btn-pill{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;
@@ -207,17 +191,12 @@ img{max-width:100%}
 .bento--hero .bento-tall{grid-row:span 2}
 .bento--trio{grid-template-columns:repeat(3,1fr)}
 .bento--duo{grid-template-columns:1fr 1fr}
-.bento-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:20px;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.14);
+.bento-card{background:var(--card);border-radius:var(--r);padding:20px;
+  border:1px solid var(--card-border);
   display:flex;flex-direction:column;justify-content:center;color:#fff;position:relative;
-  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.16),0 20px 48px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
-.bento-card--lime{background:var(--lime);border-color:var(--lime);color:var(--dark);
-  backdrop-filter:none;-webkit-backdrop-filter:none}
-.bento-card--dark{background:var(--dark);border-color:var(--dark);color:#fff;
-  backdrop-filter:none;-webkit-backdrop-filter:none}
+  box-shadow:0 2px 8px rgba(0,0,0,.20)}
+.bento-card--lime{background:var(--lime);border-color:var(--lime);color:var(--dark)}
+.bento-card--dark{background:var(--dark);border-color:var(--dark);color:#fff}
 .bento-val{font-size:2rem;font-weight:900;line-height:1;letter-spacing:-.03em}
 .bento-val--xl{font-size:2.75rem}
 .bento-label{font-size:.5625rem;color:rgba(255,255,255,.4);margin-top:6px;text-transform:uppercase;
@@ -228,12 +207,10 @@ img{max-width:100%}
 /* ===== KPI strip horizontal — glass chips ===== */
 .kpi-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .kpi-strip::-webkit-scrollbar{display:none}
-.kpi-chip{flex-shrink:0;background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+.kpi-chip{flex-shrink:0;background:var(--card);
   color:#fff;border-radius:var(--r-sm);padding:12px 16px;text-align:center;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.14);
-  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.16),0 16px 36px rgba(0,0,0,.10),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
+  border:1px solid var(--card-border);
+  box-shadow:0 2px 8px rgba(0,0,0,.20)}
 .kpi-chip-val{font-weight:900;font-size:1rem;line-height:1.2;letter-spacing:-.02em}
 .kpi-chip-label{font-size:.5rem;color:rgba(255,255,255,.4);margin-top:3px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:700}
@@ -241,10 +218,9 @@ img{max-width:100%}
 /* ===== detail sheet ===== */
 #detail-sheet{position:fixed;inset:0;z-index:100;display:none;flex-direction:column}
 #detail-sheet.open{display:flex}
-.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
 .sheet-body{position:absolute;bottom:0;left:0;right:0;max-height:92dvh;
-  background:rgba(18,20,26,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:#fff;
+  background:#141519;color:#fff;
   border-radius:var(--r-lg) var(--r-lg) 0 0;overflow-y:auto;-webkit-overflow-scrolling:touch;
   border-top:1px solid rgba(255,255,255,.12);
   box-shadow:0 -4px 16px rgba(0,0,0,.15),0 -12px 48px rgba(0,0,0,.25);
@@ -253,7 +229,7 @@ img{max-width:100%}
 .sheet-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin:12px auto}
 .sheet-close{position:absolute;top:14px;right:14px;width:36px;height:36px;display:flex;
   align-items:center;justify-content:center;border-radius:var(--r-sm);color:rgba(255,255,255,.6);
-  background:var(--glass-solid);z-index:2;border:1px solid var(--glass-border)}
+  background:var(--card-elevated);z-index:2;border:1px solid var(--card-border)}
 
 /* ===== odds table ===== */
 .odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
@@ -273,14 +249,11 @@ img{max-width:100%}
 .model-bar-fill{height:100%;border-radius:999px;transition:width .6s ease-out}
 .model-bar-val{font-size:.75rem;font-weight:800;width:42px;flex-shrink:0}
 
-/* ===== ROI cards — glass ===== */
-.roi-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:16px 18px;
+/* ===== ROI cards — matte ===== */
+.roi-card{background:var(--card);border-radius:var(--r);padding:16px 18px;
   display:flex;align-items:center;color:#fff;position:relative;
-  justify-content:space-between;border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.14);
-  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.16),0 20px 48px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
+  justify-content:space-between;border:1px solid var(--card-border);
+  box-shadow:0 2px 8px rgba(0,0,0,.20)}
 .roi-card-info{flex:1}
 .roi-card-name{font-weight:800;font-size:.875rem;letter-spacing:-.01em}
 .roi-card-sub{font-size:.6875rem;color:rgba(255,255,255,.45);font-weight:500;margin-top:1px}
@@ -299,26 +272,11 @@ img{max-width:100%}
 .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
 .gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
 .text-center{text-align:center}
-/* ===== reflexo de vidro — brilho diagonal mais visível ===== */
-.card::before,.bet-card::before,.bento-card::before,.kpi-chip::before,.roi-card::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
-  background:linear-gradient(135deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.05) 35%,transparent 55%)}
-/* multi-card tem overflow:hidden, então o ::before fica contido */
-.multi-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
-  background:linear-gradient(135deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.05) 35%,transparent 55%)}
-/* ticket hero — reflexo sutil no canto */
-.ticket-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;pointer-events:none;z-index:1;
-  background:linear-gradient(180deg,rgba(255,255,255,.03) 0%,transparent 100%);border-radius:var(--r-lg) var(--r-lg) 0 0}
-/* cards lime/dark — reflexo adaptado ao fundo opaco */
-.bento-card--lime::before{background:linear-gradient(135deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.04) 40%,transparent 60%)}
-.bento-card--dark::before{background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.015) 40%,transparent 60%)}
-/* 3D — lime e dark com sombra 3D também */
-.bento-card--lime{box-shadow:0 2px 4px rgba(0,0,0,.06),0 6px 16px rgba(163,230,53,.12),0 16px 40px rgba(0,0,0,.10);
-  border-top-color:rgba(255,255,255,.25)}
-.bento-card--dark{box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 20px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.22);
-  border-top-color:rgba(255,255,255,.08)}
-/* bottom nav — 3D flutuante */
-.bn-bar{box-shadow:0 2px 6px rgba(0,0,0,.15),0 8px 24px rgba(0,0,0,.20),0 20px 48px rgba(0,0,0,.25)}
+/* ===== cards limpos — sem reflexo, sombras sutis ===== */
+.bento-card--lime{box-shadow:0 2px 8px rgba(163,230,53,.12)}
+.bento-card--dark{box-shadow:0 2px 8px rgba(0,0,0,.25)}
+/* bottom nav — flutuante */
+.bn-bar{box-shadow:0 4px 16px rgba(0,0,0,.35)}
 .hidden{display:none!important}
 </style>
 </head>
@@ -908,7 +866,7 @@ function openMultiSheet(id){
           <div style="font-size:1.375rem;font-weight:900;flex-shrink:0;letter-spacing:-.02em">${l.odd.toFixed(2)}</div>
         </div>`).join('')}
       </div>
-      <div class="card bento-card--lime" style="margin-top:20px;text-align:center;padding:20px;border:none;backdrop-filter:none;-webkit-backdrop-filter:none">
+      <div class="card bento-card--lime" style="margin-top:20px;text-align:center;padding:20px;border:none;">
         <div style="font-size:.625rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;opacity:.6">Score Médio</div>
         <div style="font-size:2.5rem;font-weight:900;line-height:1;margin-top:4px">${m.score}</div>
       </div>
