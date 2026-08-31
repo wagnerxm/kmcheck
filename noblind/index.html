@@ -64,9 +64,23 @@ img{max-width:100%}
   animation-duration:0.01ms!important;animation-iteration-count:1!important;
   transition-duration:0.01ms!important;scroll-behavior:auto!important}}
 
-/* ===== fundo grunge — pinceladas esbranquiçadas ===== */
-#bg-art{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.07}
-#bg-art canvas{display:block;width:100%;height:100%}
+/* ===== fundo mesh gradient — aurora sutil com manchas de cor ===== */
+#bg-art{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.mesh-blob{position:absolute;border-radius:50%;will-change:transform;
+  animation:meshFloat 28s ease-in-out infinite alternate}
+.mesh-blob:nth-child(1){width:45vmax;height:45vmax;background:rgba(163,230,53,.14);
+  filter:blur(80px);top:-15%;left:-10%}
+.mesh-blob:nth-child(2){width:35vmax;height:35vmax;background:rgba(14,165,233,.10);
+  filter:blur(70px);bottom:5%;right:-8%;animation-delay:-9s;animation-duration:32s}
+.mesh-blob:nth-child(3){width:28vmax;height:28vmax;background:rgba(99,102,241,.08);
+  filter:blur(60px);top:40%;left:25%;animation-delay:-16s;animation-duration:24s}
+@keyframes meshFloat{
+  0%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(4vw,-5vh) scale(1.08)}
+  50%{transform:translate(-3vw,4vh) scale(.94)}
+  75%{transform:translate(5vw,2vh) scale(1.05)}
+  100%{transform:translate(-2vw,-3vh) scale(1.02)}
+}
 
 /* ===== layout shell ===== */
 #app{display:flex;height:100dvh;width:100%;position:relative;z-index:1}
@@ -390,8 +404,12 @@ img{max-width:100%}
 </head>
 <body>
 
-<!-- fundo grunge — pinceladas esbranquiçadas geradas em Canvas -->
-<div id="bg-art" aria-hidden="true"><canvas id="bg-canvas"></canvas></div>
+<!-- fundo mesh gradient — aurora sutil com manchas de cor flutuantes -->
+<div id="bg-art" aria-hidden="true">
+  <div class="mesh-blob"></div>
+  <div class="mesh-blob"></div>
+  <div class="mesh-blob"></div>
+</div>
 
 <div id="app">
   <div id="main">
@@ -1037,70 +1055,8 @@ function closeSheet(){$('#detail-sheet').classList.remove('open');document.body.
 /* ===== PWA ===== */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 
-/* ===== fundo grunge procedural — pinceladas diagonais + splatter ===== */
-/* Usa PRNG determinístico (mulberry32) para que o padrão seja consistente entre reloads */
-function paintGrunge(){
-  const cv=$('#bg-canvas'); if(!cv) return;
-  const dpr=Math.min(window.devicePixelRatio||1,2);
-  const W=cv.width=window.innerWidth*dpr, H=cv.height=window.innerHeight*dpr;
-  const ctx=cv.getContext('2d');
-  /* PRNG determinístico — mesma textura sempre */
-  let seed=0xDEAD;
-  const rng=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);
-    t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
-  const rr=(a,b)=>a+rng()*(b-a);
-  /* base */
-  ctx.fillStyle='#0B0D10'; ctx.fillRect(0,0,W,H);
-  /* pinceladas grossas — diagonais em tons de cinza */
-  for(let i=0;i<50;i++){
-    const x=rr(-W*.1,W*1.1), y=rr(-H*.1,H*1.1);
-    const angle=rr(-45,45)+(rng()>.5?130:0);
-    const len=rr(W*.2,W*.6), w=rr(W*.03,W*.10);
-    ctx.save(); ctx.translate(x,y); ctx.rotate(angle*Math.PI/180);
-    const b=Math.floor(rr(70,190));
-    ctx.globalAlpha=rr(.04,.14);
-    /* cada pincelada = 4-6 faixas deslocadas para irregularidade */
-    const n=Math.floor(rr(4,7));
-    for(let j=0;j<n;j++){
-      const dy=rr(-w*.4,w*.4), dw=rr(w*.3,w*.9), dl=rr(0,len*.15);
-      const g=ctx.createLinearGradient(-len/2+dl,0,len/2,0);
-      g.addColorStop(0,'transparent');
-      g.addColorStop(.12,`rgb(${b},${b},${b})`);
-      g.addColorStop(.5,`rgb(${b+10},${b+10},${b+10})`);
-      g.addColorStop(.88,`rgb(${b},${b},${b})`);
-      g.addColorStop(1,'transparent');
-      ctx.fillStyle=g;
-      ctx.fillRect(-len/2+dl,-dw/2+dy,len-dl,dw);
-    }
-    ctx.restore();
-  }
-  /* manchas maiores — gradientes radiais suaves */
-  for(let i=0;i<12;i++){
-    const x=rr(0,W), y=rr(0,H), r=rr(W*.08,W*.25);
-    const b=Math.floor(rr(60,140));
-    ctx.globalAlpha=rr(.02,.06);
-    const g=ctx.createRadialGradient(x,y,0,x,y,r);
-    g.addColorStop(0,`rgb(${b},${b},${b})`); g.addColorStop(1,'transparent');
-    ctx.fillStyle=g;
-    ctx.fillRect(x-r,y-r,r*2,r*2);
-  }
-  /* splatter — pontos de tinta espalhados */
-  for(let i=0;i<400;i++){
-    const x=rr(0,W), y=rr(0,H), r=rr(.5,3.5)*dpr;
-    ctx.globalAlpha=rr(.02,.07);
-    const b=Math.floor(rr(50,170));
-    ctx.fillStyle=`rgb(${b},${b},${b})`;
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-  }
-  /* grão fino uniforme — noise granulado */
-  ctx.globalAlpha=.03;
-  for(let i=0;i<2000;i++){
-    const x=rr(0,W), y=rr(0,H);
-    ctx.fillStyle=rng()>.5?'#aaa':'#333';
-    ctx.fillRect(x,y,dpr,dpr);
-  }
-  ctx.globalAlpha=1;
-}
+/* ===== fundo mesh gradient — agora é CSS puro, sem Canvas ===== */
+/* As 3 divs .mesh-blob já estão no HTML, animadas via @keyframes meshFloat */
 
 /* ===== IntersectionObserver — reveal suave no scroll (taste-skill 5.D) ===== */
 /* Usa IO em vez de scroll listener: sem jank, sem consumo de bateria */
@@ -1120,7 +1076,7 @@ function applyReveal(){
 
 /* ===== boot ===== */
 function init(){
-  paintGrunge(); setupReveal(); renderPage();updateStatus();
+  setupReveal(); renderPage();updateStatus();
   const sb=$('#sheet-content');let sy=0;
   sb.addEventListener('touchstart',e=>{sy=e.touches[0].clientY},{passive:true});
   sb.addEventListener('touchmove',e=>{if(sb.scrollTop<=0&&e.touches[0].clientY-sy>60)closeSheet()},{passive:true});
