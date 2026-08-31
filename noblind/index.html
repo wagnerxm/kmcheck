@@ -267,24 +267,21 @@ img{max-width:100%}
 .bento-card--lime .bento-label{color:rgba(9,9,11,.5)}
 .bento-card--dark .bento-label{color:var(--subtle)}
 
-/* ===== Hero banner — faixa fixa colada no topbar, lateral a lateral ===== */
-#hero-banner{position:relative;width:100%;height:90px;overflow:hidden;flex-shrink:0;
-  border-bottom:1px solid var(--border)}
-#hero-banner[hidden]{display:none!important}
-#hero-banner img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
-#hero-banner .hero-overlay{position:absolute;inset:0;
+/* ===== Hero banner — faixa fina com imagem do jogador (Condensed Bold) ===== */
+.hero-banner{position:relative;width:100%;height:100px;overflow:hidden;border-radius:var(--r-sm);
+  margin-bottom:var(--sp-1)}
+.hero-banner img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
+.hero-banner .hero-overlay{position:absolute;inset:0;
   background:linear-gradient(135deg,rgba(10,10,12,.88) 0%,rgba(10,10,12,.5) 45%,rgba(10,10,12,.2) 100%)}
-#hero-banner .hero-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--sp-5);gap:10px}
-#hero-banner .hero-divider{width:2.5px;height:36px;border-radius:1px;flex-shrink:0;
+.hero-banner .hero-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--sp-4);gap:10px}
+.hero-banner .hero-divider{width:2.5px;height:38px;border-radius:1px;flex-shrink:0;
   background:linear-gradient(to bottom,var(--lime),rgba(163,230,53,.2))}
-#hero-banner .hero-title{font-family:'Barlow Condensed','Impact',sans-serif;font-size:1.25rem;
+.hero-banner .hero-title{font-family:'Barlow Condensed','Impact',sans-serif;font-size:1.375rem;
   font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase;line-height:1}
-#hero-banner .hero-sub{font-family:'Barlow Condensed',sans-serif;font-size:.625rem;font-weight:400;
+.hero-banner .hero-sub{font-family:'Barlow Condensed',sans-serif;font-size:.6875rem;font-weight:400;
   color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
-#hero-banner .hero-glow{position:absolute;top:-20px;left:-20px;width:90px;height:90px;
+.hero-banner .hero-glow{position:absolute;top:-20px;left:-20px;width:90px;height:90px;
   background:radial-gradient(circle,rgba(163,230,53,.08),transparent 70%);pointer-events:none}
-/* quando o banner está visível, topbar perde a borda inferior pra ficarem colados */
-#main:has(#hero-banner:not([hidden])) #topbar{border-bottom:none}
 
 /* ===== KPI strip horizontal — faixa contínua com brilho lime ===== */
 .kpi-strip{display:flex;overflow-x:auto;scrollbar-width:none;padding:0;
@@ -440,19 +437,6 @@ img{max-width:100%}
         <div id="sb-status" role="status" aria-live="polite"></div>
       </div>
     </header>
-    <!-- hero banner fixo entre topbar e conteúdo — só aparece na tela Home -->
-    <div id="hero-banner" hidden>
-      <img src="banner-hero.jpg" alt="Análises esportivas" loading="eager">
-      <div class="hero-overlay"></div>
-      <div class="hero-glow"></div>
-      <div class="hero-content">
-        <div class="hero-divider"></div>
-        <div>
-          <div class="hero-title" id="hero-title">ANÁLISES<br>DE HOJE</div>
-          <div class="hero-sub" id="hero-sub"></div>
-        </div>
-      </div>
-    </div>
     <main id="content" role="main"></main>
   </div>
   <nav id="bottom-nav" aria-label="Navegação principal"></nav>
@@ -667,10 +651,6 @@ function renderBottomNav(){
 }
 function renderPage(){
   const c=$('#content');
-  /* banner fixo só aparece na home; topbar perde borda quando banner visível */
-  const hb=$('#hero-banner'),tb=$('#topbar');
-  if(hb){hb.hidden=currentPage!=='home'}
-  if(tb){tb.style.borderBottom=currentPage==='home'?'none':''}
   switch(currentPage){
     case 'home':c.innerHTML=renderHome();break;
     case 'singles':c.innerHTML=renderSingles();break;
@@ -706,16 +686,27 @@ function renderHome(){
   const bookCounts={};
   books.forEach(b=>{bookCounts[b]=SINGLES.filter(s=>s.odds[b]).length});
 
-  /* atualiza texto do banner fixo (fora do scroll) */
-  const ht=$('#hero-title'),hs=$('#hero-sub');
-  if(ht){
-    ht.innerHTML=isToday?'ANÁLISES<br>DE HOJE':`ANÁLISES<br>${selectedDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).toUpperCase()}`;
-    hs.textContent=isToday
-      ?`${selectedDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'long'}).toUpperCase()} · ${filtered.length} JOGOS`
-      :`${selStr.toUpperCase()} · ${filtered.length} JOGOS`;
-  }
+  /* texto do banner: dinâmico conforme data selecionada */
+  const bannerTitle=isToday?'ANÁLISES<br>DE HOJE':`ANÁLISES<br>${selectedDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).toUpperCase()}`;
+  const bannerSub=isToday
+    ?`${selectedDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'long'}).toUpperCase()} · ${filtered.length} JOGOS`
+    :`${selStr.toUpperCase()} · ${filtered.length} JOGOS`;
 
   return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:20px">
+    <!-- HERO BANNER — imagem do jogador com título Barlow Condensed -->
+    <div class="hero-banner">
+      <img src="banner-hero.jpg" alt="Análises esportivas" loading="eager">
+      <div class="hero-overlay"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="hero-divider"></div>
+        <div>
+          <h1 class="hero-title">${bannerTitle}</h1>
+          <div class="hero-sub">${bannerSub}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- SELETOR DE DATAS — calendário horizontal com 7 dias -->
     <div class="date-strip" aria-label="Selecionar data">
       ${dateRange.map((d,i)=>{
