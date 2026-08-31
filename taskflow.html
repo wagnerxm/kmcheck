@@ -1,693 +1,751 @@
 <title>Painel de Documentos</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 
 <style>
 /* ── Tokens ── */
 :root {
-  --accent: #3B7A6B;
-  --accent-hover: #327063;
-  --accent-subtle: rgba(59,122,107,.10);
-  --amber: #D0943A;
-  --amber-subtle: rgba(208,148,58,.10);
-  --bg: #F6F3ED;
-  --surface: #EDEAE3;
-  --card: #FFFFFF;
-  --card-hover: #FDFCFA;
-  --text: #2A2D33;
-  --text-2: #7C808A;
-  --text-3: #A8ABB3;
-  --border: #DDD9D1;
-  --border-light: #E8E5DE;
-  --shadow-sm: 0 1px 3px rgba(42,45,51,.05);
-  --shadow-md: 0 3px 12px rgba(42,45,51,.08);
-  --radius: 10px;
-  --radius-sm: 6px;
-  --danger: #C4453A;
-  --status-pendente: #B8BBC3;
-  --status-enviado: #D0943A;
-  --status-aprovado: #3B7A6B;
+  --violet: #7C3AED;
+  --violet-dim: rgba(124,58,237,.10);
+  --cyan: #06B6D4;
+  --cyan-dim: rgba(6,182,212,.10);
+  --green: #22C55E;
+  --green-dim: rgba(34,197,94,.10);
+  --amber: #EAB308;
+  --amber-dim: rgba(234,179,8,.10);
+  --rose: #F43F5E;
+  --rose-dim: rgba(244,63,94,.10);
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F1F3F6;
+  --text: #0F172A;
+  --text-2: #64748B;
+  --text-3: #94A3B8;
+  --border: #E2E5EB;
+  --border-light: #EEF0F4;
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
+  --shadow-md: 0 4px 16px rgba(15,23,42,.06);
+  --shadow-lg: 0 12px 40px rgba(15,23,42,.10);
+  --glow: rgba(124,58,237,.08);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --ring-track: #E2E5EB;
 }
+
 @media(prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#1C1F25;--surface:#23262D;--card:#2A2E36;--card-hover:#31353E;
-    --text:#E2E0DA;--text-2:#9B9EA6;--text-3:#6D717A;
-    --border:#383C44;--border-light:#30343C;
-    --shadow-sm:0 1px 3px rgba(0,0,0,.15);--shadow-md:0 3px 12px rgba(0,0,0,.22);
-    --accent-subtle:rgba(59,122,107,.16);--amber-subtle:rgba(208,148,58,.14);
-    --status-pendente:#5A5E66;
+    --bg:#0F1219;--surface:#1A1F2E;--surface-2:#232A3B;
+    --text:#E2E8F0;--text-2:#94A3B8;--text-3:#64748B;
+    --border:#2A3144;--border-light:#222839;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.2);
+    --shadow-md:0 4px 16px rgba(0,0,0,.3);
+    --shadow-lg:0 12px 40px rgba(0,0,0,.4);
+    --glow:rgba(124,58,237,.15);
+    --violet-dim:rgba(124,58,237,.16);
+    --cyan-dim:rgba(6,182,212,.14);
+    --green-dim:rgba(34,197,94,.14);
+    --amber-dim:rgba(234,179,8,.12);
+    --rose-dim:rgba(244,63,94,.14);
+    --ring-track:#2A3144;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#1C1F25;--surface:#23262D;--card:#2A2E36;--card-hover:#31353E;
-  --text:#E2E0DA;--text-2:#9B9EA6;--text-3:#6D717A;
-  --border:#383C44;--border-light:#30343C;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.15);--shadow-md:0 3px 12px rgba(0,0,0,.22);
-  --accent-subtle:rgba(59,122,107,.16);--amber-subtle:rgba(208,148,58,.14);
-  --status-pendente:#5A5E66;
+  --bg:#0F1219;--surface:#1A1F2E;--surface-2:#232A3B;
+  --text:#E2E8F0;--text-2:#94A3B8;--text-3:#64748B;
+  --border:#2A3144;--border-light:#222839;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.2);
+  --shadow-md:0 4px 16px rgba(0,0,0,.3);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.4);
+  --glow:rgba(124,58,237,.15);
+  --violet-dim:rgba(124,58,237,.16);
+  --cyan-dim:rgba(6,182,212,.14);
+  --green-dim:rgba(34,197,94,.14);
+  --amber-dim:rgba(234,179,8,.12);
+  --rose-dim:rgba(244,63,94,.14);
+  --ring-track:#2A3144;
 }
 
 /* ── Base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{
-  font-family:'DM Sans','Segoe UI',system-ui,sans-serif;
-  background:var(--bg);color:var(--text);
-  min-height:100vh;
+  font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
   -webkit-font-smoothing:antialiased;
 }
 
-/* ── Header ── */
-.header{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:16px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-}
-.header-icon{
-  width:36px;height:36px;border-radius:8px;
-  background:var(--accent);color:#fff;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.header h1{
-  font-size:20px;font-weight:700;letter-spacing:-.3px;flex:1;min-width:140px;
-}
-.header-actions{display:flex;gap:8px;align-items:center}
-.icon-btn{
-  width:34px;height:34px;border:none;border-radius:var(--radius-sm);
-  background:transparent;color:var(--text-2);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .12s,color .12s;
-}
-.icon-btn:hover{background:var(--accent-subtle);color:var(--text)}
-.icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
-/* ── Painel de documentos solicitados ── */
-.docs-bar{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:14px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-}
-.docs-bar-label{
-  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;
-  color:var(--text-2);flex-shrink:0;
-}
-.doc-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
-.doc-chip{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:13px;font-weight:500;padding:4px 10px 4px 12px;
-  border-radius:20px;background:var(--card);border:1px solid var(--border);
-  color:var(--text);transition:border-color .12s;
-}
-.doc-chip:hover{border-color:var(--text-3)}
-.doc-chip-x{
-  width:18px;height:18px;border:none;border-radius:50%;
-  background:transparent;color:var(--text-3);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:14px;
-  transition:background .1s,color .1s;line-height:1;
-}
-.doc-chip-x:hover{background:rgba(196,69,58,.12);color:var(--danger)}
-.add-doc-btn{
-  font-family:inherit;font-size:13px;font-weight:500;
-  padding:4px 14px;border:1px dashed var(--border);border-radius:20px;
-  background:transparent;color:var(--text-3);cursor:pointer;
-  display:inline-flex;align-items:center;gap:4px;
-  transition:border-color .12s,color .12s;
-}
-.add-doc-btn:hover{border-color:var(--accent);color:var(--accent)}
-.add-doc-input{
-  font-family:inherit;font-size:13px;padding:4px 12px;
-  border:1px solid var(--accent);border-radius:20px;
-  background:var(--card);color:var(--text);outline:none;width:180px;
-}
-
-/* ── Resumo ── */
-.summary{
-  padding:16px 24px;display:flex;gap:20px;flex-wrap:wrap;
-}
-.stat{
-  display:flex;align-items:center;gap:8px;
-  font-size:13px;color:var(--text-2);
-}
-.stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.stat b{font-weight:600;color:var(--text)}
-
-/* ── Grid de pastas ── */
-.grid{
-  padding:8px 24px 40px;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:16px;
-  align-items:start;
-}
-
-/* ── Pasta (card) ── */
-.folder{
-  background:var(--card);border:1px solid var(--border-light);
-  border-radius:var(--radius);overflow:hidden;
-  transition:box-shadow .12s;
-}
-.folder:hover{box-shadow:var(--shadow-md)}
-.folder-header{
-  padding:14px 16px 10px;display:flex;align-items:center;gap:10px;
-  border-bottom:1px solid var(--border-light);
-}
-.folder-color{
-  width:10px;height:10px;border-radius:50%;flex-shrink:0;
-}
-.folder-name{
-  font-weight:600;font-size:15px;flex:1;min-width:0;
-  background:none;border:1px solid transparent;border-radius:4px;
-  padding:2px 6px;color:var(--text);outline:none;cursor:pointer;
-  font-family:inherit;transition:border-color .12s,background .12s;
-  text-overflow:ellipsis;overflow:hidden;white-space:nowrap;
-}
-.folder-name:hover{background:var(--accent-subtle)}
-.folder-name:focus{border-color:var(--accent);background:var(--bg);cursor:text}
-.folder-progress{
-  font-size:11px;font-weight:600;color:var(--text-3);flex-shrink:0;
-  padding:2px 8px;border-radius:10px;background:var(--surface);
-}
-.folder-progress.complete{background:var(--accent-subtle);color:var(--accent)}
-.folder-menu{
-  width:26px;height:26px;border:none;border-radius:4px;
-  background:transparent;color:var(--text-3);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-  flex-shrink:0;transition:background .1s,color .1s;
-}
-.folder-menu:hover{background:var(--accent-subtle);color:var(--text)}
-
-/* Lista de documentos dentro da pasta */
-.doc-list{padding:6px 0}
-.doc-row{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 16px;cursor:pointer;
-  transition:background .08s;
-}
-.doc-row:hover{background:var(--surface)}
-.doc-status{
-  width:22px;height:22px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .15s,border-color .15s;
-}
-.doc-status[data-s="pendente"]{
-  border:2px solid var(--status-pendente);background:transparent;
-}
-.doc-status[data-s="enviado"]{
-  border:2px solid var(--status-enviado);background:var(--amber-subtle);
-}
-.doc-status[data-s="enviado"]::after{
-  content:'';width:8px;height:8px;border-radius:50%;background:var(--status-enviado);
-}
-.doc-status[data-s="aprovado"]{
-  border:2px solid var(--status-aprovado);background:var(--status-aprovado);
-}
-.doc-status[data-s="aprovado"]::after{
-  content:'';width:10px;height:8px;
-  border-left:2px solid #fff;border-bottom:2px solid #fff;
-  transform:rotate(-45deg) translateY(-1px);
-}
-.doc-name{
-  font-size:14px;flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.doc-row[data-s="aprovado"] .doc-name{color:var(--text-2);text-decoration:line-through}
-.doc-status-label{
-  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;
+/* ── Accent bar ── */
+.accent-bar{
+  height:3px;
+  background:linear-gradient(90deg,var(--violet),var(--cyan) 60%,var(--green));
   flex-shrink:0;
 }
-.doc-status-label[data-s="pendente"]{color:var(--status-pendente)}
-.doc-status-label[data-s="enviado"]{color:var(--status-enviado)}
-.doc-status-label[data-s="aprovado"]{color:var(--status-aprovado)}
 
-/* Barra de progresso */
-.folder-bar{
-  margin:0 16px 14px;height:4px;border-radius:2px;background:var(--surface);
-  overflow:hidden;
+/* ── Wrap ── */
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ── Header ── */
+.header{padding:32px 0 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.header-left h1{
+  font-family:'Sora',sans-serif;font-weight:800;font-size:26px;
+  letter-spacing:-.5px;line-height:1.2;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
 }
-.folder-bar-fill{
-  height:100%;border-radius:2px;background:var(--accent);
-  transition:width .25s ease;
+.header-left p{color:var(--text-2);font-size:14px;margin-top:4px;font-weight:500}
+.header-right{display:flex;gap:8px;align-items:center;padding-top:4px}
+.icon-btn{
+  width:38px;height:38px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s ease;box-shadow:var(--shadow-sm);
+}
+.icon-btn:hover{border-color:var(--violet);color:var(--violet);box-shadow:0 0 0 3px var(--violet-dim)}
+.icon-btn:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+
+/* ── Stats ── */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+  margin:28px 0 0;
+}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:18px 20px;
+  display:flex;align-items:center;gap:14px;
+  transition:box-shadow .2s,border-color .2s;
+}
+.stat-card:hover{box-shadow:var(--shadow-md)}
+.stat-icon{
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.stat-value{
+  font-family:'Sora',sans-serif;font-weight:800;font-size:28px;
+  letter-spacing:-.5px;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.stat-label{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* ── Docs bar ── */
+.docs-section{margin:28px 0 0}
+.section-label{
+  font-family:'Sora',sans-serif;font-weight:700;font-size:11px;
+  text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);
+  margin-bottom:10px;
+}
+.doc-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.doc-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:600;padding:7px 12px 7px 14px;
+  border-radius:8px;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);transition:all .15s;box-shadow:var(--shadow-sm);
+}
+.doc-chip:hover{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-dim)}
+.chip-x{
+  width:20px;height:20px;border:none;border-radius:50%;
+  background:var(--surface-2);color:var(--text-3);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;line-height:1;
+  transition:all .12s;
+}
+.chip-x:hover{background:var(--rose-dim);color:var(--rose)}
+.add-chip{
+  font-family:inherit;font-size:13px;font-weight:600;
+  padding:7px 16px;border:1px dashed var(--border);border-radius:8px;
+  background:transparent;color:var(--text-3);cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;
+  transition:all .15s;
+}
+.add-chip:hover{border-color:var(--violet);color:var(--violet);background:var(--violet-dim)}
+.add-chip-input{
+  font-family:inherit;font-size:13px;font-weight:600;
+  padding:7px 14px;border:1.5px solid var(--violet);border-radius:8px;
+  background:var(--surface);color:var(--text);outline:none;width:200px;
+  box-shadow:0 0 0 3px var(--violet-dim);
 }
 
-/* ── Adicionar pessoa ── */
+/* ── Grid ── */
+.grid-section{margin:28px 0 48px}
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:16px;align-items:start;
+}
+
+/* ── Folder card ── */
+.folder{
+  background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius);overflow:hidden;
+  position:relative;isolation:isolate;
+  transition:box-shadow .25s ease,transform .2s ease;
+  animation:cardIn .45s ease both;
+}
+.folder::before{
+  content:'';position:absolute;inset:-1.5px;
+  border-radius:calc(var(--radius) + 1.5px);
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  z-index:-1;opacity:0;
+  transition:opacity .3s ease;
+}
+.folder:hover{
+  box-shadow:0 8px 32px var(--glow);
+  transform:translateY(-2px);
+}
+.folder:hover::before{opacity:1}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(16px) scale(.98)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.folder-top{
+  padding:20px 20px 16px;display:flex;align-items:center;gap:14px;
+}
+.avatar{
+  width:48px;height:48px;border-radius:14px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-family:'Sora',sans-serif;font-weight:700;font-size:16px;
+  letter-spacing:.5px;
+  box-shadow:0 4px 12px rgba(0,0,0,.12);
+}
+.folder-info{flex:1;min-width:0}
+.folder-name{
+  font-weight:700;font-size:15px;line-height:1.3;color:var(--text);
+  background:none;border:1px solid transparent;border-radius:6px;
+  padding:2px 6px;margin:-2px -6px;outline:none;cursor:pointer;
+  font-family:inherit;width:calc(100% + 12px);
+  transition:border-color .15s,background .15s;
+  text-overflow:ellipsis;overflow:hidden;white-space:nowrap;
+}
+.folder-name:hover{background:var(--violet-dim)}
+.folder-name:focus{border-color:var(--violet);background:var(--surface-2);cursor:text}
+.folder-sub{font-size:12px;color:var(--text-3);margin-top:2px;padding-left:6px;font-weight:500}
+.folder-menu{
+  width:30px;height:30px;border:none;border-radius:6px;
+  background:transparent;color:var(--text-3);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  flex-shrink:0;transition:all .12s;
+}
+.folder-menu:hover{background:var(--violet-dim);color:var(--violet)}
+
+/* Progress ring */
+.ring-wrap{
+  position:relative;width:52px;height:52px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--ring-track);stroke-width:4}
+.ring-fill{
+  fill:none;stroke-width:4;stroke-linecap:round;
+  transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
+}
+.ring-pct{
+  position:absolute;font-family:'Sora',sans-serif;font-weight:700;
+  font-size:13px;letter-spacing:-.3px;color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── Doc list ── */
+.doc-list{padding:0 12px 12px}
+.doc-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 8px;border-radius:var(--radius-sm);cursor:pointer;
+  transition:background .1s;
+}
+.doc-row:hover{background:var(--surface-2)}
+.doc-row+.doc-row{border-top:1px solid var(--border-light)}
+.doc-row:hover+.doc-row{border-top-color:transparent}
+
+/* Status indicator */
+.s-dot{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s ease;
+}
+.s-dot[data-s="pendente"]{border:2px solid var(--text-3);background:transparent}
+.s-dot[data-s="enviado"]{
+  border:2px solid var(--amber);background:var(--amber-dim);
+}
+.s-dot[data-s="enviado"]::after{
+  content:'';width:8px;height:8px;border-radius:50%;background:var(--amber);
+}
+.s-dot[data-s="aprovado"]{
+  border:none;background:var(--green);
+}
+
+.doc-row-name{font-size:14px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-row[data-s="aprovado"] .doc-row-name{color:var(--text-3);text-decoration:line-through}
+
+.s-badge{
+  font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+  padding:3px 8px;border-radius:5px;flex-shrink:0;
+  transition:all .15s;
+}
+.s-badge[data-s="pendente"]{background:var(--surface-2);color:var(--text-3)}
+.s-badge[data-s="enviado"]{background:var(--amber-dim);color:var(--amber)}
+.s-badge[data-s="aprovado"]{background:var(--green-dim);color:var(--green)}
+
+/* ── Add person card ── */
 .add-person{
   border:2px dashed var(--border);border-radius:var(--radius);
   background:transparent;color:var(--text-3);cursor:pointer;
-  font-family:inherit;font-size:14px;font-weight:500;
-  padding:40px 20px;display:flex;flex-direction:column;
-  align-items:center;gap:8px;
-  transition:border-color .12s,color .12s,background .12s;
-  min-height:160px;justify-content:center;
+  font-family:inherit;font-size:14px;font-weight:600;
+  padding:48px 20px;display:flex;flex-direction:column;
+  align-items:center;gap:10px;justify-content:center;
+  transition:all .2s;min-height:200px;
+  width:100%;
 }
 .add-person:hover{
-  border-color:var(--accent);color:var(--accent);background:var(--accent-subtle);
+  border-color:var(--violet);color:var(--violet);
+  background:var(--violet-dim);
+  transform:translateY(-2px);
 }
-.add-person svg{opacity:.6}
+.add-person svg{opacity:.5;transition:opacity .2s}
+.add-person:hover svg{opacity:.8}
+
+/* ── Legend ── */
+.legend{
+  display:flex;gap:20px;flex-wrap:wrap;margin:16px 0 0;
+  font-size:12px;font-weight:600;color:var(--text-3);
+}
+.legend-item{display:flex;align-items:center;gap:7px}
+.legend-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 
 /* ── Dropdown ── */
 .dropdown{
-  position:fixed;z-index:500;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--radius-sm);box-shadow:var(--shadow-md);
-  min-width:160px;padding:4px;
-  animation:dropIn .1s ease;
+  position:fixed;z-index:600;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);
+  min-width:180px;padding:4px;
+  animation:ddIn .12s ease;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
-@keyframes dropIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ddIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .dd-item{
-  display:block;width:100%;padding:8px 12px;
-  border:none;border-radius:4px;background:none;
-  font-family:inherit;font-size:13px;color:var(--text);
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;
+  border:none;border-radius:6px;background:none;
+  font-family:inherit;font-size:13px;font-weight:500;color:var(--text);
   cursor:pointer;text-align:left;transition:background .08s;
 }
-.dd-item:hover{background:var(--accent-subtle)}
-.dd-item.danger{color:var(--danger)}
-.dd-item.danger:hover{background:rgba(196,69,58,.08)}
-
-/* ── Legenda ── */
-.legend{
-  padding:4px 24px 16px;display:flex;gap:16px;flex-wrap:wrap;
-  font-size:12px;color:var(--text-3);
-}
-.legend-item{display:flex;align-items:center;gap:6px}
-.legend-dot{
-  width:14px;height:14px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-}
-
-/* ── Vazio ── */
-.empty-state{
-  text-align:center;padding:60px 24px;color:var(--text-3);
-}
-.empty-state p{font-size:14px;margin-top:8px}
+.dd-item:hover{background:var(--violet-dim)}
+.dd-item.danger{color:var(--rose)}
+.dd-item.danger:hover{background:var(--rose-dim)}
+.dd-item svg{flex-shrink:0;width:16px;height:16px}
 
 /* ── Responsive ── */
-@media(max-width:600px){
-  .header{padding:14px 16px}
-  .docs-bar{padding:12px 16px}
-  .summary{padding:12px 16px}
-  .grid{padding:4px 16px 32px;grid-template-columns:1fr}
-  .legend{padding:4px 16px 12px}
+@media(max-width:768px){
+  .wrap{padding:0 16px}
+  .header{padding:24px 0 0}
+  .header-left h1{font-size:22px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px}
+  .stat-card{padding:14px 16px;gap:10px}
+  .stat-value{font-size:22px}
+  .stat-icon{width:36px;height:36px;border-radius:8px}
+  .grid{grid-template-columns:1fr;gap:12px}
+  .folder-top{padding:16px}
+  .doc-list{padding:0 8px 8px}
+}
+@media(max-width:400px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stat-label{font-size:10px}
+  .doc-chips{gap:6px}
 }
 
 /* ── Focus ── */
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
+:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 /* ── Motion ── */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
 </style>
 
-<!-- Header -->
-<header class="header">
-  <div class="header-icon">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-    </svg>
-  </div>
-  <h1>Documentos da Equipe</h1>
-  <div class="header-actions">
-    <button class="icon-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    </button>
-  </div>
-</header>
+<!-- Accent bar -->
+<div class="accent-bar"></div>
 
-<!-- Documentos solicitados -->
-<div class="docs-bar">
-  <span class="docs-bar-label">Solicitados:</span>
-  <div class="doc-chips" id="docChips"></div>
+<div class="wrap">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Documentos da Equipe</h1>
+      <p>Acompanhe os documentos solicitados de cada membro</p>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats" id="stats"></div>
+
+  <!-- Docs solicitados -->
+  <div class="docs-section">
+    <div class="section-label">Documentos Solicitados</div>
+    <div class="doc-chips" id="docChips"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="border:2px solid var(--text-3)"></div>Pendente
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="border:2px solid var(--amber);background:var(--amber-dim)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></div>
+      </div>Enviado
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--green)">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>
+      </div>Aprovado
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid-section">
+    <div class="section-label">Equipe</div>
+    <div class="grid" id="grid"></div>
+  </div>
 </div>
-
-<!-- Legenda -->
-<div class="legend">
-  <div class="legend-item">
-    <div class="legend-dot" style="border:2px solid var(--status-pendente)"></div> Pendente
-  </div>
-  <div class="legend-item">
-    <div class="legend-dot" style="border:2px solid var(--status-enviado);background:var(--amber-subtle)">
-      <div style="width:6px;height:6px;border-radius:50%;background:var(--status-enviado)"></div>
-    </div> Enviado
-  </div>
-  <div class="legend-item">
-    <div class="legend-dot" style="background:var(--status-aprovado)">
-      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>
-    </div> Aprovado
-  </div>
-</div>
-
-<!-- Resumo -->
-<div class="summary" id="summary"></div>
-
-<!-- Grid -->
-<div class="grid" id="grid"></div>
 
 <script>
-/* ══════════════════════════════════════
-   Painel de Documentos da Equipe
-   ══════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   Painel de Documentos — Premium
+   ═══════════════════════════════════════ */
 
-const STORAGE = 'painel-docs';
-const COLORS = ['#3B7A6B','#7B5CC4','#C4713B','#3B82C4','#C4453A','#2B8A5E','#8B6B3B','#5E3B7A','#3B6B8A','#8A5E3B'];
+const STORAGE='painel-docs-v2';
+const GRADIENTS=[
+  ['#7C3AED','#06B6D4'],
+  ['#EC4899','#F59E0B'],
+  ['#06B6D4','#22C55E'],
+  ['#F97316','#EC4899'],
+  ['#8B5CF6','#EC4899'],
+  ['#14B8A6','#3B82F6'],
+  ['#F43F5E','#7C3AED'],
+  ['#22C55E','#06B6D4'],
+  ['#EAB308','#22C55E'],
+  ['#3B82F6','#7C3AED'],
+];
+const RING_R=22, RING_C=2*Math.PI*RING_R; // circumference ≈ 138.23
 
-let data = null;
-let idN = Date.now();
-function nid(){ return 'i'+(idN++) }
+let data=null, idN=Date.now();
+function nid(){return 'i'+(idN++)}
 
-/* ── Dados padrão ── */
+/* ── Defaults ── */
 function defaults(){
-  return {
+  const d={
     docs:[
-      {id:nid(),name:'RG'},
-      {id:nid(),name:'CPF'},
+      {id:nid(),name:'RG'},{id:nid(),name:'CPF'},
       {id:nid(),name:'Comprovante de Residência'},
       {id:nid(),name:'Atestado Médico'},
     ],
     members:[
-      {id:nid(),name:'Maria Silva',color:COLORS[0],statuses:{}},
-      {id:nid(),name:'João Costa',color:COLORS[1],statuses:{}},
-      {id:nid(),name:'Ana Souza',color:COLORS[2],statuses:{}},
+      {id:nid(),name:'Maria Silva',gi:0,statuses:{}},
+      {id:nid(),name:'João Costa',gi:1,statuses:{}},
+      {id:nid(),name:'Ana Souza',gi:2,statuses:{}},
     ]
+  };
+  /* Dados de exemplo */
+  const docs=d.docs, m=d.members;
+  if(docs.length>=4&&m.length>=3){
+    m[0].statuses[docs[0].id]='aprovado';
+    m[0].statuses[docs[1].id]='aprovado';
+    m[0].statuses[docs[2].id]='enviado';
+    m[1].statuses[docs[0].id]='enviado';
+    m[2].statuses[docs[0].id]='aprovado';
+    m[2].statuses[docs[1].id]='enviado';
+    m[2].statuses[docs[2].id]='enviado';
+    m[2].statuses[docs[3].id]='aprovado';
   }
+  return d;
 }
 
 /* ── Persistência ── */
-function save(){ try{localStorage.setItem(STORAGE,JSON.stringify(data))}catch(e){} }
+function save(){try{localStorage.setItem(STORAGE,JSON.stringify(data))}catch(e){}}
 function load(){
-  try{
-    const raw=localStorage.getItem(STORAGE);
-    if(raw){data=JSON.parse(raw);return}
-  }catch(e){}
-  data=defaults();
-  /* Gerar alguns status de exemplo */
-  const d=data.docs;
-  const m=data.members;
-  if(d.length>=3&&m.length>=3){
-    m[0].statuses[d[0].id]='aprovado';
-    m[0].statuses[d[1].id]='aprovado';
-    m[0].statuses[d[2].id]='enviado';
-    m[1].statuses[d[0].id]='enviado';
-    m[2].statuses[d[0].id]='aprovado';
-    m[2].statuses[d[1].id]='enviado';
-    m[2].statuses[d[2].id]='enviado';
-    m[2].statuses[d[3].id]='aprovado';
-  }
-  save();
+  try{const r=localStorage.getItem(STORAGE);if(r){data=JSON.parse(r);return}}catch(e){}
+  data=defaults();save();
 }
 
-function getStatus(member,docId){
-  return member.statuses[docId]||'pendente';
-}
-function cycleStatus(current){
-  if(!current||current==='pendente') return 'enviado';
-  if(current==='enviado') return 'aprovado';
-  return 'pendente';
+function getS(m,did){return m.statuses[did]||'pendente'}
+function cycle(s){return s==='pendente'?'enviado':s==='enviado'?'aprovado':'pendente'}
+function initials(name){return name.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+/* ═════ Render ═════ */
+
+function render(){
+  renderStats();
+  renderChips();
+  renderGrid();
 }
 
-/* ── Render: chips dos documentos ── */
-function renderDocChips(){
+/* ── Stats ── */
+function renderStats(){
+  const el=document.getElementById('stats');
+  const total=data.members.length*data.docs.length;
+  let pend=0,env=0,aprov=0;
+  for(const m of data.members)
+    for(const d of data.docs){
+      const s=getS(m,d.id);
+      if(s==='aprovado') aprov++;
+      else if(s==='enviado') env++;
+      else pend++;
+    }
+
+  el.innerHTML=`
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--violet-dim)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div><div class="stat-value" style="color:var(--violet)">${data.members.length}</div><div class="stat-label">Pessoas</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--surface-2)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div><div class="stat-value">${pend}</div><div class="stat-label">Pendentes</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--amber-dim)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="6"/></svg>
+      </div>
+      <div><div class="stat-value" style="color:var(--amber)">${env}</div><div class="stat-label">Enviados</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--green-dim)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div><div class="stat-value" style="color:var(--green)">${aprov}</div><div class="stat-label">Aprovados</div></div>
+    </div>
+  `;
+}
+
+/* ── Doc chips ── */
+let addingDoc=false;
+function renderChips(){
   const wrap=document.getElementById('docChips');
   wrap.innerHTML='';
-
   for(const doc of data.docs){
     const chip=document.createElement('span');
     chip.className='doc-chip';
-    chip.innerHTML=`${esc(doc.name)}<button class="doc-chip-x" title="Remover" aria-label="Remover ${esc(doc.name)}">×</button>`;
-    chip.querySelector('.doc-chip-x').onclick=()=>{
-      if(!confirm(`Remover "${doc.name}" da lista de documentos solicitados?`)) return;
+    chip.innerHTML=`${esc(doc.name)}<button class="chip-x" title="Remover" aria-label="Remover ${esc(doc.name)}">×</button>`;
+    chip.querySelector('.chip-x').onclick=()=>{
+      if(!confirm(`Remover "${doc.name}" da lista?`)) return;
       data.docs=data.docs.filter(d=>d.id!==doc.id);
-      /* Limpar status órfãos */
       for(const m of data.members) delete m.statuses[doc.id];
-      save(); render();
+      save();render();
     };
     wrap.appendChild(chip);
   }
-
-  /* Botão de adicionar */
   const addBtn=document.createElement('button');
-  addBtn.className='add-doc-btn';
-  addBtn.innerHTML='+ Novo';
+  addBtn.className='add-chip';
+  addBtn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo`;
   addBtn.onclick=()=>showAddDoc(addBtn);
   wrap.appendChild(addBtn);
 }
 
-let addingDoc=false;
 function showAddDoc(btn){
   if(addingDoc) return;
-  addingDoc=true;
-  btn.hidden=true;
-
+  addingDoc=true;btn.hidden=true;
   const input=document.createElement('input');
-  input.className='add-doc-input';
+  input.className='add-chip-input';
   input.placeholder='Nome do documento…';
   btn.parentNode.insertBefore(input,btn);
   input.focus();
-
-  function close(){
-    input.remove();
-    btn.hidden=false;
-    addingDoc=false;
-  }
+  function close(){input.remove();btn.hidden=false;addingDoc=false}
   function submit(){
-    const name=input.value.trim();
-    if(name){
-      data.docs.push({id:nid(),name});
-      save(); render();
-    } else { close() }
+    const n=input.value.trim();
+    if(n){data.docs.push({id:nid(),name:n});save();render()}
+    else close();
   }
-
-  input.onkeydown=(e)=>{
-    if(e.key==='Enter'){e.preventDefault();submit()}
-    if(e.key==='Escape') close();
-  };
-  input.onblur=()=>setTimeout(close,100);
+  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();submit()}if(e.key==='Escape')close()};
+  input.onblur=()=>setTimeout(close,120);
 }
 
-/* ── Render: resumo ── */
-function renderSummary(){
-  const wrap=document.getElementById('summary');
-  const total=data.members.length*data.docs.length;
-  let pendente=0,enviado=0,aprovado=0;
-  for(const m of data.members)
-    for(const d of data.docs){
-      const s=getStatus(m,d.id);
-      if(s==='aprovado') aprovado++;
-      else if(s==='enviado') enviado++;
-      else pendente++;
-    }
-
-  if(total===0){wrap.innerHTML='';return}
-
-  wrap.innerHTML=`
-    <div class="stat"><div class="stat-dot" style="background:var(--status-pendente)"></div><b>${pendente}</b> pendente${pendente!==1?'s':''}</div>
-    <div class="stat"><div class="stat-dot" style="background:var(--status-enviado)"></div><b>${enviado}</b> enviado${enviado!==1?'s':''}</div>
-    <div class="stat"><div class="stat-dot" style="background:var(--status-aprovado)"></div><b>${aprovado}</b> aprovado${aprovado!==1?'s':''}</div>
-  `;
-}
-
-/* ── Render: grid de pastas ── */
+/* ── Grid ── */
 function renderGrid(){
   const grid=document.getElementById('grid');
   grid.innerHTML='';
-
-  if(data.members.length===0 && data.docs.length===0){
-    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="color:var(--text-3);opacity:.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><p>Adicione documentos e pessoas para começar</p></div>';
-  }
-
-  for(const member of data.members){
-    grid.appendChild(renderFolder(member));
-  }
-
-  /* Botão de adicionar pessoa */
+  data.members.forEach((member,i)=>{
+    const card=renderFolder(member,i);
+    card.style.animationDelay=(i*70)+'ms';
+    grid.appendChild(card);
+  });
+  /* Add card */
   const addBtn=document.createElement('button');
   addBtn.className='add-person';
-  addBtn.innerHTML=`<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Adicionar pessoa`;
+  addBtn.innerHTML=`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/><line x1="12" y1="17" x2="12" y2="23"/><line x1="9" y1="20" x2="15" y2="20"/></svg>Adicionar pessoa`;
   addBtn.onclick=addPerson;
   grid.appendChild(addBtn);
 }
 
-function renderFolder(member){
+function renderFolder(member,idx){
   const el=document.createElement('div');
   el.className='folder';
 
-  /* Contagem */
-  const approved=data.docs.filter(d=>getStatus(member,d.id)==='aprovado').length;
+  const aprov=data.docs.filter(d=>getS(member,d.id)==='aprovado').length;
   const total=data.docs.length;
-  const pct=total?Math.round(approved/total*100):0;
-  const allDone=total>0&&approved===total;
+  const pct=total?Math.round(aprov/total*100):0;
+  const grad=GRADIENTS[member.gi!=null?member.gi%GRADIENTS.length:idx%GRADIENTS.length];
 
-  /* Header */
-  const header=document.createElement('div');
-  header.className='folder-header';
+  /* ── Top section ── */
+  const top=document.createElement('div');
+  top.className='folder-top';
 
-  const dot=document.createElement('div');
-  dot.className='folder-color';
-  dot.style.background=member.color;
+  /* Avatar */
+  const av=document.createElement('div');
+  av.className='avatar';
+  av.style.background=`linear-gradient(135deg,${grad[0]},${grad[1]})`;
+  av.textContent=initials(member.name);
 
+  /* Info */
+  const info=document.createElement('div');
+  info.className='folder-info';
   const nameInput=document.createElement('input');
   nameInput.className='folder-name';
   nameInput.value=member.name;
   nameInput.spellcheck=false;
   nameInput.maxLength=40;
-  nameInput.onblur=()=>{member.name=nameInput.value.trim()||member.name;save()};
-  nameInput.onkeydown=(e)=>{if(e.key==='Enter')nameInput.blur()};
+  nameInput.onblur=()=>{
+    const v=nameInput.value.trim();
+    if(v&&v!==member.name){member.name=v;save();render()}
+  };
+  nameInput.onkeydown=e=>{if(e.key==='Enter')nameInput.blur()};
+  const sub=document.createElement('div');
+  sub.className='folder-sub';
+  sub.textContent=total?`${aprov} de ${total} documento${total!==1?'s':''}`:' ';
+  info.append(nameInput,sub);
 
-  const progress=document.createElement('span');
-  progress.className='folder-progress'+(allDone?' complete':'');
-  progress.textContent=`${approved}/${total}`;
+  /* Progress ring */
+  const ringWrap=document.createElement('div');
+  ringWrap.className='ring-wrap';
+  const offset=RING_C*(1-pct/100);
+  ringWrap.innerHTML=`
+    <svg width="52" height="52" viewBox="0 0 52 52">
+      <defs><linearGradient id="rg${member.id}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${grad[0]}"/>
+        <stop offset="100%" stop-color="${grad[1]}"/>
+      </linearGradient></defs>
+      <circle class="ring-track" cx="26" cy="26" r="${RING_R}"/>
+      <circle class="ring-fill" cx="26" cy="26" r="${RING_R}"
+        stroke="url(#rg${member.id})"
+        stroke-dasharray="${RING_C}"
+        stroke-dashoffset="${offset}"/>
+    </svg>
+    <span class="ring-pct">${pct}%</span>
+  `;
 
+  /* Menu */
   const menuBtn=document.createElement('button');
   menuBtn.className='folder-menu';
   menuBtn.innerHTML='⋯';
   menuBtn.title='Opções';
-  menuBtn.onclick=(e)=>{e.stopPropagation();showFolderMenu(member.id,menuBtn)};
+  menuBtn.onclick=e=>{e.stopPropagation();showMenu(member.id,menuBtn)};
 
-  header.append(dot,nameInput,progress,menuBtn);
+  top.append(av,info,ringWrap,menuBtn);
 
-  /* Lista de docs */
+  /* ── Doc list ── */
   const list=document.createElement('div');
   list.className='doc-list';
-
-  if(data.docs.length===0){
+  if(!data.docs.length){
     const empty=document.createElement('div');
-    empty.style.cssText='padding:16px;text-align:center;color:var(--text-3);font-size:13px';
+    empty.style.cssText='padding:20px;text-align:center;color:var(--text-3);font-size:13px;font-weight:500';
     empty.textContent='Nenhum documento solicitado';
     list.appendChild(empty);
   }
-
   for(const doc of data.docs){
-    const s=getStatus(member,doc.id);
+    const s=getS(member,doc.id);
     const row=document.createElement('div');
     row.className='doc-row';
     row.dataset.s=s;
-    row.title=`Clique para alterar: ${s==='pendente'?'→ Enviado':s==='enviado'?'→ Aprovado':'→ Pendente'}`;
+    row.title=`Clique: ${s==='pendente'?'→ Enviado':s==='enviado'?'→ Aprovado':'→ Pendente'}`;
     row.onclick=()=>{
-      const cur=getStatus(member,doc.id);
-      const next=cycleStatus(cur);
+      const cur=getS(member,doc.id);
+      const next=cycle(cur);
       if(next==='pendente') delete member.statuses[doc.id];
       else member.statuses[doc.id]=next;
-      save(); render();
+      save();render();
     };
 
-    const statusDot=document.createElement('div');
-    statusDot.className='doc-status';
-    statusDot.dataset.s=s;
+    const dot=document.createElement('div');
+    dot.className='s-dot';
+    dot.dataset.s=s;
+    if(s==='aprovado'){
+      dot.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>';
+    }
 
     const name=document.createElement('span');
-    name.className='doc-name';
+    name.className='doc-row-name';
     name.textContent=doc.name;
 
-    const label=document.createElement('span');
-    label.className='doc-status-label';
-    label.dataset.s=s;
-    label.textContent=s==='pendente'?'Pendente':s==='enviado'?'Enviado':'Aprovado';
+    const badge=document.createElement('span');
+    badge.className='s-badge';
+    badge.dataset.s=s;
+    badge.textContent=s==='pendente'?'Pendente':s==='enviado'?'Enviado':'Aprovado';
 
-    row.append(statusDot,name,label);
+    row.append(dot,name,badge);
     list.appendChild(row);
   }
 
-  /* Barra de progresso */
-  const bar=document.createElement('div');
-  bar.className='folder-bar';
-  const fill=document.createElement('div');
-  fill.className='folder-bar-fill';
-  fill.style.width=pct+'%';
-  bar.appendChild(fill);
-
-  el.append(header,list,bar);
+  el.append(top,list);
   return el;
 }
 
-/* ── Adicionar pessoa ── */
+/* ── Add person ── */
 function addPerson(){
   const name=prompt('Nome da pessoa:');
   if(!name||!name.trim()) return;
-  const color=COLORS[data.members.length%COLORS.length];
-  data.members.push({id:nid(),name:name.trim(),color,statuses:{}});
-  save(); render();
+  const gi=data.members.length%GRADIENTS.length;
+  data.members.push({id:nid(),name:name.trim(),gi,statuses:{}});
+  save();render();
 }
 
-/* ── Menu da pasta ── */
+/* ── Dropdown menu ── */
 let activeDd=null;
 function closeDd(){if(activeDd){activeDd.remove();activeDd=null}document.removeEventListener('click',closeDd)}
-
-function showFolderMenu(memberId,anchor){
+function showMenu(mid,anchor){
   closeDd();
   const rect=anchor.getBoundingClientRect();
   const dd=document.createElement('div');
   dd.className='dropdown';
-  dd.style.top=rect.bottom+4+'px';
-  dd.style.left=Math.min(rect.left,window.innerWidth-180)+'px';
+  dd.style.top=rect.bottom+6+'px';
+  dd.style.left=Math.min(rect.right-180,window.innerWidth-196)+'px';
 
   const items=[
-    {label:'✏️ Renomear',action:()=>{
-      closeDd();
-      const el=document.querySelector(`.folder-name`);
-      /* Encontrar o input correto */
-      const folders=document.querySelectorAll('.folder');
-      for(const f of folders){
-        const inp=f.querySelector('.folder-name');
-        if(inp){
-          const m=data.members.find(m=>m.name===inp.value);
-          if(m&&m.id===memberId){inp.focus();inp.select();break}
-        }
-      }
-    }},
-    {label:'✅ Marcar todos como aprovado',action:()=>{
-      closeDd();
-      const m=data.members.find(m=>m.id===memberId);
-      if(!m) return;
-      for(const d of data.docs) m.statuses[d.id]='aprovado';
-      save();render();
-    }},
-    {label:'↩️ Resetar status',action:()=>{
-      closeDd();
-      const m=data.members.find(m=>m.id===memberId);
-      if(!m) return;
-      if(!confirm(`Resetar todos os status de "${m.name}"?`)) return;
-      m.statuses={};save();render();
-    }},
-    {label:'🗑️ Remover pessoa',cls:'danger',action:()=>{
-      closeDd();
-      const m=data.members.find(m=>m.id===memberId);
-      if(!m||!confirm(`Remover "${m.name}" do painel?`)) return;
-      data.members=data.members.filter(m=>m.id!==memberId);
-      save();render();
-    }},
+    {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+     label:'Renomear',action:()=>{closeDd();const els=[...document.querySelectorAll('.folder')];for(const f of els){const inp=f.querySelector('.folder-name');if(inp){const m=data.members.find(x=>x.name===inp.value);if(m&&m.id===mid){inp.focus();inp.select();break}}}}},
+    {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
+     label:'Aprovar todos',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m)return;for(const d of data.docs)m.statuses[d.id]='aprovado';save();render()}},
+    {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+     label:'Resetar status',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m||!confirm(`Resetar todos os status de "${m.name}"?`))return;m.statuses={};save();render()}},
+    {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+     label:'Remover pessoa',cls:'danger',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m||!confirm(`Remover "${m.name}" do painel?`))return;data.members=data.members.filter(x=>x.id!==mid);save();render()}},
   ];
 
   for(const item of items){
     const btn=document.createElement('button');
     btn.className='dd-item'+(item.cls?' '+item.cls:'');
-    btn.textContent=item.label;
-    btn.onclick=(e)=>{e.stopPropagation();item.action()};
+    btn.innerHTML=item.icon+'<span>'+item.label+'</span>';
+    btn.onclick=e=>{e.stopPropagation();item.action()};
     dd.appendChild(btn);
   }
-
   document.body.appendChild(dd);
   activeDd=dd;
   requestAnimationFrame(()=>document.addEventListener('click',closeDd));
 }
 
-/* ── Tema ── */
+/* ── Theme ── */
 document.getElementById('themeBtn').onclick=()=>{
   const r=document.documentElement;
   const next=r.getAttribute('data-theme')==='dark'?'light':'dark';
   r.setAttribute('data-theme',next);
-  try{localStorage.setItem('painel-theme',next)}catch(e){}
+  try{localStorage.setItem('painel-theme-v2',next)}catch(e){}
 };
-try{
-  const t=localStorage.getItem('painel-theme');
-  if(t) document.documentElement.setAttribute('data-theme',t);
-}catch(e){}
+try{const t=localStorage.getItem('painel-theme-v2');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
 
-/* ── Utilitários ── */
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+/* ── Keyboard ── */
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDd()});
 
-/* ── Render geral ── */
-function render(){
-  renderDocChips();
-  renderSummary();
-  renderGrid();
-}
-
-/* ── Inicialização ── */
+/* ── Init ── */
 load();
 render();
 </script>
