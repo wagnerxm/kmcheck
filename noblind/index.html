@@ -253,14 +253,15 @@ img{max-width:100%}
 .bento-card--lime .bento-label{color:rgba(9,9,11,.5)}
 .bento-card--dark .bento-label{color:var(--subtle)}
 
-/* ===== KPI strip horizontal — chips premium ===== */
-.kpi-strip{display:flex;gap:var(--sp-2);overflow-x:auto;scrollbar-width:none;padding:2px 0}
+/* ===== KPI strip horizontal — faixa contínua com brilho lime ===== */
+.kpi-strip{display:flex;overflow-x:auto;scrollbar-width:none;padding:0;
+  border-radius:var(--r-sm);
+  background:linear-gradient(90deg,rgba(163,230,53,.03),rgba(163,230,53,.07),rgba(163,230,53,.03));
+  border:1px solid rgba(163,230,53,.10)}
 .kpi-strip::-webkit-scrollbar{display:none}
-.kpi-chip{flex-shrink:0;background:linear-gradient(180deg,#1D2028 0%,var(--surface) 100%);
-  color:var(--txt);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4);text-align:center;position:relative;
-  border:1px solid var(--border-s);border-top-color:rgba(255,255,255,.14);border-bottom-color:rgba(0,0,0,.25);
-  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 -1px 0 rgba(0,0,0,.18) inset,
-    0 4px 12px rgba(0,0,0,.20),0 12px 32px rgba(0,0,0,.15)}
+.kpi-chip{flex:1;text-align:center;padding:var(--sp-3) var(--sp-2);position:relative;min-width:0}
+.kpi-chip+.kpi-chip::before{content:'';position:absolute;left:0;top:20%;height:60%;width:1px;
+  background:rgba(255,255,255,.06)}
 .kpi-chip-val{font-family:var(--font-display);font-weight:400;font-size:var(--fs-lg);line-height:1;letter-spacing:.02em}
 .kpi-chip-label{font-size:.5rem;color:var(--subtle);margin-top:3px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:700}
@@ -368,6 +369,22 @@ img{max-width:100%}
 .odds-best{color:var(--lime);font-weight:800;background:rgba(163,230,53,.10)!important}
 /* ===== model bars — refinados ===== */
 .model-bar-val{font-variant-numeric:tabular-nums}
+/* ===== score bar — barra visual do índice NoBlind no bet card ===== */
+.score-bar{display:flex;align-items:center;gap:6px}
+.score-bar-track{width:48px;height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px;background:var(--lime);transition:width .6s ease-out}
+.score-bar-num{font-size:.6875rem;font-weight:800;color:var(--subtle);font-variant-numeric:tabular-nums}
+
+/* ===== section prefix — barra vertical lime antes dos títulos ===== */
+.sec-prefix{display:inline-block;width:3px;height:14px;border-radius:2px;background:var(--lime);
+  margin-right:8px;vertical-align:middle;box-shadow:0 0 6px rgba(163,230,53,.25)}
+
+/* ===== ticket reflexo — brilho radial no topo do bilhete ===== */
+.ticket-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 25% 0%,rgba(255,255,255,.14),transparent 55%);
+  pointer-events:none;z-index:0}
+.ticket-hero>*{position:relative;z-index:1}
+
 .hidden{display:none!important}
 </style>
 </head>
@@ -657,7 +674,7 @@ function renderHome(){
 
     <!-- FILTRO DE CASAS DE APOSTAS -->
     <div>
-      <div class="section-label" style="margin-bottom:var(--sp-2);font-size:.6875rem">${icon('filter',12)} CASA DE APOSTAS</div>
+      <div class="section-label" style="margin-bottom:var(--sp-2);font-size:.6875rem"><span class="sec-prefix"></span>CASA DE APOSTAS</div>
       <div class="book-filter" aria-label="Filtrar por casa de apostas">
         <button class="book-chip${!selectedBook?' active':''}" onclick="pickBook(this,'')">
           Todas <span class="book-chip-count">${SINGLES.length}</span>
@@ -679,7 +696,7 @@ function renderHome(){
     <!-- BILHETE DO DIA -->
     ${ticketLegs.length>=3?`<div>
       <div class="flex items-center justify-between" style="margin-bottom:12px">
-        <span class="section-label">${icon('zap',14)} BILHETE DO DIA</span>
+        <span class="section-label"><span class="sec-prefix"></span>BILHETE DO DIA</span>
         <span style="font-size:.625rem;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--dark);color:var(--lime);text-transform:uppercase;letter-spacing:.06em">Tripla</span>
       </div>
       <div class="ticket-hero">
@@ -720,7 +737,7 @@ function renderHome(){
 
     <!-- MELHORES SINGLES -->
     <div class="flex items-center justify-between">
-      <span class="section-label">MELHORES SINGLES${selectedBook?' · '+selectedBook:''}</span>
+      <span class="section-label"><span class="sec-prefix"></span>MELHORES SINGLES${selectedBook?' · '+selectedBook:''}</span>
       <button class="btn-pill btn-pill--dark" style="padding:6px 14px;font-size:.6875rem" onclick="navigate('singles')">
         Ver todos <span class="arrow">↗</span>
       </button>
@@ -733,7 +750,7 @@ function renderHome(){
 
     <!-- MÚLTIPLAS -->
     <div class="flex items-center justify-between">
-      <span class="section-label">MÚLTIPLAS SUGERIDAS</span>
+      <span class="section-label"><span class="sec-prefix"></span>MÚLTIPLAS SUGERIDAS</span>
       <button class="btn-pill btn-pill--dark" style="padding:6px 14px;font-size:.6875rem" onclick="navigate('multiples')">
         Ver todas <span class="arrow">↗</span>
       </button>
@@ -760,7 +777,8 @@ function renderBetCard(s){
     </div>
     <div class="bet-bottom">
       <div class="bet-sel">${icon('check',12)} ${s.sel}</div>
-      <div class="bet-edge">Edge <span class="bet-edge-val">+${s.edge.toFixed(1)}%</span></div>
+      <div class="bet-edge">Vantagem <span class="bet-edge-val">+${s.edge.toFixed(1)}%</span></div>
+      <div class="score-bar"><div class="score-bar-track"><div class="score-bar-fill" style="width:${s.score}%"></div></div><span class="score-bar-num">${s.score}</span></div>
     </div>
   </div>`;
 }
@@ -874,7 +892,7 @@ function renderStats(){
       </div>
     </div>
 
-    <div class="section-label" style="margin-bottom:12px">POR MERCADO</div>
+    <div class="section-label" style="margin-bottom:12px"><span class="sec-prefix"></span>POR MERCADO</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
       ${[{m:'Resultado Final',n:152,roi:13.1},{m:'Gols (Over/Under)',n:88,roi:15.8},{m:'Ambas Marcam',n:50,roi:7.4}].map(x=>`
         <div class="roi-card">
@@ -883,7 +901,7 @@ function renderStats(){
         </div>`).join('')}
     </div>
 
-    <div class="section-label" style="margin-bottom:12px">POR LIGA</div>
+    <div class="section-label" style="margin-bottom:12px"><span class="sec-prefix"></span>POR LIGA</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       ${[{l:'Brasileirão A',n:186,roi:14.2},{l:'Copa do Brasil',n:42,roi:8.7},{l:'Libertadores',n:38,roi:11.3}].map(x=>`
         <div class="roi-card">
