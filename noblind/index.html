@@ -39,8 +39,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
 img{max-width:100%}
 ::-webkit-scrollbar{width:0;height:0}
 
-/* ===== fundo removido — matte black sólido ===== */
-#bg-art{display:none}
+/* ===== fundo grunge — pinceladas esbranquiçadas ===== */
+#bg-art{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.07}
+#bg-art canvas{display:block;width:100%;height:100%}
 
 /* ===== layout shell ===== */
 #app{display:flex;height:100dvh;width:100%;position:relative;z-index:1}
@@ -292,56 +293,8 @@ img{max-width:100%}
 </head>
 <body>
 
-<!-- fundo campo de futebol escuro com marcações -->
-<div id="bg-art" aria-hidden="true">
-<svg viewBox="0 0 420 920" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <!-- textura de grama — ruído fractal sutil -->
-    <filter id="grass" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="4" seed="7" stitchTiles="stitch" result="n"/>
-      <feColorMatrix type="saturate" values="0" in="n" result="g"/>
-      <feComponentTransfer in="g" result="a"><feFuncA type="linear" slope=".07"/></feComponentTransfer>
-      <feBlend in="SourceGraphic" in2="a" mode="multiply"/>
-    </filter>
-    <!-- listras da grama cortada -->
-    <pattern id="mow" width="420" height="76" patternUnits="userSpaceOnUse">
-      <rect width="420" height="38" fill="rgba(255,255,255,.012)"/>
-      <rect y="38" width="420" height="38" fill="rgba(0,0,0,.018)"/>
-    </pattern>
-  </defs>
-  <!-- base escura -->
-  <rect width="420" height="920" fill="#111418"/>
-  <!-- listras -->
-  <rect width="420" height="920" fill="url(#mow)"/>
-  <!-- textura noise -->
-  <rect width="420" height="920" fill="#111418" filter="url(#grass)" opacity=".45"/>
-  <!-- marcações do campo — traço branco sutil -->
-  <g fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.6">
-    <!-- linhas laterais -->
-    <rect x="24" y="24" width="372" height="872" rx="1"/>
-    <!-- meio-campo -->
-    <line x1="24" y1="460" x2="396" y2="460"/>
-    <!-- círculo central -->
-    <circle cx="210" cy="460" r="62"/>
-    <!-- grande área superior -->
-    <rect x="92" y="24" width="236" height="148"/>
-    <!-- pequena área superior -->
-    <rect x="142" y="24" width="136" height="55"/>
-    <!-- arco penâlti superior -->
-    <path d="M 152 172 A 60 60 0 0 0 268 172"/>
-    <!-- grande área inferior -->
-    <rect x="92" y="748" width="236" height="148"/>
-    <!-- pequena área inferior -->
-    <rect x="142" y="841" width="136" height="55"/>
-    <!-- arco penâlti inferior -->
-    <path d="M 152 748 A 60 60 0 0 1 268 748"/>
-  </g>
-  <!-- marcas de centro e penâlti -->
-  <circle cx="210" cy="460" r="2.5" fill="rgba(255,255,255,.20)"/>
-  <circle cx="210" cy="136" r="2.5" fill="rgba(255,255,255,.20)"/>
-  <circle cx="210" cy="784" r="2.5" fill="rgba(255,255,255,.20)"/>
-</svg>
-</div>
+<!-- fundo grunge — pinceladas esbranquiçadas geradas em Canvas -->
+<div id="bg-art" aria-hidden="true"><canvas id="bg-canvas"></canvas></div>
 
 <div id="app">
   <div id="main">
@@ -890,9 +843,74 @@ function closeSheet(){$('#detail-sheet').classList.remove('open');document.body.
 /* ===== PWA ===== */
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 
+/* ===== fundo grunge procedural — pinceladas diagonais + splatter ===== */
+/* Usa PRNG determinístico (mulberry32) para que o padrão seja consistente entre reloads */
+function paintGrunge(){
+  const cv=$('#bg-canvas'); if(!cv) return;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const W=cv.width=window.innerWidth*dpr, H=cv.height=window.innerHeight*dpr;
+  const ctx=cv.getContext('2d');
+  /* PRNG determinístico — mesma textura sempre */
+  let seed=0xDEAD;
+  const rng=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const rr=(a,b)=>a+rng()*(b-a);
+  /* base */
+  ctx.fillStyle='#0B0D10'; ctx.fillRect(0,0,W,H);
+  /* pinceladas grossas — diagonais em tons de cinza */
+  for(let i=0;i<50;i++){
+    const x=rr(-W*.1,W*1.1), y=rr(-H*.1,H*1.1);
+    const angle=rr(-45,45)+(rng()>.5?130:0);
+    const len=rr(W*.2,W*.6), w=rr(W*.03,W*.10);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(angle*Math.PI/180);
+    const b=Math.floor(rr(70,190));
+    ctx.globalAlpha=rr(.04,.14);
+    /* cada pincelada = 4-6 faixas deslocadas para irregularidade */
+    const n=Math.floor(rr(4,7));
+    for(let j=0;j<n;j++){
+      const dy=rr(-w*.4,w*.4), dw=rr(w*.3,w*.9), dl=rr(0,len*.15);
+      const g=ctx.createLinearGradient(-len/2+dl,0,len/2,0);
+      g.addColorStop(0,'transparent');
+      g.addColorStop(.12,`rgb(${b},${b},${b})`);
+      g.addColorStop(.5,`rgb(${b+10},${b+10},${b+10})`);
+      g.addColorStop(.88,`rgb(${b},${b},${b})`);
+      g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;
+      ctx.fillRect(-len/2+dl,-dw/2+dy,len-dl,dw);
+    }
+    ctx.restore();
+  }
+  /* manchas maiores — gradientes radiais suaves */
+  for(let i=0;i<12;i++){
+    const x=rr(0,W), y=rr(0,H), r=rr(W*.08,W*.25);
+    const b=Math.floor(rr(60,140));
+    ctx.globalAlpha=rr(.02,.06);
+    const g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgb(${b},${b},${b})`); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;
+    ctx.fillRect(x-r,y-r,r*2,r*2);
+  }
+  /* splatter — pontos de tinta espalhados */
+  for(let i=0;i<400;i++){
+    const x=rr(0,W), y=rr(0,H), r=rr(.5,3.5)*dpr;
+    ctx.globalAlpha=rr(.02,.07);
+    const b=Math.floor(rr(50,170));
+    ctx.fillStyle=`rgb(${b},${b},${b})`;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+  /* grão fino uniforme — noise granulado */
+  ctx.globalAlpha=.03;
+  for(let i=0;i<2000;i++){
+    const x=rr(0,W), y=rr(0,H);
+    ctx.fillStyle=rng()>.5?'#aaa':'#333';
+    ctx.fillRect(x,y,dpr,dpr);
+  }
+  ctx.globalAlpha=1;
+}
+
 /* ===== boot ===== */
 function init(){
-  renderPage();updateStatus();
+  paintGrunge(); renderPage();updateStatus();
   const sb=$('#sheet-content');let sy=0;
   sb.addEventListener('touchstart',e=>{sy=e.touches[0].clientY},{passive:true});
   sb.addEventListener('touchmove',e=>{if(sb.scrollTop<=0&&e.touches[0].clientY-sy>60)closeSheet()},{passive:true});
