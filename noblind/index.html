@@ -19,9 +19,9 @@
   --lime:#A3E635;--lime-d:rgba(163,230,53,.10);--lime-dk:#65A30D;
   --dark:#09090B;--dark2:#18181B;--dark3:#27272A;
   --bg:#FFFFFF;--bg2:#F1F5F9;
-  /* glass card — cinza claro translúcido com blur */
-  --glass:rgba(24,26,32,.55);--glass-border:rgba(255,255,255,.10);
-  --glass-solid:rgba(28,30,36,.75);
+  /* card escuro sólido com brilho de superfície (estilo PATO) */
+  --glass:#1A1C22;--glass-border:rgba(255,255,255,.06);
+  --glass-solid:#222428;
   --border:rgba(0,0,0,.05);--border-s:rgba(0,0,0,.08);
   --success:#22C55E;--success-d:rgba(34,197,94,.10);
   --danger:#EF4444;--danger-d:rgba(239,68,68,.10);
@@ -79,26 +79,24 @@ img{max-width:100%}
 .tb-actions{display:flex;align-items:center;gap:8px}
 
 /* ===== floating bottom nav — pílula preta ===== */
-#bottom-nav{position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(12px + var(--safe-b));z-index:50}
-.bn-bar{display:flex;align-items:center;gap:2px;
-  background:var(--dark);border-radius:999px;padding:6px 8px;
-  border:1px solid rgba(255,255,255,.06);border-top-color:rgba(255,255,255,.10)}
+#bottom-nav{position:fixed;left:16px;right:16px;
+  bottom:calc(10px + var(--safe-b));z-index:50}
+.bn-bar{display:flex;align-items:center;gap:0;
+  background:var(--dark);border-radius:var(--r);padding:4px;
+  border:1px solid rgba(255,255,255,.06);border-top-color:rgba(255,255,255,.08)}
 .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  width:64px;height:52px;border-radius:999px;
+  flex:1;height:52px;border-radius:calc(var(--r) - 4px);
   font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:rgba(255,255,255,.35);transition:all .25s ease;
   -webkit-tap-highlight-color:transparent;cursor:pointer}
-.bn-item.active{color:var(--lime);background:rgba(163,230,53,.12)}
+.bn-item.active{color:var(--dark);background:var(--lime)}
 .bn-item svg{flex-shrink:0}
 .bn-item .ic{line-height:0}
 
-/* ===== glass card — 3D glass com profundidade ===== */
-.card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:20px;color:#fff;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.18);
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.10),0 16px 40px rgba(0,0,0,.14),
-    inset 0 1px 0 rgba(255,255,255,.10);
+/* ===== card escuro sólido 3D ===== */
+.card{background:var(--glass);border-radius:var(--r);padding:20px;color:#fff;position:relative;
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.12);
   transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
 
 /* ===== BILHETE DO DIA — bloco preto sólido de alto contraste ===== */
@@ -133,16 +131,15 @@ img{max-width:100%}
 .team-shield{flex-shrink:0;line-height:0}
 .team-shield.away{margin-left:-8px;position:relative;z-index:1}
 
-/* ===== bet card — 3D glass com odd protagonista ===== */
-.bet-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:18px;cursor:pointer;color:#fff;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.18);
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.10),0 16px 40px rgba(0,0,0,.14),
-    inset 0 1px 0 rgba(255,255,255,.10);
+/* ===== bet card — sólido 3D ===== */
+.bet-card{background:var(--glass);border-radius:var(--r);padding:18px;cursor:pointer;
+  color:#fff;position:relative;
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.12);
   transform:perspective(800px) translateZ(0);transform-style:preserve-3d;
   transition:transform .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
-.bet-card:active{transform:perspective(800px) translateZ(-4px) scale(.97);
-  box-shadow:0 1px 2px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.08)}
+.bet-card:active{transform:perspective(800px) translateZ(-3px) scale(.97);
+  box-shadow:0 1px 3px rgba(0,0,0,.15),0 4px 8px rgba(0,0,0,.10)}
 .bet-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .bet-teams-col{display:flex;align-items:center}
 .bet-info{flex:1;min-width:0}
@@ -159,16 +156,15 @@ img{max-width:100%}
 .bet-edge{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;font-weight:600;color:rgba(255,255,255,.45)}
 .bet-edge-val{color:var(--lime);font-weight:800}
 
-/* ===== múltipla card — 3D glass ===== */
-.multi-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);overflow:hidden;color:#fff;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.18);
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.10),0 16px 40px rgba(0,0,0,.14),
-    inset 0 1px 0 rgba(255,255,255,.10);
+/* ===== múltipla card — sólido 3D ===== */
+.multi-card{background:var(--glass);border-radius:var(--r);overflow:hidden;
+  color:#fff;position:relative;
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.12);
   transform:perspective(800px) translateZ(0);transform-style:preserve-3d;
   cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
-.multi-card:active{transform:perspective(800px) translateZ(-4px) scale(.97);
-  box-shadow:0 1px 2px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.08)}
+.multi-card:active{transform:perspective(800px) translateZ(-3px) scale(.97);
+  box-shadow:0 1px 3px rgba(0,0,0,.15),0 4px 8px rgba(0,0,0,.10)}
 .multi-header{display:flex;align-items:center;justify-content:space-between;padding:18px;
   border-bottom:1px solid rgba(255,255,255,.06)}
 .multi-type{font-size:.625rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;
@@ -196,10 +192,9 @@ img{max-width:100%}
 .pill-bar::-webkit-scrollbar{display:none}
 .pill{display:inline-flex;align-items:center;padding:9px 18px;border-radius:999px;
   font-size:.8125rem;font-weight:700;background:var(--glass-solid);color:rgba(255,255,255,.6);
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.15);cursor:pointer;white-space:nowrap;
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.08);cursor:pointer;white-space:nowrap;
   transition:all .2s;-webkit-tap-highlight-color:transparent;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  box-shadow:0 1px 3px rgba(0,0,0,.10),0 4px 12px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.06)}
+  box-shadow:0 2px 6px rgba(0,0,0,.12),0 8px 20px rgba(0,0,0,.10)}
 .pill:active{transform:scale(.96)}
 .pill.active{background:var(--dark);color:var(--lime);border-color:var(--dark);
   backdrop-filter:none;-webkit-backdrop-filter:none}
@@ -227,11 +222,10 @@ img{max-width:100%}
 .bento--hero .bento-tall{grid-row:span 2}
 .bento--trio{grid-template-columns:repeat(3,1fr)}
 .bento--duo{grid-template-columns:1fr 1fr}
-.bento-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:20px;border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.18);
+.bento-card{background:var(--glass);border-radius:var(--r);padding:20px;
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);
   display:flex;flex-direction:column;justify-content:center;color:#fff;position:relative;
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.10),0 16px 40px rgba(0,0,0,.14),
-    inset 0 1px 0 rgba(255,255,255,.10);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.12);
   transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
 .bento-card--lime{background:var(--lime);border-color:var(--lime);color:var(--dark);
   backdrop-filter:none;-webkit-backdrop-filter:none}
@@ -247,12 +241,10 @@ img{max-width:100%}
 /* ===== KPI strip horizontal — glass chips ===== */
 .kpi-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .kpi-strip::-webkit-scrollbar{display:none}
-.kpi-chip{flex-shrink:0;background:var(--glass);backdrop-filter:blur(16px);color:#fff;
-  -webkit-backdrop-filter:blur(16px);border-radius:var(--r-sm);padding:12px 16px;
-  text-align:center;position:relative;
-  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.18);
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.10),0 12px 32px rgba(0,0,0,.12),
-    inset 0 1px 0 rgba(255,255,255,.10);
+.kpi-chip{flex-shrink:0;background:var(--glass);color:#fff;
+  border-radius:var(--r-sm);padding:12px 16px;text-align:center;position:relative;
+  border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.18),0 16px 36px rgba(0,0,0,.10);
   transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
 .kpi-chip-val{font-weight:900;font-size:1rem;line-height:1.2;letter-spacing:-.02em}
 .kpi-chip-label{font-size:.5rem;color:rgba(255,255,255,.4);margin-top:3px;text-transform:uppercase;
@@ -273,7 +265,7 @@ img{max-width:100%}
 .sheet-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin:12px auto}
 .sheet-close{position:absolute;top:14px;right:14px;width:36px;height:36px;display:flex;
   align-items:center;justify-content:center;border-radius:var(--r-sm);color:rgba(255,255,255,.6);
-  background:var(--glass-solid);z-index:1;border:1px solid var(--glass-border)}
+  background:var(--glass-solid);z-index:2;border:1px solid var(--glass-border)}
 
 /* ===== odds table ===== */
 .odds-table{width:100%;border-collapse:separate;border-spacing:0 4px}
@@ -294,11 +286,10 @@ img{max-width:100%}
 .model-bar-val{font-size:.75rem;font-weight:800;width:42px;flex-shrink:0}
 
 /* ===== ROI cards — glass ===== */
-.roi-card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;color:#fff;position:relative;
-  justify-content:space-between;border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.18);
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.10),0 16px 40px rgba(0,0,0,.14),
-    inset 0 1px 0 rgba(255,255,255,.10);
+.roi-card{background:var(--glass);border-radius:var(--r);padding:16px 18px;
+  display:flex;align-items:center;color:#fff;position:relative;
+  justify-content:space-between;border:1px solid var(--glass-border);border-top-color:rgba(255,255,255,.10);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.12);
   transform:perspective(800px) translateZ(0);transform-style:preserve-3d}
 .roi-card-info{flex:1}
 .roi-card-name{font-weight:800;font-size:.875rem;letter-spacing:-.01em}
@@ -318,27 +309,26 @@ img{max-width:100%}
 .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
 .gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
 .text-center{text-align:center}
-/* ===== 3D glass — reflexo diagonal de luz ===== */
+/* ===== reflexo sutil de superfície — brilho diagonal estilo PATO ===== */
 .card::before,.bet-card::before,.bento-card::before,.kpi-chip::before,.roi-card::before{
   content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
-  background:linear-gradient(135deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.05) 35%,transparent 55%)}
+  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 40%,transparent 60%)}
 /* multi-card tem overflow:hidden, então o ::before fica contido */
 .multi-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
-  background:linear-gradient(135deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.05) 35%,transparent 55%)}
+  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 40%,transparent 60%)}
 /* ticket hero — reflexo sutil no canto */
 .ticket-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;pointer-events:none;z-index:1;
-  background:linear-gradient(180deg,rgba(255,255,255,.04) 0%,transparent 100%);border-radius:var(--r-lg) var(--r-lg) 0 0}
+  background:linear-gradient(180deg,rgba(255,255,255,.03) 0%,transparent 100%);border-radius:var(--r-lg) var(--r-lg) 0 0}
 /* cards lime/dark — reflexo adaptado ao fundo opaco */
-.bento-card--lime::before{background:linear-gradient(135deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.06) 35%,transparent 55%)}
-.bento-card--dark::before{background:linear-gradient(135deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.02) 35%,transparent 55%)}
+.bento-card--lime::before{background:linear-gradient(135deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.04) 40%,transparent 60%)}
+.bento-card--dark::before{background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.015) 40%,transparent 60%)}
 /* 3D — lime e dark com sombra 3D também */
 .bento-card--lime{box-shadow:0 2px 4px rgba(0,0,0,.06),0 6px 16px rgba(163,230,53,.12),0 16px 40px rgba(0,0,0,.10);
   border-top-color:rgba(255,255,255,.25)}
 .bento-card--dark{box-shadow:0 2px 4px rgba(0,0,0,.12),0 8px 20px rgba(0,0,0,.18),0 20px 48px rgba(0,0,0,.22);
   border-top-color:rgba(255,255,255,.08)}
 /* bottom nav — 3D flutuante */
-.bn-bar{box-shadow:0 2px 4px rgba(0,0,0,.15),0 8px 24px rgba(0,0,0,.25),0 20px 48px rgba(0,0,0,.30);
-  transform:perspective(600px) translateZ(0)}
+.bn-bar{box-shadow:0 2px 6px rgba(0,0,0,.15),0 8px 24px rgba(0,0,0,.20),0 20px 48px rgba(0,0,0,.25)}
 .hidden{display:none!important}
 </style>
 </head>
