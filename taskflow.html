@@ -4,64 +4,64 @@
 <style>
 /* ── Tokens ── */
 :root {
-  --violet: #7C3AED;
-  --violet-dim: rgba(124,58,237,.10);
-  --cyan: #06B6D4;
-  --cyan-dim: rgba(6,182,212,.10);
-  --green: #22C55E;
-  --green-dim: rgba(34,197,94,.10);
-  --amber: #EAB308;
-  --amber-dim: rgba(234,179,8,.10);
-  --rose: #F43F5E;
-  --rose-dim: rgba(244,63,94,.10);
-  --bg: #F7F8FA;
+  --forest: #2D6A4F;
+  --forest-dim: rgba(45,106,79,.10);
+  --sand: #D4A373;
+  --sand-dim: rgba(212,163,115,.10);
+  --sage: #40916C;
+  --sage-dim: rgba(64,145,108,.10);
+  --honey: #DDA15E;
+  --honey-dim: rgba(221,161,94,.10);
+  --brick: #BC4749;
+  --brick-dim: rgba(188,71,73,.10);
+  --bg: #F8F5F0;
   --surface: #FFFFFF;
-  --surface-2: #F1F3F6;
-  --text: #0F172A;
-  --text-2: #64748B;
-  --text-3: #94A3B8;
-  --border: #E2E5EB;
-  --border-light: #EEF0F4;
-  --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
-  --shadow-md: 0 4px 16px rgba(15,23,42,.06);
-  --shadow-lg: 0 12px 40px rgba(15,23,42,.10);
-  --glow: rgba(124,58,237,.08);
+  --surface-2: #F2EEE8;
+  --text: #1A2C1F;
+  --text-2: #6B7B6F;
+  --text-3: #9BA89E;
+  --border: #DED8CE;
+  --border-light: #EBE7E0;
+  --shadow-sm: 0 1px 2px rgba(26,44,31,.04);
+  --shadow-md: 0 4px 16px rgba(26,44,31,.07);
+  --shadow-lg: 0 12px 40px rgba(26,44,31,.10);
+  --glow: rgba(45,106,79,.10);
   --radius: 14px;
   --radius-sm: 8px;
-  --ring-track: #E2E5EB;
+  --ring-track: #DED8CE;
 }
 
 @media(prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0F1219;--surface:#1A1F2E;--surface-2:#232A3B;
-    --text:#E2E8F0;--text-2:#94A3B8;--text-3:#64748B;
-    --border:#2A3144;--border-light:#222839;
+    --bg:#12170F;--surface:#1C231A;--surface-2:#252D22;
+    --text:#E2E0DA;--text-2:#9BA89E;--text-3:#6B7B6F;
+    --border:#2D3429;--border-light:#232B20;
     --shadow-sm:0 1px 2px rgba(0,0,0,.2);
     --shadow-md:0 4px 16px rgba(0,0,0,.3);
     --shadow-lg:0 12px 40px rgba(0,0,0,.4);
-    --glow:rgba(124,58,237,.15);
-    --violet-dim:rgba(124,58,237,.16);
-    --cyan-dim:rgba(6,182,212,.14);
-    --green-dim:rgba(34,197,94,.14);
-    --amber-dim:rgba(234,179,8,.12);
-    --rose-dim:rgba(244,63,94,.14);
-    --ring-track:#2A3144;
+    --glow:rgba(45,106,79,.18);
+    --forest-dim:rgba(45,106,79,.18);
+    --sand-dim:rgba(212,163,115,.14);
+    --sage-dim:rgba(64,145,108,.16);
+    --honey-dim:rgba(221,161,94,.14);
+    --brick-dim:rgba(188,71,73,.14);
+    --ring-track:#2D3429;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0F1219;--surface:#1A1F2E;--surface-2:#232A3B;
-  --text:#E2E8F0;--text-2:#94A3B8;--text-3:#64748B;
-  --border:#2A3144;--border-light:#222839;
+  --bg:#12170F;--surface:#1C231A;--surface-2:#252D22;
+  --text:#E2E0DA;--text-2:#9BA89E;--text-3:#6B7B6F;
+  --border:#2D3429;--border-light:#232B20;
   --shadow-sm:0 1px 2px rgba(0,0,0,.2);
   --shadow-md:0 4px 16px rgba(0,0,0,.3);
   --shadow-lg:0 12px 40px rgba(0,0,0,.4);
-  --glow:rgba(124,58,237,.15);
-  --violet-dim:rgba(124,58,237,.16);
-  --cyan-dim:rgba(6,182,212,.14);
-  --green-dim:rgba(34,197,94,.14);
-  --amber-dim:rgba(234,179,8,.12);
-  --rose-dim:rgba(244,63,94,.14);
-  --ring-track:#2A3144;
+  --glow:rgba(45,106,79,.18);
+  --forest-dim:rgba(45,106,79,.18);
+  --sand-dim:rgba(212,163,115,.14);
+  --sage-dim:rgba(64,145,108,.16);
+  --honey-dim:rgba(221,161,94,.14);
+  --brick-dim:rgba(188,71,73,.14);
+  --ring-track:#2D3429;
 }
 
 /* ── Base ── */
@@ -75,7 +75,7 @@ body{
 /* ── Accent bar ── */
 .accent-bar{
   height:3px;
-  background:linear-gradient(90deg,var(--violet),var(--cyan) 60%,var(--green));
+  background:linear-gradient(90deg,var(--forest),var(--sage) 35%,var(--sand) 70%,var(--honey));
   flex-shrink:0;
 }
 
@@ -87,7 +87,7 @@ body{
 .header-left h1{
   font-family:'Sora',sans-serif;font-weight:800;font-size:26px;
   letter-spacing:-.5px;line-height:1.2;
-  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  background:linear-gradient(135deg,var(--forest),var(--sand));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
@@ -99,8 +99,8 @@ body{
   display:flex;align-items:center;justify-content:center;
   transition:all .15s ease;box-shadow:var(--shadow-sm);
 }
-.icon-btn:hover{border-color:var(--violet);color:var(--violet);box-shadow:0 0 0 3px var(--violet-dim)}
-.icon-btn:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.icon-btn:hover{border-color:var(--forest);color:var(--forest);box-shadow:0 0 0 3px var(--forest-dim)}
+.icon-btn:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
 
 /* ── Stats ── */
 .stats{
@@ -139,7 +139,7 @@ body{
   border-radius:8px;background:var(--surface);border:1px solid var(--border);
   color:var(--text);transition:all .15s;box-shadow:var(--shadow-sm);
 }
-.doc-chip:hover{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-dim)}
+.doc-chip:hover{border-color:var(--forest);box-shadow:0 0 0 3px var(--forest-dim)}
 .chip-x{
   width:20px;height:20px;border:none;border-radius:50%;
   background:var(--surface-2);color:var(--text-3);cursor:pointer;
@@ -147,7 +147,7 @@ body{
   font-size:13px;font-weight:700;line-height:1;
   transition:all .12s;
 }
-.chip-x:hover{background:var(--rose-dim);color:var(--rose)}
+.chip-x:hover{background:var(--brick-dim);color:var(--brick)}
 .add-chip{
   font-family:inherit;font-size:13px;font-weight:600;
   padding:7px 16px;border:1px dashed var(--border);border-radius:8px;
@@ -155,12 +155,12 @@ body{
   display:inline-flex;align-items:center;gap:5px;
   transition:all .15s;
 }
-.add-chip:hover{border-color:var(--violet);color:var(--violet);background:var(--violet-dim)}
+.add-chip:hover{border-color:var(--forest);color:var(--forest);background:var(--forest-dim)}
 .add-chip-input{
   font-family:inherit;font-size:13px;font-weight:600;
-  padding:7px 14px;border:1.5px solid var(--violet);border-radius:8px;
+  padding:7px 14px;border:1.5px solid var(--forest);border-radius:8px;
   background:var(--surface);color:var(--text);outline:none;width:200px;
-  box-shadow:0 0 0 3px var(--violet-dim);
+  box-shadow:0 0 0 3px var(--forest-dim);
 }
 
 /* ── Grid ── */
@@ -181,7 +181,7 @@ body{
 .folder::before{
   content:'';position:absolute;inset:-1.5px;
   border-radius:calc(var(--radius) + 1.5px);
-  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  background:linear-gradient(135deg,var(--forest),var(--sand));
   z-index:-1;opacity:0;
   transition:opacity .3s ease;
 }
@@ -214,8 +214,8 @@ body{
   transition:border-color .15s,background .15s;
   text-overflow:ellipsis;overflow:hidden;white-space:nowrap;
 }
-.folder-name:hover{background:var(--violet-dim)}
-.folder-name:focus{border-color:var(--violet);background:var(--surface-2);cursor:text}
+.folder-name:hover{background:var(--forest-dim)}
+.folder-name:focus{border-color:var(--forest);background:var(--surface-2);cursor:text}
 .folder-sub{font-size:12px;color:var(--text-3);margin-top:2px;padding-left:6px;font-weight:500}
 .folder-menu{
   width:30px;height:30px;border:none;border-radius:6px;
@@ -223,7 +223,7 @@ body{
   display:flex;align-items:center;justify-content:center;font-size:18px;
   flex-shrink:0;transition:all .12s;
 }
-.folder-menu:hover{background:var(--violet-dim);color:var(--violet)}
+.folder-menu:hover{background:var(--forest-dim);color:var(--forest)}
 
 /* Progress ring */
 .ring-wrap{
@@ -261,13 +261,13 @@ body{
 }
 .s-dot[data-s="pendente"]{border:2px solid var(--text-3);background:transparent}
 .s-dot[data-s="enviado"]{
-  border:2px solid var(--amber);background:var(--amber-dim);
+  border:2px solid var(--honey);background:var(--honey-dim);
 }
 .s-dot[data-s="enviado"]::after{
-  content:'';width:8px;height:8px;border-radius:50%;background:var(--amber);
+  content:'';width:8px;height:8px;border-radius:50%;background:var(--honey);
 }
 .s-dot[data-s="aprovado"]{
-  border:none;background:var(--green);
+  border:none;background:var(--sage);
 }
 
 .doc-row-name{font-size:14px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -279,8 +279,8 @@ body{
   transition:all .15s;
 }
 .s-badge[data-s="pendente"]{background:var(--surface-2);color:var(--text-3)}
-.s-badge[data-s="enviado"]{background:var(--amber-dim);color:var(--amber)}
-.s-badge[data-s="aprovado"]{background:var(--green-dim);color:var(--green)}
+.s-badge[data-s="enviado"]{background:var(--honey-dim);color:var(--honey)}
+.s-badge[data-s="aprovado"]{background:var(--sage-dim);color:var(--sage)}
 
 /* ── Add person card ── */
 .add-person{
@@ -293,8 +293,8 @@ body{
   width:100%;
 }
 .add-person:hover{
-  border-color:var(--violet);color:var(--violet);
-  background:var(--violet-dim);
+  border-color:var(--forest);color:var(--forest);
+  background:var(--forest-dim);
   transform:translateY(-2px);
 }
 .add-person svg{opacity:.5;transition:opacity .2s}
@@ -324,9 +324,9 @@ body{
   font-family:inherit;font-size:13px;font-weight:500;color:var(--text);
   cursor:pointer;text-align:left;transition:background .08s;
 }
-.dd-item:hover{background:var(--violet-dim)}
-.dd-item.danger{color:var(--rose)}
-.dd-item.danger:hover{background:var(--rose-dim)}
+.dd-item:hover{background:var(--forest-dim)}
+.dd-item.danger{color:var(--brick)}
+.dd-item.danger:hover{background:var(--brick-dim)}
 .dd-item svg{flex-shrink:0;width:16px;height:16px}
 
 /* ── Responsive ── */
@@ -349,7 +349,7 @@ body{
 }
 
 /* ── Focus ── */
-:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
 /* ── Motion ── */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -388,12 +388,12 @@ body{
       <div class="legend-dot" style="border:2px solid var(--text-3)"></div>Pendente
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="border:2px solid var(--amber);background:var(--amber-dim)">
-        <div style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></div>
+      <div class="legend-dot" style="border:2px solid var(--honey);background:var(--honey-dim)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--honey)"></div>
       </div>Enviado
     </div>
     <div class="legend-item">
-      <div class="legend-dot" style="background:var(--green)">
+      <div class="legend-dot" style="background:var(--sage)">
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>
       </div>Aprovado
     </div>
@@ -408,23 +408,23 @@ body{
 
 <script>
 /* ═══════════════════════════════════════
-   Painel de Documentos — Premium
+   Painel de Documentos — Natureza Luxe
    ═══════════════════════════════════════ */
 
-const STORAGE='painel-docs-v2';
+const STORAGE='painel-docs-v3';
 const GRADIENTS=[
-  ['#7C3AED','#06B6D4'],
-  ['#EC4899','#F59E0B'],
-  ['#06B6D4','#22C55E'],
-  ['#F97316','#EC4899'],
-  ['#8B5CF6','#EC4899'],
-  ['#14B8A6','#3B82F6'],
-  ['#F43F5E','#7C3AED'],
-  ['#22C55E','#06B6D4'],
-  ['#EAB308','#22C55E'],
-  ['#3B82F6','#7C3AED'],
+  ['#2D6A4F','#40916C'],  // floresta→sálvia
+  ['#D4A373','#BC4749'],  // camel→terracota
+  ['#40916C','#588157'],  // sálvia→oliva
+  ['#DDA15E','#D4A373'],  // mel→camel
+  ['#588157','#2D6A4F'],  // oliva→floresta
+  ['#BC4749','#D4A373'],  // terracota→camel
+  ['#2D6A4F','#D4A373'],  // floresta→camel
+  ['#40916C','#DDA15E'],  // sálvia→mel
+  ['#D4A373','#588157'],  // camel→oliva
+  ['#DDA15E','#BC4749'],  // mel→terracota
 ];
-const RING_R=22, RING_C=2*Math.PI*RING_R; // circumference ≈ 138.23
+const RING_R=22, RING_C=2*Math.PI*RING_R;
 
 let data=null, idN=Date.now();
 function nid(){return 'i'+(idN++)}
@@ -443,7 +443,6 @@ function defaults(){
       {id:nid(),name:'Ana Souza',gi:2,statuses:{}},
     ]
   };
-  /* Dados de exemplo */
   const docs=d.docs, m=d.members;
   if(docs.length>=4&&m.length>=3){
     m[0].statuses[docs[0].id]='aprovado';
@@ -493,10 +492,10 @@ function renderStats(){
 
   el.innerHTML=`
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--violet-dim)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <div class="stat-icon" style="background:var(--forest-dim)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
-      <div><div class="stat-value" style="color:var(--violet)">${data.members.length}</div><div class="stat-label">Pessoas</div></div>
+      <div><div class="stat-value" style="color:var(--forest)">${data.members.length}</div><div class="stat-label">Pessoas</div></div>
     </div>
     <div class="stat-card">
       <div class="stat-icon" style="background:var(--surface-2)">
@@ -505,16 +504,16 @@ function renderStats(){
       <div><div class="stat-value">${pend}</div><div class="stat-label">Pendentes</div></div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--amber-dim)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="6"/></svg>
+      <div class="stat-icon" style="background:var(--honey-dim)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--honey)" stroke-width="2" stroke-linecap="round"><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="6"/></svg>
       </div>
-      <div><div class="stat-value" style="color:var(--amber)">${env}</div><div class="stat-label">Enviados</div></div>
+      <div><div class="stat-value" style="color:var(--honey)">${env}</div><div class="stat-label">Enviados</div></div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:var(--green-dim)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div class="stat-icon" style="background:var(--sage-dim)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div><div class="stat-value" style="color:var(--green)">${aprov}</div><div class="stat-label">Aprovados</div></div>
+      <div><div class="stat-value" style="color:var(--sage)">${aprov}</div><div class="stat-label">Aprovados</div></div>
     </div>
   `;
 }
@@ -570,7 +569,6 @@ function renderGrid(){
     card.style.animationDelay=(i*70)+'ms';
     grid.appendChild(card);
   });
-  /* Add card */
   const addBtn=document.createElement('button');
   addBtn.className='add-person';
   addBtn.innerHTML=`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/><line x1="12" y1="17" x2="12" y2="23"/><line x1="9" y1="20" x2="15" y2="20"/></svg>Adicionar pessoa`;
@@ -591,13 +589,11 @@ function renderFolder(member,idx){
   const top=document.createElement('div');
   top.className='folder-top';
 
-  /* Avatar */
   const av=document.createElement('div');
   av.className='avatar';
   av.style.background=`linear-gradient(135deg,${grad[0]},${grad[1]})`;
   av.textContent=initials(member.name);
 
-  /* Info */
   const info=document.createElement('div');
   info.className='folder-info';
   const nameInput=document.createElement('input');
@@ -615,7 +611,6 @@ function renderFolder(member,idx){
   sub.textContent=total?`${aprov} de ${total} documento${total!==1?'s':''}`:' ';
   info.append(nameInput,sub);
 
-  /* Progress ring */
   const ringWrap=document.createElement('div');
   ringWrap.className='ring-wrap';
   const offset=RING_C*(1-pct/100);
@@ -634,7 +629,6 @@ function renderFolder(member,idx){
     <span class="ring-pct">${pct}%</span>
   `;
 
-  /* Menu */
   const menuBtn=document.createElement('button');
   menuBtn.className='folder-menu';
   menuBtn.innerHTML='⋯';
@@ -643,7 +637,6 @@ function renderFolder(member,idx){
 
   top.append(av,info,ringWrap,menuBtn);
 
-  /* ── Doc list ── */
   const list=document.createElement('div');
   list.className='doc-list';
   if(!data.docs.length){
@@ -738,9 +731,9 @@ document.getElementById('themeBtn').onclick=()=>{
   const r=document.documentElement;
   const next=r.getAttribute('data-theme')==='dark'?'light':'dark';
   r.setAttribute('data-theme',next);
-  try{localStorage.setItem('painel-theme-v2',next)}catch(e){}
+  try{localStorage.setItem('painel-theme-v3',next)}catch(e){}
 };
-try{const t=localStorage.getItem('painel-theme-v2');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+try{const t=localStorage.getItem('painel-theme-v3');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
 
 /* ── Keyboard ── */
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDd()});
