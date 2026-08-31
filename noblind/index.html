@@ -123,34 +123,34 @@ img{max-width:100%}
   transition:transform var(--transition-fast),box-shadow var(--transition-fast)}
 
 /* ===== BILHETE DO DIA — card destaque verde 3D biselado ===== */
-.ticket-hero{background:linear-gradient(180deg,#CAFF5A 0%,#A3E635 30%,#7FB82E 70%,#5D9A1E 100%);border-radius:var(--r-lg);padding:0;color:var(--dark);
+.ticket-hero{background:linear-gradient(180deg,#8FCC2A 0%,#6BA31E 40%,#4D8216 80%,#3A6B10 100%);border-radius:var(--r-lg);padding:0;color:#fff;
   position:relative;overflow:hidden;
-  border:1px solid rgba(255,255,255,.25);border-top-color:rgba(255,255,255,.45);border-bottom-color:rgba(0,0,0,.25);
-  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -2px 0 rgba(0,0,0,.12) inset,
-    0 4px 20px rgba(163,230,53,.30),0 8px 32px rgba(163,230,53,.15),0 16px 48px rgba(0,0,0,.25)}
+  border:1px solid rgba(163,230,53,.35);border-top-color:rgba(163,230,53,.50);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -2px 0 rgba(0,0,0,.15) inset,
+    0 4px 24px rgba(163,230,53,.35),0 8px 36px rgba(163,230,53,.18),0 16px 48px rgba(0,0,0,.25)}
 .ticket-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
 .ticket-label{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
-  color:rgba(9,9,11,.5)}
+  color:rgba(255,255,255,.55)}
 .ticket-type{font-size:.625rem;font-weight:700;padding:5px 12px;border-radius:999px;
-  background:rgba(9,9,11,.15);color:var(--dark);text-transform:uppercase;letter-spacing:.06em}
+  background:rgba(0,0,0,.20);color:#fff;text-transform:uppercase;letter-spacing:.06em}
 .ticket-odds-total{text-align:center;padding:28px 24px 20px}
 .ticket-odds-number{font-family:var(--font-display);font-size:5rem;font-weight:400;line-height:.85;
-  letter-spacing:.02em;color:var(--dark);
-  text-shadow:0 2px 12px rgba(9,9,11,.15)}
-.ticket-odds-label{font-size:.6875rem;color:rgba(9,9,11,.45);margin-top:8px;text-transform:uppercase;
+  letter-spacing:.02em;color:#fff;
+  text-shadow:0 2px 16px rgba(163,230,53,.30)}
+.ticket-odds-label{font-size:.6875rem;color:rgba(255,255,255,.55);margin-top:8px;text-transform:uppercase;
   letter-spacing:.08em;font-weight:600}
-.ticket-legs{border-top:1px solid rgba(9,9,11,.12);padding:16px 24px;
+.ticket-legs{border-top:1px solid rgba(255,255,255,.12);padding:16px 24px;
   display:flex;flex-direction:column;gap:14px}
 .ticket-leg{display:flex;align-items:center;gap:10px}
 .ticket-leg-teams{flex:1;min-width:0}
-.ticket-leg-match{font-size:.8125rem;font-weight:700;line-height:1.3}
-.ticket-leg-meta{font-size:.6875rem;color:rgba(9,9,11,.4);font-weight:500}
+.ticket-leg-match{font-size:.8125rem;font-weight:700;line-height:1.3;color:#fff}
+.ticket-leg-meta{font-size:.6875rem;color:rgba(255,255,255,.50);font-weight:500}
 .ticket-leg-pick{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.ticket-leg-sel{font-size:.625rem;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.04em}
-.ticket-leg-odd{font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:.02em}
-.ticket-footer{border-top:1px solid rgba(9,9,11,.12);padding:16px 24px;
+.ticket-leg-sel{font-size:.625rem;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.04em}
+.ticket-leg-odd{font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:.02em;color:#fff}
+.ticket-footer{border-top:1px solid rgba(255,255,255,.12);padding:16px 24px;
   display:flex;align-items:center;justify-content:space-between}
-.ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(9,9,11,.45);font-weight:500}
+.ticket-conf{display:flex;align-items:center;gap:6px;font-size:.6875rem;color:rgba(255,255,255,.55);font-weight:500}
 
 /* ===== escudo do time — formato de shield SVG ===== */
 .team-shield{flex-shrink:0;line-height:0}
@@ -267,19 +267,19 @@ img{max-width:100%}
 .bento-card--lime .bento-label{color:rgba(9,9,11,.5)}
 .bento-card--dark .bento-label{color:var(--subtle)}
 
-/* ===== Hero banner — faixa fixa flutuante colada no topbar, lateral a lateral ===== */
-#hero-banner{position:relative;width:100%;height:90px;overflow:hidden;flex-shrink:0;
-  border-bottom:1px solid var(--border)}
-#hero-banner[hidden]{display:none!important}
+/* ===== Hero banner — fixo entre topbar e scroll, bordas arredondadas, flutuante ===== */
+#hero-banner-wrap{flex-shrink:0;padding:var(--sp-3) var(--sp-5) 0}
+#hero-banner-wrap[hidden]{display:none!important}
+#hero-banner{position:relative;width:100%;height:100px;overflow:hidden;border-radius:var(--r-sm)}
 #hero-banner img{width:100%;height:100%;object-fit:cover;object-position:center 40%}
 #hero-banner .hero-overlay{position:absolute;inset:0;
   background:linear-gradient(135deg,rgba(10,10,12,.88) 0%,rgba(10,10,12,.5) 45%,rgba(10,10,12,.2) 100%)}
-#hero-banner .hero-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--sp-5);gap:10px}
-#hero-banner .hero-divider{width:2.5px;height:36px;border-radius:1px;flex-shrink:0;
+#hero-banner .hero-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--sp-4);gap:10px}
+#hero-banner .hero-divider{width:2.5px;height:38px;border-radius:1px;flex-shrink:0;
   background:linear-gradient(to bottom,var(--lime),rgba(163,230,53,.2))}
-#hero-banner .hero-title{font-family:'Barlow Condensed','Impact',sans-serif;font-size:1.25rem;
+#hero-banner .hero-title{font-family:'Barlow Condensed','Impact',sans-serif;font-size:1.375rem;
   font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase;line-height:1}
-#hero-banner .hero-sub{font-family:'Barlow Condensed',sans-serif;font-size:.625rem;font-weight:400;
+#hero-banner .hero-sub{font-family:'Barlow Condensed',sans-serif;font-size:.6875rem;font-weight:400;
   color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
 #hero-banner .hero-glow{position:absolute;top:-20px;left:-20px;width:90px;height:90px;
   background:radial-gradient(circle,rgba(163,230,53,.08),transparent 70%);pointer-events:none}
@@ -414,7 +414,7 @@ img{max-width:100%}
 
 /* ===== ticket reflexo — brilho radial no topo do bilhete ===== */
 .ticket-hero::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 25% 0%,rgba(255,255,255,.22),transparent 55%);
+  background:radial-gradient(ellipse at 25% 0%,rgba(163,230,53,.30),transparent 55%);
   pointer-events:none;z-index:0}
 .ticket-hero>*{position:relative;z-index:1}
 
@@ -440,16 +440,18 @@ img{max-width:100%}
         <div id="sb-status" role="status" aria-live="polite"></div>
       </div>
     </header>
-    <!-- hero banner fixo entre topbar e conteúdo — só aparece na tela Home -->
-    <div id="hero-banner" hidden>
-      <img src="banner-hero.jpg" alt="Análises esportivas" loading="eager">
-      <div class="hero-overlay"></div>
-      <div class="hero-glow"></div>
-      <div class="hero-content">
-        <div class="hero-divider"></div>
-        <div>
-          <div class="hero-title" id="hero-title">ANÁLISES<br>DE HOJE</div>
-          <div class="hero-sub" id="hero-sub"></div>
+    <!-- hero banner fixo entre topbar e scroll — bordas arredondadas, flutuante, não scrolla -->
+    <div id="hero-banner-wrap" hidden>
+      <div id="hero-banner">
+        <img src="banner-hero.jpg" alt="Análises esportivas" loading="eager">
+        <div class="hero-overlay"></div>
+        <div class="hero-glow"></div>
+        <div class="hero-content">
+          <div class="hero-divider"></div>
+          <div>
+            <div class="hero-title" id="hero-title">ANÁLISES<br>DE HOJE</div>
+            <div class="hero-sub" id="hero-sub"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -667,10 +669,9 @@ function renderBottomNav(){
 }
 function renderPage(){
   const c=$('#content');
-  /* banner fixo só aparece na home; topbar perde borda quando banner visível */
-  const hb=$('#hero-banner'),tb=$('#topbar');
-  if(hb)hb.hidden=currentPage!=='home';
-  if(tb)tb.style.borderBottom=currentPage==='home'?'none':'';
+  /* banner fixo só aparece na home */
+  const hbw=$('#hero-banner-wrap');
+  if(hbw)hbw.hidden=currentPage!=='home';
   switch(currentPage){
     case 'home':c.innerHTML=renderHome();break;
     case 'singles':c.innerHTML=renderSingles();break;
