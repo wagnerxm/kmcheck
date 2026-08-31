@@ -13,6 +13,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
     },
+    "frontend-design-anthropic": {
+      "source": "thevibethinker/vibe-thinker-skills",
+      "sourceType": "github",
+      "skillPath": "frontend-design-anthropic/SKILL.md",
+      "computedHash": "25b6d39bee7ca7d198b09972ab84a08d954ac6f44459a8f77ad1338127947deb"
+    },
     "seo": {
       "source": "addyosmani/web-quality-skills",
       "sourceType": "github",
