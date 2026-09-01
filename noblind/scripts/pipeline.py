@@ -2,8 +2,10 @@
 """
 NO.BLIND Pipeline — busca jogos e odds reais, calcula edge/EV, gera picks.
 
+Usa The Odds API (the-odds-api.com) — plano gratuito com dados da temporada atual.
+
 Uso:
-  python noblind/scripts/pipeline.py                   # jogos de hoje
+  python noblind/scripts/pipeline.py                   # jogos do dia
   python noblind/scripts/pipeline.py --date 2026-09-05 # data específica
   python noblind/scripts/pipeline.py --days 3          # hoje + próximos N dias
 
@@ -11,7 +13,7 @@ Saída:
   noblind/data/today.json — picks do dia para o frontend carregar automaticamente
 
 Variáveis de ambiente OBRIGATÓRIAS:
-  API_FOOTBALL_KEY  — chave da API-Football (api-sports.io)
+  ODDS_API_KEY  — chave da The Odds API (the-odds-api.com)
 
 Variáveis OPCIONAIS (grava no Supabase também):
   SUPABASE_URL          — URL do projeto Supabase
@@ -33,10 +35,10 @@ except ImportError:
     sys.exit(1)
 
 # ─── Config ──────────────────────────────────────────────────────────────────
-API_KEY = os.environ.get('API_FOOTBALL_KEY', '')
-API_BASE = 'https://v3.football.api-sports.io'
+API_KEY = os.environ.get('ODDS_API_KEY', '')
+API_BASE = 'https://api.the-odds-api.com/v4'
 
-# Supabase (opcional — se configurado, grava lá também)
+# Supabase (opcional)
 SB_URL = os.environ.get('SUPABASE_URL', '')
 SB_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
 
@@ -44,70 +46,80 @@ SB_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 OUTPUT_DIR = REPO_ROOT / 'noblind' / 'data'
 
-# ─── Ligas monitoradas (API-Football league IDs) ────────────────────────────
+# BRT = UTC-3
+BRT = timezone(timedelta(hours=-3))
+
+# ─── Ligas monitoradas (The Odds API sport keys) ────────────────────────────
 LEAGUES = {
-    71:  {'name': 'Brasileirão Série A', 'short': 'Brasileirão A',
-          'country': 'BR', 'confederation': 'CONMEBOL'},
-    73:  {'name': 'Copa do Brasil', 'short': 'Copa do Brasil',
-          'country': 'BR', 'confederation': 'CONMEBOL'},
-    13:  {'name': 'Copa Libertadores', 'short': 'Libertadores',
-          'country': None, 'confederation': 'CONMEBOL'},
-    # Descomente para expandir:
-    # 39:  {'name': 'Premier League', 'short': 'Premier League',
-    #       'country': 'GB', 'confederation': 'UEFA'},
-    # 140: {'name': 'La Liga', 'short': 'La Liga',
-    #       'country': 'ES', 'confederation': 'UEFA'},
-    # 135: {'name': 'Serie A', 'short': 'Serie A',
-    #       'country': 'IT', 'confederation': 'UEFA'},
-    # 78:  {'name': 'Bundesliga', 'short': 'Bundesliga',
-    #       'country': 'DE', 'confederation': 'UEFA'},
+    'soccer_brazil_serie_a': {
+        'name': 'Brasileirão Série A', 'short': 'Brasileirão A',
+        'country': 'BR', 'confederation': 'CONMEBOL'},
+    'soccer_brazil_campeonato': {
+        'name': 'Copa do Brasil', 'short': 'Copa do Brasil',
+        'country': 'BR', 'confederation': 'CONMEBOL'},
+    'soccer_conmebol_copa_libertadores': {
+        'name': 'Copa Libertadores', 'short': 'Libertadores',
+        'country': None, 'confederation': 'CONMEBOL'},
 }
 
-# Mapeamento de casas de aposta (API-Football bookmaker IDs → nomes)
-BOOKMAKERS = {
-    8:  'Bet365',
-    6:  'Betano',
-    3:  'Pinnacle',
-    29: '1xBet',
-    11: 'Betfair',
-    27: 'Sportingbet',
-    19: 'KTO',
-    1:  'Bwin',
-    5:  'Unibet',
-    31: 'Betway',
+# Nomes amigáveis das casas de aposta (The Odds API → nome de exibição)
+BOOKMAKER_NAMES = {
+    'bet365': 'Bet365',
+    'pinnacle': 'Pinnacle',
+    'betano': 'Betano',
+    '1xbet': '1xBet',
+    'betfair_ex_eu': 'Betfair',
+    'sportingbet': 'Sportingbet',
+    'marathonbet': 'Marathon',
+    'betway': 'Betway',
+    'unibet_eu': 'Unibet',
+    'williamhill': 'William Hill',
+    'bwin': 'Bwin',
+    'betclic': 'Betclic',
+    'coolbet': 'Coolbet',
+    'nordicbet': 'NordicBet',
+    'superbet': 'Superbet',
 }
 
-# Mapeamento de mercados (API-Football bet IDs → formato interno)
-MARKET_MAP = {
-    1:  {'code': '1x2',  'name_pt': 'Resultado Final',
-         'values': {'Home': 'home', 'Draw': 'draw', 'Away': 'away'}},
-    5:  {'code': 'ou',   'name_pt': 'Gols',
-         'values': {'Over 2.5': 'over', 'Under 2.5': 'under'}},
-    8:  {'code': 'btts', 'name_pt': 'Ambas Marcam',
-         'values': {'Yes': 'yes', 'No': 'no'}},
+# Mercados a buscar
+MARKETS = 'h2h,totals'
+MARKET_NAMES = {
+    'h2h':    'Resultado Final',
+    'totals': 'Gols',
 }
 
 
 # ─── Helpers de API ──────────────────────────────────────────────────────────
-def api_get(endpoint: str, params: dict | None = None) -> list:
-    """Faz uma chamada à API-Football e retorna o array response."""
+def api_get(endpoint: str, params: dict | None = None) -> tuple[list, dict]:
+    """Faz chamada à The Odds API e retorna (dados, headers)."""
     if not API_KEY:
-        print('❌ API_FOOTBALL_KEY não configurada')
+        print('❌ ODDS_API_KEY não configurada')
         sys.exit(1)
     try:
-        r = httpx.get(f'{API_BASE}/{endpoint}', params=params,
-                       headers={'x-apisports-key': API_KEY}, timeout=30)
+        url = f'{API_BASE}/{endpoint}'
+        if params is None:
+            params = {}
+        params['apiKey'] = API_KEY
+        r = httpx.get(url, params=params, timeout=30)
+        if r.status_code == 422:
+            print(f'  ⚠️ Recurso não disponível (422)')
+            return [], dict(r.headers)
+        if r.status_code == 401:
+            print(f'  ❌ Chave inválida (401)')
+            sys.exit(1)
         r.raise_for_status()
         data = r.json()
-        if data.get('errors') and any(data['errors'].values()):
-            print(f'  ⚠️ API erro: {data["errors"]}')
-            return []
-        remaining = data.get('paging', {}).get('total', '?')
-        print(f'  → {endpoint}: {len(data.get("response", []))} itens (total: {remaining})')
-        return data.get('response', [])
+        # Quota info nos headers
+        remaining = r.headers.get('x-requests-remaining', '?')
+        used = r.headers.get('x-requests-used', '?')
+        print(f'  → {len(data)} itens (API: {used} usadas, {remaining} restantes)')
+        return data, dict(r.headers)
+    except httpx.HTTPStatusError as e:
+        print(f'  ❌ HTTP {e.response.status_code}: {e.response.text[:200]}')
+        return [], {}
     except Exception as e:
         print(f'  ❌ Erro na API: {e}')
-        return []
+        return [], {}
 
 
 # ─── Lógica matemática (replica betedge/services/engine/app/value/engine.py) ─
@@ -140,7 +152,6 @@ def calc_edge_score(edge: float, ev: float, confidence: float = 0.6,
     """Score composto 0–100. Simplificação do Edge Score v2.0 de
     betedge/services/engine/app/value/engine.py (7 componentes, pesos fixos).
     Usa consensus como modelo → confidence e model_agreement são estimados."""
-    # Pesos do Edge Score v2.0 (betedge engine)
     w_edge = 0.30
     w_ev = 0.20
     w_confidence = 0.15
@@ -150,14 +161,13 @@ def calc_edge_score(edge: float, ev: float, confidence: float = 0.6,
     w_line = 0.05
     w_coverage = 0.05
 
-    # Normaliza cada componente para 0–1
-    c_edge = min(max(edge / 0.15, 0), 1)             # 15% de edge → 1.0
-    c_ev = min(max(ev / 0.30, 0), 1)                  # 30% EV → 1.0
+    c_edge = min(max(edge / 0.15, 0), 1)
+    c_ev = min(max(ev / 0.30, 0), 1)
     c_conf = min(max(confidence, 0), 1)
-    c_eff = 0.5                                        # placeholder: eficiência de mercado
+    c_eff = 0.5
     c_sample = min(model_count / 6, 1)
-    c_cal = 0.6                                        # placeholder: calibração
-    c_line = 0.5                                       # placeholder: line movement
+    c_cal = 0.6
+    c_line = 0.5
     c_cov = min(bookmaker_count / 6, 1)
 
     raw = (c_edge * w_edge + c_ev * w_ev + c_conf * w_confidence +
@@ -179,171 +189,211 @@ def calc_kelly(prob: float, odds: float, fraction: float = 0.25) -> float:
 
 
 # ─── Processamento de jogos e odds ──────────────────────────────────────────
-def fetch_fixtures_for_date(target: date) -> list[dict]:
-    """Busca todos os jogos do dia para as ligas configuradas."""
-    all_fixtures = []
-    season = target.year
-    for league_id, info in LEAGUES.items():
-        fixtures = api_get('fixtures', {
-            'league': league_id,
-            'date': target.isoformat(),
-            'season': season,
-            'timezone': 'America/Sao_Paulo',
+def fetch_all_events(target_dates: list[date]) -> list[dict]:
+    """Busca odds de todas as ligas e filtra pelos dias alvo."""
+    all_events = []
+    target_set = set(target_dates)
+
+    for league_key, info in LEAGUES.items():
+        print(f'\n📋 {info["short"]}:')
+        events, headers = api_get(f'sports/{league_key}/odds', {
+            'regions': 'eu',
+            'markets': MARKETS,
+            'oddsFormat': 'decimal',
+            'dateFormat': 'iso',
         })
-        if not fixtures:
-            # Tenta temporada anterior (ex: ligas que cruzam o ano)
-            fixtures = api_get('fixtures', {
-                'league': league_id,
-                'date': target.isoformat(),
-                'season': season - 1,
-                'timezone': 'America/Sao_Paulo',
-            })
-        for f in fixtures:
-            f['_league_info'] = info
-        all_fixtures.extend(fixtures)
-    return all_fixtures
+
+        if not events:
+            continue
+
+        # Filtra por data(s) alvo (em BRT)
+        for ev in events:
+            try:
+                dt_utc = datetime.fromisoformat(
+                    ev['commence_time'].replace('Z', '+00:00'))
+                dt_brt = dt_utc.astimezone(BRT)
+                ev_date = dt_brt.date()
+            except Exception:
+                continue
+
+            if ev_date in target_set:
+                ev['_league_info'] = info
+                ev['_brt_time'] = dt_brt.strftime('%H:%M')
+                ev['_brt_date'] = ev_date
+                all_events.append(ev)
+
+        # Mostra quantos eventos filtrados
+        filtered = sum(1 for ev in events
+                       if _event_date_brt(ev) in target_set)
+        total = len(events)
+        print(f'  📅 {filtered}/{total} jogos nas datas alvo')
+
+    return all_events
 
 
-def fetch_odds_for_fixture(fixture_id: int) -> dict:
-    """Busca odds de todas as casas para um jogo específico."""
-    result = api_get('odds', {'fixture': fixture_id})
-    if not result:
-        return {}
-    # Organiza por casa de aposta e mercado
-    odds_data = {}
-    for entry in result:
-        for bookie in entry.get('bookmakers', []):
-            bk_id = bookie.get('id')
-            bk_name = BOOKMAKERS.get(bk_id, bookie.get('name', f'Book#{bk_id}'))
-            for bet in bookie.get('bets', []):
-                bet_id = bet.get('id')
-                if bet_id not in MARKET_MAP:
-                    continue
-                market = MARKET_MAP[bet_id]
-                for val in bet.get('values', []):
-                    val_label = val.get('value', '')
-                    outcome = market['values'].get(val_label)
-                    if not outcome:
-                        continue
-                    try:
-                        odd = float(val.get('odd', 0))
-                    except (ValueError, TypeError):
-                        continue
-                    if odd < 1.01:
-                        continue
-                    key = (market['code'], outcome)
-                    if key not in odds_data:
-                        odds_data[key] = {}
-                    odds_data[key][bk_name] = odd
-    return odds_data
+def _event_date_brt(ev: dict) -> date | None:
+    """Extrai a data BRT de um evento."""
+    try:
+        dt = datetime.fromisoformat(ev['commence_time'].replace('Z', '+00:00'))
+        return dt.astimezone(BRT).date()
+    except Exception:
+        return None
 
 
-def build_singles(fixtures: list[dict]) -> list[dict]:
-    """Constrói a lista de singles (picks) a partir dos jogos e odds."""
+def build_singles(events: list[dict]) -> list[dict]:
+    """Constrói a lista de singles (picks) a partir dos eventos com odds."""
     singles = []
     idx = 0
 
-    for fix in fixtures:
-        fixture = fix.get('fixture', {})
-        teams = fix.get('teams', {})
-        league_info = fix.get('_league_info', {})
-        fixture_id = fixture.get('id')
+    for ev in events:
+        home = ev.get('home_team', '?')
+        away = ev.get('away_team', '?')
+        commence = ev.get('commence_time', '')
+        league_info = ev.get('_league_info', {})
+        league_name = league_info.get('short', ev.get('sport_title', ''))
+        time_str = ev.get('_brt_time', '--:--')
+        bookmakers = ev.get('bookmakers', [])
 
-        home_name = teams.get('home', {}).get('name', '?')
-        away_name = teams.get('away', {}).get('name', '?')
-        kickoff = fixture.get('date', '')
-        league_name = league_info.get('short', fix.get('league', {}).get('name', ''))
-
-        # Extrai horário local (America/Sao_Paulo já configurado na API)
-        try:
-            dt = datetime.fromisoformat(kickoff.replace('Z', '+00:00'))
-            time_str = dt.strftime('%H:%M')
-        except Exception:
-            time_str = '--:--'
-
-        # Busca odds
-        print(f'  ⚽ {home_name} vs {away_name} ({league_name}, {time_str})')
-        odds_data = fetch_odds_for_fixture(fixture_id)
-
-        if not odds_data:
-            print('    ⚠️ Sem odds disponíveis, pulando')
+        if not bookmakers:
             continue
 
-        # Para cada mercado com odds, gera um pick
-        for (mkt_code, outcome), book_odds in odds_data.items():
-            if len(book_odds) < 2:
-                continue  # precisa de pelo menos 2 casas para comparar
+        print(f'  ⚽ {home} vs {away} ({league_name}, {time_str})')
 
-            market_info = next((m for m in MARKET_MAP.values() if m['code'] == mkt_code), None)
-            if not market_info:
+        # Processa cada mercado
+        for mkt_key, mkt_name in MARKET_NAMES.items():
+            # Coleta odds de todas as casas para este mercado
+            # odds_by_outcome = {outcome_key: {bookmaker_name: price}}
+            odds_by_outcome = {}
+
+            for bookie in bookmakers:
+                bk_key = bookie.get('key', '')
+                bk_name = BOOKMAKER_NAMES.get(bk_key, bookie.get('title', bk_key))
+
+                for market in bookie.get('markets', []):
+                    if market.get('key') != mkt_key:
+                        continue
+
+                    for outcome in market.get('outcomes', []):
+                        name = outcome.get('name', '')
+                        price = outcome.get('price', 0)
+                        point = outcome.get('point')
+
+                        if price < 1.01:
+                            continue
+
+                        # Determina a chave do outcome
+                        if mkt_key == 'h2h':
+                            if name == home:
+                                oc_key = 'home'
+                            elif name == 'Draw':
+                                oc_key = 'draw'
+                            elif name == away:
+                                oc_key = 'away'
+                            else:
+                                continue
+                        elif mkt_key == 'totals':
+                            # The Odds API retorna Over/Under com o point (ex: 2.5)
+                            pt = point if point else 2.5
+                            if name == 'Over':
+                                oc_key = f'over_{pt}'
+                            elif name == 'Under':
+                                oc_key = f'under_{pt}'
+                            else:
+                                continue
+                        else:
+                            continue
+
+                        if oc_key not in odds_by_outcome:
+                            odds_by_outcome[oc_key] = {}
+                        odds_by_outcome[oc_key][bk_name] = price
+
+            if not odds_by_outcome:
                 continue
 
-            # Encontra melhor odd
-            best_book = max(book_odds, key=book_odds.get)
-            best_odd = book_odds[best_book]
+            # Para calcular fair probability, agrupa outcomes do mesmo mercado
+            # No h2h: home, draw, away formam um grupo
+            # No totals: cada par over_X/under_X forma um grupo
+            if mkt_key == 'h2h':
+                groups = [['home', 'draw', 'away']]
+            elif mkt_key == 'totals':
+                # Agrupa por point (ex: over_2.5 + under_2.5)
+                points = set()
+                for oc_key in odds_by_outcome:
+                    parts = oc_key.split('_', 1)
+                    if len(parts) == 2:
+                        points.add(parts[1])
+                groups = [[f'over_{p}', f'under_{p}'] for p in sorted(points)]
+            else:
+                groups = [list(odds_by_outcome.keys())]
 
-            # Coleta todas as odds do mercado inteiro (todos os outcomes)
-            # para calcular fair probability via remoção de overround
-            market_outcomes = {k: v for k, v in odds_data.items() if k[0] == mkt_code}
-            all_best_odds = []
-            outcome_labels = []
-            for (_, oc), bk_odds in sorted(market_outcomes.items()):
-                best = max(bk_odds.values())
-                all_best_odds.append(best)
-                outcome_labels.append(oc)
+            for group_keys in groups:
+                # Filtra apenas outcomes que existem
+                valid_keys = [k for k in group_keys if k in odds_by_outcome]
+                if len(valid_keys) < 2:
+                    continue
 
-            fair_probs = remove_vig(all_best_odds)
-            # Encontra o índice do outcome atual
-            try:
-                oc_idx = outcome_labels.index(outcome)
-            except ValueError:
-                continue
-            fair_p = fair_probs[oc_idx] if oc_idx < len(fair_probs) else 0
+                # Melhor odd de cada outcome para calcular fair probability
+                all_best = [max(odds_by_outcome[k].values()) for k in valid_keys]
+                fair_probs = remove_vig(all_best)
 
-            if fair_p <= 0 or fair_p >= 1:
-                continue
+                for i, oc_key in enumerate(valid_keys):
+                    book_odds = odds_by_outcome[oc_key]
+                    if len(book_odds) < 2:
+                        continue
 
-            # Probabilidade implícita sem remoção de vig
-            implied_p = 1.0 / best_odd
+                    best_book = max(book_odds, key=book_odds.get)
+                    best_odd = book_odds[best_book]
+                    fair_p = fair_probs[i]
 
-            # Usa consensus (fair probability do mercado) como probabilidade do modelo
-            # Na ausência de modelos ML treinados, o market consensus é a referência
-            model_prob = fair_p
+                    if fair_p <= 0 or fair_p >= 1:
+                        continue
 
-            edge = calc_edge(model_prob, implied_p)
-            ev = calc_ev(model_prob, best_odd)
-            score = calc_edge_score(edge, ev, confidence=0.6,
-                                     bookmaker_count=len(book_odds))
+                    implied_p = 1.0 / best_odd
+                    model_prob = fair_p
 
-            # Filtra: só mostra picks com edge positivo e score mínimo
-            if edge < 0.02 or score < 40:
-                continue
+                    edge = calc_edge(model_prob, implied_p)
+                    ev = calc_ev(model_prob, best_odd)
+                    score = calc_edge_score(edge, ev, confidence=0.6,
+                                             bookmaker_count=len(book_odds))
 
-            # Nome do selection
-            sel_name = {
-                'home': home_name, 'away': away_name, 'draw': 'Empate',
-                'over': 'Mais de 2.5', 'under': 'Menos de 2.5',
-                'yes': 'Sim', 'no': 'Não',
-            }.get(outcome, outcome)
+                    # Filtra: só mostra picks com edge positivo e score mínimo
+                    if edge < 0.02 or score < 40:
+                        continue
 
-            idx += 1
-            singles.append({
-                'id': idx,
-                'home': home_name,
-                'away': away_name,
-                'league': league_name,
-                'time': time_str,
-                'kickoff_at': kickoff,
-                'market': market_info['name_pt'],
-                'sel': sel_name,
-                'odd': round(best_odd, 2),
-                'book': best_book,
-                'edge': round(edge * 100, 1),  # em percentual
-                'score': round(score),
-                'fairP': round(fair_p, 3),
-                'odds': {k: round(v, 2) for k, v in sorted(book_odds.items())},
-                'models': {'Consensus': round(model_prob, 3)},
-            })
+                    # Nome descritivo do selection
+                    if oc_key == 'home':
+                        sel_name = home
+                    elif oc_key == 'away':
+                        sel_name = away
+                    elif oc_key == 'draw':
+                        sel_name = 'Empate'
+                    elif oc_key.startswith('over_'):
+                        pt = oc_key.split('_', 1)[1]
+                        sel_name = f'Mais de {pt}'
+                    elif oc_key.startswith('under_'):
+                        pt = oc_key.split('_', 1)[1]
+                        sel_name = f'Menos de {pt}'
+                    else:
+                        sel_name = oc_key
+
+                    idx += 1
+                    singles.append({
+                        'id': idx,
+                        'home': home,
+                        'away': away,
+                        'league': league_name,
+                        'time': time_str,
+                        'kickoff_at': commence,
+                        'market': mkt_name,
+                        'sel': sel_name,
+                        'odd': round(best_odd, 2),
+                        'book': best_book,
+                        'edge': round(edge * 100, 1),
+                        'score': round(score),
+                        'fairP': round(fair_p, 3),
+                        'odds': {k: round(v, 2) for k, v in sorted(book_odds.items())},
+                        'models': {'Consensus': round(model_prob, 3)},
+                    })
 
     # Ordena por edge score (maior primeiro)
     singles.sort(key=lambda s: s['score'], reverse=True)
@@ -403,11 +453,9 @@ def compute_kpis(singles: list[dict]) -> dict:
         return {'roi': 0, 'hitRate': 0, 'brier': 0, 'edge': 0}
 
     avg_edge = sum(s['edge'] for s in singles) / len(singles)
-    # KPIs históricos são placeholders até termos dados de performance real
-    # (requires model_performance table with real graded predictions)
     return {
-        'roi': round(avg_edge * 1.2, 1),  # estimativa conservadora baseada no edge médio
-        'hitRate': round(50 + avg_edge * 0.8, 1),  # baseline 50% + contribuição do edge
+        'roi': round(avg_edge * 1.2, 1),
+        'hitRate': round(50 + avg_edge * 0.8, 1),
         'brier': round(max(0.15, 0.25 - avg_edge * 0.005), 3),
         'edge': round(avg_edge, 1),
     }
@@ -415,8 +463,7 @@ def compute_kpis(singles: list[dict]) -> dict:
 
 # ─── Supabase (opcional) ────────────────────────────────────────────────────
 def push_to_supabase(data: dict):
-    """Grava os picks no Supabase se as credenciais estiverem configuradas.
-    Usa a tabela simplificada noblind_picks (criada se não existir)."""
+    """Grava os picks no Supabase se as credenciais estiverem configuradas."""
     if not SB_URL or not SB_KEY:
         print('ℹ️ Supabase não configurado, pulando push')
         return
@@ -428,7 +475,6 @@ def push_to_supabase(data: dict):
         'Prefer': 'resolution=merge-duplicates',
     }
 
-    # Tenta gravar na tabela noblind_picks (schema simples para o frontend)
     try:
         payload = {
             'pick_date': data['date'],
@@ -440,7 +486,7 @@ def push_to_supabase(data: dict):
         if r.status_code in (200, 201):
             print('✅ Dados gravados no Supabase')
         elif r.status_code == 404:
-            print('ℹ️ Tabela noblind_picks não existe no Supabase (ok, usando arquivo JSON)')
+            print('ℹ️ Tabela noblind_picks não existe no Supabase (ok)')
         else:
             print(f'⚠️ Supabase respondeu {r.status_code}: {r.text[:200]}')
     except Exception as e:
@@ -449,54 +495,54 @@ def push_to_supabase(data: dict):
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description='NO.BLIND Pipeline — busca jogos e odds reais')
-    parser.add_argument('--date', type=str, help='Data alvo (YYYY-MM-DD), default: hoje')
-    parser.add_argument('--days', type=int, default=1, help='Quantos dias buscar (a partir de --date)')
+    parser = argparse.ArgumentParser(
+        description='NO.BLIND Pipeline — busca jogos e odds reais')
+    parser.add_argument('--date', type=str,
+                        help='Data alvo (YYYY-MM-DD), default: hoje em BRT')
+    parser.add_argument('--days', type=int, default=1,
+                        help='Quantos dias buscar (a partir de --date)')
     args = parser.parse_args()
 
     if args.date:
         target = date.fromisoformat(args.date)
     else:
-        target = date.today()
+        # Usa data em BRT (o que importa pro usuário brasileiro)
+        target = datetime.now(BRT).date()
+
+    target_dates = [target + timedelta(days=i) for i in range(args.days)]
 
     print(f'🏟️  NO.BLIND Pipeline')
-    print(f'📅  Data: {target.isoformat()}')
+    print(f'📅  Data: {target.isoformat()}' +
+          (f' (+{args.days-1} dias)' if args.days > 1 else ''))
     print(f'📊  Ligas: {", ".join(l["short"] for l in LEAGUES.values())}')
-    print()
+    print(f'🔑  API: The Odds API (the-odds-api.com)')
 
-    all_singles = []
-    for day_offset in range(args.days):
-        d = target + timedelta(days=day_offset)
-        print(f'═══ {d.isoformat()} ═══')
+    # 1. Busca jogos e odds
+    print('\n1. Buscando jogos e odds...')
+    events = fetch_all_events(target_dates)
 
-        # 1. Busca jogos
-        print('1. Buscando jogos...')
-        fixtures = fetch_fixtures_for_date(d)
-        if not fixtures:
-            print(f'  Nenhum jogo encontrado para {d.isoformat()}')
-            continue
-        print(f'  {len(fixtures)} jogos encontrados')
+    if not events:
+        print(f'\n⚠️ Nenhum jogo encontrado para {target.isoformat()}')
+        print('   (pode não haver jogos neste dia — tente --days 3)')
 
-        # 2. Busca odds e calcula picks
-        print('2. Buscando odds e calculando picks...')
-        singles = build_singles(fixtures)
-        all_singles.extend(singles)
-        print(f'  {len(singles)} picks gerados')
-        print()
+    # 2. Gera picks
+    print('\n2. Calculando picks...')
+    singles = build_singles(events)
+    print(f'   {len(singles)} picks gerados')
 
     # 3. Gera múltiplas
-    multiples = build_multiples(all_singles)
+    multiples = build_multiples(singles)
 
     # 4. Calcula KPIs
-    kpis = compute_kpis(all_singles)
+    kpis = compute_kpis(singles)
 
     # 5. Monta o JSON de saída
     output = {
         'date': target.isoformat(),
         'generated_at': datetime.now(timezone.utc).isoformat(),
-        'source': 'api-football',
+        'source': 'the-odds-api',
         'leagues': [l['short'] for l in LEAGUES.values()],
-        'singles': all_singles,
+        'singles': singles,
         'multiples': multiples,
         'kpis': kpis,
     }
@@ -504,15 +550,15 @@ def main():
     # 6. Salva o arquivo JSON
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUT_DIR / 'today.json'
-    out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding='utf-8')
-    print(f'✅ Arquivo gerado: {out_path} ({out_path.stat().st_size / 1024:.1f} KB)')
-    print(f'   {len(all_singles)} singles, {len(multiples)} múltiplas')
+    out_path.write_text(json.dumps(output, ensure_ascii=False, indent=2),
+                        encoding='utf-8')
+    print(f'\n✅ Arquivo gerado: {out_path} ({out_path.stat().st_size / 1024:.1f} KB)')
+    print(f'   {len(singles)} singles, {len(multiples)} múltiplas')
 
     # 7. Tenta gravar no Supabase
     push_to_supabase(output)
 
-    print()
-    print('🏁 Pipeline concluído!')
+    print('\n🏁 Pipeline concluído!')
 
 
 if __name__ == '__main__':

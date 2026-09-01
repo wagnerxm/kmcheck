@@ -1,12 +1,12 @@
 # =============================================================================
 # noblind-data.yml — Pipeline automático de dados reais para o NO.BLIND
 #
-# Roda 2x por dia (manhã e tarde BRT) + manual, busca jogos e odds reais,
-# gera noblind/data/today.json e faz commit/push para GitHub Pages.
+# Roda 3x por dia (madrugada, manhã e tarde BRT) + manual, busca jogos e odds
+# reais, gera noblind/data/today.json e faz commit/push para GitHub Pages.
 #
 # Secrets necessários (Settings → Secrets → Actions):
-#   API_FOOTBALL_KEY    — chave da API-Football (api-sports.io)
-#                          Crie grátis em: https://www.api-football.com/pricing
+#   ODDS_API_KEY        — chave da The Odds API (the-odds-api.com)
+#                          Crie grátis em: https://the-odds-api.com/#get-access
 #
 # Secrets opcionais (para gravar no Supabase também):
 #   SUPABASE_URL        — URL do projeto (ex: https://xxx.supabase.co)
@@ -53,7 +53,7 @@ jobs:
 
       - name: Executar pipeline
         env:
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
