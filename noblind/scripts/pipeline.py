@@ -50,37 +50,88 @@ OUTPUT_DIR = REPO_ROOT / 'noblind' / 'data'
 BRT = timezone(timedelta(hours=-3))
 
 # ─── Ligas monitoradas (The Odds API sport keys) ────────────────────────────
-# Ligas fixas que sabemos que existem na API
-FIXED_LEAGUES = {
-    'soccer_brazil_campeonato': {
-        'name': 'Copa do Brasil', 'short': 'Copa do Brasil',
-        'country': 'BR', 'confederation': 'CONMEBOL'},
-    'soccer_conmebol_copa_libertadores': {
-        'name': 'Copa Libertadores', 'short': 'Libertadores',
-        'country': None, 'confederation': 'CONMEBOL'},
-    'soccer_conmebol_copa_sudamericana': {
-        'name': 'Copa Sudamericana', 'short': 'Sudamericana',
-        'country': None, 'confederation': 'CONMEBOL'},
+# Orçamento mensal: 500 requests (plano gratuito)
+# Cada liga custa 1 request (só h2h). Discovery (/v4/sports) é grátis.
+# Com 2 runs/dia × 30 dias = 60 runs → ~8 ligas/run = 480 req/mês.
+# Priorizamos por importância, cortando se o saldo ficar baixo.
+
+# Prioridade de ligas (ordem de importância para buscar odds):
+# 1 = máxima (sempre busca), 2 = alta, 3 = média, 4 = se sobrar orçamento
+LEAGUE_PRIORITY = {
+    # === Prioridade 1: Brasil ===
+    'soccer_brazil_campeonato':           1,
+    'soccer_brazil_serie_a':              1,
+    'soccer_brazil_serie_b':              1,
+    # === Prioridade 1: CONMEBOL ===
+    'soccer_conmebol_copa_libertadores':  1,
+    'soccer_conmebol_copa_sudamericana':  1,
+    # === Prioridade 2: Europa top 5 + Champions ===
+    'soccer_uefa_champs_league':          2,
+    'soccer_uefa_europa_league':          2,
+    'soccer_uefa_europa_conference_league': 2,
+    'soccer_epl':                         2,  # Premier League
+    'soccer_spain_la_liga':               2,
+    'soccer_germany_bundesliga':          2,
+    'soccer_italy_serie_a':              2,
+    'soccer_france_ligue_one':           2,
+    # === Prioridade 3: Américas + Europa secundária ===
+    'soccer_argentina_primera_division':  3,
+    'soccer_mexico_ligamx':              3,
+    'soccer_usa_mls':                    3,
+    'soccer_netherlands_eredivisie':      3,
+    'soccer_portugal_primeira_liga':      3,
+    'soccer_turkey_super_league':        3,
+    'soccer_belgium_first_div':          3,
+    'soccer_scotland_premiership':       3,
+    # === Prioridade 4: descobertas automaticamente ===
 }
 
-# Padrões de sport key que indicam futebol brasileiro (para auto-discovery)
-BRAZIL_KEY_PATTERNS = ['soccer_brazil']
-CONMEBOL_KEY_PATTERNS = ['soccer_conmebol']
+# Nomes curtos para exibição (quando o título da API for longo)
+SHORT_NAMES = {
+    'soccer_brazil_campeonato': 'Copa do Brasil',
+    'soccer_brazil_serie_a': 'Brasileirão A',
+    'soccer_brazil_serie_b': 'Brasileirão B',
+    'soccer_conmebol_copa_libertadores': 'Libertadores',
+    'soccer_conmebol_copa_sudamericana': 'Sudamericana',
+    'soccer_uefa_champs_league': 'Champions League',
+    'soccer_uefa_europa_league': 'Europa League',
+    'soccer_uefa_europa_conference_league': 'Conference League',
+    'soccer_epl': 'Premier League',
+    'soccer_spain_la_liga': 'La Liga',
+    'soccer_germany_bundesliga': 'Bundesliga',
+    'soccer_italy_serie_a': 'Serie A (Itália)',
+    'soccer_france_ligue_one': 'Ligue 1',
+    'soccer_argentina_primera_division': 'Liga Argentina',
+    'soccer_mexico_ligamx': 'Liga MX',
+    'soccer_usa_mls': 'MLS',
+    'soccer_netherlands_eredivisie': 'Eredivisie',
+    'soccer_portugal_primeira_liga': 'Liga Portugal',
+    'soccer_turkey_super_league': 'Süper Lig',
+    'soccer_belgium_first_div': 'Pro League (Bélgica)',
+    'soccer_scotland_premiership': 'Scottish Prem',
+}
+
+# Reserva mínima de requests — se o saldo cair abaixo, só busca prioridade 1
+MIN_RESERVE = 30
 
 
-def discover_leagues() -> dict:
-    """Descobre ligas brasileiras e CONMEBOL disponíveis via /v4/sports.
-    Combina auto-discovery com as ligas fixas (fallback se a API falhar)."""
-    leagues = dict(FIXED_LEAGUES)
+def discover_leagues() -> tuple[list[dict], int]:
+    """Descobre TODAS as ligas de futebol ativas via /v4/sports.
+    Retorna lista ordenada por prioridade e o saldo de requests restantes."""
+    leagues = []
+    remaining = 500  # fallback se não conseguir ler o header
 
     try:
         url = f'{API_BASE}/sports'
         r = httpx.get(url, params={'apiKey': API_KEY}, timeout=15)
         if r.status_code != 200:
-            print(f'  ⚠️ /v4/sports retornou {r.status_code}, usando ligas fixas')
-            return leagues
+            print(f'  ⚠️ /v4/sports retornou {r.status_code}')
+            return [], remaining
 
         sports = r.json()
+        remaining = int(r.headers.get('x-requests-remaining', '500'))
+
+        soccer_count = 0
         for sport in sports:
             key = sport.get('key', '')
             title = sport.get('title', '')
@@ -90,36 +141,32 @@ def discover_leagues() -> dict:
             if group != 'Soccer' or not active:
                 continue
 
-            # Liga brasileira que ainda não temos?
-            is_brazil = any(key.startswith(p) for p in BRAZIL_KEY_PATTERNS)
-            is_conmebol = any(key.startswith(p) for p in CONMEBOL_KEY_PATTERNS)
+            soccer_count += 1
+            priority = LEAGUE_PRIORITY.get(key, 4)
+            short = SHORT_NAMES.get(key, title)
 
-            if (is_brazil or is_conmebol) and key not in leagues:
-                short = title
-                # Nomes mais curtos para exibição
-                if 'Série A' in title or 'Serie A' in title:
-                    short = 'Brasileirão A'
-                elif 'Série B' in title or 'Serie B' in title:
-                    short = 'Brasileirão B'
-                elif 'Paulista' in title:
-                    short = 'Paulistão'
+            leagues.append({
+                'key': key,
+                'name': title,
+                'short': short,
+                'priority': priority,
+            })
 
-                leagues[key] = {
-                    'name': title,
-                    'short': short,
-                    'country': 'BR' if is_brazil else None,
-                    'confederation': 'CONMEBOL',
-                }
-                print(f'  🆕 Liga descoberta: {title} ({key})')
+        # Ordena por prioridade (menor = mais importante)
+        leagues.sort(key=lambda l: (l['priority'], l['short']))
 
-        # Quota info
-        remaining = r.headers.get('x-requests-remaining', '?')
-        print(f'  📡 {len(sports)} esportes na API ({remaining} requests restantes)')
+        print(f'  📡 {soccer_count} ligas de futebol na API ({remaining} requests restantes)')
+        for p in [1, 2, 3, 4]:
+            names = [l['short'] for l in leagues if l['priority'] == p]
+            if names:
+                labels = {1: '🇧🇷 Brasil/CONMEBOL', 2: '⭐ Europa top',
+                          3: '🌎 Outras', 4: '🔍 Descobertas'}
+                print(f'  {labels[p]}: {", ".join(names)}')
 
     except Exception as e:
-        print(f'  ⚠️ Erro ao descobrir ligas: {e} — usando ligas fixas')
+        print(f'  ⚠️ Erro ao descobrir ligas: {e}')
 
-    return leagues
+    return leagues, remaining
 
 # Nomes amigáveis das casas de aposta (The Odds API → nome de exibição)
 BOOKMAKER_NAMES = {
@@ -140,11 +187,10 @@ BOOKMAKER_NAMES = {
     'superbet': 'Superbet',
 }
 
-# Mercados a buscar
-MARKETS = 'h2h,totals'
+# Mercados a buscar (só h2h para maximizar cobertura de ligas no plano grátis)
+MARKETS = 'h2h'
 MARKET_NAMES = {
     'h2h':    'Resultado Final',
-    'totals': 'Gols',
 }
 
 
@@ -248,19 +294,45 @@ def calc_kelly(prob: float, odds: float, fraction: float = 0.25) -> float:
 
 
 # ─── Processamento de jogos e odds ──────────────────────────────────────────
-def fetch_all_events(target_dates: list[date], leagues: dict) -> list[dict]:
-    """Busca odds de todas as ligas e filtra pelos dias alvo."""
+def fetch_all_events(target_dates: list[date], leagues: list[dict],
+                     remaining: int) -> list[dict]:
+    """Busca odds de todas as ligas (por prioridade) e filtra pelos dias alvo.
+    Respeita o orçamento de requests restantes da API."""
     all_events = []
     target_set = set(target_dates)
+    fetched = 0
 
-    for league_key, info in leagues.items():
-        print(f'\n📋 {info["short"]}:')
+    # Calcula quantas ligas cabem no orçamento
+    # Cada liga custa ~1 request (só h2h). Reserva MIN_RESERVE para o mês.
+    budget = max(0, remaining - MIN_RESERVE)
+    max_leagues = min(len(leagues), budget)
+
+    if max_leagues < len(leagues):
+        print(f'  ⚠️ Orçamento limitado: buscando {max_leagues}/{len(leagues)} ligas '
+              f'({remaining} restantes, reserva {MIN_RESERVE})')
+
+    for league in leagues[:max_leagues]:
+        league_key = league['key']
+        short = league['short']
+        priority = league['priority']
+
+        # Se saldo ficou muito baixo, só busca prioridade 1
+        if remaining - fetched <= MIN_RESERVE and priority > 1:
+            print(f'\n⏸️  Parando em prioridade {priority} (saldo baixo)')
+            break
+
+        print(f'\n📋 {short} (P{priority}):')
         events, headers = api_get(f'sports/{league_key}/odds', {
             'regions': 'eu',
             'markets': MARKETS,
             'oddsFormat': 'decimal',
             'dateFormat': 'iso',
         })
+        fetched += 1
+
+        # Atualiza saldo real dos headers
+        if headers.get('x-requests-remaining'):
+            remaining = int(headers['x-requests-remaining'])
 
         if not events:
             continue
@@ -276,7 +348,7 @@ def fetch_all_events(target_dates: list[date], leagues: dict) -> list[dict]:
                 continue
 
             if ev_date in target_set:
-                ev['_league_info'] = info
+                ev['_league_info'] = league
                 ev['_brt_time'] = dt_brt.strftime('%H:%M')
                 ev['_brt_date'] = ev_date
                 all_events.append(ev)
@@ -287,6 +359,7 @@ def fetch_all_events(target_dates: list[date], leagues: dict) -> list[dict]:
         total = len(events)
         print(f'  📅 {filtered}/{total} jogos nas datas alvo')
 
+    print(f'\n  📊 {fetched} ligas consultadas, {remaining} requests restantes na API')
     return all_events
 
 
@@ -575,14 +648,16 @@ def main():
           (f' (+{args.days-1} dias)' if args.days > 1 else ''))
     print(f'🔑  API: The Odds API (the-odds-api.com)')
 
-    # 0. Descobre ligas disponíveis (auto-discovery + fixas)
+    # 0. Descobre TODAS as ligas de futebol disponíveis
     print('\n0. Descobrindo ligas disponíveis...')
-    leagues = discover_leagues()
-    print(f'📊  Ligas: {", ".join(l["short"] for l in leagues.values())}')
+    leagues, remaining = discover_leagues()
+    if not leagues:
+        print('⚠️ Nenhuma liga de futebol encontrada na API')
+    print(f'📊  {len(leagues)} ligas disponíveis')
 
-    # 1. Busca jogos e odds
+    # 1. Busca jogos e odds (respeitando orçamento)
     print('\n1. Buscando jogos e odds...')
-    events = fetch_all_events(target_dates, leagues)
+    events = fetch_all_events(target_dates, leagues, remaining)
 
     if not events:
         print(f'\n⚠️ Nenhum jogo encontrado para {target.isoformat()}')
@@ -604,7 +679,7 @@ def main():
         'date': target.isoformat(),
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'source': 'the-odds-api',
-        'leagues': [l['short'] for l in leagues.values()],
+        'leagues': [l['short'] for l in leagues],
         'singles': singles,
         'multiples': multiples,
         'kpis': kpis,

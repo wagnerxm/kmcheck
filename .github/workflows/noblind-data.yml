@@ -17,12 +17,10 @@ name: NO.BLIND Data Pipeline
 
 on:
   schedule:
-    # 06:00 UTC = 03:00 BRT (madrugada, pega jogos do dia)
-    - cron: '0 6 * * *'
-    # 14:00 UTC = 11:00 BRT (manhã, atualiza odds antes dos jogos da tarde)
+    # 14:00 UTC = 11:00 BRT (manhã, pega jogos do dia e atualiza odds)
     - cron: '0 14 * * *'
-    # 20:00 UTC = 17:00 BRT (tarde, atualiza odds antes dos jogos da noite)
-    - cron: '0 20 * * *'
+    # 22:00 UTC = 19:00 BRT (noite, atualiza odds antes dos jogos noturnos)
+    - cron: '0 22 * * *'
   workflow_dispatch:
     inputs:
       date:
