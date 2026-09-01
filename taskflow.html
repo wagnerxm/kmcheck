@@ -1,19 +1,19 @@
 <title>Painel de Documentos</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 
 <style>
 /* ── Tokens ── */
 :root {
   --forest: #2D6A4F;
-  --forest-dim: rgba(45,106,79,.10);
+  --forest-dim: rgba(45,106,79,.08);
   --sand: #D4A373;
-  --sand-dim: rgba(212,163,115,.10);
+  --sand-dim: rgba(212,163,115,.08);
   --sage: #40916C;
-  --sage-dim: rgba(64,145,108,.10);
+  --sage-dim: rgba(64,145,108,.08);
   --honey: #DDA15E;
-  --honey-dim: rgba(221,161,94,.10);
+  --honey-dim: rgba(221,161,94,.08);
   --brick: #BC4749;
-  --brick-dim: rgba(188,71,73,.10);
+  --brick-dim: rgba(188,71,73,.08);
   --bg: #F8F5F0;
   --surface: #FFFFFF;
   --surface-2: #F2EEE8;
@@ -23,10 +23,10 @@
   --border: #DED8CE;
   --border-light: #EBE7E0;
   --shadow-sm: 0 1px 2px rgba(26,44,31,.04);
-  --shadow-md: 0 4px 16px rgba(26,44,31,.07);
-  --shadow-lg: 0 12px 40px rgba(26,44,31,.10);
-  --glow: rgba(45,106,79,.10);
-  --radius: 14px;
+  --shadow-md: 0 4px 16px rgba(26,44,31,.06);
+  --shadow-lg: 0 8px 32px rgba(26,44,31,.10);
+  --glow: rgba(45,106,79,.08);
+  --radius: 12px;
   --radius-sm: 8px;
   --ring-track: #DED8CE;
 }
@@ -36,15 +36,15 @@
     --bg:#12170F;--surface:#1C231A;--surface-2:#252D22;
     --text:#E2E0DA;--text-2:#9BA89E;--text-3:#6B7B6F;
     --border:#2D3429;--border-light:#232B20;
-    --shadow-sm:0 1px 2px rgba(0,0,0,.2);
-    --shadow-md:0 4px 16px rgba(0,0,0,.3);
-    --shadow-lg:0 12px 40px rgba(0,0,0,.4);
-    --glow:rgba(45,106,79,.18);
-    --forest-dim:rgba(45,106,79,.18);
-    --sand-dim:rgba(212,163,115,.14);
-    --sage-dim:rgba(64,145,108,.16);
-    --honey-dim:rgba(221,161,94,.14);
-    --brick-dim:rgba(188,71,73,.14);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.25);
+    --shadow-md:0 4px 16px rgba(0,0,0,.35);
+    --shadow-lg:0 8px 32px rgba(0,0,0,.45);
+    --glow:rgba(45,106,79,.15);
+    --forest-dim:rgba(45,106,79,.16);
+    --sand-dim:rgba(212,163,115,.12);
+    --sage-dim:rgba(64,145,108,.14);
+    --honey-dim:rgba(221,161,94,.12);
+    --brick-dim:rgba(188,71,73,.12);
     --ring-track:#2D3429;
   }
 }
@@ -52,15 +52,15 @@
   --bg:#12170F;--surface:#1C231A;--surface-2:#252D22;
   --text:#E2E0DA;--text-2:#9BA89E;--text-3:#6B7B6F;
   --border:#2D3429;--border-light:#232B20;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.2);
-  --shadow-md:0 4px 16px rgba(0,0,0,.3);
-  --shadow-lg:0 12px 40px rgba(0,0,0,.4);
-  --glow:rgba(45,106,79,.18);
-  --forest-dim:rgba(45,106,79,.18);
-  --sand-dim:rgba(212,163,115,.14);
-  --sage-dim:rgba(64,145,108,.16);
-  --honey-dim:rgba(221,161,94,.14);
-  --brick-dim:rgba(188,71,73,.14);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.25);
+  --shadow-md:0 4px 16px rgba(0,0,0,.35);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.45);
+  --glow:rgba(45,106,79,.15);
+  --forest-dim:rgba(45,106,79,.16);
+  --sand-dim:rgba(212,163,115,.12);
+  --sage-dim:rgba(64,145,108,.14);
+  --honey-dim:rgba(221,161,94,.12);
+  --brick-dim:rgba(188,71,73,.12);
   --ring-track:#2D3429;
 }
 
@@ -72,27 +72,22 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
-/* ── Accent bar ── */
-.accent-bar{
-  height:3px;
-  background:linear-gradient(90deg,var(--forest),var(--sage) 35%,var(--sand) 70%,var(--honey));
-  flex-shrink:0;
-}
-
-/* ── Wrap ── */
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+/* ── Shell ── */
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px 48px}
 
 /* ── Header ── */
-.header{padding:32px 0 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.header-left h1{
-  font-family:'Sora',sans-serif;font-weight:800;font-size:26px;
-  letter-spacing:-.5px;line-height:1.2;
+.hdr{padding:36px 0 0}
+.hdr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hdr-title h1{
+  font-family:'DM Serif Display',Georgia,'Times New Roman',serif;
+  font-weight:400;font-size:30px;line-height:1.15;
+  letter-spacing:-.3px;
   background:linear-gradient(135deg,var(--forest),var(--sand));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
-.header-left p{color:var(--text-2);font-size:14px;margin-top:4px;font-weight:500}
-.header-right{display:flex;gap:8px;align-items:center;padding-top:4px}
+.hdr-title p{color:var(--text-2);font-size:14px;margin-top:4px;font-weight:500}
+.hdr-actions{display:flex;gap:8px;align-items:center;padding-top:4px}
 .icon-btn{
   width:38px;height:38px;border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--surface);color:var(--text-2);cursor:pointer;
@@ -100,37 +95,75 @@ body{
   transition:all .15s ease;box-shadow:var(--shadow-sm);
 }
 .icon-btn:hover{border-color:var(--forest);color:var(--forest);box-shadow:0 0 0 3px var(--forest-dim)}
-.icon-btn:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
+.export-btn{
+  width:auto;padding:0 14px;gap:6px;font-family:inherit;
+  font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+}
+
+/* ── Busca ── */
+.search-row{margin:16px 0 0}
+.search-wrap{position:relative;max-width:360px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none}
+.search-input{
+  width:100%;padding:9px 12px 9px 38px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text);
+  font-family:inherit;font-size:14px;font-weight:500;
+  transition:border-color .15s,box-shadow .15s;
+  box-shadow:var(--shadow-sm);
+}
+.search-input:focus{border-color:var(--forest);box-shadow:0 0 0 3px var(--forest-dim);outline:none}
+.search-input::placeholder{color:var(--text-3);font-weight:400}
+
+/* ── Overview ── */
+.overview{
+  margin:24px 0 0;padding:20px;
+  background:var(--surface);border:1px solid var(--border-light);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);
+}
+.ov-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.ov-title{font-size:13px;font-weight:700;color:var(--text-2)}
+.ov-pct{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--text)}
+.ov-bar{
+  display:flex;height:10px;border-radius:5px;overflow:hidden;
+  background:var(--surface-2);
+}
+/* 2px surface gap entre segmentos empilhados (mark spec dataviz) */
+.ov-seg+.ov-seg{border-left:2px solid var(--surface)}
+.ov-seg{transition:width .6s cubic-bezier(.4,0,.2,1);min-width:0}
+.ov-labels{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.ov-lbl{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-2)}
+.ov-lbl i{width:10px;height:10px;border-radius:3px;flex-shrink:0;display:block}
 
 /* ── Stats ── */
 .stats{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
-  margin:28px 0 0;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  margin:16px 0 0;
 }
 .stat-card{
   background:var(--surface);border:1px solid var(--border-light);
-  border-radius:var(--radius);padding:18px 20px;
-  display:flex;align-items:center;gap:14px;
+  border-radius:var(--radius);padding:16px 18px;
+  display:flex;align-items:center;gap:12px;
   transition:box-shadow .2s,border-color .2s;
 }
 .stat-card:hover{box-shadow:var(--shadow-md)}
 .stat-icon{
-  width:42px;height:42px;border-radius:10px;
+  width:40px;height:40px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .stat-value{
-  font-family:'Sora',sans-serif;font-weight:800;font-size:28px;
+  font-weight:800;font-size:26px;
   letter-spacing:-.5px;line-height:1;
   font-variant-numeric:tabular-nums;
 }
-.stat-label{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.stat-label{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
 
 /* ── Docs bar ── */
-.docs-section{margin:28px 0 0}
+.docs-section{margin:24px 0 0}
 .section-label{
-  font-family:'Sora',sans-serif;font-weight:700;font-size:11px;
+  font-weight:700;font-size:11px;
   text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);
-  margin-bottom:10px;
+  margin-bottom:8px;
 }
 .doc-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .doc-chip{
@@ -144,16 +177,14 @@ body{
   width:20px;height:20px;border:none;border-radius:50%;
   background:var(--surface-2);color:var(--text-3);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;line-height:1;
-  transition:all .12s;
+  font-size:13px;font-weight:700;line-height:1;transition:all .12s;
 }
 .chip-x:hover{background:var(--brick-dim);color:var(--brick)}
 .add-chip{
   font-family:inherit;font-size:13px;font-weight:600;
   padding:7px 16px;border:1px dashed var(--border);border-radius:8px;
   background:transparent;color:var(--text-3);cursor:pointer;
-  display:inline-flex;align-items:center;gap:5px;
-  transition:all .15s;
+  display:inline-flex;align-items:center;gap:5px;transition:all .15s;
 }
 .add-chip:hover{border-color:var(--forest);color:var(--forest);background:var(--forest-dim)}
 .add-chip-input{
@@ -163,11 +194,32 @@ body{
   box-shadow:0 0 0 3px var(--forest-dim);
 }
 
+/* ── Controls: legenda + ordenação ── */
+.controls{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:20px 0 0;flex-wrap:wrap;gap:12px;
+}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-weight:600;color:var(--text-3)}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.sort{display:flex;align-items:center;gap:6px}
+.sort-label{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
+.sort-btn{
+  font-family:inherit;font-size:12px;font-weight:600;
+  padding:5px 10px;border:1px solid var(--border);border-radius:6px;
+  background:var(--surface);color:var(--text-2);cursor:pointer;
+  display:flex;align-items:center;gap:4px;transition:all .12s;
+}
+.sort-btn:hover{border-color:var(--forest);color:var(--forest)}
+.sort-btn.active{background:var(--forest-dim);border-color:var(--forest);color:var(--forest)}
+.sort-arrow{font-size:10px;opacity:.4;font-weight:400}
+.sort-btn.active .sort-arrow{opacity:1}
+
 /* ── Grid ── */
-.grid-section{margin:28px 0 48px}
+.grid-section{margin:20px 0 0}
 .grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  gap:16px;align-items:start;
+  gap:14px;align-items:start;
 }
 
 /* ── Folder card ── */
@@ -176,34 +228,27 @@ body{
   border-radius:var(--radius);overflow:hidden;
   position:relative;isolation:isolate;
   transition:box-shadow .25s ease,transform .2s ease;
-  animation:cardIn .45s ease both;
+  animation:cardIn .4s ease both;
 }
 .folder::before{
   content:'';position:absolute;inset:-1.5px;
   border-radius:calc(var(--radius) + 1.5px);
   background:linear-gradient(135deg,var(--forest),var(--sand));
-  z-index:-1;opacity:0;
-  transition:opacity .3s ease;
+  z-index:-1;opacity:0;transition:opacity .3s ease;
 }
-.folder:hover{
-  box-shadow:0 8px 32px var(--glow);
-  transform:translateY(-2px);
-}
+.folder:hover{box-shadow:0 8px 28px var(--glow);transform:translateY(-2px)}
 .folder:hover::before{opacity:1}
 @keyframes cardIn{
-  from{opacity:0;transform:translateY(16px) scale(.98)}
-  to{opacity:1;transform:translateY(0) scale(1)}
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
-.folder-top{
-  padding:20px 20px 16px;display:flex;align-items:center;gap:14px;
-}
+.folder-top{padding:18px 18px 14px;display:flex;align-items:center;gap:12px}
 .avatar{
-  width:48px;height:48px;border-radius:14px;flex-shrink:0;
+  width:46px;height:46px;border-radius:12px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  color:#fff;font-family:'Sora',sans-serif;font-weight:700;font-size:16px;
-  letter-spacing:.5px;
-  box-shadow:0 4px 12px rgba(0,0,0,.12);
+  color:#fff;font-weight:700;font-size:15px;letter-spacing:.5px;
+  box-shadow:0 3px 10px rgba(0,0,0,.12);
 }
 .folder-info{flex:1;min-width:0}
 .folder-name{
@@ -218,7 +263,7 @@ body{
 .folder-name:focus{border-color:var(--forest);background:var(--surface-2);cursor:text}
 .folder-sub{font-size:12px;color:var(--text-3);margin-top:2px;padding-left:6px;font-weight:500}
 .folder-menu{
-  width:30px;height:30px;border:none;border-radius:6px;
+  width:28px;height:28px;border:none;border-radius:6px;
   background:transparent;color:var(--text-3);cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:18px;
   flex-shrink:0;transition:all .12s;
@@ -227,56 +272,43 @@ body{
 
 /* Progress ring */
 .ring-wrap{
-  position:relative;width:52px;height:52px;flex-shrink:0;
+  position:relative;width:50px;height:50px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
 }
 .ring-wrap svg{transform:rotate(-90deg)}
 .ring-track{fill:none;stroke:var(--ring-track);stroke-width:4}
-.ring-fill{
-  fill:none;stroke-width:4;stroke-linecap:round;
-  transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1);
-}
+.ring-fill{fill:none;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)}
 .ring-pct{
-  position:absolute;font-family:'Sora',sans-serif;font-weight:700;
-  font-size:13px;letter-spacing:-.3px;color:var(--text);
-  font-variant-numeric:tabular-nums;
+  position:absolute;font-weight:700;font-size:12px;
+  letter-spacing:-.3px;color:var(--text);font-variant-numeric:tabular-nums;
 }
 
 /* ── Doc list ── */
-.doc-list{padding:0 12px 12px}
+.doc-list{padding:0 10px 10px}
 .doc-row{
   display:flex;align-items:center;gap:10px;
-  padding:10px 8px;border-radius:var(--radius-sm);cursor:pointer;
+  padding:9px 8px;border-radius:var(--radius-sm);cursor:pointer;
   transition:background .1s;
 }
 .doc-row:hover{background:var(--surface-2)}
 .doc-row+.doc-row{border-top:1px solid var(--border-light)}
 .doc-row:hover+.doc-row{border-top-color:transparent}
 
-/* Status indicator */
 .s-dot{
-  width:22px;height:22px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .2s ease;
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;transition:all .2s ease;
 }
 .s-dot[data-s="pendente"]{border:2px solid var(--text-3);background:transparent}
-.s-dot[data-s="enviado"]{
-  border:2px solid var(--honey);background:var(--honey-dim);
-}
-.s-dot[data-s="enviado"]::after{
-  content:'';width:8px;height:8px;border-radius:50%;background:var(--honey);
-}
-.s-dot[data-s="aprovado"]{
-  border:none;background:var(--sage);
-}
+.s-dot[data-s="enviado"]{border:2px solid var(--honey);background:var(--honey-dim)}
+.s-dot[data-s="enviado"]::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--honey)}
+.s-dot[data-s="aprovado"]{border:none;background:var(--sage)}
 
-.doc-row-name{font-size:14px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-row-name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .doc-row[data-s="aprovado"] .doc-row-name{color:var(--text-3);text-decoration:line-through}
 
 .s-badge{
-  font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
-  padding:3px 8px;border-radius:5px;flex-shrink:0;
-  transition:all .15s;
+  font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px;flex-shrink:0;transition:all .15s;
 }
 .s-badge[data-s="pendente"]{background:var(--surface-2);color:var(--text-3)}
 .s-badge[data-s="enviado"]{background:var(--honey-dim);color:var(--honey)}
@@ -289,33 +321,40 @@ body{
   font-family:inherit;font-size:14px;font-weight:600;
   padding:48px 20px;display:flex;flex-direction:column;
   align-items:center;gap:10px;justify-content:center;
-  transition:all .2s;min-height:200px;
-  width:100%;
+  transition:all .2s;min-height:200px;width:100%;
 }
-.add-person:hover{
-  border-color:var(--forest);color:var(--forest);
-  background:var(--forest-dim);
-  transform:translateY(-2px);
-}
-.add-person svg{opacity:.5;transition:opacity .2s}
-.add-person:hover svg{opacity:.8}
+.add-person:hover{border-color:var(--forest);color:var(--forest);background:var(--forest-dim);transform:translateY(-2px)}
+.add-person svg{opacity:.4;transition:opacity .2s}
+.add-person:hover svg{opacity:.7}
 
-/* ── Legend ── */
-.legend{
-  display:flex;gap:20px;flex-wrap:wrap;margin:16px 0 0;
-  font-size:12px;font-weight:600;color:var(--text-3);
+/* ── Empty state (busca sem resultado) ── */
+.empty-state{
+  grid-column:1/-1;text-align:center;padding:60px 24px;
+  color:var(--text-3);
 }
-.legend-item{display:flex;align-items:center;gap:7px}
-.legend-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.empty-state svg{margin-bottom:12px;opacity:.3}
+.empty-state p{font-size:14px;font-weight:500}
+.empty-state .empty-hint{font-size:12px;margin-top:4px;color:var(--text-3)}
+
+/* ── Toast ── */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:900;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  padding:11px 18px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--border);
+  border-left:3px solid var(--toast-accent,var(--forest));
+  box-shadow:var(--shadow-lg);
+  font-size:13px;font-weight:600;color:var(--text);
+  transform:translateX(16px);opacity:0;
+  transition:all .25s ease;pointer-events:auto;
+}
+.toast.show{transform:translateX(0);opacity:1}
 
 /* ── Dropdown ── */
 .dropdown{
   position:fixed;z-index:600;
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);
-  min-width:180px;padding:4px;
-  animation:ddIn .12s ease;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  min-width:180px;padding:4px;animation:ddIn .12s ease;
 }
 @keyframes ddIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .dd-item{
@@ -331,21 +370,28 @@ body{
 
 /* ── Responsive ── */
 @media(max-width:768px){
-  .wrap{padding:0 16px}
-  .header{padding:24px 0 0}
-  .header-left h1{font-size:22px}
+  .wrap{padding:0 16px 40px}
+  .hdr{padding:24px 0 0}
+  .hdr-title h1{font-size:24px}
+  .search-wrap{max-width:100%}
+  .overview{padding:16px}
+  .ov-pct{font-size:18px}
   .stats{grid-template-columns:repeat(2,1fr);gap:8px}
-  .stat-card{padding:14px 16px;gap:10px}
-  .stat-value{font-size:22px}
-  .stat-icon{width:36px;height:36px;border-radius:8px}
+  .stat-card{padding:12px 14px;gap:10px}
+  .stat-value{font-size:20px}
+  .stat-icon{width:34px;height:34px;border-radius:8px}
+  .controls{flex-direction:column;align-items:flex-start}
   .grid{grid-template-columns:1fr;gap:12px}
-  .folder-top{padding:16px}
+  .folder-top{padding:14px}
   .doc-list{padding:0 8px 8px}
+  .toasts{left:16px;right:16px;bottom:16px}
 }
 @media(max-width:400px){
   .stats{grid-template-columns:1fr 1fr}
   .stat-label{font-size:10px}
   .doc-chips{gap:6px}
+  .ov-labels{gap:10px}
+  .sort{flex-wrap:wrap}
 }
 
 /* ── Focus ── */
@@ -356,22 +402,37 @@ body{
 }
 </style>
 
-<!-- Accent bar -->
-<div class="accent-bar"></div>
-
 <div class="wrap">
   <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <h1>Documentos da Equipe</h1>
-      <p>Acompanhe os documentos solicitados de cada membro</p>
+  <header class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-title">
+        <h1>Documentos da Equipe</h1>
+        <p>Acompanhe os documentos solicitados de cada membro</p>
+      </div>
+      <div class="hdr-actions">
+        <button class="icon-btn export-btn" id="exportBtn" title="Exportar CSV" aria-label="Exportar" hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Exportar</span>
+        </button>
+        <button class="icon-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
     </div>
-    <div class="header-right">
-      <button class="icon-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
+    <!-- Busca -->
+    <div class="search-row">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+        </svg>
+        <input type="search" id="searchInput" class="search-input" placeholder="Buscar pessoa…" autocomplete="off">
+      </div>
     </div>
-  </div>
+  </header>
+
+  <!-- Overview — barra de progresso geral -->
+  <div class="overview" id="overview"></div>
 
   <!-- Stats -->
   <div class="stats" id="stats"></div>
@@ -382,34 +443,43 @@ body{
     <div class="doc-chips" id="docChips"></div>
   </div>
 
-  <!-- Legend -->
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="border:2px solid var(--text-3)"></div>Pendente
+  <!-- Legenda + ordenação -->
+  <div class="controls">
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="border:2px solid var(--text-3)"></div>Pendente
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="border:2px solid var(--honey);background:var(--honey-dim)">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--honey)"></div>
+        </div>Enviado
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--sage)">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>
+        </div>Aprovado
+      </div>
     </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="border:2px solid var(--honey);background:var(--honey-dim)">
-        <div style="width:6px;height:6px;border-radius:50%;background:var(--honey)"></div>
-      </div>Enviado
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:var(--sage)">
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>
-      </div>Aprovado
+    <div class="sort" id="sortBtns">
+      <span class="sort-label">Ordenar</span>
+      <button class="sort-btn" data-sort="name">Nome <span class="sort-arrow">↕</span></button>
+      <button class="sort-btn" data-sort="progress">Progresso <span class="sort-arrow">↕</span></button>
     </div>
   </div>
 
   <!-- Grid -->
   <div class="grid-section">
-    <div class="section-label">Equipe</div>
     <div class="grid" id="grid"></div>
   </div>
 </div>
 
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
 <script>
-/* ═══════════════════════════════════════
-   Painel de Documentos — Natureza Luxe
-   ═══════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   Painel de Documentos — Natureza Luxe v4
+   ═══════════════════════════════════════════ */
 
 const STORAGE='painel-docs-v3';
 const GRADIENTS=[
@@ -427,6 +497,7 @@ const GRADIENTS=[
 const RING_R=22, RING_C=2*Math.PI*RING_R;
 
 let data=null, idN=Date.now();
+let searchQ='', sortBy='', sortDir=1;
 function nid(){return 'i'+(idN++)}
 
 /* ── Defaults ── */
@@ -469,12 +540,57 @@ function cycle(s){return s==='pendente'?'enviado':s==='enviado'?'aprovado':'pend
 function initials(name){return name.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()}
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
+/* ── Toast ── */
+function toast(msg,type){
+  const t=document.createElement('div');
+  t.className='toast';
+  if(type) t.style.setProperty('--toast-accent',`var(--${type})`);
+  t.textContent=msg;
+  document.getElementById('toasts').appendChild(t);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},2400);
+}
+
 /* ═════ Render ═════ */
 
 function render(){
+  renderOverview();
   renderStats();
   renderChips();
   renderGrid();
+}
+
+/* ── Overview: barra empilhada de progresso geral ── */
+function renderOverview(){
+  const el=document.getElementById('overview');
+  const total=data.members.length*data.docs.length;
+  if(!total){el.innerHTML='<div class="ov-head"><span class="ov-title">Progresso Geral</span><span class="ov-pct">—</span></div>';return}
+  let pend=0,env=0,aprov=0;
+  for(const m of data.members)
+    for(const d of data.docs){
+      const s=getS(m,d.id);
+      if(s==='aprovado') aprov++;
+      else if(s==='enviado') env++;
+      else pend++;
+    }
+  const pctA=(aprov/total*100),pctE=(env/total*100),pctP=(pend/total*100);
+  const pctTotal=Math.round(pctA);
+  el.innerHTML=`
+    <div class="ov-head">
+      <span class="ov-title">Progresso Geral</span>
+      <span class="ov-pct">${pctTotal}%</span>
+    </div>
+    <div class="ov-bar">
+      ${pctA?`<div class="ov-seg" style="width:${pctA.toFixed(1)}%;background:var(--sage)"></div>`:''}
+      ${pctE?`<div class="ov-seg" style="width:${pctE.toFixed(1)}%;background:var(--honey)"></div>`:''}
+      ${pctP?`<div class="ov-seg" style="width:${pctP.toFixed(1)}%;background:var(--border)"></div>`:''}
+    </div>
+    <div class="ov-labels">
+      <span class="ov-lbl"><i style="background:var(--sage)"></i>Aprovado ${aprov}</span>
+      <span class="ov-lbl"><i style="background:var(--honey)"></i>Enviado ${env}</span>
+      <span class="ov-lbl"><i style="background:var(--border)"></i>Pendente ${pend}</span>
+    </div>
+  `;
 }
 
 /* ── Stats ── */
@@ -489,29 +605,28 @@ function renderStats(){
       else if(s==='enviado') env++;
       else pend++;
     }
-
   el.innerHTML=`
     <div class="stat-card">
       <div class="stat-icon" style="background:var(--forest-dim)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
       <div><div class="stat-value" style="color:var(--forest)">${data.members.length}</div><div class="stat-label">Pessoas</div></div>
     </div>
     <div class="stat-card">
       <div class="stat-icon" style="background:var(--surface-2)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
       <div><div class="stat-value">${pend}</div><div class="stat-label">Pendentes</div></div>
     </div>
     <div class="stat-card">
       <div class="stat-icon" style="background:var(--honey-dim)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--honey)" stroke-width="2" stroke-linecap="round"><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="6"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--honey)" stroke-width="2" stroke-linecap="round"><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="6"/></svg>
       </div>
       <div><div class="stat-value" style="color:var(--honey)">${env}</div><div class="stat-label">Enviados</div></div>
     </div>
     <div class="stat-card">
       <div class="stat-icon" style="background:var(--sage-dim)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div><div class="stat-value" style="color:var(--sage)">${aprov}</div><div class="stat-label">Aprovados</div></div>
     </div>
@@ -532,6 +647,7 @@ function renderChips(){
       data.docs=data.docs.filter(d=>d.id!==doc.id);
       for(const m of data.members) delete m.statuses[doc.id];
       save();render();
+      toast('Documento removido','brick');
     };
     wrap.appendChild(chip);
   }
@@ -553,27 +669,74 @@ function showAddDoc(btn){
   function close(){input.remove();btn.hidden=false;addingDoc=false}
   function submit(){
     const n=input.value.trim();
-    if(n){data.docs.push({id:nid(),name:n});save();render()}
+    if(n){data.docs.push({id:nid(),name:n});save();render();toast('Documento adicionado','forest')}
     else close();
   }
   input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();submit()}if(e.key==='Escape')close()};
   input.onblur=()=>setTimeout(close,120);
 }
 
-/* ── Grid ── */
+/* ── Grid (com busca e ordenação) ── */
 function renderGrid(){
   const grid=document.getElementById('grid');
   grid.innerHTML='';
-  data.members.forEach((member,i)=>{
+
+  let members=[...data.members];
+
+  /* Filtro de busca */
+  if(searchQ){
+    const q=searchQ.toLowerCase();
+    members=members.filter(m=>m.name.toLowerCase().includes(q));
+  }
+
+  /* Ordenação */
+  if(sortBy==='name'){
+    members.sort((a,b)=>sortDir*a.name.localeCompare(b.name,'pt-BR'));
+  } else if(sortBy==='progress'){
+    members.sort((a,b)=>{
+      const pA=data.docs.length?data.docs.filter(d=>getS(a,d.id)==='aprovado').length/data.docs.length:0;
+      const pB=data.docs.length?data.docs.filter(d=>getS(b,d.id)==='aprovado').length/data.docs.length:0;
+      return sortDir*(pA-pB);
+    });
+  }
+
+  /* Nenhum resultado */
+  if(!members.length){
+    const empty=document.createElement('div');
+    empty.className='empty-state';
+    if(searchQ){
+      empty.innerHTML=`
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+        </svg>
+        <p>Nenhum resultado para "${esc(searchQ)}"</p>
+        <div class="empty-hint">Tente outro termo de busca</div>`;
+    } else {
+      empty.innerHTML=`
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/>
+        </svg>
+        <p>Nenhuma pessoa cadastrada</p>
+        <div class="empty-hint">Clique no botão abaixo para adicionar</div>`;
+    }
+    grid.appendChild(empty);
+  }
+
+  members.forEach((member,i)=>{
     const card=renderFolder(member,i);
-    card.style.animationDelay=(i*70)+'ms';
+    card.style.animationDelay=(i*50)+'ms';
     grid.appendChild(card);
   });
-  const addBtn=document.createElement('button');
-  addBtn.className='add-person';
-  addBtn.innerHTML=`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/><line x1="12" y1="17" x2="12" y2="23"/><line x1="9" y1="20" x2="15" y2="20"/></svg>Adicionar pessoa`;
-  addBtn.onclick=addPerson;
-  grid.appendChild(addBtn);
+
+  /* Botão de adicionar — só mostra fora da busca */
+  if(!searchQ){
+    const addBtn=document.createElement('button');
+    addBtn.className='add-person';
+    addBtn.innerHTML=`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/><line x1="12" y1="17" x2="12" y2="23"/><line x1="9" y1="20" x2="15" y2="20"/></svg>Adicionar pessoa`;
+    addBtn.onclick=addPerson;
+    grid.appendChild(addBtn);
+  }
 }
 
 function renderFolder(member,idx){
@@ -603,7 +766,7 @@ function renderFolder(member,idx){
   nameInput.maxLength=40;
   nameInput.onblur=()=>{
     const v=nameInput.value.trim();
-    if(v&&v!==member.name){member.name=v;save();render()}
+    if(v&&v!==member.name){member.name=v;save();render();toast('Nome atualizado','forest')}
   };
   nameInput.onkeydown=e=>{if(e.key==='Enter')nameInput.blur()};
   const sub=document.createElement('div');
@@ -615,7 +778,7 @@ function renderFolder(member,idx){
   ringWrap.className='ring-wrap';
   const offset=RING_C*(1-pct/100);
   ringWrap.innerHTML=`
-    <svg width="52" height="52" viewBox="0 0 52 52">
+    <svg width="50" height="50" viewBox="0 0 52 52">
       <defs><linearGradient id="rg${member.id}" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stop-color="${grad[0]}"/>
         <stop offset="100%" stop-color="${grad[1]}"/>
@@ -657,13 +820,16 @@ function renderFolder(member,idx){
       if(next==='pendente') delete member.statuses[doc.id];
       else member.statuses[doc.id]=next;
       save();render();
+      const labels={enviado:'Enviado',aprovado:'Aprovado',pendente:'Pendente'};
+      const types={enviado:'honey',aprovado:'sage',pendente:''};
+      toast(`${doc.name} → ${labels[next]}`,types[next]);
     };
 
     const dot=document.createElement('div');
     dot.className='s-dot';
     dot.dataset.s=s;
     if(s==='aprovado'){
-      dot.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>';
+      dot.innerHTML='<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 6 5 8.5 9.5 3.5"/></svg>';
     }
 
     const name=document.createElement('span');
@@ -690,6 +856,7 @@ function addPerson(){
   const gi=data.members.length%GRADIENTS.length;
   data.members.push({id:nid(),name:name.trim(),gi,statuses:{}});
   save();render();
+  toast(`${name.trim()} adicionado(a)`,'forest');
 }
 
 /* ── Dropdown menu ── */
@@ -707,11 +874,11 @@ function showMenu(mid,anchor){
     {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
      label:'Renomear',action:()=>{closeDd();const els=[...document.querySelectorAll('.folder')];for(const f of els){const inp=f.querySelector('.folder-name');if(inp){const m=data.members.find(x=>x.name===inp.value);if(m&&m.id===mid){inp.focus();inp.select();break}}}}},
     {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
-     label:'Aprovar todos',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m)return;for(const d of data.docs)m.statuses[d.id]='aprovado';save();render()}},
+     label:'Aprovar todos',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m)return;for(const d of data.docs)m.statuses[d.id]='aprovado';save();render();toast(`Todos aprovados para ${m.name}`,'sage')}},
     {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
-     label:'Resetar status',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m||!confirm(`Resetar todos os status de "${m.name}"?`))return;m.statuses={};save();render()}},
+     label:'Resetar status',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m||!confirm(`Resetar todos os status de "${m.name}"?`))return;m.statuses={};save();render();toast('Status resetado','honey')}},
     {icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
-     label:'Remover pessoa',cls:'danger',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m||!confirm(`Remover "${m.name}" do painel?`))return;data.members=data.members.filter(x=>x.id!==mid);save();render()}},
+     label:'Remover pessoa',cls:'danger',action:()=>{closeDd();const m=data.members.find(x=>x.id===mid);if(!m||!confirm(`Remover "${m.name}" do painel?`))return;data.members=data.members.filter(x=>x.id!==mid);save();render();toast(`${m.name} removido(a)`,'brick')}},
   ];
 
   for(const item of items){
@@ -726,6 +893,34 @@ function showMenu(mid,anchor){
   requestAnimationFrame(()=>document.addEventListener('click',closeDd));
 }
 
+/* ── Busca ── */
+document.getElementById('searchInput').oninput=function(){
+  searchQ=this.value.trim();
+  renderGrid();
+};
+
+/* ── Ordenação ── */
+document.getElementById('sortBtns').onclick=function(e){
+  const btn=e.target.closest('.sort-btn');
+  if(!btn) return;
+  const by=btn.dataset.sort;
+  if(sortBy===by){
+    /* mesmo botão: inverte direção ou desativa */
+    if(sortDir===1) sortDir=-1;
+    else { sortBy=''; sortDir=1; }
+  } else {
+    sortBy=by; sortDir=1;
+  }
+  /* atualiza visual dos botões */
+  document.querySelectorAll('.sort-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.sort===sortBy);
+    const arrow=b.querySelector('.sort-arrow');
+    if(b.dataset.sort===sortBy) arrow.textContent=sortDir===1?'↑':'↓';
+    else arrow.textContent='↕';
+  });
+  renderGrid();
+};
+
 /* ── Theme ── */
 document.getElementById('themeBtn').onclick=()=>{
   const r=document.documentElement;
@@ -736,7 +931,41 @@ document.getElementById('themeBtn').onclick=()=>{
 try{const t=localStorage.getItem('painel-theme-v3');document.documentElement.setAttribute('data-theme',t||'light')}catch(e){document.documentElement.setAttribute('data-theme','light')}
 
 /* ── Keyboard ── */
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDd()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeDd();document.getElementById('searchInput').blur()}
+  /* Ctrl/Cmd+F → foca a busca */
+  if((e.ctrlKey||e.metaKey)&&e.key==='f'){
+    const si=document.getElementById('searchInput');
+    /* só intercepta se o search não está focado */
+    if(document.activeElement!==si){e.preventDefault();si.focus();si.select()}
+  }
+});
+
+/* ── Downloads (capability do artefato) ── */
+(async()=>{
+  try{
+    if(typeof claude==='undefined'||!claude.use) return;
+    const dl=await claude.use('downloads');
+    if(!dl) return;
+    const btn=document.getElementById('exportBtn');
+    btn.hidden=false;
+    btn.onclick=async()=>{
+      /* gera CSV com BOM para acentos no Excel */
+      const BOM='﻿';
+      const rows=['"Pessoa","Documento","Status"'];
+      for(const m of data.members)
+        for(const d of data.docs){
+          const s=getS(m,d.id);
+          const label=s==='pendente'?'Pendente':s==='enviado'?'Enviado':'Aprovado';
+          rows.push(`"${m.name}","${d.name}","${label}"`);
+        }
+      try{
+        await dl.save({filename:'equipe-documentos.csv',data:BOM+rows.join('\r\n')});
+        toast('Relatório exportado','sage');
+      }catch(e){if(e.code!=='cancelled') toast('Erro ao exportar','brick')}
+    };
+  }catch(e){}
+})();
 
 /* ── Init ── */
 load();
