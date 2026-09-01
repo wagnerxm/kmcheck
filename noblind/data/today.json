@@ -1,19 +1,137 @@
 {
   "date": "2026-08-31",
-  "generated_at": "2026-09-01T01:16:23.455069+00:00",
+  "generated_at": "2026-09-01T02:37:36.345505+00:00",
   "source": "the-odds-api",
   "leagues": [
+    "Brasileirão B",
     "Copa do Brasil",
     "Libertadores",
     "Sudamericana",
-    "Brasileirão B"
+    "Bundesliga",
+    "Champions League",
+    "Conference League",
+    "Europa League",
+    "La Liga",
+    "Ligue 1",
+    "Premier League",
+    "Serie A (Itália)",
+    "Eredivisie",
+    "Liga Argentina",
+    "Liga MX",
+    "Liga Portugal",
+    "MLS",
+    "Pro League (Bélgica)",
+    "Süper Lig",
+    "3. Liga - Germany",
+    "Allsvenskan - Sweden",
+    "Austrian Football Bundesliga",
+    "Bundesliga 2 - Germany",
+    "Championship",
+    "Coppa Italia",
+    "DFB-Pokal",
+    "Denmark Superliga",
+    "Ekstraklasa - Poland",
+    "Eliteserien - Norway",
+    "J League",
+    "K League 1",
+    "La Liga 2 - Spain",
+    "League 1",
+    "League 2",
+    "League of Ireland",
+    "Leagues Cup",
+    "Ligue 2 - France",
+    "Premier League - Russia",
+    "Premiership - Scotland",
+    "Primera División - Chile",
+    "Saudi Pro League",
+    "Serie B - Italy",
+    "Super League - China",
+    "Super League - Greece",
+    "Superettan - Sweden",
+    "Swiss Superleague",
+    "UEFA Nations League"
   ],
-  "singles": [],
-  "multiples": [],
+  "singles": [
+    {
+      "id": 1,
+      "home": "Universidad Católica (CHI)",
+      "away": "O'Higgins",
+      "league": "Primera División - Chile",
+      "time": "21:45",
+      "kickoff_at": "2026-09-01T00:45:00Z",
+      "market": "Resultado Final",
+      "sel": "Universidad Católica (CHI)",
+      "odd": 3.74,
+      "book": "Pinnacle",
+      "edge": 48.9,
+      "score": 78,
+      "fairP": 0.756,
+      "odds": {
+        "Betfair": 1.08,
+        "Coolbet": 1.06,
+        "Pinnacle": 3.74,
+        "Tipico": 1.07,
+        "Winamax (DE)": 1.04,
+        "Winamax (FR)": 1.08
+      },
+      "models": {
+        "Consensus": 0.756
+      }
+    },
+    {
+      "id": 2,
+      "home": "Universidad Católica (CHI)",
+      "away": "O'Higgins",
+      "league": "Primera División - Chile",
+      "time": "21:45",
+      "kickoff_at": "2026-09-01T00:45:00Z",
+      "market": "Resultado Final",
+      "sel": "Empate",
+      "odd": 12.5,
+      "book": "Betfair",
+      "edge": 14.6,
+      "score": 78,
+      "fairP": 0.226,
+      "odds": {
+        "Betfair": 12.5,
+        "Coolbet": 11.0,
+        "Pinnacle": 1.67,
+        "Tipico": 6.0,
+        "Winamax (DE)": 10.0,
+        "Winamax (FR)": 8.5
+      },
+      "models": {
+        "Consensus": 0.226
+      }
+    }
+  ],
+  "multiples": [
+    {
+      "id": "m1",
+      "type": "Dupla",
+      "legs": [
+        {
+          "home": "Universidad Católica (CHI)",
+          "away": "O'Higgins",
+          "sel": "Universidad Católica (CHI)",
+          "odd": 3.74,
+          "book": "Pinnacle"
+        },
+        {
+          "home": "Universidad Católica (CHI)",
+          "away": "O'Higgins",
+          "sel": "Empate",
+          "odd": 12.5,
+          "book": "Betfair"
+        }
+      ],
+      "score": 78
+    }
+  ],
   "kpis": {
-    "roi": 0,
-    "hitRate": 0,
-    "brier": 0,
-    "edge": 0
+    "roi": 38.1,
+    "hitRate": 75.4,
+    "brier": 0.15,
+    "edge": 31.8
   }
 }
