@@ -508,6 +508,18 @@ def build_singles(events: list[dict]) -> list[dict]:
                     else:
                         sel_name = oc_key
 
+                    # Classificação de zebra: odds altas + edge significativo
+                    # Não é modelo novo — apenas tag baseada nos dados já calculados
+                    is_zebra = best_odd >= 2.50 and edge >= 0.05
+                    zebra_tier = ''
+                    if is_zebra:
+                        if best_odd >= 5.0:
+                            zebra_tier = 'gold'    # 🥇 odds altíssimas
+                        elif best_odd >= 3.50:
+                            zebra_tier = 'silver'  # 🥈 odds altas
+                        else:
+                            zebra_tier = 'bronze'  # 🥉 odds moderadas
+
                     idx += 1
                     singles.append({
                         'id': idx,
@@ -525,6 +537,8 @@ def build_singles(events: list[dict]) -> list[dict]:
                         'fairP': round(fair_p, 3),
                         'odds': {k: round(v, 2) for k, v in sorted(book_odds.items())},
                         'models': {'Consensus': round(model_prob, 3)},
+                        'zebra': is_zebra,
+                        'zebra_tier': zebra_tier,
                     })
 
     # Ordena por edge score (maior primeiro)

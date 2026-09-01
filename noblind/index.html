@@ -348,6 +348,45 @@ img{max-width:100%}
 .roi-card-sub{font-size:var(--fs-xs);color:var(--subtle);font-weight:500;margin-top:1px}
 .roi-card-val{font-family:var(--font-display);font-weight:400;font-size:1.375rem;letter-spacing:.02em;color:var(--lime)}
 
+/* ===== zebra cards — cor âmbar para "valor escondido" ===== */
+:root{
+  --amber:#F59E0B;--amber-d:rgba(245,158,11,.08);--amber-glow:rgba(245,158,11,.06);
+  --amber-dk:#D97706;--amber-border:rgba(245,158,11,.14);
+}
+.zebra-intro{background:linear-gradient(180deg,#22252E 0%,#181B22 100%);border-radius:var(--r);padding:var(--sp-5);
+  border:1px solid var(--amber-border);border-top-color:rgba(255,255,255,.14);
+  box-shadow:0 0 20px var(--amber-glow)}
+.zebra-intro-title{font-family:var(--font-display);font-size:var(--fs-xl);letter-spacing:.04em;text-transform:uppercase;
+  display:flex;align-items:center;gap:var(--sp-2)}
+.zebra-intro-sub{font-size:var(--fs-sm);color:var(--muted);margin-top:var(--sp-2);line-height:1.5}
+.zebra-card{background:linear-gradient(180deg,#2A2518 0%,#1C1A14 100%);border-radius:var(--r);padding:18px;cursor:pointer;color:var(--txt);position:relative;
+  border:1px solid var(--amber-border);border-top-color:rgba(255,255,255,.14);border-bottom-color:rgba(0,0,0,.30);
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 -1px 0 rgba(0,0,0,.20) inset,
+    0 4px 16px rgba(0,0,0,.25),0 12px 36px rgba(0,0,0,.18),0 0 18px var(--amber-glow);
+  transition:transform var(--transition-fast),box-shadow var(--transition-fast),border-color var(--transition-fast);
+  -webkit-tap-highlight-color:transparent}
+.zebra-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.30)}
+@media(hover:hover){.zebra-card:hover{border-color:rgba(245,158,11,.28);transform:translateY(-1px);
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 6px 24px rgba(0,0,0,.28),0 16px 44px rgba(0,0,0,.20),0 0 24px var(--amber-glow)}}
+.zebra-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;
+  font-size:.5625rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.zebra-badge--gold{background:rgba(245,158,11,.15);color:#FBBF24}
+.zebra-badge--silver{background:rgba(156,163,175,.12);color:#D1D5DB}
+.zebra-badge--bronze{background:rgba(180,83,9,.12);color:#F59E0B}
+.zebra-sel{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;
+  background:var(--amber);color:var(--dark);font-weight:700;font-size:.6875rem}
+.zebra-edge-val{color:var(--amber);font-weight:800}
+.zebra-odd{font-family:var(--font-display);font-size:var(--fs-3xl);font-weight:400;line-height:1;
+  letter-spacing:.02em;color:var(--amber);text-shadow:0 0 12px var(--amber-glow)}
+.zebra-disclaimer{font-size:.5625rem;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle);
+  text-align:center;padding:var(--sp-4);font-weight:600;line-height:1.6}
+.zebra-kpi-strip{display:flex;overflow-x:auto;scrollbar-width:none;padding:0;
+  border-radius:var(--r-sm);
+  background:linear-gradient(90deg,rgba(245,158,11,.05),rgba(245,158,11,.12),rgba(245,158,11,.05));
+  border:1px solid rgba(245,158,11,.18);
+  box-shadow:0 0 16px var(--amber-glow)}
+.zebra-kpi-strip::-webkit-scrollbar{display:none}
+
 /* ===== animações — spring easing premium ===== */
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .4s cubic-bezier(.16,1,.3,1) both}
@@ -689,6 +728,7 @@ function multiOdd(legs){return legs.reduce((a,l)=>a*l.odd,1)}
 const PAGES=[
   {id:'home',label:'Hoje',icon:'home'},
   {id:'singles',label:'Singles',icon:'target'},
+  {id:'zebras',label:'Zebras',icon:'zap'},
   {id:'multiples',label:'Múltiplas',icon:'layers'},
   {id:'stats',label:'Stats',icon:'chart'},
 ];
@@ -714,6 +754,7 @@ function renderPage(){
   switch(currentPage){
     case 'home':c.innerHTML=renderHome();break;
     case 'singles':c.innerHTML=renderSingles();break;
+    case 'zebras':c.innerHTML=renderZebras();break;
     case 'multiples':c.innerHTML=renderMultiples();break;
     case 'stats':c.innerHTML=renderStats();break;
     default:c.innerHTML=renderHome();
@@ -846,6 +887,21 @@ function renderHome(){
       Nenhuma análise com a melhor odd em ${selectedBook}.
     </div>`}
 
+    <!-- ZEBRAS — preview na home -->
+    ${(()=>{
+      const zb=getZebras();
+      if(!zb.length) return '';
+      return `<div class="flex items-center justify-between">
+        <span class="section-label" style="display:flex;align-items:center;gap:6px"><span style="font-size:.875rem">🦓</span> ZEBRAS DO DIA</span>
+        <button class="btn-pill btn-pill--dark" style="padding:6px 14px;font-size:.6875rem" onclick="navigate('zebras')">
+          Ver todas <span class="arrow">↗</span>
+        </button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${zb.slice(0,2).map(z=>renderZebraCard(z)).join('')}
+      </div>`;
+    })()}
+
     <!-- MÚLTIPLAS -->
     <div class="flex items-center justify-between">
       <span class="section-label"><span class="sec-prefix"></span>MÚLTIPLAS SUGERIDAS</span>
@@ -921,6 +977,111 @@ function renderSingles(){
     <div style="display:flex;flex-direction:column;gap:10px">
       ${sorted.map(s=>renderBetCard(s)).join('')}
     </div>
+  </div>`;
+}
+
+/* ========================================================
+   TELA ZEBRAS — picks com odds altas e edge significativo
+   ======================================================== */
+/* Filtra zebras: usa a flag do pipeline quando disponível, senão calcula aqui.
+   Não altera nenhuma lógica matemática — apenas filtra e exibe. */
+function getZebras(){
+  return SINGLES.filter(s=>{
+    if(typeof s.zebra!=='undefined') return s.zebra;
+    return s.odd>=2.50 && s.edge>=5;
+  }).sort((a,b)=>b.odd-a.odd); /* ordena por odds (mais alta primeiro) */
+}
+function zebraTier(s){
+  if(s.zebra_tier) return s.zebra_tier;
+  if(s.odd>=5.0) return 'gold';
+  if(s.odd>=3.50) return 'silver';
+  return 'bronze';
+}
+function zebraTierLabel(tier){
+  return tier==='gold'?'🥇 Alta':'🥈 Média';
+}
+function renderZebraCard(s){
+  const tier=zebraTier(s);
+  const ev=((s.fairP||0)*s.odd-1)*100; /* EV% calculado para exibição */
+  return `<div class="zebra-card" onclick="openSheet(${s.id})">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+      <div class="bet-teams-col">${tc(s.home,28)}${tc(s.away,28,'away')}</div>
+      <div style="flex:1;min-width:0">
+        <div class="bet-match">${s.home} vs ${s.away}</div>
+        <div class="bet-meta">${s.league} · ${s.time} · ${s.market}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end">
+        <div class="zebra-odd">${s.odd.toFixed(2)}</div>
+        <div class="bet-book">${s.book}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid rgba(245,158,11,.10)">
+      <div class="zebra-sel">${icon('zap',12)} ${s.sel}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="bet-edge">Edge <span class="zebra-edge-val">+${s.edge.toFixed(1)}%</span></div>
+        <div class="bet-edge">EV <span class="zebra-edge-val">${ev>0?'+':''}${ev.toFixed(1)}%</span></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+      <span class="zebra-badge zebra-badge--${tier}">${tier==='gold'?'🥇 Odds 5.0+':tier==='silver'?'🥈 Odds 3.5+':'🥉 Odds 2.5+'}</span>
+      <div class="score-bar"><div class="score-bar-track"><div class="score-bar-fill" style="width:${s.score}%;background:var(--amber)"></div></div><span class="score-bar-num">${s.score}</span></div>
+    </div>
+  </div>`;
+}
+function renderZebras(){
+  const zebras=getZebras();
+  const avgEdge=zebras.length?zebras.reduce((s,z)=>s+z.edge,0)/zebras.length:0;
+  const avgOdd=zebras.length?zebras.reduce((s,z)=>s+z.odd,0)/zebras.length:0;
+  const goldCount=zebras.filter(z=>zebraTier(z)==='gold').length;
+  const silverCount=zebras.filter(z=>zebraTier(z)==='silver').length;
+  const bronzeCount=zebras.filter(z=>zebraTier(z)==='bronze').length;
+
+  return `<div class="page active fade-in" style="display:flex;flex-direction:column;gap:16px">
+    <div style="margin-bottom:4px">
+      <h2 style="font-family:var(--font-display);font-size:2rem;font-weight:400;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:8px">
+        <span style="font-size:1.5rem">🦓</span> Zebras
+      </h2>
+      <p style="color:var(--muted);font-size:.8125rem;margin-top:2px;font-weight:500">Underdogs com divergência estatística detectada</p>
+    </div>
+
+    <!-- Explicação rápida -->
+    <div class="zebra-intro">
+      <div class="zebra-intro-title" style="color:var(--amber)">${icon('zap',18)} O que são zebras?</div>
+      <div class="zebra-intro-sub">
+        Picks com <strong style="color:var(--amber)">odds altas</strong> (≥ 2.50) onde a análise detectou
+        <strong style="color:var(--amber)">edge ≥ 5%</strong> — o mercado pode estar subestimando o resultado.
+        Maior risco, mas com valor estatístico identificado.
+      </div>
+    </div>
+
+    ${zebras.length?`
+    <!-- KPIs das zebras -->
+    <div class="zebra-kpi-strip">
+      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--amber)">${zebras.length}</div><div class="kpi-chip-label">Zebras</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val" style="color:var(--amber)">+${avgEdge.toFixed(1)}%</div><div class="kpi-chip-label">Edge Médio</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val">${avgOdd.toFixed(2)}</div><div class="kpi-chip-label">Odd Média</div></div>
+      <div class="kpi-chip"><div class="kpi-chip-val">${goldCount}/${silverCount}/${bronzeCount}</div><div class="kpi-chip-label">🥇/🥈/🥉</div></div>
+    </div>
+
+    <!-- Lista de zebras -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${zebras.map(z=>renderZebraCard(z)).join('')}
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="zebra-disclaimer">
+      ⚠️ Zebras são apostas de maior risco. A divergência estatística indica possível valor,
+      mas não garante resultado. Gerencie sua banca com responsabilidade.
+    </div>
+    `:`
+    <div class="zebra-intro" style="text-align:center;padding:var(--sp-8) var(--sp-5)">
+      <div style="font-size:2.5rem;margin-bottom:var(--sp-3)">🦓</div>
+      <div style="font-size:var(--fs-base);font-weight:700;margin-bottom:var(--sp-2)">Nenhuma zebra encontrada hoje</div>
+      <div style="font-size:var(--fs-sm);color:var(--muted);line-height:1.5">
+        Quando houver picks com odds ≥ 2.50 e edge ≥ 5%, eles aparecerão aqui.
+        ${dataSource==='demo'?'<br><span style="color:var(--amber);font-weight:600">Dados demo — aguarde o pipeline ao vivo.</span>':''}
+      </div>
+    </div>`}
   </div>`;
 }
 
