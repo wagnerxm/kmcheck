@@ -475,6 +475,21 @@ def build_singles(events: list[dict]) -> list[dict]:
 
                     best_book = max(book_odds, key=book_odds.get)
                     best_odd = book_odds[best_book]
+
+                    # Filtro de qualidade: detecta odds outlier extremo.
+                    # Se a melhor odd diverge mais de 3× da mediana das outras
+                    # casas, provavelmente é erro da API (odd errada, mercado
+                    # diferente, linha obsoleta). Não é edge real.
+                    # NÃO altera nenhum cálculo — apenas descarta dados
+                    # inconsistentes antes de virar pick.
+                    if len(book_odds) >= 3:
+                        sorted_odds = sorted(book_odds.values())
+                        median_odd = sorted_odds[len(sorted_odds) // 2]
+                        if best_odd > median_odd * 3.0:
+                            print(f'    ⚠️ {oc_key}: outlier ({best_odd} vs '
+                                  f'mediana {median_odd:.2f}) — descartando')
+                            continue
+
                     fair_p = fair_probs[i]
 
                     if fair_p <= 0 or fair_p >= 1:
@@ -488,8 +503,10 @@ def build_singles(events: list[dict]) -> list[dict]:
                     score = calc_edge_score(edge, ev, confidence=0.6,
                                              bookmaker_count=len(book_odds))
 
-                    # Filtra: só mostra picks com edge positivo e score mínimo
-                    if edge < 0.02 or score < 40:
+                    # Filtra: só mostra picks com edge real e score sólido.
+                    # Limiar subiu de 2%/40 para 3%/50 — mais seletivo,
+                    # mostra só picks que realmente compensam apostar.
+                    if edge < 0.03 or score < 50:
                         continue
 
                     # Nome descritivo do selection
@@ -547,35 +564,68 @@ def build_singles(events: list[dict]) -> list[dict]:
 
 
 def build_multiples(singles: list[dict]) -> list[dict]:
-    """Gera múltiplas combinando os melhores singles (top picks)."""
+    """Gera múltiplas combinando os melhores singles (top picks).
+
+    REGRA FUNDAMENTAL: nunca combinar picks do mesmo jogo.
+    Vitória e Empate (ou qualquer par de outcomes) do mesmo jogo são
+    mutuamente exclusivos — uma parlay com ambos NUNCA pode ganhar.
+
+    Primeiro deduplica por jogo (mantém o pick de maior score), depois
+    gera combinações apenas entre jogos diferentes."""
     if len(singles) < 2:
         return []
 
-    multiples = []
-    top = [s for s in singles if s['score'] >= 70][:6]
+    # Chave única do jogo — identifica o evento independente da seleção
+    def game_key(s):
+        return f"{s['home']}|{s['away']}|{s.get('kickoff_at', '')}"
+
+    # Deduplica por jogo: mantém o pick de maior score para cada jogo.
+    # (singles já vem ordenado por score desc, então o primeiro de cada
+    # jogo é automaticamente o melhor.)
+    seen = set()
+    unique = []
+    for s in singles:
+        gk = game_key(s)
+        if gk not in seen:
+            seen.add(gk)
+            unique.append(s)
+
+    # Exige score mais alto para múltiplas (risco multiplicativo)
+    top = [s for s in unique if s['score'] >= 60][:8]
     if len(top) < 2:
-        top = singles[:4]
+        top = unique[:6]
 
-    # Gera duplas com os top picks
-    for i in range(0, len(top) - 1, 2):
-        if i + 1 >= len(top):
+    if len(top) < 2:
+        return []
+
+    multiples = []
+
+    # Gera duplas (máximo 3) com os melhores picks de jogos diferentes
+    for i in range(len(top)):
+        if len(multiples) >= 3:
             break
-        a, b = top[i], top[i + 1]
-        legs = [
-            {'home': a['home'], 'away': a['away'], 'sel': a['sel'],
-             'odd': a['odd'], 'book': a['book']},
-            {'home': b['home'], 'away': b['away'], 'sel': b['sel'],
-             'odd': b['odd'], 'book': b['book']},
-        ]
-        combined_score = round((a['score'] + b['score']) / 2)
-        multiples.append({
-            'id': f'm{len(multiples)+1}',
-            'type': 'Dupla',
-            'legs': legs,
-            'score': combined_score,
-        })
+        for j in range(i + 1, len(top)):
+            if len(multiples) >= 3:
+                break
+            a, b = top[i], top[j]
+            # Segurança extra: confirma jogos diferentes
+            if game_key(a) == game_key(b):
+                continue
+            legs = [
+                {'home': a['home'], 'away': a['away'], 'sel': a['sel'],
+                 'odd': a['odd'], 'book': a['book']},
+                {'home': b['home'], 'away': b['away'], 'sel': b['sel'],
+                 'odd': b['odd'], 'book': b['book']},
+            ]
+            combined_score = round((a['score'] + b['score']) / 2)
+            multiples.append({
+                'id': f'm{len(multiples)+1}',
+                'type': 'Dupla',
+                'legs': legs,
+                'score': combined_score,
+            })
 
-    # Gera uma tripla se tiver 3+ picks
+    # Gera uma tripla se tiver 3+ picks de jogos diferentes
     if len(top) >= 3:
         legs = [
             {'home': s['home'], 'away': s['away'], 'sel': s['sel'],
