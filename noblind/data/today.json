@@ -1,6 +1,6 @@
 {
-  "date": "2026-08-31",
-  "generated_at": "2026-09-01T02:37:36.345505+00:00",
+  "date": "2026-09-01",
+  "generated_at": "2026-09-01T17:37:54.098345+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -49,60 +49,93 @@
     "Super League - Greece",
     "Superettan - Sweden",
     "Swiss Superleague",
+    "UEFA Champions League Women",
     "UEFA Nations League"
   ],
   "singles": [
     {
-      "id": 1,
-      "home": "Universidad Católica (CHI)",
-      "away": "O'Higgins",
-      "league": "Primera División - Chile",
-      "time": "21:45",
-      "kickoff_at": "2026-09-01T00:45:00Z",
+      "id": 2,
+      "home": "Wolfsberger AC",
+      "away": "LASK",
+      "league": "Austrian Football Bundesliga",
+      "time": "14:30",
+      "kickoff_at": "2026-09-01T17:30:00Z",
       "market": "Resultado Final",
-      "sel": "Universidad Católica (CHI)",
-      "odd": 3.74,
-      "book": "Pinnacle",
-      "edge": 48.9,
-      "score": 78,
-      "fairP": 0.756,
+      "sel": "LASK",
+      "odd": 1.43,
+      "book": "1xBet",
+      "edge": 15.4,
+      "score": 73,
+      "fairP": 0.853,
       "odds": {
-        "Betfair": 1.08,
-        "Coolbet": 1.06,
-        "Pinnacle": 3.74,
+        "1xBet": 1.43,
+        "888sport": 1.11,
+        "BetOnline.ag": 1.41,
+        "Betclic (FR)": 1.07,
+        "Betfair": 1.13,
+        "Betsson": 1.07,
+        "Codere (IT)": 1.36,
+        "Coolbet": 1.11,
+        "LeoVegas (SE)": 1.02,
+        "Matchbook": 1.12,
+        "NordicBet": 1.07,
+        "Pinnacle": 1.41,
+        "Suprabets": 1.1,
         "Tipico": 1.07,
-        "Winamax (DE)": 1.04,
-        "Winamax (FR)": 1.08
+        "Unibet (FR)": 1.32,
+        "Unibet (NL)": 1.08,
+        "Unibet (SE)": 1.08,
+        "William Hill": 1.4,
+        "Winamax (DE)": 1.09,
+        "Winamax (FR)": 1.12
       },
       "models": {
-        "Consensus": 0.756
-      }
+        "Consensus": 0.853
+      },
+      "zebra": false,
+      "zebra_tier": ""
     },
     {
-      "id": 2,
-      "home": "Universidad Católica (CHI)",
-      "away": "O'Higgins",
-      "league": "Primera División - Chile",
-      "time": "21:45",
-      "kickoff_at": "2026-09-01T00:45:00Z",
+      "id": 1,
+      "home": "Wolfsberger AC",
+      "away": "LASK",
+      "league": "Austrian Football Bundesliga",
+      "time": "14:30",
+      "kickoff_at": "2026-09-01T17:30:00Z",
       "market": "Resultado Final",
       "sel": "Empate",
-      "odd": 12.5,
+      "odd": 11.0,
       "book": "Betfair",
-      "edge": 14.6,
-      "score": 78,
-      "fairP": 0.226,
+      "edge": 2.0,
+      "score": 47,
+      "fairP": 0.111,
       "odds": {
-        "Betfair": 12.5,
-        "Coolbet": 11.0,
-        "Pinnacle": 1.67,
-        "Tipico": 6.0,
-        "Winamax (DE)": 10.0,
-        "Winamax (FR)": 8.5
+        "1xBet": 5.12,
+        "888sport": 8.0,
+        "BetOnline.ag": 5.25,
+        "Betclic (FR)": 8.0,
+        "Betfair": 11.0,
+        "Betsson": 8.2,
+        "Codere (IT)": 5.0,
+        "Coolbet": 8.5,
+        "LeoVegas (SE)": 9.0,
+        "Matchbook": 11.0,
+        "NordicBet": 8.2,
+        "Pinnacle": 5.3,
+        "Suprabets": 7.8,
+        "Tipico": 9.0,
+        "Unibet (FR)": 4.75,
+        "Unibet (NL)": 9.0,
+        "Unibet (SE)": 9.0,
+        "William Hill": 4.8,
+        "Winamax (DE)": 8.5,
+        "Winamax (FR)": 8.0
       },
       "models": {
-        "Consensus": 0.226
-      }
+        "Consensus": 0.111
+      },
+      "zebra": false,
+      "zebra_tier": ""
     }
   ],
   "multiples": [
@@ -111,27 +144,27 @@
       "type": "Dupla",
       "legs": [
         {
-          "home": "Universidad Católica (CHI)",
-          "away": "O'Higgins",
-          "sel": "Universidad Católica (CHI)",
-          "odd": 3.74,
-          "book": "Pinnacle"
+          "home": "Wolfsberger AC",
+          "away": "LASK",
+          "sel": "LASK",
+          "odd": 1.43,
+          "book": "1xBet"
         },
         {
-          "home": "Universidad Católica (CHI)",
-          "away": "O'Higgins",
+          "home": "Wolfsberger AC",
+          "away": "LASK",
           "sel": "Empate",
-          "odd": 12.5,
+          "odd": 11.0,
           "book": "Betfair"
         }
       ],
-      "score": 78
+      "score": 60
     }
   ],
   "kpis": {
-    "roi": 38.1,
-    "hitRate": 75.4,
-    "brier": 0.15,
-    "edge": 31.8
+    "roi": 10.4,
+    "hitRate": 57.0,
+    "brier": 0.207,
+    "edge": 8.7
   }
 }
