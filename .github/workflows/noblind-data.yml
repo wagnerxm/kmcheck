@@ -1,0 +1,88 @@
+# =============================================================================
+# noblind-data.yml — Pipeline automático de dados reais para o NO.BLIND
+#
+# Roda 2x por dia (manhã e tarde BRT) + manual, busca jogos e odds reais,
+# gera noblind/data/today.json e faz commit/push para GitHub Pages.
+#
+# Secrets necessários (Settings → Secrets → Actions):
+#   API_FOOTBALL_KEY    — chave da API-Football (api-sports.io)
+#                          Crie grátis em: https://www.api-football.com/pricing
+#
+# Secrets opcionais (para gravar no Supabase também):
+#   SUPABASE_URL        — URL do projeto (ex: https://xxx.supabase.co)
+#   SUPABASE_SERVICE_KEY — chave service_role para escrita
+# =============================================================================
+
+name: NO.BLIND Data Pipeline
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 BRT (madrugada, pega jogos do dia)
+    - cron: '0 6 * * *'
+    # 14:00 UTC = 11:00 BRT (manhã, atualiza odds antes dos jogos da tarde)
+    - cron: '0 14 * * *'
+    # 20:00 UTC = 17:00 BRT (tarde, atualiza odds antes dos jogos da noite)
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Data específica (YYYY-MM-DD), default: hoje'
+        required: false
+      days:
+        description: 'Quantos dias buscar (default: 1)'
+        required: false
+        default: '1'
+
+jobs:
+  fetch-data:
+    name: Buscar jogos e odds
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install -r noblind/scripts/requirements.txt
+
+      - name: Executar pipeline
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            ARGS="--date ${{ github.event.inputs.date }}"
+          fi
+          if [ -n "${{ github.event.inputs.days }}" ]; then
+            ARGS="$ARGS --days ${{ github.event.inputs.days }}"
+          fi
+          python noblind/scripts/pipeline.py $ARGS
+
+      - name: Commit e push dados
+        run: |
+          git config user.name "NO.BLIND Pipeline"
+          git config user.email "noblind-bot@users.noreply.github.com"
+
+          # Só commita se o arquivo mudou
+          if git diff --quiet noblind/data/today.json 2>/dev/null; then
+            echo "ℹ️ Nenhuma mudança nos dados"
+          else
+            git add noblind/data/today.json
+            DATE=$(date -u +%Y-%m-%d)
+            PICKS=$(python3 -c "import json;d=json.load(open('noblind/data/today.json'));print(len(d.get('singles',[])))" 2>/dev/null || echo "?")
+            git commit -m "📊 NO.BLIND: ${PICKS} picks para ${DATE}"
+            # Retry com backoff exponencial
+            for i in 1 2 3 4; do
+              git push origin main && break
+              echo "Push falhou (tentativa $i/4), aguardando..."
+              sleep $((2 ** i))
+            done
+          fi

@@ -515,13 +515,50 @@ async function checkSupabase(){
 }
 function updateStatus(){
   const el=$('#sb-status');if(!el)return;
-  el.innerHTML=sbOnline
-    ?`<span class="stat-pill stat-pill--live"><span class="stat-pill__dot"></span>${sbLeagues.length} ligas</span>`
-    :`<span class="stat-pill stat-pill--demo"><span class="stat-pill__dot"></span>Demo</span>`;
+  if(dataSource==='real'){
+    /* dados reais carregados do pipeline */
+    el.innerHTML=`<span class="stat-pill stat-pill--live"><span class="stat-pill__dot"></span>Ao vivo</span>`;
+  } else if(sbOnline){
+    el.innerHTML=`<span class="stat-pill stat-pill--live"><span class="stat-pill__dot"></span>${sbLeagues.length} ligas</span>`;
+  } else {
+    el.innerHTML=`<span class="stat-pill stat-pill--demo"><span class="stat-pill__dot"></span>Demo</span>`;
+  }
 }
 
-/* ===== dados demo — apostas do dia ===== */
-const SINGLES=[
+/* ===== carregamento de dados reais — data/today.json do pipeline ===== */
+/* O pipeline (noblind/scripts/pipeline.py) gera este arquivo via GitHub Action
+   3x por dia. O frontend tenta carregá-lo; se disponível e com data de hoje,
+   substitui os arrays demo. Se não, mantém o fallback demo sem erro. */
+async function loadRealData(){
+  try{
+    const r=await fetch('./data/today.json',{cache:'no-cache'});
+    if(!r.ok) return false;
+    const data=await r.json();
+    /* valida que o JSON tem a estrutura esperada */
+    if(!data.singles||!Array.isArray(data.singles)||data.singles.length===0) return false;
+    /* verifica se a data do JSON é de hoje (ou no máximo 1 dia atrás) */
+    const jsonDate=new Date(data.date+'T12:00:00');
+    const today=new Date();
+    const diffDays=Math.abs(today-jsonDate)/(1000*60*60*24);
+    if(diffDays>2) return false; /* dados muito antigos, ignora */
+    /* substitui os dados demo pelos dados reais */
+    SINGLES=data.singles;
+    if(data.multiples&&data.multiples.length) MULTIPLES=data.multiples;
+    if(data.kpis) KPIS=data.kpis;
+    dataSource='real';
+    console.log(`✅ Dados reais carregados: ${SINGLES.length} singles, fonte: ${data.source||'pipeline'}`);
+    return true;
+  }catch(e){
+    console.log('ℹ️ data/today.json não disponível, usando dados demo');
+    return false;
+  }
+}
+
+/* ===== dados — apostas do dia ===== */
+/* Carregados do pipeline real (data/today.json) quando disponível;
+   fallback para dados demo se offline ou arquivo ausente */
+let dataSource='demo'; /* 'real' quando data/today.json é carregado com sucesso */
+let SINGLES=[
 {id:1,home:'Flamengo',away:'Palmeiras',league:'Brasileirão A',time:'20:00',
  market:'Resultado Final',sel:'Flamengo',odd:2.25,book:'Pinnacle',edge:8.5,score:82,fairP:.482,
  odds:{Bet365:2.20,Betano:2.15,Pinnacle:2.25,'1xBet':2.22,Sportingbet:2.10,KTO:2.18,Betfair:2.28},
@@ -556,7 +593,7 @@ const SINGLES=[
  models:{Poisson:.60,'Dixon-Coles':.63,Elo:.61,'Grad.Boost':.65,'Consensus':.58,Ensemble:.62}},
 ];
 
-const MULTIPLES=[
+let MULTIPLES=[
 {id:'m1',type:'Dupla',legs:[
   {home:'Corinthians',away:'São Paulo',sel:'Mais de 2.5',odd:1.82,book:'Bet365'},
   {home:'Grêmio',away:'Internacional',sel:'Ambas Marcam Sim',odd:1.90,book:'Betfair'},
@@ -578,7 +615,7 @@ const MULTIPLES=[
 ],score:78},
 ];
 
-const KPIS={roi:12.4,hitRate:58.3,brier:.198,edge:5.7};
+let KPIS={roi:12.4,hitRate:58.3,brier:.198,edge:5.7};
 
 /* ===== estado dos filtros — data e casa de bet ===== */
 /* A data selecionada no calendário horizontal e a casa de bet filtrada */
@@ -1124,7 +1161,12 @@ function init(){
   sb.addEventListener('touchstart',e=>{sy=e.touches[0].clientY},{passive:true});
   sb.addEventListener('touchmove',e=>{if(sb.scrollTop<=0&&e.touches[0].clientY-sy>60)closeSheet()},{passive:true});
 }
-document.addEventListener('DOMContentLoaded',()=>{init();checkSupabase()});
+document.addEventListener('DOMContentLoaded',async()=>{
+  /* tenta carregar dados reais do pipeline antes de renderizar */
+  await loadRealData();
+  init();
+  checkSupabase();
+});
 </script>
 </body>
 </html>
