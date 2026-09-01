@@ -71,11 +71,14 @@ jobs:
           git config user.name "NO.BLIND Pipeline"
           git config user.email "noblind-bot@users.noreply.github.com"
 
-          # Só commita se o arquivo mudou
-          if git diff --quiet noblind/data/today.json 2>/dev/null; then
+          # git add primeiro — detecta arquivos novos (untracked) e modificados
+          git add noblind/data/today.json
+
+          # Agora checa se há diferença no staging area
+          if git diff --cached --quiet noblind/data/today.json 2>/dev/null; then
             echo "ℹ️ Nenhuma mudança nos dados"
+            git reset noblind/data/today.json 2>/dev/null || true
           else
-            git add noblind/data/today.json
             DATE=$(date -u +%Y-%m-%d)
             PICKS=$(python3 -c "import json;d=json.load(open('noblind/data/today.json'));print(len(d.get('singles',[])))" 2>/dev/null || echo "?")
             git commit -m "📊 NO.BLIND: ${PICKS} picks para ${DATE}"

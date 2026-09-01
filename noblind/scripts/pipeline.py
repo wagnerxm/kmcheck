@@ -50,17 +50,76 @@ OUTPUT_DIR = REPO_ROOT / 'noblind' / 'data'
 BRT = timezone(timedelta(hours=-3))
 
 # ─── Ligas monitoradas (The Odds API sport keys) ────────────────────────────
-LEAGUES = {
-    'soccer_brazil_serie_a': {
-        'name': 'Brasileirão Série A', 'short': 'Brasileirão A',
-        'country': 'BR', 'confederation': 'CONMEBOL'},
+# Ligas fixas que sabemos que existem na API
+FIXED_LEAGUES = {
     'soccer_brazil_campeonato': {
         'name': 'Copa do Brasil', 'short': 'Copa do Brasil',
         'country': 'BR', 'confederation': 'CONMEBOL'},
     'soccer_conmebol_copa_libertadores': {
         'name': 'Copa Libertadores', 'short': 'Libertadores',
         'country': None, 'confederation': 'CONMEBOL'},
+    'soccer_conmebol_copa_sudamericana': {
+        'name': 'Copa Sudamericana', 'short': 'Sudamericana',
+        'country': None, 'confederation': 'CONMEBOL'},
 }
+
+# Padrões de sport key que indicam futebol brasileiro (para auto-discovery)
+BRAZIL_KEY_PATTERNS = ['soccer_brazil']
+CONMEBOL_KEY_PATTERNS = ['soccer_conmebol']
+
+
+def discover_leagues() -> dict:
+    """Descobre ligas brasileiras e CONMEBOL disponíveis via /v4/sports.
+    Combina auto-discovery com as ligas fixas (fallback se a API falhar)."""
+    leagues = dict(FIXED_LEAGUES)
+
+    try:
+        url = f'{API_BASE}/sports'
+        r = httpx.get(url, params={'apiKey': API_KEY}, timeout=15)
+        if r.status_code != 200:
+            print(f'  ⚠️ /v4/sports retornou {r.status_code}, usando ligas fixas')
+            return leagues
+
+        sports = r.json()
+        for sport in sports:
+            key = sport.get('key', '')
+            title = sport.get('title', '')
+            group = sport.get('group', '')
+            active = sport.get('active', False)
+
+            if group != 'Soccer' or not active:
+                continue
+
+            # Liga brasileira que ainda não temos?
+            is_brazil = any(key.startswith(p) for p in BRAZIL_KEY_PATTERNS)
+            is_conmebol = any(key.startswith(p) for p in CONMEBOL_KEY_PATTERNS)
+
+            if (is_brazil or is_conmebol) and key not in leagues:
+                short = title
+                # Nomes mais curtos para exibição
+                if 'Série A' in title or 'Serie A' in title:
+                    short = 'Brasileirão A'
+                elif 'Série B' in title or 'Serie B' in title:
+                    short = 'Brasileirão B'
+                elif 'Paulista' in title:
+                    short = 'Paulistão'
+
+                leagues[key] = {
+                    'name': title,
+                    'short': short,
+                    'country': 'BR' if is_brazil else None,
+                    'confederation': 'CONMEBOL',
+                }
+                print(f'  🆕 Liga descoberta: {title} ({key})')
+
+        # Quota info
+        remaining = r.headers.get('x-requests-remaining', '?')
+        print(f'  📡 {len(sports)} esportes na API ({remaining} requests restantes)')
+
+    except Exception as e:
+        print(f'  ⚠️ Erro ao descobrir ligas: {e} — usando ligas fixas')
+
+    return leagues
 
 # Nomes amigáveis das casas de aposta (The Odds API → nome de exibição)
 BOOKMAKER_NAMES = {
@@ -189,12 +248,12 @@ def calc_kelly(prob: float, odds: float, fraction: float = 0.25) -> float:
 
 
 # ─── Processamento de jogos e odds ──────────────────────────────────────────
-def fetch_all_events(target_dates: list[date]) -> list[dict]:
+def fetch_all_events(target_dates: list[date], leagues: dict) -> list[dict]:
     """Busca odds de todas as ligas e filtra pelos dias alvo."""
     all_events = []
     target_set = set(target_dates)
 
-    for league_key, info in LEAGUES.items():
+    for league_key, info in leagues.items():
         print(f'\n📋 {info["short"]}:')
         events, headers = api_get(f'sports/{league_key}/odds', {
             'regions': 'eu',
@@ -514,12 +573,16 @@ def main():
     print(f'🏟️  NO.BLIND Pipeline')
     print(f'📅  Data: {target.isoformat()}' +
           (f' (+{args.days-1} dias)' if args.days > 1 else ''))
-    print(f'📊  Ligas: {", ".join(l["short"] for l in LEAGUES.values())}')
     print(f'🔑  API: The Odds API (the-odds-api.com)')
+
+    # 0. Descobre ligas disponíveis (auto-discovery + fixas)
+    print('\n0. Descobrindo ligas disponíveis...')
+    leagues = discover_leagues()
+    print(f'📊  Ligas: {", ".join(l["short"] for l in leagues.values())}')
 
     # 1. Busca jogos e odds
     print('\n1. Buscando jogos e odds...')
-    events = fetch_all_events(target_dates)
+    events = fetch_all_events(target_dates, leagues)
 
     if not events:
         print(f'\n⚠️ Nenhum jogo encontrado para {target.isoformat()}')
@@ -541,7 +604,7 @@ def main():
         'date': target.isoformat(),
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'source': 'the-odds-api',
-        'leagues': [l['short'] for l in LEAGUES.values()],
+        'leagues': [l['short'] for l in leagues.values()],
         'singles': singles,
         'multiples': multiples,
         'kpis': kpis,
