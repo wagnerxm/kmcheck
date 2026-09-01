@@ -1,0 +1,19 @@
+{
+  "date": "2026-08-31",
+  "generated_at": "2026-09-01T01:16:23.455069+00:00",
+  "source": "the-odds-api",
+  "leagues": [
+    "Copa do Brasil",
+    "Libertadores",
+    "Sudamericana",
+    "Brasileirão B"
+  ],
+  "singles": [],
+  "multiples": [],
+  "kpis": {
+    "roi": 0,
+    "hitRate": 0,
+    "brier": 0,
+    "edge": 0
+  }
+}
