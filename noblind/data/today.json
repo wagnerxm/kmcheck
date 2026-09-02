@@ -1,6 +1,6 @@
 {
   "date": "2026-09-02",
-  "generated_at": "2026-09-02T17:37:16.340740+00:00",
+  "generated_at": "2026-09-02T23:56:43.354502+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -28,7 +28,6 @@
     "Bundesliga 2 - Germany",
     "Championship",
     "Coppa Italia",
-    "DFB-Pokal",
     "Denmark Superliga",
     "Ekstraklasa - Poland",
     "Eliteserien - Norway",
@@ -49,16 +48,47 @@
     "Super League - Greece",
     "Superettan - Sweden",
     "Swiss Superleague",
-    "UEFA Champions League Women",
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
-  "singles": [],
+  "singles": [
+    {
+      "id": 1,
+      "home": "Coquimbo Unido",
+      "away": "Universidad de Concepción",
+      "league": "Primera División - Chile",
+      "time": "19:01",
+      "kickoff_at": "2026-09-02T22:01:00Z",
+      "market": "Resultado Final",
+      "sel": "Empate",
+      "odd": 19.0,
+      "book": "Winamax (DE)",
+      "edge": 9.7,
+      "score": 68,
+      "fairP": 0.149,
+      "odds": {
+        "888sport": 11.0,
+        "Betfair": 17.5,
+        "Betsson": 17.0,
+        "Coolbet": 18.0,
+        "NordicBet": 17.0,
+        "Pinnacle": 1.5,
+        "Tipico": 8.5,
+        "Winamax (DE)": 19.0,
+        "Winamax (FR)": 18.0
+      },
+      "models": {
+        "Consensus": 0.149
+      },
+      "zebra": true,
+      "zebra_tier": "gold"
+    }
+  ],
   "multiples": [],
   "kpis": {
-    "roi": 0,
-    "hitRate": 0,
-    "brier": 0,
-    "edge": 0
+    "roi": 11.6,
+    "hitRate": 57.8,
+    "brier": 0.202,
+    "edge": 9.7
   }
 }
