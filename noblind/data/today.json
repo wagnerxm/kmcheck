@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-01",
-  "generated_at": "2026-09-01T23:54:56.726628+00:00",
+  "date": "2026-09-02",
+  "generated_at": "2026-09-02T17:37:16.340740+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -50,7 +50,8 @@
     "Superettan - Sweden",
     "Swiss Superleague",
     "UEFA Champions League Women",
-    "UEFA Nations League"
+    "UEFA Nations League",
+    "Veikkausliiga - Finland"
   ],
   "singles": [],
   "multiples": [],
