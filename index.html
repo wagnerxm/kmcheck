@@ -258,6 +258,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .topbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:none;color:#fff;cursor:pointer;transition:transform .3s ease}
 .topbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+/* indicador GPS na câmera — bolinha pequena entre os botões do topbar */
+#camgpsdot{width:8px;height:8px;border-radius:50%;background:#f44;transition:background .4s;flex-shrink:0}
+#camgpsdot.fix{background:#8f0}#camgpsdot.weak{background:#fc0}
+@keyframes gpsPulse{0%,100%{opacity:1}50%{opacity:.3}}
+#camgpsdot:not(.fix):not(.weak){animation:gpsPulse 1.5s ease-in-out infinite}
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 /* seletor de PROPORÇÃO (1:1 / 4:3 / 16:9), logo acima da barra inferior — igual ao iPhone.
    O formato ativo fica destacado; tocar recorta a área útil da câmera na hora. */
@@ -860,6 +865,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <!-- barra superior fina: Voltar + Trocar câmera, ambos no canto superior esquerdo -->
   <div id="camtopbar">
     <button id="camback" class="topbtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+    <span id="camgpsdot" title="GPS"></span>
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="camstage">
@@ -1732,7 +1738,17 @@ function _getGpsEls(){
     hest:document.getElementById('heroestaca')};
   return _gpsEls;
 }
+/* Atualiza o indicador GPS no topbar da câmera — verde (fix bom), amarelo (fraco), vermelho (sem fix) */
+function paintCamGps(){
+  const dot=document.getElementById('camgpsdot'); if(!dot) return;
+  dot.classList.remove('fix','weak');
+  if(S.pos && isFinite(S.pos.lat)){
+    if(S.pos.acc!=null && S.pos.acc<50) dot.classList.add('fix');
+    else dot.classList.add('weak');
+  }
+}
 function paintGps(){
+  paintCamGps();
   const {kb,lav,lov,herobr,signBr,signKm,hest}=_getGpsEls();
   if(S.pos){
     lav.textContent=fc(S.pos.lat); lov.textContent=fc(S.pos.lon);
@@ -2347,6 +2363,16 @@ async function openCam(){
   }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
+  /* Se ainda não temos fix GPS, pede uma posição rápida em paralelo —
+     watchPosition pode demorar segundos; getCurrentPosition com timeout
+     curto tenta entregar uma posição "cached" mais rápido. */
+  if(!S.pos && navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(p=>{
+      if(!S.pos) S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy,
+        alt:p.coords.altitude, spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
+      paintCamGps();
+    }, ()=>{}, {enableHighAccuracy:true, maximumAge:10000, timeout:5000});
+  }
 
   /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
   document.querySelector('nav').style.display='none';
@@ -2514,15 +2540,25 @@ document.getElementById('shutter').onclick=()=>{
   burnLegend(ctx,W,H,info,0);
   // geração SÍNCRONA (toDataURL) para o menu de salvar nativo abrir ainda dentro do toque
   let bytes=dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual));
+  /* ── EXIF OBRIGATÓRIO ──
+     Sempre injeta EXIF com todos os dados disponíveis. Se GPS estiver indisponível,
+     ainda grava EXIF com data/hora/descrição e avisa o usuário com toast destacado.
+     Nunca silencia falhas — EXIF é requisito do registro fotográfico. */
+  const meta=buildCaptureMeta(info, W, H);
+  const hasGpsData=meta.lat!=null && meta.lon!=null && isFinite(meta.lat) && isFinite(meta.lon);
   try{
-    const meta=buildCaptureMeta(info, W, H);
     bytes=insertExif(bytes, buildExifApp1(meta));
-    /* verificação rápida: o APP1 deve estar logo após o SOI (FF D8 FF E1) */
     if(!(bytes[2]===0xFF && bytes[3]===0xE1)) throw new Error('APP1 não encontrado após injeção');
   } catch(e){
-    console.error('EXIF falhou:', e);
-    toast('⚠ Foto sem dados EXIF — verifique as permissões.');
+    console.error('[KMCheck] EXIF FALHOU:', e);
+    /* Tenta novamente sem dados opcionais — EXIF mínimo é melhor que nenhum */
+    try{
+      const minMeta={dt:meta.dt, lat:meta.lat, lon:meta.lon, desc:meta.desc, imgW:W, imgH:H, ms:meta.ms, tz:meta.tz};
+      bytes=insertExif(dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual)), buildExifApp1(minMeta));
+    }catch(e2){ console.error('[KMCheck] EXIF retry FALHOU:', e2); }
+    toast('⚠ Erro ao gravar EXIF — foto pode estar sem metadados.');
   }
+  if(!hasGpsData) toast('📍 GPS indisponível — foto salva SEM coordenadas. Aguarde o sinal GPS.');
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
   }catch(err){
     console.error('[KMCheck] captura falhou:', err);
@@ -2975,9 +3011,20 @@ function buildExifApp1(m){
   gpsPtr=longE(0x8825,0); ifd0.push(gpsPtr);
 
   const exif=[];
-  exif.push(E(0x9000,7,4,new Uint8Array([0x30,0x32,0x33,0x30]))); // ExifVersion "0230"
+  exif.push(E(0x9000,7,4,new Uint8Array([0x30,0x32,0x33,0x32]))); // ExifVersion "0232" (padrão moderno, igual iOS)
   exif.push(ascii(0x9003,dtStr));   // DateTimeOriginal
   exif.push(ascii(0x9004,dtStr));   // DateTimeDigitized
+  /* SubSecTime — precisão em milissegundos, igual câmeras nativas iOS/Android */
+  const msStr=String(m.ms||0).padStart(3,'0');
+  exif.push(ascii(0x9290,msStr));   // SubSecTime
+  exif.push(ascii(0x9291,msStr));   // SubSecTimeOriginal
+  exif.push(ascii(0x9292,msStr));   // SubSecTimeDigitized
+  /* OffsetTime — fuso horário no formato "+HH:MM" ou "-HH:MM" (EXIF 2.31+) */
+  if(m.tz) {
+    exif.push(ascii(0x9010,m.tz));  // OffsetTime
+    exif.push(ascii(0x9011,m.tz));  // OffsetTimeOriginal
+    exif.push(ascii(0x9012,m.tz));  // OffsetTimeDigitized
+  }
   exif.push(shortE(0xA001,1));      // ColorSpace = sRGB
   if(m.imgW) exif.push(longE(0xA002,m.imgW));   // PixelXDimension
   if(m.imgH) exif.push(longE(0xA003,m.imgH));   // PixelYDimension
@@ -3012,6 +3059,9 @@ function buildExifApp1(m){
       gps.push(ascii(0x000E,'T'));                               // GPSTrackRef = True north
       gps.push(ratE(0x000F,[[Math.round(m.head*100),100]]));     // GPSTrack (graus)
     }
+    /* GPSMapDatum — identifica o sistema geodésico. Alguns viewers (Google Photos,
+       QGIS, ArcGIS) só exibem coordenadas se este tag estiver presente. */
+    gps.push(ascii(0x0012,'WGS-84'));                            // GPSMapDatum
     if(m.acc!=null&&isFinite(m.acc)) gps.push(ratE(0x001F,[[Math.round(m.acc*100),100]])); // GPSHPositioningError
   }
   gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
@@ -3072,8 +3122,15 @@ function buildCaptureMeta(info, imgW, imgH){
   const acc=S.pos&&isFinite(S.pos.acc)?S.pos.acc:(info&&info.acc!=null?info.acc:null);
   const spd=S.pos&&S.pos.spd!=null&&isFinite(S.pos.spd)?S.pos.spd:null;
   const head=S.pos&&S.pos.head!=null&&isFinite(S.pos.head)?S.pos.head:null;
+  /* ms: milissegundos para SubSecTime (precisão igual câmera nativa iOS/Android)
+     tz: fuso horário "+HH:MM" para OffsetTime (EXIF 2.31+, lido pelo Google Photos, Apple Fotos) */
+  const ms=dt.getMilliseconds();
+  const tzOff=-dt.getTimezoneOffset(), tzSign=tzOff>=0?'+':'-',
+    tzH=String(Math.floor(Math.abs(tzOff)/60)).padStart(2,'0'),
+    tzM=String(Math.abs(tzOff)%60).padStart(2,'0'),
+    tz=tzSign+tzH+':'+tzM;
   let desc=''; try{ const {L}=legendLines(info||{}); desc=toAscii((L||[]).join(' | ')); }catch(e){}
-  return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0};
+  return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0, ms, tz};
 }
 /* Salva a foto no dispositivo E na galeria interna do app.
    PRECISA ser chamado DENTRO do toque do obturador (por isso a foto é gerada de forma síncrona,
