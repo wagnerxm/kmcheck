@@ -3144,34 +3144,53 @@ function buildCaptureMeta(info, imgW, imgH){
    • Android browser / Desktop: <a download> clássico — funciona normalmente.
    • iOS (PWA): navigator.share — único caminho que funciona no Safari standalone. */
 const _isPWAStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+/* ── Garantir que o SW esteja controlando a página ──
+   No primeiro acesso após instalar ou após update do SW, o controller pode ser null.
+   Esta função espera até 2s pelo controllerchange antes de desistir. */
+function _ensureSWController(){
+  if(navigator.serviceWorker && navigator.serviceWorker.controller) return Promise.resolve(true);
+  if(!navigator.serviceWorker) return Promise.resolve(false);
+  return new Promise(resolve=>{
+    const t=setTimeout(()=>{ navigator.serviceWorker.removeEventListener('controllerchange',h); resolve(false) }, 2000);
+    const h=()=>{ clearTimeout(t); resolve(true) };
+    navigator.serviceWorker.addEventListener('controllerchange', h, {once:true});
+  });
+}
+/* ── Download via SW: coloca blob no cache, <a download> aponta pra URL do SW ──
+   Usa <a download> em vez de iframe — mantém o gesto do usuário (importante pra
+   Android OEM que bloqueiam downloads fora de gesto). O SW serve com
+   Content-Disposition: attachment e o Chrome baixa automaticamente. */
 async function _downloadViaSW(blob, name){
-  /* Salva via Service Worker: coloca no cache 'kmcheck-dl' com header de download,
-     navega iframe oculto pra essa URL. O SW intercepta, serve com attachment, e Chrome baixa.
-     Funciona em PWA standalone onde <a download> falha. */
   try{
-    if(!navigator.serviceWorker||!navigator.serviceWorker.controller) return false;
-    const dlUrl=new URL('__dl/'+encodeURIComponent(name), location.href).href;
+    const hasCtrl=await _ensureSWController();
+    if(!hasCtrl) return false;
+    const safeName=name.replace(/\s+/g,'_');
+    const dlUrl=new URL('__dl/'+encodeURIComponent(safeName), location.href).href;
     const cache=await caches.open('kmcheck-dl');
     await cache.put(dlUrl, new Response(blob,{
-      headers:{'Content-Type':'image/jpeg','Content-Disposition':'attachment; filename="'+name+'"'}
+      headers:{'Content-Type':'image/jpeg',
+        'Content-Disposition':'attachment; filename="'+safeName+'"; filename*=UTF-8\'\''+encodeURIComponent(safeName)}
     }));
-    const iframe=document.createElement('iframe');
-    iframe.style.display='none';
-    iframe.src=dlUrl;
-    document.body.appendChild(iframe);
-    setTimeout(()=>{ try{ document.body.removeChild(iframe) }catch(e){} }, 5000);
+    /* <a download> + URL real do SW — combina o atributo download com a resposta
+       do SW que tem Content-Disposition: attachment. Funciona em PWA standalone
+       onde <a download> com blob: é ignorado (Chrome Android 120+). */
+    const a=document.createElement('a');
+    a.href=dlUrl; a.download=safeName; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} }, 3000);
     return true;
   }catch(e){
     console.error('[KMCheck] download via SW falhou:', e);
     return false;
   }
 }
+/* ── Download direto: <a download> com blob URL (Chrome browser / Desktop) ── */
 function _downloadDirect(blob, name){
-  /* Salva via <a download> — funciona no navegador normal e desktop. */
   try{
+    const safeName=name.replace(/\s+/g,'_');
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download=name; a.style.display='none';
+    a.href=url; a.download=safeName; a.style.display='none';
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} URL.revokeObjectURL(url) }, 5000);
   }catch(e){
@@ -3183,41 +3202,48 @@ function saveAndShare(blob){
   const {L}=legendLines(info);
   const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
   const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
-  const name=`${base} ${hhmmss}.jpg`;
+  const name=`${base}_${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
-  /* 1) salva na galeria interna do app (IndexedDB) */
-  savePhotoToGallery(blob, name).catch(e=>{
-    console.error('[KMCheck] IndexedDB falhou:', e);
-    toast('⚠ Foto não ficou na galeria do app');
-  });
+  /* 1) salva na galeria interna do app (IndexedDB) — silencioso */
+  savePhotoToGallery(blob, name).catch(e=>console.error('[KMCheck] IndexedDB falhou:', e));
   /* 2) salva no dispositivo */
   if(_isIOS){
     /* iOS: navigator.share é o único caminho em PWA standalone */
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({files:[file]}).then(()=>{
+      navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
+        if(e.name!=='AbortError') console.error('[KMCheck] share iOS falhou:', e);
         toast('📸 Foto salva');
-      }).catch(e=>{
-        if(e.name==='AbortError') toast('📸 Foto registrada');
-        else { console.error('[KMCheck] share iOS falhou:', e); toast('⚠ Não foi possível salvar.'); }
       });
     } else {
       _downloadDirect(blob, name);
       toast('📸 Foto salva');
     }
-  } else if(_isAndroid && _isPWAStandalone){
-    /* Android PWA standalone: <a download> não funciona — usa download via SW */
+  } else if(_isAndroid){
+    /* Android (PWA ou browser): cascata de 3 métodos, automático sem diálogo.
+       1º SW download (<a download> + URL do SW) — funciona em PWA standalone
+       2º <a download> direto com blob — funciona em Chrome browser normal
+       3º navigator.share silencioso — último recurso, nunca deve chegar aqui */
     _downloadViaSW(blob, name).then(ok=>{
-      if(ok) toast('📸 Foto salva');
-      else {
-        /* fallback: navigator.share se SW falhar */
-        if(navigator.canShare && navigator.canShare({files:[file]})){
-          navigator.share({files:[file]}).catch(()=>{});
+      if(!ok){
+        if(_isPWAStandalone){
+          /* Standalone e SW falhou: tenta blob direto (pode falhar), depois share */
+          _downloadDirect(blob, name);
+          /* Dispara share em paralelo como seguro — se o download direto falhar
+             silenciosamente (Chrome 120+), o share garante que a foto não se perde.
+             Se o download funcionar, a foto fica duplicada mas é melhor que perder. */
+          try{
+            if(navigator.canShare && navigator.canShare({files:[file]})){
+              navigator.share({files:[file]}).catch(()=>{});
+            }
+          }catch(e){}
+        } else {
+          _downloadDirect(blob, name);
         }
-        toast('📸 Foto registrada');
       }
+      toast('📸 Foto salva');
     });
   } else {
-    /* Android browser / Desktop: <a download> funciona normalmente */
+    /* Desktop / outros */
     _downloadDirect(blob, name);
     toast('📸 Foto salva');
   }
