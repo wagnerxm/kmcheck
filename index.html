@@ -2369,21 +2369,6 @@ async function openCam(){
   }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
-  /* Pede posição rápida em paralelo — 2 pedidos: um de baixa precisão (torre de
-     celular, resposta em <1s) e um de alta precisão (GPS real). O primeiro que
-     chegar popula S.pos se ainda estiver vazio. */
-  if(navigator.geolocation && (!S.pos||!isFinite(S.pos.lat))){
-    const _fill=p=>{
-      if(!S.pos||!isFinite(S.pos.lat)){
-        S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy,
-          alt:p.coords.altitude, spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
-        try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
-      }
-      paintCamGps();
-    };
-    navigator.geolocation.getCurrentPosition(_fill, ()=>{}, {enableHighAccuracy:false, maximumAge:60000, timeout:3000});
-    navigator.geolocation.getCurrentPosition(_fill, ()=>{}, {enableHighAccuracy:true, maximumAge:10000, timeout:8000});
-  }
 
   /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
   document.querySelector('nav').style.display='none';
@@ -2556,6 +2541,7 @@ document.getElementById('shutter').onclick=()=>{
      ainda grava EXIF com data/hora/descrição e avisa o usuário com toast destacado.
      Nunca silencia falhas — EXIF é requisito do registro fotográfico. */
   const meta=buildCaptureMeta(info, W, H);
+  console.log('[KMCheck] EXIF GPS:', meta.lat, meta.lon, '| S.pos:', S.pos?`${S.pos.lat},${S.pos.lon} acc=${S.pos.acc}`:'NULL', '| watchId:', S.watchId);
   try{
     bytes=insertExif(bytes, buildExifApp1(meta));
     if(!(bytes[2]===0xFF && bytes[3]===0xE1)) throw new Error('APP1 não encontrado após injeção');
@@ -3403,21 +3389,10 @@ if(svcAdd) svcAdd.onclick=()=>{
   renderServices();
   paintTags();
   loadLogo();
-  /* GPS inicia no boot — watchPosition (contínuo) + getCurrentPosition (imediato).
-     O getCurrentPosition com maximumAge alto aceita posição cached do sistema (~1s),
-     enquanto o watchPosition com enableHighAccuracy demora mais (~5-15s pro 1º fix).
-     Assim a 1ª foto já terá coordenadas mesmo tirada logo após abrir o app. */
+  /* GPS inicia no boot — só watchPosition (contínuo, alta precisão).
+     NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
+     interfere com o watchPosition, cancelando os callbacks e deixando S.pos vazio. */
   startGps();
-  if(!S.pos && navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(p=>{
-      if(!S.pos||!isFinite(S.pos.lat)){
-        S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy,
-          alt:p.coords.altitude, spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
-        try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
-        paintGps();
-      }
-    }, ()=>{}, {enableHighAccuracy:false, maximumAge:60000, timeout:5000});
-  }
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{
       /* Força atualização imediata: checa o sw.js no servidor agora, e se houver
