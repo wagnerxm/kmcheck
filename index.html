@@ -2369,15 +2369,20 @@ async function openCam(){
   }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   startGps();
-  /* Se ainda não temos fix GPS, pede uma posição rápida em paralelo —
-     watchPosition pode demorar segundos; getCurrentPosition com timeout
-     curto tenta entregar uma posição "cached" mais rápido. */
-  if(!S.pos && navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(p=>{
-      if(!S.pos) S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy,
-        alt:p.coords.altitude, spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
+  /* Pede posição rápida em paralelo — 2 pedidos: um de baixa precisão (torre de
+     celular, resposta em <1s) e um de alta precisão (GPS real). O primeiro que
+     chegar popula S.pos se ainda estiver vazio. */
+  if(navigator.geolocation && (!S.pos||!isFinite(S.pos.lat))){
+    const _fill=p=>{
+      if(!S.pos||!isFinite(S.pos.lat)){
+        S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy,
+          alt:p.coords.altitude, spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
+        try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
+      }
       paintCamGps();
-    }, ()=>{}, {enableHighAccuracy:true, maximumAge:10000, timeout:5000});
+    };
+    navigator.geolocation.getCurrentPosition(_fill, ()=>{}, {enableHighAccuracy:false, maximumAge:60000, timeout:3000});
+    navigator.geolocation.getCurrentPosition(_fill, ()=>{}, {enableHighAccuracy:true, maximumAge:10000, timeout:8000});
   }
 
   /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
@@ -3007,10 +3012,10 @@ function buildExifApp1(m){
   ifd0.push(ascii(0x0132,dtStr));                // DateTime
   const exifPtr=longE(0x8769,0); ifd0.push(exifPtr);
   let gpsPtr=null;
-  /* GPS IFD é montado SEMPRE que houver lat/lon, e também quando não houver —
-     neste caso com apenas a versão, para que leitores EXIF reconheçam a foto
-     como "com suporte a GPS" e não descartem o bloco inteiro */
-  gpsPtr=longE(0x8825,0); ifd0.push(gpsPtr);
+  /* GPS IFD só é montado quando temos coordenadas reais — sem lat/lon, não
+     inclui o ponteiro. Viewers mostram "0; 0; 0" quando o IFD existe sem dados,
+     o que confunde o usuário. Sem o ponteiro, simplesmente não aparece GPS. */
+  if(hasGps){ gpsPtr=longE(0x8825,0); ifd0.push(gpsPtr); }
 
   const exif=[];
   exif.push(E(0x9000,7,4,new Uint8Array([0x30,0x32,0x33,0x32]))); // ExifVersion "0232" (padrão moderno, igual iOS)
@@ -3066,17 +3071,20 @@ function buildExifApp1(m){
     gps.push(ascii(0x0012,'WGS-84'));                            // GPSMapDatum
     if(m.acc!=null&&isFinite(m.acc)) gps.push(ratE(0x001F,[[Math.round(m.acc*100),100]])); // GPSHPositioningError
   }
-  gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
-  gps.push(ascii(0x001D,dt.getUTCFullYear()+':'+String(dt.getUTCMonth()+1).padStart(2,'0')+':'+String(dt.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
-  gps.sort((a,b)=>a.tag-b.tag);
+  if(hasGps){
+    gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
+    gps.push(ascii(0x001D,dt.getUTCFullYear()+':'+String(dt.getUTCMonth()+1).padStart(2,'0')+':'+String(dt.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
+    gps.sort((a,b)=>a.tag-b.tag);
+  }
   ifd0.sort((a,b)=>a.tag-b.tag);
   exif.sort((a,b)=>a.tag-b.tag);
 
   const ifdLen=n=>2+n*12+4;
-  const ifd0Len=ifdLen(ifd0.length), exifLen=ifdLen(exif.length), gpsLen=ifdLen(gps.length);
-  const exifOffset=8+ifd0Len, gpsOffset=exifOffset+exifLen, dataBase=gpsOffset+gpsLen;
+  const ifd0Len=ifdLen(ifd0.length), exifLen=ifdLen(exif.length);
+  const gpsLen=hasGps?ifdLen(gps.length):0;
+  const exifOffset=8+ifd0Len, gpsOffset=hasGps?exifOffset+exifLen:0, dataBase=(hasGps?gpsOffset+gpsLen:exifOffset+exifLen);
   new DataView(exifPtr.bytes.buffer).setUint32(0,exifOffset,LE);
-  new DataView(gpsPtr.bytes.buffer).setUint32(0,gpsOffset,LE);
+  if(gpsPtr) new DataView(gpsPtr.bytes.buffer).setUint32(0,gpsOffset,LE);
 
   const dataPool=[]; let dataLen=0;
   const pushData=bytes=>{ const off=dataBase+dataLen; dataPool.push(bytes); dataLen+=bytes.length;
@@ -3092,12 +3100,14 @@ function buildExifApp1(m){
     }
     dv.setUint32(p,0,LE); return buf;
   }
-  const ifd0buf=writeIFD(ifd0), exifbuf=writeIFD(exif), gpsbuf=writeIFD(gps);
+  const ifd0buf=writeIFD(ifd0), exifbuf=writeIFD(exif);
+  const gpsbuf=hasGps?writeIFD(gps):null;
 
   const tiffLen=8+ifd0Len+exifLen+gpsLen+dataLen;
   const tiff=new Uint8Array(tiffLen), tv=new DataView(tiff.buffer);
   tiff[0]=0x49; tiff[1]=0x49; tv.setUint16(2,42,LE); tv.setUint32(4,8,LE);
-  tiff.set(ifd0buf,8); tiff.set(exifbuf,exifOffset); tiff.set(gpsbuf,gpsOffset);
+  tiff.set(ifd0buf,8); tiff.set(exifbuf,exifOffset);
+  if(gpsbuf) tiff.set(gpsbuf,gpsOffset);
   let dp=dataBase; for(const b of dataPool){ tiff.set(b,dp); dp+=b.length; }
 
   const app1Len=2+6+tiffLen;                      // campo length + "Exif\0\0" + TIFF
@@ -3393,8 +3403,21 @@ if(svcAdd) svcAdd.onclick=()=>{
   renderServices();
   paintTags();
   loadLogo();
-  /* GPS inicia no boot sem diálogo — permissões são pedidas quando a câmera abre */
+  /* GPS inicia no boot — watchPosition (contínuo) + getCurrentPosition (imediato).
+     O getCurrentPosition com maximumAge alto aceita posição cached do sistema (~1s),
+     enquanto o watchPosition com enableHighAccuracy demora mais (~5-15s pro 1º fix).
+     Assim a 1ª foto já terá coordenadas mesmo tirada logo após abrir o app. */
   startGps();
+  if(!S.pos && navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(p=>{
+      if(!S.pos||!isFinite(S.pos.lat)){
+        S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy,
+          alt:p.coords.altitude, spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
+        try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
+        paintGps();
+      }
+    }, ()=>{}, {enableHighAccuracy:false, maximumAge:60000, timeout:5000});
+  }
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{
       /* Força atualização imediata: checa o sw.js no servidor agora, e se houver
