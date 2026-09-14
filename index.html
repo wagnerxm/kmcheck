@@ -3188,10 +3188,13 @@ function _ensureSWController(){
     navigator.serviceWorker.addEventListener('controllerchange', h, {once:true});
   });
 }
-/* ── Download via SW: coloca blob no cache, <a download> aponta pra URL do SW ──
-   Usa <a download> em vez de iframe — mantém o gesto do usuário (importante pra
-   Android OEM que bloqueiam downloads fora de gesto). O SW serve com
-   Content-Disposition: attachment e o Chrome baixa automaticamente. */
+/* ── Download via SW: coloca blob no cache, dispara <a download> + iframe ──
+   O <a download> funciona em Chrome browser normal.
+   O iframe funciona em PWA standalone (Chrome Android 120+), onde <a download>
+   com blob: é ignorado silenciosamente.
+   Dispara AMBOS em paralelo — o SW mantém o blob em cache por 30s, então
+   ambos conseguem ler do mesmo cache sem race condition.
+   Pelo menos um dos dois métodos funciona em cada Chrome/Android. */
 async function _downloadViaSW(blob, name){
   try{
     const hasCtrl=await _ensureSWController();
@@ -3199,17 +3202,27 @@ async function _downloadViaSW(blob, name){
     const safeName=name.replace(/\s+/g,'_');
     const dlUrl=new URL('__dl/'+encodeURIComponent(safeName), location.href).href;
     const cache=await caches.open('kmcheck-dl');
+    /* Limpa downloads anteriores (evita acumular blobs de fotos passadas) */
+    try{ const old=await cache.keys(); await Promise.all(old.map(k=>cache.delete(k))) }catch(e){}
     await cache.put(dlUrl, new Response(blob,{
       headers:{'Content-Type':'image/jpeg',
         'Content-Disposition':'attachment; filename="'+safeName+'"; filename*=UTF-8\'\''+encodeURIComponent(safeName)}
     }));
-    /* <a download> + URL real do SW — combina o atributo download com a resposta
-       do SW que tem Content-Disposition: attachment. Funciona em PWA standalone
-       onde <a download> com blob: é ignorado (Chrome Android 120+). */
+    /* Método 1: <a download> — funciona em Chrome browser */
     const a=document.createElement('a');
     a.href=dlUrl; a.download=safeName; a.style.display='none';
     document.body.appendChild(a); a.click();
-    setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} }, 3000);
+    /* Método 2: iframe — funciona em PWA standalone.
+       Content-Disposition: attachment na resposta do SW faz o Chrome baixar
+       automaticamente, sem navegar para fora do app. */
+    const iframe=document.createElement('iframe');
+    iframe.style.cssText='width:0;height:0;border:none;position:absolute;left:-9999px';
+    document.body.appendChild(iframe);
+    iframe.src=dlUrl;
+    setTimeout(()=>{
+      try{ document.body.removeChild(a) }catch(e){}
+      try{ document.body.removeChild(iframe) }catch(e){}
+    }, 5000);
     return true;
   }catch(e){
     console.error('[KMCheck] download via SW falhou:', e);
@@ -3240,10 +3253,19 @@ function saveAndShare(blob){
   savePhotoToGallery(blob, name).catch(e=>console.error('[KMCheck] IndexedDB falhou:', e));
   /* 2) salva no dispositivo */
   if(_isIOS){
-    /* iOS: navigator.share é o único caminho em PWA standalone */
+    /* iOS (Safari browser e PWA standalone):
+       1. navigator.share com files — mostra o share sheet do iOS onde o usuário
+          pode salvar nas Fotos, copiar, enviar etc. É o único caminho que funciona
+          de forma confiável no Safari, tanto browser quanto standalone.
+       2. Fallback <a download> — funciona no Safari browser (não standalone).
+       Não há como salvar automaticamente nas Fotos do iOS via web, mas o share
+       sheet com imagem já traz "Salvar Imagem" como opção proeminente. */
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
-        if(e.name!=='AbortError') console.error('[KMCheck] share iOS falhou:', e);
+        if(e.name!=='AbortError'){
+          console.error('[KMCheck] share iOS falhou:', e);
+          _downloadDirect(blob, name);
+        }
         toast('📸 Foto salva');
       });
     } else {
@@ -3251,29 +3273,28 @@ function saveAndShare(blob){
       toast('📸 Foto salva');
     }
   } else if(_isAndroid){
-    /* Android (PWA ou browser): cascata de 3 métodos, automático sem diálogo.
-       1º SW download (<a download> + URL do SW) — funciona em PWA standalone
-       2º <a download> direto com blob — funciona em Chrome browser normal
-       3º navigator.share silencioso — último recurso, nunca deve chegar aqui */
-    _downloadViaSW(blob, name).then(ok=>{
-      if(!ok){
-        if(_isPWAStandalone){
-          /* Standalone e SW falhou: tenta blob direto (pode falhar), depois share */
+    /* Android: estratégia por modo.
+       • PWA standalone: <a download> com blob: é ignorado pelo Chrome 120+.
+         Usamos SW download com <a download> + iframe em paralelo (v217).
+         Se SW indisponível, dispara download direto + share como seguro.
+       • Chrome browser: <a download> com blob funciona normalmente. */
+    if(_isPWAStandalone){
+      _downloadViaSW(blob, name).then(ok=>{
+        if(!ok){
+          /* SW indisponível: tenta tudo que puder */
           _downloadDirect(blob, name);
-          /* Dispara share em paralelo como seguro — se o download direto falhar
-             silenciosamente (Chrome 120+), o share garante que a foto não se perde.
-             Se o download funcionar, a foto fica duplicada mas é melhor que perder. */
           try{
             if(navigator.canShare && navigator.canShare({files:[file]})){
               navigator.share({files:[file]}).catch(()=>{});
             }
           }catch(e){}
-        } else {
-          _downloadDirect(blob, name);
         }
-      }
-      toast('📸 Foto salva');
-    });
+      });
+    } else {
+      /* Chrome browser: <a download> com blob funciona */
+      _downloadDirect(blob, name);
+    }
+    toast('📸 Foto salva');
   } else {
     /* Desktop / outros */
     _downloadDirect(blob, name);
