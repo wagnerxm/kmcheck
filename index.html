@@ -1002,7 +1002,12 @@ const OAES = [{"n":1,"nome":"Ponte sobre o Riacho Poço dos Bois","br":"BR-110",
 /* ================= estado ================= */
 /* Restaura última posição GPS do cache — evita EXIF sem coordenadas quando o app
    abre e o usuário tira foto antes do watchPosition entregar o 1º fix. */
-const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(isFinite(p.lat)&&isFinite(p.lon)) return p; } }catch(e){} return null; })();
+/* (0,0) = "Null Island" no Golfo da Guiné — alguns Androids retornam isso como posição
+   padrão antes do fix real do GPS. Rejeitamos aqui, no watchPosition e no buildCaptureMeta. */
+const _validGps=(la,lo)=>la!=null&&lo!=null&&isFinite(la)&&isFinite(lo)&&(la!==0||lo!==0);
+const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
+/* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
+(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
 const S = {
   bases: [],           // {id, br, uf, fonte, kmMin, kmMax, n, lat[], lon[], km[]}
   pos: _cachedPos,     // {lat, lon, acc, t} — restaurado do cache, atualizado pelo watchPosition
@@ -1724,7 +1729,12 @@ function importCsv(text, fname){
 function startGps(){
   if(S.watchId!=null || !navigator.geolocation) return;
   S.watchId=navigator.geolocation.watchPosition(p=>{
-    S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy, alt:p.coords.altitude,
+    const _la=p.coords.latitude, _lo=p.coords.longitude;
+    /* Rejeita (0,0) — "Null Island": alguns Androids (Samsung, Xiaomi, Motorola) retornam
+       lat=0 lon=0 como posição padrão antes do GPS travar o fix real. Gravar (0,0) no EXIF
+       gera "GPS 0; 0; 0" que confunde o usuário. Ignoramos e esperamos o fix real. */
+    if(_la===0&&_lo===0) return;
+    S.pos={lat:_la, lon:_lo, acc:p.coords.accuracy, alt:p.coords.altitude,
            spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
     /* Persiste posição no localStorage — garante que o próximo app-start já tenha
        coordenadas disponíveis mesmo antes do 1º fix do watchPosition. */
@@ -2541,7 +2551,7 @@ document.getElementById('shutter').onclick=()=>{
      ainda grava EXIF com data/hora/descrição e avisa o usuário com toast destacado.
      Nunca silencia falhas — EXIF é requisito do registro fotográfico. */
   const meta=buildCaptureMeta(info, W, H);
-  console.log('[KMCheck] EXIF GPS:', meta.lat, meta.lon, '| S.pos:', S.pos?`${S.pos.lat},${S.pos.lon} acc=${S.pos.acc}`:'NULL', '| watchId:', S.watchId);
+  console.log('[KMCheck] EXIF GPS:', meta.lat, meta.lon, '| S.pos:', S.pos?`${S.pos.lat},${S.pos.lon} acc=${S.pos.acc}`:'NULL', '| watchId:', S.watchId, '| validGps:', _validGps(meta.lat,meta.lon));
   try{
     bytes=insertExif(bytes, buildExifApp1(meta));
     if(!(bytes[2]===0xFF && bytes[3]===0xE1)) throw new Error('APP1 não encontrado após injeção');
@@ -2985,7 +2995,8 @@ function buildExifApp1(m){
   const longE=(tag,v)=>E(tag,4,1,l1(v));
   const ratE=(tag,arr)=>E(tag,5,arr.length,rat(arr));
   const dt=m.dt||new Date(), dtStr=exifDateStr(dt);
-  const hasGps=m.lat!=null&&m.lon!=null&&isFinite(m.lat)&&isFinite(m.lon);
+  /* Última barreira: só grava GPS IFD com coordenadas reais (não-nulas, finitas, não (0,0)) */
+  const hasGps=_validGps(m.lat,m.lon);
 
   const ifd0=[];
   if(m.desc) ifd0.push(ascii(0x010E,m.desc));   // ImageDescription — texto da legenda
@@ -3106,19 +3117,39 @@ function buildExifApp1(m){
 }
 function insertExif(jpeg, app1){
   if(!(jpeg[0]===0xFF&&jpeg[1]===0xD8)) return jpeg;   // não é JPEG: não mexe
-  const out=new Uint8Array(jpeg.length+app1.length);
-  out.set(jpeg.subarray(0,2),0);                        // SOI
+  /* Remove qualquer APP1 (EXIF) pré-existente do JPEG.
+     Canvas.toDataURL normalmente não gera EXIF, mas alguns browsers (ex.: Samsung Internet)
+     inserem um stub APP1 vazio que, se mantido, pode confundir viewers que leem o segundo
+     APP1 em vez do primeiro. Removemos TODOS os APP1 antes de inserir o nosso. */
+  let clean=jpeg;
+  let p=2;
+  while(p<clean.length-3){
+    if(clean[p]===0xFF&&clean[p+1]===0xE1){
+      const segLen=(clean[p+2]<<8)|clean[p+3];
+      const before=clean.subarray(0,p), after=clean.subarray(p+2+segLen);
+      const merged=new Uint8Array(before.length+after.length);
+      merged.set(before); merged.set(after,before.length);
+      clean=merged; // não avança p — pode haver outro APP1 consecutivo
+    } else if(clean[p]===0xFF&&clean[p+1]>=0xE0&&clean[p+1]<=0xEF){
+      const segLen=(clean[p+2]<<8)|clean[p+3];
+      p+=2+segLen; // pula outros APPn (JFIF, etc.)
+    } else break; // chegou nos dados da imagem
+  }
+  const out=new Uint8Array(2+app1.length+(clean.length-2));
+  out.set(clean.subarray(0,2),0);                        // SOI
   out.set(app1,2);                                       // EXIF logo após o SOI
-  out.set(jpeg.subarray(2),2+app1.length);
+  out.set(clean.subarray(2),2+app1.length);
   return out;
 }
 function buildCaptureMeta(info, imgW, imgH){
   const dt=new Date();
   /* Cascata de fontes GPS: S.pos (live) → info (legenda) → localStorage (cache).
      Garante que a foto SEMPRE tenha coordenadas se o GPS funcionou ao menos 1 vez. */
-  const gps=S.pos||(info&&info.lat!=null?info:null)||(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(isFinite(p.lat)) return p; } }catch(e){} return null; })();
-  const lat=gps&&isFinite(gps.lat)?gps.lat:null;
-  const lon=gps&&isFinite(gps.lon)?gps.lon:null;
+  /* Cascata com validação anti-Null-Island: rejeita (0,0) em todas as fontes */
+  const _g=S.pos||(info&&info.lat!=null?info:null)||(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(isFinite(p.lat)&&isFinite(p.lon)) return p; } }catch(e){} return null; })();
+  const gps=(_g&&_validGps(_g.lat,_g.lon))?_g:null;
+  const lat=gps?gps.lat:null;
+  const lon=gps?gps.lon:null;
   const alt=gps&&gps.alt!=null&&isFinite(gps.alt)?gps.alt:null;
   const acc=gps&&isFinite(gps.acc)?gps.acc:null;
   const spd=gps&&gps.spd!=null&&isFinite(gps.spd)?gps.spd:null;
