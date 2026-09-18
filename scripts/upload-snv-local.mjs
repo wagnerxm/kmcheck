@@ -29,8 +29,10 @@ const TMP = join(__dirname, '..', '.tmp-snv-upload');
 
 // ── Configuração ──
 const API_URL = 'https://controlcheck.duckdns.org/api';
-const IMPORT_KEY = 'controlcheck-snv-import-2026';   // deve bater com IMPORT_KEY no .env do servidor
-const SHARE_TOKEN = 'oTpPRmYs5AAdiNr';
+const IMPORT_KEY = process.env.IMPORT_KEY;
+if (!IMPORT_KEY) { console.error('⚠  Defina IMPORT_KEY (env var)'); process.exit(1); }
+const SHARE_TOKEN = process.env.WEBDAV_SHARE_TOKEN;
+if (!SHARE_TOKEN) { console.error('⚠  Defina WEBDAV_SHARE_TOKEN (env var)'); process.exit(1); }
 const WEBDAV = 'https://servicos.dnit.gov.br/dnitcloud/public.php/webdav';
 const SHP_FOLDER = 'SNV Bases Geométricas (2013-Atual) (SHP)';
 const AUTH = 'Basic ' + Buffer.from(SHARE_TOKEN + ':').toString('base64');

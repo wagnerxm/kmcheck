@@ -12,6 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Check">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
 (function(){
   var light=localStorage.getItem('kc-theme')!=='dark';
@@ -1005,6 +1006,8 @@ const OAES = [{"n":1,"nome":"Ponte sobre o Riacho Poço dos Bois","br":"BR-110",
 /* (0,0) = "Null Island" no Golfo da Guiné — alguns Androids retornam isso como posição
    padrão antes do fix real do GPS. Rejeitamos aqui, no watchPosition e no buildCaptureMeta. */
 const _validGps=(la,lo)=>la!=null&&lo!=null&&isFinite(la)&&isFinite(lo)&&(la!==0||lo!==0);
+/* escape HTML para interpolar strings em innerHTML sem risco de XSS */
+const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
@@ -1198,10 +1201,10 @@ function renderBases(){
     el.innerHTML=S.bases.map(b=>`
       <div class="base-item">
         <div>
-          <div class="bname">${b.br}/${b.uf}</div>
-          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+b.fonte:''}</div>
+          <div class="bname">${_esc(b.br)}/${_esc(b.uf)}</div>
+          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+_esc(b.fonte):''}</div>
         </div>
-        <button class="del" data-id="${b.id}">remover</button>
+        <button class="del" data-id="${_esc(b.id)}">remover</button>
       </div>`).join('');
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
       if(!confirm('Remover '+btn.dataset.id+'?')) return;
@@ -1543,7 +1546,7 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
   const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
   list.innerHTML=keys.sort().map(k=>{
     const g=segsByKey[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
-    return `<div class="switch"><span><b>${k}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${k}" checked></div>`;
+    return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
   dlg.showModal();
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
@@ -1616,7 +1619,7 @@ function importKml(xml, fname){
   const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
   list.innerHTML=Object.keys(groups).sort().map(k=>{
     const g=groups[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
-    return `<div class="switch"><span><b>${k}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${k}" checked></div>`;
+    return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
   dlg.showModal();
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
@@ -1893,8 +1896,8 @@ function renderContracts(){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
   } else {
     el.innerHTML=list.map(c=>`
-      <div class="ct-item ${c===act?'sel':''}" data-ct="${c.replace(/"/g,'&quot;')}">
-        <span class="dot"></span><span class="num">${c}</span>
+      <div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}">
+        <span class="dot"></span><span class="num">${_esc(c)}</span>
         <button class="del">remover</button>
       </div>`).join('');
     el.querySelectorAll('.ct-item').forEach(item=>{
@@ -2593,8 +2596,8 @@ function renderSvcGrid(){
   // lista única, em ordem alfabética (rolável) — padrões apagados ficam de fora
   const all=[...new Set([...SVC_PADRAO.filter(s=>!removed.includes(s)), ...custom])].sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
   const sel=getSvcSel();
-  g.innerHTML=all.map(s=>`<div class="ct-item svc ${s===sel?'sel':''}" data-s="${s.replace(/"/g,'&quot;')}">
-      <span class="dot"></span><span class="num">${s}</span>
+  g.innerHTML=all.map(s=>`<div class="ct-item svc ${s===sel?'sel':''}" data-s="${_esc(s)}">
+      <span class="dot"></span><span class="num">${_esc(s)}</span>
       <button class="del">remover</button>
     </div>`).join('');
   g.querySelectorAll('.ct-item').forEach(item=>{
@@ -2636,8 +2639,8 @@ function renderContracts2(){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
   } else {
     el.innerHTML=list.map(c=>`
-      <div class="ct-item ${c===act?'sel':''}" data-ct="${c.replace(/"/g,'&quot;')}">
-        <span class="dot"></span><span class="num">${c}</span>
+      <div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}">
+        <span class="dot"></span><span class="num">${_esc(c)}</span>
         <button class="del">remover</button>
       </div>`).join('');
     el.querySelectorAll('.ct-item').forEach(item=>{
@@ -3318,7 +3321,7 @@ document.getElementById('q-run').onclick=()=>{
   tb.innerHTML=qres.map(r=>{
     if(!r.f) return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td colspan="3" class="errc">sem eixo</td></tr>`;
     const off=r.f.dist>CFG.maxdist;
-    return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td>${r.f.br}/${r.f.uf}</td><td class="${off?'warnc':'okc'}">${fkm(r.f.km)}</td><td>${Math.round(r.f.dist)} m</td></tr>`;
+    return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td>${_esc(r.f.br)}/${_esc(r.f.uf)}</td><td class="${off?'warnc':'okc'}">${fkm(r.f.km)}</td><td>${Math.round(r.f.dist)} m</td></tr>`;
   }).join('');
   document.getElementById('q-out').style.display='block';
   document.getElementById('q-copy').style.display='block';
@@ -3397,7 +3400,7 @@ function renderServices(){
   const el=document.getElementById('svclist'); if(!el) return;
   const list=getServices();
   if(!list.length){ el.innerHTML='<p class="empty">Nenhum serviço cadastrado.</p>'; return }
-  el.innerHTML=list.map(s=>`<div class="ct-item" data-s="${s.replace(/"/g,'&quot;')}"><span class="num">${s}</span><button class="del">remover</button></div>`).join('');
+  el.innerHTML=list.map(s=>`<div class="ct-item" data-s="${_esc(s)}"><span class="num">${_esc(s)}</span><button class="del">remover</button></div>`).join('');
   el.querySelectorAll('.ct-item').forEach(item=>{
     item.querySelector('.del').onclick=()=>{
       const s=item.dataset.s;

@@ -25,6 +25,8 @@ jobs:
       - name: Fetch SNV shapefile from DNIT Cloud
         run: node scripts/fetch-snv-wfs.mjs
         timeout-minutes: 45
+        env:
+          WEBDAV_SHARE_TOKEN: ${{ secrets.WEBDAV_SHARE_TOKEN }}
 
       - name: Commit and push
         run: |
