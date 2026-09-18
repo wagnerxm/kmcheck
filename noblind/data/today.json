@@ -1,6 +1,6 @@
 {
   "date": "2026-09-17",
-  "generated_at": "2026-09-17T17:56:43.382203+00:00",
+  "generated_at": "2026-09-18T00:01:17.191868+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -10,7 +10,6 @@
     "Bundesliga",
     "Champions League",
     "Conference League",
-    "Europa League",
     "La Liga",
     "Ligue 1",
     "Premier League",
@@ -32,6 +31,7 @@
     "EFL Cup",
     "Ekstraklasa - Poland",
     "Eliteserien - Norway",
+    "FA Cup",
     "Frauen-Bundesliga",
     "J League",
     "K League 1",
@@ -40,7 +40,6 @@
     "League 2",
     "League of Ireland",
     "Ligue 2 - France",
-    "Premier League - Russia",
     "Premiership - Scotland",
     "Serie B - Italy",
     "Super League - China",
