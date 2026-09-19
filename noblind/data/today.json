@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-18",
-  "generated_at": "2026-09-19T00:03:45.630058+00:00",
+  "date": "2026-09-19",
+  "generated_at": "2026-09-19T17:00:22.564681+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -10,6 +10,7 @@
     "Bundesliga",
     "Champions League",
     "Conference League",
+    "Europa League",
     "La Liga",
     "Ligue 1",
     "Premier League",
@@ -44,8 +45,7 @@
     "Super League - Greece",
     "Superettan - Sweden",
     "Swiss Superleague",
-    "UEFA Nations League",
-    "Veikkausliiga - Finland"
+    "UEFA Nations League"
   ],
   "singles": [],
   "multiples": [],
