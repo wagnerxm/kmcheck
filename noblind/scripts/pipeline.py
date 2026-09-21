@@ -24,7 +24,7 @@ o motor Python do betedge (services/engine/app/value/engine.py). Nenhum cálculo
 é inventado — tudo deriva de odds reais de mercado.
 """
 
-import os, sys, json, math, argparse
+import os, sys, json, math, argparse, time, unicodedata
 from datetime import datetime, date, timezone, timedelta
 from pathlib import Path
 
@@ -41,6 +41,10 @@ API_BASE = 'https://api.the-odds-api.com/v4'
 # Supabase (opcional)
 SB_URL = os.environ.get('SUPABASE_URL', '')
 SB_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
+
+# football-data.org (opcional — enriquecimento com estatísticas reais)
+FD_KEY = os.environ.get('FOOTBALL_DATA_KEY', '')
+FD_BASE = 'https://api.football-data.org/v4'
 
 # Caminho de saída relativo à raiz do repo
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -109,6 +113,19 @@ SHORT_NAMES = {
     'soccer_turkey_super_league': 'Süper Lig',
     'soccer_belgium_first_div': 'Pro League (Bélgica)',
     'soccer_scotland_premiership': 'Scottish Prem',
+}
+
+# Mapeamento Odds API → football-data.org (competições do plano gratuito)
+FD_LEAGUE_MAP = {
+    'soccer_brazil_serie_a':         'BSA',
+    'soccer_epl':                    'PL',
+    'soccer_spain_la_liga':          'PD',
+    'soccer_germany_bundesliga':     'BL1',
+    'soccer_italy_serie_a':          'SA',
+    'soccer_france_ligue_one':       'FL1',
+    'soccer_uefa_champs_league':     'CL',
+    'soccer_netherlands_eredivisie': 'DED',
+    'soccer_portugal_primeira_liga': 'PPL',
 }
 
 # Reserva mínima de requests — se o saldo cair abaixo, só busca prioridade 1
@@ -543,10 +560,12 @@ def build_singles(events: list[dict]) -> list[dict]:
                         'home': home,
                         'away': away,
                         'league': league_name,
+                        'league_key': league_info.get('key', ''),
                         'time': time_str,
                         'kickoff_at': commence,
                         'market': mkt_name,
                         'sel': sel_name,
+                        'sel_key': oc_key,
                         'odd': round(best_odd, 2),
                         'book': best_book,
                         'edge': round(edge * 100, 1),
@@ -657,6 +676,230 @@ def compute_kpis(singles: list[dict]) -> dict:
     }
 
 
+# ─── football-data.org — estatísticas reais para análise ────────────────────
+_fd_last_call = 0.0
+
+
+def fd_get(endpoint: str) -> dict | None:
+    """Busca dados da football-data.org com rate limiting (10 req/min)."""
+    global _fd_last_call
+    if not FD_KEY:
+        return None
+
+    elapsed = time.time() - _fd_last_call
+    if elapsed < 6.5:
+        time.sleep(6.5 - elapsed)
+
+    try:
+        url = f'{FD_BASE}/{endpoint}'
+        r = httpx.get(url, headers={'X-Auth-Token': FD_KEY}, timeout=15)
+        _fd_last_call = time.time()
+
+        if r.status_code == 429:
+            print(f'    ⚠️ football-data.org rate limit, esperando 60s...')
+            time.sleep(60)
+            r = httpx.get(url, headers={'X-Auth-Token': FD_KEY}, timeout=15)
+            _fd_last_call = time.time()
+
+        if r.status_code != 200:
+            print(f'    ⚠️ football-data.org {r.status_code}: {r.text[:100]}')
+            return None
+
+        return r.json()
+    except Exception as e:
+        print(f'    ⚠️ football-data.org erro: {e}')
+        return None
+
+
+def normalize_name(name: str) -> str:
+    """Remove acentos e prefixos/sufixos de clube para matching de nomes."""
+    s = unicodedata.normalize('NFD', name)
+    s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
+    s = s.lower().strip()
+    for prefix in ['fc ', 'sc ', 'ac ', 'as ', 'ss ', 'us ', 'cd ', 'cf ',
+                    'rc ', 'rcd ', 'sd ', 'ud ', 'ssc ', 'afc ', 'bsc ',
+                    'tsg ', 'vfb ', 'vfl ', 'sv ', 'rb ', 'fk ', '1. ']:
+        if s.startswith(prefix):
+            s = s[len(prefix):]
+    for suffix in [' fc', ' sc', ' ac', ' cf', ' bc']:
+        if s.endswith(suffix):
+            s = s[:-len(suffix)]
+    return s.strip()
+
+
+def match_team(name: str, standings: list[dict]) -> dict | None:
+    """Encontra o time nos standings por nome normalizado (exato ou parcial)."""
+    norm = normalize_name(name)
+
+    for entry in standings:
+        team = entry.get('team', {})
+        if normalize_name(team.get('name', '')) == norm:
+            return entry
+        if normalize_name(team.get('shortName', '')) == norm:
+            return entry
+        if team.get('tla', '').lower() == norm:
+            return entry
+
+    for entry in standings:
+        team = entry.get('team', {})
+        tn = normalize_name(team.get('name', ''))
+        sn = normalize_name(team.get('shortName', ''))
+        if norm in tn or tn in norm:
+            return entry
+        if sn and (norm in sn or sn in norm):
+            return entry
+
+    return None
+
+
+def form_to_display(form_str: str) -> str:
+    """Converte form 'W,D,L,W,W' → 'V V E D V' (pt-BR)."""
+    if not form_str:
+        return ''
+    tr = {'W': 'V', 'D': 'E', 'L': 'D'}
+    sep = ',' if ',' in form_str else ' '
+    return ' '.join(tr.get(c.strip(), c.strip()) for c in form_str.split(sep) if c.strip())
+
+
+def form_score(form_str: str) -> float:
+    """Score numérico da forma (0.0–1.0). V=3, E=1, D=0."""
+    if not form_str:
+        return 0.5
+    pts = {'W': 3, 'D': 1, 'L': 0}
+    results = [c.strip() for c in form_str.replace(' ', ',').split(',') if c.strip()]
+    total = sum(pts.get(r, 0) for r in results)
+    mx = len(results) * 3
+    return total / mx if mx > 0 else 0.5
+
+
+def fetch_league_standings(league_key: str) -> list[dict] | None:
+    """Busca tabela de classificação de uma liga na football-data.org."""
+    fd_code = FD_LEAGUE_MAP.get(league_key)
+    if not fd_code:
+        return None
+
+    data = fd_get(f'competitions/{fd_code}/standings')
+    if not data:
+        return None
+
+    for table in data.get('standings', []):
+        if table.get('type') == 'TOTAL':
+            return table.get('table', [])
+
+    standings = data.get('standings', [])
+    if standings:
+        return standings[0].get('table', [])
+    return None
+
+
+def enrich_with_stats(singles: list[dict]) -> list[dict]:
+    """Enriquece picks com classificação, forma e gols reais.
+
+    Busca standings na football-data.org para ligas cobertas pelo plano grátis.
+    NÃO altera edge, EV, score ou qualquer cálculo matemático — adiciona
+    campos informativos para o usuário avaliar o contexto do jogo."""
+    if not FD_KEY:
+        print('\n  ℹ️ FOOTBALL_DATA_KEY não configurado — picks sem estatísticas')
+        return singles
+
+    needed = {s.get('league_key', '') for s in singles} & set(FD_LEAGUE_MAP)
+    if not needed:
+        print('\n  ℹ️ Nenhuma liga com picks tem cobertura no football-data.org')
+        return singles
+
+    print(f'\n2b. Buscando estatísticas ({len(needed)} ligas)...')
+    cache = {}
+    for lk in sorted(needed):
+        fd_code = FD_LEAGUE_MAP[lk]
+        short = SHORT_NAMES.get(lk, lk)
+        print(f'  📊 {short} ({fd_code})...')
+        table = fetch_league_standings(lk)
+        if table:
+            cache[lk] = table
+            print(f'    ✅ {len(table)} times na tabela')
+        else:
+            print(f'    ⚠️ sem dados')
+
+    if not cache:
+        return singles
+
+    enriched = 0
+    for s in singles:
+        lk = s.get('league_key', '')
+        if lk not in cache:
+            continue
+
+        table = cache[lk]
+        he = match_team(s['home'], table)
+        ae = match_team(s['away'], table)
+        if not he and not ae:
+            continue
+
+        if he:
+            gp = he.get('playedGames', 1) or 1
+            s['home_pos'] = he.get('position', 0)
+            s['home_pts'] = he.get('points', 0)
+            s['home_form'] = form_to_display(he.get('form', ''))
+            s['home_gf'] = he.get('goalsFor', 0)
+            s['home_gc'] = he.get('goalsAgainst', 0)
+            s['home_gp'] = gp
+            s['home_w'] = he.get('won', 0)
+            s['home_d'] = he.get('draw', 0)
+            s['home_l'] = he.get('lost', 0)
+
+        if ae:
+            gp = ae.get('playedGames', 1) or 1
+            s['away_pos'] = ae.get('position', 0)
+            s['away_pts'] = ae.get('points', 0)
+            s['away_form'] = form_to_display(ae.get('form', ''))
+            s['away_gf'] = ae.get('goalsFor', 0)
+            s['away_gc'] = ae.get('goalsAgainst', 0)
+            s['away_gp'] = gp
+            s['away_w'] = ae.get('won', 0)
+            s['away_d'] = ae.get('draw', 0)
+            s['away_l'] = ae.get('lost', 0)
+
+        parts = []
+        if he:
+            gpg = he.get('goalsFor', 0) / (he.get('playedGames', 1) or 1)
+            parts.append(f"{s['home']} ({s['home_pos']}º, {s['home_pts']}pts) · "
+                         f"Forma: {s['home_form']} · {gpg:.1f} gols/jogo")
+        if ae:
+            gpg = ae.get('goalsFor', 0) / (ae.get('playedGames', 1) or 1)
+            parts.append(f"{s['away']} ({s['away_pos']}º, {s['away_pts']}pts) · "
+                         f"Forma: {s['away_form']} · {gpg:.1f} gols/jogo")
+        s['analysis'] = '\n'.join(parts)
+
+        # Confiança: convergência de forma + posição + edge.
+        # NÃO é modelo novo — classifica indicadores já calculados.
+        sel_key = s.get('sel_key', '')
+        factors = []
+
+        if sel_key == 'home' and he:
+            factors.append(form_score(he.get('form', '')))
+        elif sel_key == 'away' and ae:
+            factors.append(form_score(ae.get('form', '')))
+        elif sel_key == 'draw' and he and ae:
+            hf = form_score(he.get('form', ''))
+            af = form_score(ae.get('form', ''))
+            factors.append(1.0 - abs(hf - af))
+
+        factors.append(min(s.get('edge', 0) / 15.0, 1.0))
+
+        if sel_key in ('home', 'away') and he and ae:
+            hp = he.get('position', 10)
+            ap = ae.get('position', 10)
+            diff = (ap - hp) if sel_key == 'home' else (hp - ap)
+            factors.append(min(max(diff / 10 + 0.5, 0), 1))
+
+        avg = sum(factors) / len(factors) if factors else 0.5
+        s['confidence'] = 'alta' if avg >= 0.65 else 'média' if avg >= 0.40 else 'baixa'
+        enriched += 1
+
+    print(f'  ✅ {enriched}/{len(singles)} picks enriquecidos com estatísticas')
+    return singles
+
+
 # ─── Supabase (opcional) ────────────────────────────────────────────────────
 def push_to_supabase(data: dict):
     """Grava os picks no Supabase se as credenciais estiverem configuradas."""
@@ -731,6 +974,9 @@ def main():
     print('\n2. Calculando picks...')
     singles = build_singles(events)
     print(f'   {len(singles)} picks gerados')
+
+    # 2b. Enriquece picks com estatísticas reais (football-data.org)
+    singles = enrich_with_stats(singles)
 
     # 3. Gera múltiplas
     multiples = build_multiples(singles)

@@ -183,6 +183,15 @@ img{max-width:100%}
   background:var(--lime);color:var(--dark);font-weight:700;font-size:.6875rem}
 .bet-edge{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;font-weight:600;color:rgba(255,255,255,.45)}
 .bet-edge-val{color:var(--lime);font-weight:800}
+/* estatísticas de time — forma, posição, confiança */
+.bet-stats{display:flex;align-items:center;gap:6px;padding:10px 0;border-top:1px solid rgba(255,255,255,.05);margin-bottom:-4px;font-size:.6875rem}
+.form-dots{display:inline-flex;align-items:center;gap:2px}
+.form-dot{display:inline-block;width:7px;height:7px;border-radius:50%}
+.pos-badge{font-size:.625rem;font-weight:800;color:var(--txt);background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.conf-badge{font-size:.5625rem;font-weight:700;padding:3px 10px;border-radius:var(--r-full);text-transform:uppercase;letter-spacing:.06em;margin-left:auto;flex-shrink:0}
+.conf-badge--alta{background:rgba(34,197,94,.12);color:var(--success)}
+.conf-badge--media,.conf-badge--média{background:rgba(245,158,11,.12);color:var(--warning)}
+.conf-badge--baixa{background:rgba(239,68,68,.12);color:var(--danger)}
 
 /* ===== múltipla card — 3D biselado com hover ===== */
 .multi-card{background:linear-gradient(180deg,#22252E 0%,#181B22 100%);border-radius:var(--r);overflow:hidden;color:var(--txt);position:relative;
@@ -915,8 +924,27 @@ function renderHome(){
   </div>`;
 }
 
+/* ===== forma visual — bolinhas coloridas V/E/D ===== */
+function formDots(f){
+  if(!f)return '';
+  return '<span class="form-dots">'+f.split(' ').map(r=>{
+    const c=r==='V'?'var(--success)':r==='E'?'var(--warning)':'var(--danger)';
+    const t=r==='V'?'Vitória':r==='E'?'Empate':'Derrota';
+    return `<span class="form-dot" style="background:${c}" title="${t}"></span>`;
+  }).join('')+'</span>';
+}
+
 /* ===== bet card — glass com odd protagonista ===== */
 function renderBetCard(s){
+  const hasStats=s.home_pos||s.away_pos;
+  const statsRow=hasStats?`<div class="bet-stats">
+      <span class="pos-badge">${s.home_pos||'—'}º</span>
+      ${formDots(s.home_form)}
+      <span style="color:var(--subtle);font-size:.5625rem;font-weight:700">VS</span>
+      ${formDots(s.away_form)}
+      <span class="pos-badge">${s.away_pos||'—'}º</span>
+      ${s.confidence?`<span class="conf-badge conf-badge--${s.confidence}">${s.confidence}</span>`:''}
+    </div>`:'';
   return `<div class="bet-card" onclick="openSheet(${s.id})">
     <div class="bet-top">
       <div class="bet-teams-col">${tc(s.home,28)}${tc(s.away,28,'away')}</div>
@@ -929,6 +957,7 @@ function renderBetCard(s){
         <div class="bet-book">${s.book}</div>
       </div>
     </div>
+    ${statsRow}
     <div class="bet-bottom">
       <div class="bet-sel">${icon('check',12)} ${s.sel}</div>
       <div class="bet-edge">Vantagem <span class="bet-edge-val">+${s.edge.toFixed(1)}%</span></div>
@@ -1221,6 +1250,30 @@ function openSheet(id){
           <div class="bento-label">Score</div>
         </div>
       </div>
+
+      ${s.home_pos?`<div class="section-label" style="margin-bottom:12px">ANÁLISE DO JOGO</div>
+      ${s.confidence?`<div style="margin-bottom:12px"><span class="conf-badge conf-badge--${s.confidence}" style="font-size:.75rem;padding:5px 14px">Confiança ${s.confidence}</span></div>`:''}
+      <div class="card" style="padding:16px;margin-bottom:20px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;text-align:center">
+            <div style="font-weight:800;font-size:.8125rem;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.home}</div>
+            <div style="font-size:1.75rem;font-weight:900;color:var(--lime)">${s.home_pos}º</div>
+            <div style="font-size:.6875rem;color:var(--muted)">${s.home_pts} pts</div>
+            <div style="margin:8px 0">${formDots(s.home_form)}</div>
+            <div style="font-size:.625rem;color:var(--muted)">${s.home_w||0}V ${s.home_d||0}E ${s.home_l||0}D</div>
+            <div style="font-size:.625rem;color:var(--muted)">${s.home_gf||0} gols · ${s.home_gc||0} sofr.</div>
+          </div>
+          <div style="display:flex;align-items:center;padding:0 4px"><span style="font-size:.6875rem;color:var(--subtle);font-weight:700">VS</span></div>
+          <div style="flex:1;text-align:center">
+            <div style="font-weight:800;font-size:.8125rem;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.away}</div>
+            <div style="font-size:1.75rem;font-weight:900;color:var(--lime)">${s.away_pos||'—'}º</div>
+            <div style="font-size:.6875rem;color:var(--muted)">${s.away_pts||0} pts</div>
+            <div style="margin:8px 0">${formDots(s.away_form)}</div>
+            <div style="font-size:.625rem;color:var(--muted)">${s.away_w||0}V ${s.away_d||0}E ${s.away_l||0}D</div>
+            <div style="font-size:.625rem;color:var(--muted)">${s.away_gf||0} gols · ${s.away_gc||0} sofr.</div>
+          </div>
+        </div>
+      </div>`:''}
 
       <div class="section-label" style="margin-bottom:12px">PROBABILIDADE POR MODELO</div>
       <div style="margin-bottom:20px">

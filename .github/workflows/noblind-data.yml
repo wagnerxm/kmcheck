@@ -8,8 +8,10 @@
 #   ODDS_API_KEY        — chave da The Odds API (the-odds-api.com)
 #                          Crie grátis em: https://the-odds-api.com/#get-access
 #
-# Secrets opcionais (para gravar no Supabase também):
-#   SUPABASE_URL        — URL do projeto (ex: https://xxx.supabase.co)
+# Secrets opcionais:
+#   FOOTBALL_DATA_KEY   — chave da football-data.org (estatísticas reais)
+#                          Crie grátis em: https://www.football-data.org/client/register
+#   SUPABASE_URL        — URL do projeto Supabase
 #   SUPABASE_SERVICE_KEY — chave service_role para escrita
 # =============================================================================
 
@@ -55,6 +57,7 @@ jobs:
       - name: Executar pipeline
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
