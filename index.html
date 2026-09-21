@@ -444,6 +444,31 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+/* ── prompt de instalação ── */
+.install-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .3s;pointer-events:none}
+.install-overlay.on{opacity:1;pointer-events:auto}
+.install-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:420px;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.install-overlay.on .install-sheet{transform:translateY(0)}
+.install-sheet .handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.install-sheet .app-info{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.install-sheet .app-icon{width:52px;height:52px;border-radius:14px;object-fit:cover}
+.install-sheet .app-name{font-size:17px;font-weight:700;color:var(--fg)}
+.install-sheet .app-origin{font-size:12px;color:var(--dim);margin-top:2px}
+.install-sheet .app-desc{font-size:13px;color:var(--dim);line-height:1.55;margin-bottom:18px}
+.install-sheet .steps{margin-bottom:18px}
+.install-sheet .step{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.install-sheet .step-n{min-width:26px;height:26px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold)}
+.install-sheet .step-text{font-size:13px;color:var(--fg);padding-top:3px;line-height:1.45}
+.install-sheet .step-text .key{display:inline-flex;align-items:center;gap:3px;background:var(--input-bg);border-radius:4px;padding:1px 7px;font-size:12px;vertical-align:middle}
+.install-btns{display:flex;gap:10px}
+.install-btns button{flex:1;padding:13px;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.install-btns .btn-dismiss{background:var(--input-bg);color:var(--dim)}
+.install-btns .btn-install{background:var(--gold);color:#1a1c1e}
+.install-share-icon{display:inline-block;vertical-align:middle;margin:0 2px}
+.safari-bar-hint{position:fixed;bottom:0;left:0;right:0;z-index:901;display:flex;justify-content:center;padding-bottom:calc(8px + env(safe-area-inset-bottom));pointer-events:none;opacity:0;transition:opacity .3s}
+.safari-bar-hint.on{opacity:1}
+.safari-bar-hint .arrow{width:28px;height:28px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:bounce-hint 1.2s infinite}
+@keyframes bounce-hint{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 </style>
 </head>
 <body style="opacity:0">
@@ -992,6 +1017,30 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button class="btn gold" id="logo-use">Usar recorte</button>
   </div>
 </dialog>
+
+<!-- prompt de instalação na tela inicial -->
+<div class="install-overlay" id="install-overlay">
+  <div class="install-sheet" id="install-sheet">
+    <div class="handle"></div>
+    <div class="app-info">
+      <img src="icon-192.png" class="app-icon" alt="KM Check">
+      <div>
+        <div class="app-name">KM Check</div>
+        <div class="app-origin">wagnerxm.github.io</div>
+      </div>
+    </div>
+    <!-- conteúdo trocado via JS: Android mostra botão instalar, iOS mostra tutorial -->
+    <div id="install-body"></div>
+    <div class="install-btns">
+      <button class="btn-dismiss" id="install-dismiss">Agora não</button>
+      <button class="btn-install" id="install-accept" style="display:none">Instalar</button>
+    </div>
+  </div>
+</div>
+<!-- seta pulsante apontando pro botão compartilhar do Safari (iOS) -->
+<div class="safari-bar-hint" id="safari-hint">
+  <div class="arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1c1e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -3436,6 +3485,79 @@ if(svcAdd) svcAdd.onclick=()=>{
   };
 })();
 
+/* ================= prompt de instalação (tela inicial) ================= */
+/* Android: captura o beforeinstallprompt e mostra popup customizado com logo.
+   iOS: mostra tutorial visual com os passos do Safari.
+   Só aparece se: (1) não está em standalone (já instalado), (2) nunca foi exibido (localStorage). */
+let _deferredInstall=null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  _deferredInstall=e;
+});
+function showInstallPrompt(){
+  /* já instalado ou já mostrou — sai */
+  if(_isPWAStandalone) return;
+  if(localStorage.getItem('kc-install-shown')) return;
+  localStorage.setItem('kc-install-shown','1');
+
+  const overlay=document.getElementById('install-overlay');
+  const body=document.getElementById('install-body');
+  const btnAccept=document.getElementById('install-accept');
+  const btnDismiss=document.getElementById('install-dismiss');
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  if(isIOS){
+    /* iOS: tutorial de 3 passos */
+    const shareIcon='<svg class="install-share-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>';
+    body.innerHTML=`
+      <p class="app-desc">Para instalar, siga os passos abaixo:</p>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><div class="step-text">Toque no botão ${shareIcon} <b>Compartilhar</b> na barra do Safari</div></div>
+        <div class="step"><div class="step-n">2</div><div class="step-text">Role e toque em <span class="key"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Tela de Início</span></div></div>
+        <div class="step"><div class="step-n">3</div><div class="step-text">Toque em <b>Adicionar</b></div></div>
+      </div>`;
+    btnAccept.style.display='none';
+    btnDismiss.textContent='Entendi';
+    btnDismiss.style.flex='1';
+  } else if(_deferredInstall){
+    /* Android: botão que aciona o prompt nativo do Chrome */
+    body.innerHTML='<p class="app-desc">Instale o KM Check na tela inicial para acesso rápido, uso offline e tela cheia.</p>';
+    btnAccept.style.display='';
+    btnAccept.onclick=async()=>{
+      overlay.classList.remove('on');
+      try{
+        _deferredInstall.prompt();
+        const choice=await _deferredInstall.userChoice;
+        if(choice.outcome==='accepted') toast('App instalado com sucesso!');
+      }catch(e){}
+      _deferredInstall=null;
+    };
+  } else {
+    /* Android sem beforeinstallprompt (já elegível ou browser sem suporte) — tutorial genérico */
+    body.innerHTML=`
+      <p class="app-desc">Para instalar na tela inicial:</p>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><div class="step-text">Toque no menu <b>⋮</b> do navegador</div></div>
+        <div class="step"><div class="step-n">2</div><div class="step-text">Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b></div></div>
+      </div>`;
+    btnAccept.style.display='none';
+    btnDismiss.textContent='Entendi';
+  }
+
+  btnDismiss.onclick=()=>{
+    overlay.classList.remove('on');
+    document.getElementById('safari-hint').classList.remove('on');
+  };
+  overlay.onclick=e=>{ if(e.target===overlay) btnDismiss.click() };
+
+  /* mostra com delay de 1.5s para o app ter tempo de renderizar */
+  setTimeout(()=>{
+    overlay.classList.add('on');
+    /* no iOS mostra a seta apontando pro botão compartilhar do Safari */
+    if(isIOS) document.getElementById('safari-hint').classList.add('on');
+  }, 1500);
+}
+
 /* ================= boot ================= */
 (async function(){
   try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
@@ -3444,6 +3566,7 @@ if(svcAdd) svcAdd.onclick=()=>{
   renderServices();
   paintTags();
   loadLogo();
+  showInstallPrompt();
   /* GPS inicia no boot — só watchPosition (contínuo, alta precisão).
      NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
      interfere com o watchPosition, cancelando os callbacks e deixando S.pos vazio. */
