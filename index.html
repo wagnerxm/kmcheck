@@ -1071,9 +1071,9 @@ const S = {
   tilt: 0, sensorTilt: 0
 };
 const CFG = {
-  get oae(){ return ls('oae', true) }, get coord(){ return ls('coord', true) },
+  get oae(){ return ls('oae', false) }, get coord(){ return ls('coord', true) },
   get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 },
-  get estaca(){ return ls('estaca', false) }, get snv(){ return ls('snv', false) },
+  get estaca(){ return ls('estaca', true) }, get snv(){ return ls('snv', true) },
   get preview(){ return ls('preview', false) }, get autosave(){ return ls('autosave', true) },
   get res(){ return localStorage.getItem('kc-res') || 'max' },
   get qual(){ return +localStorage.getItem('kc-qual') || 0.92 },
@@ -1086,18 +1086,18 @@ const CFG = {
   get legsz(){ return (+localStorage.getItem('kc-legsz') || 100)/100 },
   get coordstyle(){ return localStorage.getItem('kc-coordstyle') || 'decimal' },
   get datestyle(){ return localStorage.getItem('kc-datestyle') || 'curta_hora' },
-  get legbold(){ return ls('legbold', false) },
-  get legbg(){ return ls('legbg', false) },
+  get legbold(){ return ls('legbold', true) },
+  get legbg(){ return ls('legbg', true) },
   get legbgtone(){ return localStorage.getItem('kc-legbgtone') || 'dark' },
   get legbgop(){ return (+localStorage.getItem('kc-legbgop') || 50)/100 },
-  get soundalert(){ return ls('soundalert', false) },
+  get soundalert(){ return ls('soundalert', true) },
   get format(){ return localStorage.getItem('kc-format') || '3:4' }
 };
 function ls(id, def){ const v = localStorage.getItem('kc-'+id); return v===null?def:v==='1' }
-if(!localStorage.getItem('kc-defaults-v1')){
-  const _d={res:'1080',qual:'0.95',soundalert:'1',legsz:'150',legbold:'1',estaca:'1',acc:'0',theme:'light'};
+if(!localStorage.getItem('kc-defaults-v2')){
+  const _d={res:'1080',qual:'0.95',soundalert:'1',legsz:'150',legbold:'1',estaca:'1',acc:'0',theme:'light',snv:'1',oae:'0',legbg:'1',autoaccept:'1',autosave:'1'};
   for(const k in _d) if(localStorage.getItem('kc-'+k)===null) localStorage.setItem('kc-'+k,_d[k]);
-  localStorage.setItem('kc-defaults-v1','1');
+  localStorage.setItem('kc-defaults-v2','1');
 }
 
 /* ================= IndexedDB ================= */
@@ -3407,8 +3407,8 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 });
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
-for(const [id, def] of [['cfg-oae',true],['cfg-coord',true],['cfg-acc',true],['cfg-legbold',false],['cfg-legbg',true],['cfg-soundalert',false],
-                        ['cfg-estaca',false],['cfg-snv',true],['cfg-autoaccept',true],['cfg-autosave',true]]){
+for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
+                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
