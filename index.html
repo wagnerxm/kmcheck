@@ -1096,7 +1096,7 @@ const CFG = {
 function ls(id, def){ const v = localStorage.getItem('kc-'+id); return v===null?def:v==='1' }
 if(!localStorage.getItem('kc-defaults-v2')){
   const _d={res:'1080',qual:'0.95',soundalert:'1',legsz:'150',legbold:'1',estaca:'1',acc:'0',theme:'light',snv:'1',oae:'0',legbg:'1',autoaccept:'1',autosave:'1'};
-  for(const k in _d) if(localStorage.getItem('kc-'+k)===null) localStorage.setItem('kc-'+k,_d[k]);
+  for(const k in _d) localStorage.setItem('kc-'+k,_d[k]);
   localStorage.setItem('kc-defaults-v2','1');
 }
 
