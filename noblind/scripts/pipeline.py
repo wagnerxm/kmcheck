@@ -129,7 +129,7 @@ FD_LEAGUE_MAP = {
 }
 
 # Reserva mínima de requests — se o saldo cair abaixo, só busca prioridade 1
-MIN_RESERVE = 30
+MIN_RESERVE = 5
 
 
 def discover_leagues() -> tuple[list[dict], int]:
