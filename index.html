@@ -12,6 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Check">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
 (function(){
   var light=localStorage.getItem('kc-theme')!=='dark';
@@ -258,6 +259,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .topbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:none;color:#fff;cursor:pointer;transition:transform .3s ease}
 .topbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+/* indicador GPS na câmera — bolinha pequena entre os botões do topbar */
+#camgpsdot{width:8px;height:8px;border-radius:50%;background:#f44;transition:background .4s;flex-shrink:0}
+#camgpsdot.fix{background:#8f0}#camgpsdot.weak{background:#fc0}
+@keyframes gpsPulse{0%,100%{opacity:1}50%{opacity:.3}}
+#camgpsdot:not(.fix):not(.weak){animation:gpsPulse 1.5s ease-in-out infinite}
 #camstage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 /* seletor de PROPORÇÃO (1:1 / 4:3 / 16:9), logo acima da barra inferior — igual ao iPhone.
    O formato ativo fica destacado; tocar recorta a área útil da câmera na hora. */
@@ -860,6 +866,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <!-- barra superior fina: Voltar + Trocar câmera, ambos no canto superior esquerdo -->
   <div id="camtopbar">
     <button id="camback" class="topbtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+    <span id="camgpsdot" title="GPS"></span>
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <div id="camstage">
@@ -994,9 +1001,19 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 const OAES = [{"n":1,"nome":"Ponte sobre o Riacho Poço dos Bois","br":"BR-110","uf":"RN","km":36.28,"mun":"Mossoró","ext":90.0,"larg":11.9},{"n":2,"nome":"Ponte sobre o Riacho Baixa Grande","br":"BR-110","uf":"RN","km":91.85,"mun":"Upanema","ext":53.0,"larg":13.0},{"n":3,"nome":"Ponte km 109,25","br":"BR-110","uf":"RN","km":109.25,"mun":"Campo Grande","ext":30.0,"larg":8.8},{"n":4,"nome":"Ponte sobre o Riacho do Silva","br":"BR-110","uf":"RN","km":114.96,"mun":"Campo Grande","ext":30.0,"larg":8.8},{"n":5,"nome":"Ponte km 127,34","br":"BR-110","uf":"RN","km":127.34,"mun":"Campo Grande","ext":7.0,"larg":10.2},{"n":6,"nome":"Ponte km 128,01","br":"BR-110","uf":"RN","km":128.01,"mun":"Campo Grande","ext":50.0,"larg":13.0},{"n":7,"nome":"Ponte sobre o Riacho da Cachoeirinha","br":"BR-110","uf":"RN","km":128.28,"mun":"Campo Grande","ext":120.0,"larg":10.0},{"n":8,"nome":"Ponte sobre o Riacho das Cacimbas","br":"BR-226","uf":"RN","km":303.19,"mun":"Campo Grande","ext":10.9,"larg":10.8},{"n":9,"nome":"Ponte sobre o Riacho do Livramento","br":"BR-226","uf":"RN","km":305.61,"mun":"Janduís","ext":21.9,"larg":8.3},{"n":10,"nome":"Ponte sobre o Riacho Cacimba de Baixo","br":"BR-226","uf":"RN","km":328.29,"mun":"Messias Targino","ext":13.0,"larg":10.2},{"n":11,"nome":"Ponte km 355,45","br":"BR-226","uf":"RN","km":355.45,"mun":"Almino Afonso","ext":32.5,"larg":12.0},{"n":12,"nome":"Ponte km 358,64","br":"BR-226","uf":"RN","km":358.64,"mun":"Almino Afonso","ext":35.0,"larg":12.0},{"n":13,"nome":"Ponte km 364,51","br":"BR-226","uf":"RN","km":364.51,"mun":"Frutuoso Gomes","ext":32.5,"larg":12.0},{"n":14,"nome":"Ponte km 364,92","br":"BR-226","uf":"RN","km":364.92,"mun":"Frutuoso Gomes","ext":16.0,"larg":12.0},{"n":15,"nome":"Ponte km 379,27","br":"BR-226","uf":"RN","km":379.27,"mun":"Antônio Martins","ext":32.5,"larg":12.0},{"n":16,"nome":"Ponte km 382,25","br":"BR-226","uf":"RN","km":382.25,"mun":"Serrinha dos Pintos","ext":6.0,"larg":19.4},{"n":17,"nome":"Ponte km 384,35","br":"BR-226","uf":"RN","km":384.35,"mun":"Serrinha dos Pintos","ext":32.8,"larg":12.0},{"n":18,"nome":"Ponte km 398,96","br":"BR-226","uf":"RN","km":398.96,"mun":"Serrinha dos Pintos","ext":16.0,"larg":12.0},{"n":19,"nome":"Pontilhão km 402,99","br":"BR-226","uf":"RN","km":402.99,"mun":"Pau dos Ferros","ext":5.8,"larg":12.5},{"n":20,"nome":"Ponte sobre o Rio Apodi","br":"BR-226","uf":"RN","km":409.12,"mun":"Pau dos Ferros","ext":190.0,"larg":12.0},{"n":21,"nome":"Ponte sobre o Rio Cachoeirinha","br":"BR-226","uf":"RN","km":416.7,"mun":"Pau dos Ferros","ext":49.0,"larg":12.0},{"n":22,"nome":"Ponte sobre o Riacho do Cabelo","br":"BR-226","uf":"RN","km":419.4,"mun":"Pau dos Ferros","ext":70.4,"larg":12.0},{"n":23,"nome":"Viaduto km 34,35 (LE)","br":"BR-304","uf":"RN","km":34.35,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":24,"nome":"Viaduto km 34,35 (LD)","br":"BR-304","uf":"RN","km":34.35,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":25,"nome":"Viaduto km 36,10 (LD)","br":"BR-304","uf":"RN","km":36.1,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":26,"nome":"Viaduto km 36,10 (LE)","br":"BR-304","uf":"RN","km":36.1,"mun":"Mossoró","ext":67.4,"larg":11.7},{"n":27,"nome":"Viaduto km 37,59 (LD)","br":"BR-304","uf":"RN","km":37.59,"mun":"Mossoró","ext":60.4,"larg":12.0},{"n":28,"nome":"Viaduto km 37,59 (LE)","br":"BR-304","uf":"RN","km":37.59,"mun":"Mossoró","ext":60.4,"larg":12.0},{"n":29,"nome":"Viaduto km 39,69","br":"BR-304","uf":"RN","km":39.69,"mun":"Mossoró","ext":40.0,"larg":12.0},{"n":30,"nome":"Ponte sobre o Rio Apodi (LD)","br":"BR-304","uf":"RN","km":43.76,"mun":"Mossoró","ext":165.0,"larg":12.9},{"n":31,"nome":"Ponte sobre o Rio Apodi (LE)","br":"BR-304","uf":"RN","km":43.76,"mun":"Mossoró","ext":160.0,"larg":12.9},{"n":32,"nome":"Viaduto km 47,59","br":"BR-304","uf":"RN","km":47.59,"mun":"Mossoró","ext":22.0,"larg":12.0},{"n":33,"nome":"Ponte sobre o Riacho do Inferno","br":"BR-304","uf":"RN","km":55.67,"mun":"Mossoró","ext":151.0,"larg":10.1},{"n":34,"nome":"Ponte sobre o Rio Assú","br":"BR-304","uf":"RN","km":115.18,"mun":"Açu","ext":585.0,"larg":17.2},{"n":35,"nome":"Ponte sobre o Riacho Acauã","br":"BR-304","uf":"RN","km":116.58,"mun":"Itajá","ext":11.0,"larg":8.7},{"n":36,"nome":"Ponte sobre o Riacho Latadinha","br":"BR-304","uf":"RN","km":127.89,"mun":"Itajá","ext":30.0,"larg":10.1},{"n":37,"nome":"Ponte sobre o Riacho da Bisca","br":"BR-304","uf":"RN","km":132.22,"mun":"Itajá","ext":30.0,"larg":10.1},{"n":38,"nome":"Ponte sobre o Rio Sombra","br":"BR-304","uf":"RN","km":133.63,"mun":"Itajá","ext":90.0,"larg":10.1},{"n":39,"nome":"Ponte sobre o Riacho Grande","br":"BR-405","uf":"RN","km":3.57,"mun":"Mossoró","ext":20.0,"larg":10.0},{"n":40,"nome":"Ponte sobre o Riacho dos Buracos","br":"BR-405","uf":"RN","km":31.35,"mun":"Governador Dix-Sept Rosado","ext":40.0,"larg":12.9},{"n":41,"nome":"Ponte sobre o Rio Tapuio","br":"BR-405","uf":"RN","km":49.2,"mun":"Felipe Guerra","ext":40.0,"larg":12.9},{"n":42,"nome":"Ponte sobre o Córrego do Apodi","br":"BR-405","uf":"RN","km":77.87,"mun":"Apodi","ext":21.5,"larg":22.0},{"n":43,"nome":"Pontilhão km 92,77","br":"BR-405","uf":"RN","km":92.77,"mun":"Apodi","ext":4.5,"larg":7.0},{"n":44,"nome":"Ponte sobre o Rio Malhada Vermelha","br":"BR-405","uf":"RN","km":98.87,"mun":"Severiano Melo","ext":22.0,"larg":8.0},{"n":45,"nome":"Ponte km 107,39","br":"BR-405","uf":"RN","km":107.39,"mun":"Itaú","ext":11.1,"larg":5.8},{"n":46,"nome":"Ponte sobre o Rio Umari","br":"BR-405","uf":"RN","km":114.36,"mun":"Rodolfo Fernandes","ext":32.0,"larg":8.0},{"n":47,"nome":"Ponte sobre o Riacho Santana","br":"BR-405","uf":"RN","km":117.49,"mun":"Rodolfo Fernandes","ext":22.0,"larg":8.0},{"n":48,"nome":"Ponte sobre o Riacho do Meio","br":"BR-405","uf":"RN","km":121.81,"mun":"Rodolfo Fernandes","ext":22.0,"larg":8.0},{"n":49,"nome":"Ponte sobre o Riacho do Sabino","br":"BR-405","uf":"RN","km":124.74,"mun":"Rodolfo Fernandes","ext":22.0,"larg":8.0},{"n":50,"nome":"Ponte sobre o Riacho da Gangorra","br":"BR-405","uf":"RN","km":129.89,"mun":"Rodolfo Fernandes","ext":32.0,"larg":8.0},{"n":51,"nome":"Ponte sobre o Riacho do Juazeiro","br":"BR-405","uf":"RN","km":133.83,"mun":"Pau dos Ferros","ext":22.0,"larg":8.0},{"n":52,"nome":"Ponte sobre o Rio Apodi-Mossoró","br":"BR-405","uf":"RN","km":137.74,"mun":"Pau dos Ferros","ext":110.0,"larg":12.0},{"n":53,"nome":"Pontilhão km 145,70","br":"BR-405","uf":"RN","km":145.7,"mun":"Pau dos Ferros","ext":5.0,"larg":10.0},{"n":54,"nome":"Ponte sobre o Riacho Cachoeirinha","br":"BR-405","uf":"RN","km":151.87,"mun":"Rafael Fernandes","ext":24.0,"larg":10.0},{"n":55,"nome":"Ponte sobre o Rio Encanto","br":"BR-405","uf":"RN","km":157.4,"mun":"Encanto","ext":36.0,"larg":10.0}];
 
 /* ================= estado ================= */
+/* Restaura última posição GPS do cache — evita EXIF sem coordenadas quando o app
+   abre e o usuário tira foto antes do watchPosition entregar o 1º fix. */
+/* (0,0) = "Null Island" no Golfo da Guiné — alguns Androids retornam isso como posição
+   padrão antes do fix real do GPS. Rejeitamos aqui, no watchPosition e no buildCaptureMeta. */
+const _validGps=(la,lo)=>la!=null&&lo!=null&&isFinite(la)&&isFinite(lo)&&(la!==0||lo!==0);
+/* escape HTML para interpolar strings em innerHTML sem risco de XSS */
+const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
+/* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
+(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
 const S = {
   bases: [],           // {id, br, uf, fonte, kmMin, kmMax, n, lat[], lon[], km[]}
-  pos: null,           // {lat, lon, acc, t}
+  pos: _cachedPos,     // {lat, lon, acc, t} — restaurado do cache, atualizado pelo watchPosition
   fix: null,           // resultado findKm mais recente
   watchId: null,
   stream: null,
@@ -1184,10 +1201,10 @@ function renderBases(){
     el.innerHTML=S.bases.map(b=>`
       <div class="base-item">
         <div>
-          <div class="bname">${b.br}/${b.uf}</div>
-          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+b.fonte:''}</div>
+          <div class="bname">${_esc(b.br)}/${_esc(b.uf)}</div>
+          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+_esc(b.fonte):''}</div>
         </div>
-        <button class="del" data-id="${b.id}">remover</button>
+        <button class="del" data-id="${_esc(b.id)}">remover</button>
       </div>`).join('');
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
       if(!confirm('Remover '+btn.dataset.id+'?')) return;
@@ -1529,7 +1546,7 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
   const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
   list.innerHTML=keys.sort().map(k=>{
     const g=segsByKey[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
-    return `<div class="switch"><span><b>${k}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${k}" checked></div>`;
+    return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
   dlg.showModal();
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
@@ -1602,7 +1619,7 @@ function importKml(xml, fname){
   const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
   list.innerHTML=Object.keys(groups).sort().map(k=>{
     const g=groups[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
-    return `<div class="switch"><span><b>${k}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${k}" checked></div>`;
+    return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
   dlg.showModal();
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
@@ -1715,8 +1732,16 @@ function importCsv(text, fname){
 function startGps(){
   if(S.watchId!=null || !navigator.geolocation) return;
   S.watchId=navigator.geolocation.watchPosition(p=>{
-    S.pos={lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy, alt:p.coords.altitude,
+    const _la=p.coords.latitude, _lo=p.coords.longitude;
+    /* Rejeita (0,0) — "Null Island": alguns Androids (Samsung, Xiaomi, Motorola) retornam
+       lat=0 lon=0 como posição padrão antes do GPS travar o fix real. Gravar (0,0) no EXIF
+       gera "GPS 0; 0; 0" que confunde o usuário. Ignoramos e esperamos o fix real. */
+    if(_la===0&&_lo===0) return;
+    S.pos={lat:_la, lon:_lo, acc:p.coords.accuracy, alt:p.coords.altitude,
            spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
+    /* Persiste posição no localStorage — garante que o próximo app-start já tenha
+       coordenadas disponíveis mesmo antes do 1º fix do watchPosition. */
+    try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
     paintGps();
   }, err=>{
@@ -1732,7 +1757,17 @@ function _getGpsEls(){
     hest:document.getElementById('heroestaca')};
   return _gpsEls;
 }
+/* Atualiza o indicador GPS no topbar da câmera — verde (fix bom), amarelo (fraco), vermelho (sem fix) */
+function paintCamGps(){
+  const dot=document.getElementById('camgpsdot'); if(!dot) return;
+  dot.classList.remove('fix','weak');
+  if(S.pos && isFinite(S.pos.lat)){
+    if(S.pos.acc!=null && S.pos.acc<50) dot.classList.add('fix');
+    else dot.classList.add('weak');
+  }
+}
 function paintGps(){
+  paintCamGps();
   const {kb,lav,lov,herobr,signBr,signKm,hest}=_getGpsEls();
   if(S.pos){
     lav.textContent=fc(S.pos.lat); lov.textContent=fc(S.pos.lon);
@@ -1861,8 +1896,8 @@ function renderContracts(){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
   } else {
     el.innerHTML=list.map(c=>`
-      <div class="ct-item ${c===act?'sel':''}" data-ct="${c.replace(/"/g,'&quot;')}">
-        <span class="dot"></span><span class="num">${c}</span>
+      <div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}">
+        <span class="dot"></span><span class="num">${_esc(c)}</span>
         <button class="del">remover</button>
       </div>`).join('');
     el.querySelectorAll('.ct-item').forEach(item=>{
@@ -2514,14 +2549,21 @@ document.getElementById('shutter').onclick=()=>{
   burnLegend(ctx,W,H,info,0);
   // geração SÍNCRONA (toDataURL) para o menu de salvar nativo abrir ainda dentro do toque
   let bytes=dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual));
+  /* ── EXIF OBRIGATÓRIO ──
+     Sempre injeta EXIF com todos os dados disponíveis. Se GPS estiver indisponível,
+     ainda grava EXIF com data/hora/descrição e avisa o usuário com toast destacado.
+     Nunca silencia falhas — EXIF é requisito do registro fotográfico. */
+  const meta=buildCaptureMeta(info, W, H);
+  console.log('[KMCheck] EXIF GPS:', meta.lat, meta.lon, '| S.pos:', S.pos?`${S.pos.lat},${S.pos.lon} acc=${S.pos.acc}`:'NULL', '| watchId:', S.watchId, '| validGps:', _validGps(meta.lat,meta.lon));
   try{
-    const meta=buildCaptureMeta(info, W, H);
     bytes=insertExif(bytes, buildExifApp1(meta));
-    /* verificação rápida: o APP1 deve estar logo após o SOI (FF D8 FF E1) */
     if(!(bytes[2]===0xFF && bytes[3]===0xE1)) throw new Error('APP1 não encontrado após injeção');
   } catch(e){
-    console.error('EXIF falhou:', e);
-    toast('⚠ Foto sem dados EXIF — verifique as permissões.');
+    console.error('[KMCheck] EXIF FALHOU:', e);
+    try{
+      const minMeta={dt:meta.dt, lat:meta.lat, lon:meta.lon, desc:meta.desc, imgW:W, imgH:H, ms:meta.ms, tz:meta.tz};
+      bytes=insertExif(dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual)), buildExifApp1(minMeta));
+    }catch(e2){ console.error('[KMCheck] EXIF retry FALHOU:', e2); }
   }
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
   }catch(err){
@@ -2554,8 +2596,8 @@ function renderSvcGrid(){
   // lista única, em ordem alfabética (rolável) — padrões apagados ficam de fora
   const all=[...new Set([...SVC_PADRAO.filter(s=>!removed.includes(s)), ...custom])].sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
   const sel=getSvcSel();
-  g.innerHTML=all.map(s=>`<div class="ct-item svc ${s===sel?'sel':''}" data-s="${s.replace(/"/g,'&quot;')}">
-      <span class="dot"></span><span class="num">${s}</span>
+  g.innerHTML=all.map(s=>`<div class="ct-item svc ${s===sel?'sel':''}" data-s="${_esc(s)}">
+      <span class="dot"></span><span class="num">${_esc(s)}</span>
       <button class="del">remover</button>
     </div>`).join('');
   g.querySelectorAll('.ct-item').forEach(item=>{
@@ -2597,8 +2639,8 @@ function renderContracts2(){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
   } else {
     el.innerHTML=list.map(c=>`
-      <div class="ct-item ${c===act?'sel':''}" data-ct="${c.replace(/"/g,'&quot;')}">
-        <span class="dot"></span><span class="num">${c}</span>
+      <div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}">
+        <span class="dot"></span><span class="num">${_esc(c)}</span>
         <button class="del">remover</button>
       </div>`).join('');
     el.querySelectorAll('.ct-item').forEach(item=>{
@@ -2956,7 +2998,8 @@ function buildExifApp1(m){
   const longE=(tag,v)=>E(tag,4,1,l1(v));
   const ratE=(tag,arr)=>E(tag,5,arr.length,rat(arr));
   const dt=m.dt||new Date(), dtStr=exifDateStr(dt);
-  const hasGps=m.lat!=null&&m.lon!=null&&isFinite(m.lat)&&isFinite(m.lon);
+  /* Última barreira: só grava GPS IFD com coordenadas reais (não-nulas, finitas, não (0,0)) */
+  const hasGps=_validGps(m.lat,m.lon);
 
   const ifd0=[];
   if(m.desc) ifd0.push(ascii(0x010E,m.desc));   // ImageDescription — texto da legenda
@@ -2969,15 +3012,26 @@ function buildExifApp1(m){
   ifd0.push(ascii(0x0132,dtStr));                // DateTime
   const exifPtr=longE(0x8769,0); ifd0.push(exifPtr);
   let gpsPtr=null;
-  /* GPS IFD é montado SEMPRE que houver lat/lon, e também quando não houver —
-     neste caso com apenas a versão, para que leitores EXIF reconheçam a foto
-     como "com suporte a GPS" e não descartem o bloco inteiro */
-  gpsPtr=longE(0x8825,0); ifd0.push(gpsPtr);
+  /* GPS IFD só é montado quando temos coordenadas reais — sem lat/lon, não
+     inclui o ponteiro. Viewers mostram "0; 0; 0" quando o IFD existe sem dados,
+     o que confunde o usuário. Sem o ponteiro, simplesmente não aparece GPS. */
+  if(hasGps){ gpsPtr=longE(0x8825,0); ifd0.push(gpsPtr); }
 
   const exif=[];
-  exif.push(E(0x9000,7,4,new Uint8Array([0x30,0x32,0x33,0x30]))); // ExifVersion "0230"
+  exif.push(E(0x9000,7,4,new Uint8Array([0x30,0x32,0x33,0x32]))); // ExifVersion "0232" (padrão moderno, igual iOS)
   exif.push(ascii(0x9003,dtStr));   // DateTimeOriginal
   exif.push(ascii(0x9004,dtStr));   // DateTimeDigitized
+  /* SubSecTime — precisão em milissegundos, igual câmeras nativas iOS/Android */
+  const msStr=String(m.ms||0).padStart(3,'0');
+  exif.push(ascii(0x9290,msStr));   // SubSecTime
+  exif.push(ascii(0x9291,msStr));   // SubSecTimeOriginal
+  exif.push(ascii(0x9292,msStr));   // SubSecTimeDigitized
+  /* OffsetTime — fuso horário no formato "+HH:MM" ou "-HH:MM" (EXIF 2.31+) */
+  if(m.tz) {
+    exif.push(ascii(0x9010,m.tz));  // OffsetTime
+    exif.push(ascii(0x9011,m.tz));  // OffsetTimeOriginal
+    exif.push(ascii(0x9012,m.tz));  // OffsetTimeDigitized
+  }
   exif.push(shortE(0xA001,1));      // ColorSpace = sRGB
   if(m.imgW) exif.push(longE(0xA002,m.imgW));   // PixelXDimension
   if(m.imgH) exif.push(longE(0xA003,m.imgH));   // PixelYDimension
@@ -3012,19 +3066,25 @@ function buildExifApp1(m){
       gps.push(ascii(0x000E,'T'));                               // GPSTrackRef = True north
       gps.push(ratE(0x000F,[[Math.round(m.head*100),100]]));     // GPSTrack (graus)
     }
+    /* GPSMapDatum — identifica o sistema geodésico. Alguns viewers (Google Photos,
+       QGIS, ArcGIS) só exibem coordenadas se este tag estiver presente. */
+    gps.push(ascii(0x0012,'WGS-84'));                            // GPSMapDatum
     if(m.acc!=null&&isFinite(m.acc)) gps.push(ratE(0x001F,[[Math.round(m.acc*100),100]])); // GPSHPositioningError
   }
-  gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
-  gps.push(ascii(0x001D,dt.getUTCFullYear()+':'+String(dt.getUTCMonth()+1).padStart(2,'0')+':'+String(dt.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
-  gps.sort((a,b)=>a.tag-b.tag);
+  if(hasGps){
+    gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
+    gps.push(ascii(0x001D,dt.getUTCFullYear()+':'+String(dt.getUTCMonth()+1).padStart(2,'0')+':'+String(dt.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
+    gps.sort((a,b)=>a.tag-b.tag);
+  }
   ifd0.sort((a,b)=>a.tag-b.tag);
   exif.sort((a,b)=>a.tag-b.tag);
 
   const ifdLen=n=>2+n*12+4;
-  const ifd0Len=ifdLen(ifd0.length), exifLen=ifdLen(exif.length), gpsLen=ifdLen(gps.length);
-  const exifOffset=8+ifd0Len, gpsOffset=exifOffset+exifLen, dataBase=gpsOffset+gpsLen;
+  const ifd0Len=ifdLen(ifd0.length), exifLen=ifdLen(exif.length);
+  const gpsLen=hasGps?ifdLen(gps.length):0;
+  const exifOffset=8+ifd0Len, gpsOffset=hasGps?exifOffset+exifLen:0, dataBase=(hasGps?gpsOffset+gpsLen:exifOffset+exifLen);
   new DataView(exifPtr.bytes.buffer).setUint32(0,exifOffset,LE);
-  new DataView(gpsPtr.bytes.buffer).setUint32(0,gpsOffset,LE);
+  if(gpsPtr) new DataView(gpsPtr.bytes.buffer).setUint32(0,gpsOffset,LE);
 
   const dataPool=[]; let dataLen=0;
   const pushData=bytes=>{ const off=dataBase+dataLen; dataPool.push(bytes); dataLen+=bytes.length;
@@ -3040,12 +3100,14 @@ function buildExifApp1(m){
     }
     dv.setUint32(p,0,LE); return buf;
   }
-  const ifd0buf=writeIFD(ifd0), exifbuf=writeIFD(exif), gpsbuf=writeIFD(gps);
+  const ifd0buf=writeIFD(ifd0), exifbuf=writeIFD(exif);
+  const gpsbuf=hasGps?writeIFD(gps):null;
 
   const tiffLen=8+ifd0Len+exifLen+gpsLen+dataLen;
   const tiff=new Uint8Array(tiffLen), tv=new DataView(tiff.buffer);
   tiff[0]=0x49; tiff[1]=0x49; tv.setUint16(2,42,LE); tv.setUint32(4,8,LE);
-  tiff.set(ifd0buf,8); tiff.set(exifbuf,exifOffset); tiff.set(gpsbuf,gpsOffset);
+  tiff.set(ifd0buf,8); tiff.set(exifbuf,exifOffset);
+  if(gpsbuf) tiff.set(gpsbuf,gpsOffset);
   let dp=dataBase; for(const b of dataPool){ tiff.set(b,dp); dp+=b.length; }
 
   const app1Len=2+6+tiffLen;                      // campo length + "Exif\0\0" + TIFF
@@ -3058,22 +3120,52 @@ function buildExifApp1(m){
 }
 function insertExif(jpeg, app1){
   if(!(jpeg[0]===0xFF&&jpeg[1]===0xD8)) return jpeg;   // não é JPEG: não mexe
-  const out=new Uint8Array(jpeg.length+app1.length);
-  out.set(jpeg.subarray(0,2),0);                        // SOI
+  /* Remove qualquer APP1 (EXIF) pré-existente do JPEG.
+     Canvas.toDataURL normalmente não gera EXIF, mas alguns browsers (ex.: Samsung Internet)
+     inserem um stub APP1 vazio que, se mantido, pode confundir viewers que leem o segundo
+     APP1 em vez do primeiro. Removemos TODOS os APP1 antes de inserir o nosso. */
+  let clean=jpeg;
+  let p=2;
+  while(p<clean.length-3){
+    if(clean[p]===0xFF&&clean[p+1]===0xE1){
+      const segLen=(clean[p+2]<<8)|clean[p+3];
+      const before=clean.subarray(0,p), after=clean.subarray(p+2+segLen);
+      const merged=new Uint8Array(before.length+after.length);
+      merged.set(before); merged.set(after,before.length);
+      clean=merged; // não avança p — pode haver outro APP1 consecutivo
+    } else if(clean[p]===0xFF&&clean[p+1]>=0xE0&&clean[p+1]<=0xEF){
+      const segLen=(clean[p+2]<<8)|clean[p+3];
+      p+=2+segLen; // pula outros APPn (JFIF, etc.)
+    } else break; // chegou nos dados da imagem
+  }
+  const out=new Uint8Array(2+app1.length+(clean.length-2));
+  out.set(clean.subarray(0,2),0);                        // SOI
   out.set(app1,2);                                       // EXIF logo após o SOI
-  out.set(jpeg.subarray(2),2+app1.length);
+  out.set(clean.subarray(2),2+app1.length);
   return out;
 }
 function buildCaptureMeta(info, imgW, imgH){
   const dt=new Date();
-  const lat=S.pos&&isFinite(S.pos.lat)?S.pos.lat:(info&&info.lat!=null?info.lat:null);
-  const lon=S.pos&&isFinite(S.pos.lon)?S.pos.lon:(info&&info.lon!=null?info.lon:null);
-  const alt=S.pos&&S.pos.alt!=null&&isFinite(S.pos.alt)?S.pos.alt:null;
-  const acc=S.pos&&isFinite(S.pos.acc)?S.pos.acc:(info&&info.acc!=null?info.acc:null);
-  const spd=S.pos&&S.pos.spd!=null&&isFinite(S.pos.spd)?S.pos.spd:null;
-  const head=S.pos&&S.pos.head!=null&&isFinite(S.pos.head)?S.pos.head:null;
+  /* Cascata de fontes GPS: S.pos (live) → info (legenda) → localStorage (cache).
+     Garante que a foto SEMPRE tenha coordenadas se o GPS funcionou ao menos 1 vez. */
+  /* Cascata com validação anti-Null-Island: rejeita (0,0) em todas as fontes */
+  const _g=S.pos||(info&&info.lat!=null?info:null)||(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(isFinite(p.lat)&&isFinite(p.lon)) return p; } }catch(e){} return null; })();
+  const gps=(_g&&_validGps(_g.lat,_g.lon))?_g:null;
+  const lat=gps?gps.lat:null;
+  const lon=gps?gps.lon:null;
+  const alt=gps&&gps.alt!=null&&isFinite(gps.alt)?gps.alt:null;
+  const acc=gps&&isFinite(gps.acc)?gps.acc:null;
+  const spd=gps&&gps.spd!=null&&isFinite(gps.spd)?gps.spd:null;
+  const head=gps&&gps.head!=null&&isFinite(gps.head)?gps.head:null;
+  /* ms: milissegundos para SubSecTime (precisão igual câmera nativa iOS/Android)
+     tz: fuso horário "+HH:MM" para OffsetTime (EXIF 2.31+, lido pelo Google Photos, Apple Fotos) */
+  const ms=dt.getMilliseconds();
+  const tzOff=-dt.getTimezoneOffset(), tzSign=tzOff>=0?'+':'-',
+    tzH=String(Math.floor(Math.abs(tzOff)/60)).padStart(2,'0'),
+    tzM=String(Math.abs(tzOff)%60).padStart(2,'0'),
+    tz=tzSign+tzH+':'+tzM;
   let desc=''; try{ const {L}=legendLines(info||{}); desc=toAscii((L||[]).join(' | ')); }catch(e){}
-  return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0};
+  return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0, ms, tz};
 }
 /* Salva a foto no dispositivo E na galeria interna do app.
    PRECISA ser chamado DENTRO do toque do obturador (por isso a foto é gerada de forma síncrona,
@@ -3087,34 +3179,66 @@ function buildCaptureMeta(info, imgW, imgH){
    • Android browser / Desktop: <a download> clássico — funciona normalmente.
    • iOS (PWA): navigator.share — único caminho que funciona no Safari standalone. */
 const _isPWAStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+/* ── Garantir que o SW esteja controlando a página ──
+   No primeiro acesso após instalar ou após update do SW, o controller pode ser null.
+   Esta função espera até 2s pelo controllerchange antes de desistir. */
+function _ensureSWController(){
+  if(navigator.serviceWorker && navigator.serviceWorker.controller) return Promise.resolve(true);
+  if(!navigator.serviceWorker) return Promise.resolve(false);
+  return new Promise(resolve=>{
+    const t=setTimeout(()=>{ navigator.serviceWorker.removeEventListener('controllerchange',h); resolve(false) }, 2000);
+    const h=()=>{ clearTimeout(t); resolve(true) };
+    navigator.serviceWorker.addEventListener('controllerchange', h, {once:true});
+  });
+}
+/* ── Download via SW: coloca blob no cache, dispara <a download> + iframe ──
+   O <a download> funciona em Chrome browser normal.
+   O iframe funciona em PWA standalone (Chrome Android 120+), onde <a download>
+   com blob: é ignorado silenciosamente.
+   Dispara AMBOS em paralelo — o SW mantém o blob em cache por 30s, então
+   ambos conseguem ler do mesmo cache sem race condition.
+   Pelo menos um dos dois métodos funciona em cada Chrome/Android. */
 async function _downloadViaSW(blob, name){
-  /* Salva via Service Worker: coloca no cache 'kmcheck-dl' com header de download,
-     navega iframe oculto pra essa URL. O SW intercepta, serve com attachment, e Chrome baixa.
-     Funciona em PWA standalone onde <a download> falha. */
   try{
-    if(!navigator.serviceWorker||!navigator.serviceWorker.controller) return false;
-    const dlUrl=new URL('__dl/'+encodeURIComponent(name), location.href).href;
+    const hasCtrl=await _ensureSWController();
+    if(!hasCtrl) return false;
+    const safeName=name.replace(/\s+/g,'_');
+    const dlUrl=new URL('__dl/'+encodeURIComponent(safeName), location.href).href;
     const cache=await caches.open('kmcheck-dl');
+    /* Limpa downloads anteriores (evita acumular blobs de fotos passadas) */
+    try{ const old=await cache.keys(); await Promise.all(old.map(k=>cache.delete(k))) }catch(e){}
     await cache.put(dlUrl, new Response(blob,{
-      headers:{'Content-Type':'image/jpeg','Content-Disposition':'attachment; filename="'+name+'"'}
+      headers:{'Content-Type':'image/jpeg',
+        'Content-Disposition':'attachment; filename="'+safeName+'"; filename*=UTF-8\'\''+encodeURIComponent(safeName)}
     }));
+    /* Método 1: <a download> — funciona em Chrome browser */
+    const a=document.createElement('a');
+    a.href=dlUrl; a.download=safeName; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    /* Método 2: iframe — funciona em PWA standalone.
+       Content-Disposition: attachment na resposta do SW faz o Chrome baixar
+       automaticamente, sem navegar para fora do app. */
     const iframe=document.createElement('iframe');
-    iframe.style.display='none';
-    iframe.src=dlUrl;
+    iframe.style.cssText='width:0;height:0;border:none;position:absolute;left:-9999px';
     document.body.appendChild(iframe);
-    setTimeout(()=>{ try{ document.body.removeChild(iframe) }catch(e){} }, 5000);
+    iframe.src=dlUrl;
+    setTimeout(()=>{
+      try{ document.body.removeChild(a) }catch(e){}
+      try{ document.body.removeChild(iframe) }catch(e){}
+    }, 5000);
     return true;
   }catch(e){
     console.error('[KMCheck] download via SW falhou:', e);
     return false;
   }
 }
+/* ── Download direto: <a download> com blob URL (Chrome browser / Desktop) ── */
 function _downloadDirect(blob, name){
-  /* Salva via <a download> — funciona no navegador normal e desktop. */
   try{
+    const safeName=name.replace(/\s+/g,'_');
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download=name; a.style.display='none';
+    a.href=url; a.download=safeName; a.style.display='none';
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} URL.revokeObjectURL(url) }, 5000);
   }catch(e){
@@ -3126,41 +3250,56 @@ function saveAndShare(blob){
   const {L}=legendLines(info);
   const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
   const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
-  const name=`${base} ${hhmmss}.jpg`;
+  const name=`${base}_${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
-  /* 1) salva na galeria interna do app (IndexedDB) */
-  savePhotoToGallery(blob, name).catch(e=>{
-    console.error('[KMCheck] IndexedDB falhou:', e);
-    toast('⚠ Foto não ficou na galeria do app');
-  });
+  /* 1) salva na galeria interna do app (IndexedDB) — silencioso */
+  savePhotoToGallery(blob, name).catch(e=>console.error('[KMCheck] IndexedDB falhou:', e));
   /* 2) salva no dispositivo */
   if(_isIOS){
-    /* iOS: navigator.share é o único caminho em PWA standalone */
+    /* iOS (Safari browser e PWA standalone):
+       1. navigator.share com files — mostra o share sheet do iOS onde o usuário
+          pode salvar nas Fotos, copiar, enviar etc. É o único caminho que funciona
+          de forma confiável no Safari, tanto browser quanto standalone.
+       2. Fallback <a download> — funciona no Safari browser (não standalone).
+       Não há como salvar automaticamente nas Fotos do iOS via web, mas o share
+       sheet com imagem já traz "Salvar Imagem" como opção proeminente. */
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({files:[file]}).then(()=>{
+      navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
+        if(e.name!=='AbortError'){
+          console.error('[KMCheck] share iOS falhou:', e);
+          _downloadDirect(blob, name);
+        }
         toast('📸 Foto salva');
-      }).catch(e=>{
-        if(e.name==='AbortError') toast('📸 Foto registrada');
-        else { console.error('[KMCheck] share iOS falhou:', e); toast('⚠ Não foi possível salvar.'); }
       });
     } else {
       _downloadDirect(blob, name);
       toast('📸 Foto salva');
     }
-  } else if(_isAndroid && _isPWAStandalone){
-    /* Android PWA standalone: <a download> não funciona — usa download via SW */
-    _downloadViaSW(blob, name).then(ok=>{
-      if(ok) toast('📸 Foto salva');
-      else {
-        /* fallback: navigator.share se SW falhar */
-        if(navigator.canShare && navigator.canShare({files:[file]})){
-          navigator.share({files:[file]}).catch(()=>{});
+  } else if(_isAndroid){
+    /* Android: estratégia por modo.
+       • PWA standalone: <a download> com blob: é ignorado pelo Chrome 120+.
+         Usamos SW download com <a download> + iframe em paralelo (v217).
+         Se SW indisponível, dispara download direto + share como seguro.
+       • Chrome browser: <a download> com blob funciona normalmente. */
+    if(_isPWAStandalone){
+      _downloadViaSW(blob, name).then(ok=>{
+        if(!ok){
+          /* SW indisponível: tenta tudo que puder */
+          _downloadDirect(blob, name);
+          try{
+            if(navigator.canShare && navigator.canShare({files:[file]})){
+              navigator.share({files:[file]}).catch(()=>{});
+            }
+          }catch(e){}
         }
-        toast('📸 Foto registrada');
-      }
-    });
+      });
+    } else {
+      /* Chrome browser: <a download> com blob funciona */
+      _downloadDirect(blob, name);
+    }
+    toast('📸 Foto salva');
   } else {
-    /* Android browser / Desktop: <a download> funciona normalmente */
+    /* Desktop / outros */
     _downloadDirect(blob, name);
     toast('📸 Foto salva');
   }
@@ -3182,7 +3321,7 @@ document.getElementById('q-run').onclick=()=>{
   tb.innerHTML=qres.map(r=>{
     if(!r.f) return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td colspan="3" class="errc">sem eixo</td></tr>`;
     const off=r.f.dist>CFG.maxdist;
-    return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td>${r.f.br}/${r.f.uf}</td><td class="${off?'warnc':'okc'}">${fkm(r.f.km)}</td><td>${Math.round(r.f.dist)} m</td></tr>`;
+    return `<tr><td>${fc(r.lat)}</td><td>${fc(r.lon)}</td><td>${_esc(r.f.br)}/${_esc(r.f.uf)}</td><td class="${off?'warnc':'okc'}">${fkm(r.f.km)}</td><td>${Math.round(r.f.dist)} m</td></tr>`;
   }).join('');
   document.getElementById('q-out').style.display='block';
   document.getElementById('q-copy').style.display='block';
@@ -3261,7 +3400,7 @@ function renderServices(){
   const el=document.getElementById('svclist'); if(!el) return;
   const list=getServices();
   if(!list.length){ el.innerHTML='<p class="empty">Nenhum serviço cadastrado.</p>'; return }
-  el.innerHTML=list.map(s=>`<div class="ct-item" data-s="${s.replace(/"/g,'&quot;')}"><span class="num">${s}</span><button class="del">remover</button></div>`).join('');
+  el.innerHTML=list.map(s=>`<div class="ct-item" data-s="${_esc(s)}"><span class="num">${_esc(s)}</span><button class="del">remover</button></div>`).join('');
   el.querySelectorAll('.ct-item').forEach(item=>{
     item.querySelector('.del').onclick=()=>{
       const s=item.dataset.s;
@@ -3305,7 +3444,9 @@ if(svcAdd) svcAdd.onclick=()=>{
   renderServices();
   paintTags();
   loadLogo();
-  /* GPS inicia no boot sem diálogo — permissões são pedidas quando a câmera abre */
+  /* GPS inicia no boot — só watchPosition (contínuo, alta precisão).
+     NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
+     interfere com o watchPosition, cancelando os callbacks e deixando S.pos vazio. */
   startGps();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{

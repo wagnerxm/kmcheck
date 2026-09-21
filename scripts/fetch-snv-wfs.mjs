@@ -15,7 +15,8 @@ setGlobalDispatcher(new Agent({
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data', 'rodovias');
 const TMP = join(__dirname, '..', '.tmp-snv');
-const SHARE_TOKEN = 'oTpPRmYs5AAdiNr';
+const SHARE_TOKEN = process.env.WEBDAV_SHARE_TOKEN;
+if (!SHARE_TOKEN) { console.error('⚠  Defina WEBDAV_SHARE_TOKEN (env var ou GitHub Secret)'); process.exit(1); }
 const WEBDAV = 'https://servicos.dnit.gov.br/dnitcloud/public.php/webdav';
 const SHP_FOLDER = 'SNV Bases Geométricas (2013-Atual) (SHP)';
 const AUTH = 'Basic ' + Buffer.from(SHARE_TOKEN + ':').toString('base64');

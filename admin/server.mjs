@@ -36,7 +36,11 @@ if (existsSync(envPath)) {
 
 /* ── Config ── */
 const PORT             = +(process.env.ADMIN_PORT || 3457);
-const JWT_SECRET       = process.env.JWT_SECRET || 'troque-esta-chave';
+const JWT_SECRET       = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('⚠  JWT_SECRET não definido no .env. O servidor não pode iniciar sem ele.');
+  process.exit(1);
+}
 const ADMIN_USER       = process.env.ADMIN_USER || 'admin';
 const ADMIN_HASH       = process.env.ADMIN_HASH;
 const CONTROLCHECK_API = process.env.CONTROLCHECK_API || 'https://controlcheck.duckdns.org/api';
@@ -338,8 +342,9 @@ function detectDevice(ua, screenStr, hw) {
 /* ── Express ── */
 const app = express();
 app.set('trust proxy', true);
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(helmet());
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://wagnerxm.github.io';
+app.use(cors({ origin: CORS_ORIGIN.split(',').map(s=>s.trim()) }));
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 
@@ -380,9 +385,22 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
    ROTAS — DISPOSITIVOS
    ================================================================ */
 
+/* Rate-limit simples para o ping público: máx 30 req/min por IP */
+const _pingRL = new Map();
+function pingRateLimit(req, res, next) {
+  const ip = req.ip || req.socket.remoteAddress || '?';
+  const now = Date.now(), window = 60000, max = 30;
+  let entry = _pingRL.get(ip);
+  if (!entry || now - entry.start > window) { entry = { start: now, count: 0 }; _pingRL.set(ip, entry); }
+  if (++entry.count > max) return res.status(429).json({ error: 'Rate limit excedido' });
+  next();
+}
+/* Limpa IPs antigos a cada 5 min para não acumular memória */
+setInterval(() => { const cutoff = Date.now() - 120000; for (const [k, v] of _pingRL) if (v.start < cutoff) _pingRL.delete(k); }, 300000);
+
 /* Ping público — chamado pelo app mobile no boot.
    Recebe dados aprimorados: marca, modelo, OS, GPS, bases baixadas. */
-app.post('/api/admin/devices/ping', (req, res) => {
+app.post('/api/admin/devices/ping', pingRateLimit, (req, res) => {
   try {
     const { device_id, app_version, platform, user_agent, screen,
             brand, os_version, model, hw, location, bases_count, bases } = req.body || {};

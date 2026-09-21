@@ -1,4 +1,4 @@
-const CACHE = 'kmcheck-v210';
+const CACHE = 'kmcheck-v218';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -20,7 +20,13 @@ self.addEventListener('fetch', e => {
   if (url.pathname.includes('/__dl/')) {
     e.respondWith(
       caches.match(e.request).then(r => {
-        if (r) { caches.open('kmcheck-dl').then(c => c.delete(e.request)); return r; }
+        if (r) {
+          /* Apaga do cache após 30s — dá tempo para ambos os métodos de download
+             (<a download> + iframe) lerem o blob do mesmo cache sem race condition.
+             Na v216 era deleção imediata, o que impedia o 2º método de funcionar. */
+          setTimeout(() => caches.open('kmcheck-dl').then(c => c.delete(e.request)).catch(() => {}), 30000);
+          return r;
+        }
         return new Response('', { status: 404 });
       })
     );

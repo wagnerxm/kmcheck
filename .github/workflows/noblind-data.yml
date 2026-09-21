@@ -60,13 +60,15 @@ jobs:
           FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          INPUT_DATE: ${{ github.event.inputs.date }}
+          INPUT_DAYS: ${{ github.event.inputs.days }}
         run: |
           ARGS=""
-          if [ -n "${{ github.event.inputs.date }}" ]; then
-            ARGS="--date ${{ github.event.inputs.date }}"
+          if [ -n "$INPUT_DATE" ]; then
+            ARGS="--date $INPUT_DATE"
           fi
-          if [ -n "${{ github.event.inputs.days }}" ]; then
-            ARGS="$ARGS --days ${{ github.event.inputs.days }}"
+          if [ -n "$INPUT_DAYS" ]; then
+            ARGS="$ARGS --days $INPUT_DAYS"
           fi
           python noblind/scripts/pipeline.py $ARGS
 
