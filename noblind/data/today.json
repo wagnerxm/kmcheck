@@ -1,6 +1,6 @@
 {
   "date": "2026-09-30",
-  "generated_at": "2026-09-30T21:35:39.408981+00:00",
+  "generated_at": "2026-10-01T01:39:22.603582+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -50,12 +50,42 @@
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
-  "singles": [],
+  "singles": [
+    {
+      "id": 1,
+      "home": "New York Red Bulls",
+      "away": "St. Louis City SC",
+      "league": "MLS",
+      "league_key": "soccer_usa_mls",
+      "time": "20:30",
+      "kickoff_at": "2026-09-30T23:30:00Z",
+      "market": "Resultado Final",
+      "sel": "St. Louis City SC",
+      "sel_key": "away",
+      "odd": 1.23,
+      "book": "Pinnacle",
+      "edge": 15.9,
+      "score": 70,
+      "fairP": 0.972,
+      "odds": {
+        "Betfair": 1.01,
+        "MyBookie.ag": 1.16,
+        "Pinnacle": 1.23,
+        "Winamax (DE)": 1.12,
+        "Winamax (FR)": 1.15
+      },
+      "models": {
+        "Consensus": 0.972
+      },
+      "zebra": false,
+      "zebra_tier": ""
+    }
+  ],
   "multiples": [],
   "kpis": {
-    "roi": 0,
-    "hitRate": 0,
-    "brier": 0,
-    "edge": 0
+    "roi": 19.1,
+    "hitRate": 62.7,
+    "brier": 0.17,
+    "edge": 15.9
   }
 }
