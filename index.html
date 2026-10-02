@@ -1270,24 +1270,9 @@ function renderBases(){
    http://servicos.dnit.gov.br/sgplan/apigeo/rotas/espacializarponto
      ?br=110&tipo=B&uf=RN&cd_tipo=null&data=AAAA-MM-DD&km=0.46                        */
 const UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
-/* rodovias federais mais conhecidas por UF — lista de referência para preencher o seletor;
-   sempre existe a opção "Outra BR..." para digitar um número fora da lista */
-const BR_POR_UF={
-  AC:['317','364'], AL:['101','104','316','423'], AM:['174','230','319'],
-  AP:['156','210'], BA:['020','101','116','242','324','407','415'],
-  CE:['020','116','222','304'], DF:['020','040','060','070'],
-  ES:['101','259','262','482'], GO:['060','070','153','352','364'],
-  MA:['010','135','222','230','316'], MG:['040','050','116','135','153','262','381','491'],
-  MS:['060','158','163','267','359','376'], MT:['070','158','163','174','364'],
-  PA:['155','163','230','316','422'], PB:['101','104','230','412'],
-  PE:['101','104','232','316','408'], PI:['020','135','230','316','343'],
-  PR:['101','116','153','158','163','272','277','280','369','373','376'],
-  RJ:['040','101','116','465'], RN:['101','104','110','226','304','405','406','427','437'],
-  RO:['364','421','425'], RR:['174','210','401'],
-  RS:['101','116','153','158','285','290','293','386','392','471','472'],
-  SC:['101','153','163','280','282','470','476','480'], SE:['101','235','428'],
-  SP:['050','101','116','153','262','267','364','374','381','459'], TO:['010','153','226','242'],
-};
+/* rodovias por UF — carregado do index.json para listar TODAS as BRs com dados geométricos;
+   a opção "Outra BR..." permite digitar qualquer número fora da lista */
+let BR_POR_UF={};
 function renderBrOptions(){
   const uf=document.getElementById('dl-uf').value;
   const sel=document.getElementById('dl-br');
@@ -1297,10 +1282,21 @@ function renderBrOptions(){
 }
 const sel=document.getElementById('dl-br');
 sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.value==='__outra'?'block':'none' };
-(function(){ const s=document.getElementById('dl-uf');
+(async function(){ const s=document.getElementById('dl-uf');
   UFS.forEach(u=>{ const o=document.createElement('option'); o.value=o.textContent=u; s.appendChild(o) });
   s.value=localStorage.getItem('kc-dluf')||'RN';
   s.onchange=()=>{ localStorage.setItem('kc-dluf', s.value); renderBrOptions() };
+  /* busca index.json (cache do SW) para popular o seletor com todas as BRs disponíveis */
+  try{
+    const r=await fetch('data/rodovias/index.json',{signal:AbortSignal.timeout(5000)});
+    if(r.ok){
+      const idx=await r.json();
+      const m={};
+      for(const rd of idx.roads)(m[rd.uf]=m[rd.uf]||[]).push(rd.br);
+      for(const u in m) m[u]=[...new Set(m[u])].sort();
+      BR_POR_UF=m;
+    }
+  }catch(e){}
   renderBrOptions();
 })();
 
