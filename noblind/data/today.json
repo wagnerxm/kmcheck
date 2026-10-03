@@ -1,6 +1,6 @@
 {
   "date": "2026-10-02",
-  "generated_at": "2026-10-02T21:29:58.082987+00:00",
+  "generated_at": "2026-10-03T01:31:43.413565+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -53,12 +53,65 @@
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
-  "singles": [],
+  "singles": [
+    {
+      "id": 1,
+      "home": "Juventude",
+      "away": "Operario PR",
+      "league": "Brasileirão B",
+      "league_key": "soccer_brazil_serie_b",
+      "time": "20:45",
+      "kickoff_at": "2026-10-02T23:45:00Z",
+      "market": "Resultado Final",
+      "sel": "Empate",
+      "sel_key": "draw",
+      "odd": 23.0,
+      "book": "Betsson",
+      "edge": 55.3,
+      "score": 75,
+      "fairP": 0.596,
+      "odds": {
+        "Betsson": 23.0,
+        "NordicBet": 23.0
+      },
+      "models": {
+        "Consensus": 0.596
+      },
+      "zebra": true,
+      "zebra_tier": "gold"
+    },
+    {
+      "id": 2,
+      "home": "Juventude",
+      "away": "Operario PR",
+      "league": "Brasileirão B",
+      "league_key": "soccer_brazil_serie_b",
+      "time": "20:45",
+      "kickoff_at": "2026-10-02T23:45:00Z",
+      "market": "Resultado Final",
+      "sel": "Operario PR",
+      "sel_key": "away",
+      "odd": 34.0,
+      "book": "Betsson",
+      "edge": 37.4,
+      "score": 75,
+      "fairP": 0.404,
+      "odds": {
+        "Betsson": 34.0,
+        "NordicBet": 34.0
+      },
+      "models": {
+        "Consensus": 0.404
+      },
+      "zebra": true,
+      "zebra_tier": "gold"
+    }
+  ],
   "multiples": [],
   "kpis": {
-    "roi": 0,
-    "hitRate": 0,
-    "brier": 0,
-    "edge": 0
+    "roi": 55.6,
+    "hitRate": 87.1,
+    "brier": 0.15,
+    "edge": 46.3
   }
 }
