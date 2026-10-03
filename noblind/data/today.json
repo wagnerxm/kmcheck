@@ -1,6 +1,6 @@
 {
   "date": "2026-10-03",
-  "generated_at": "2026-10-03T14:28:00.443877+00:00",
+  "generated_at": "2026-10-03T20:17:14.060173+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -33,7 +33,6 @@
     "EFL Cup",
     "Ekstraklasa - Poland",
     "Eliteserien - Norway",
-    "FA Cup",
     "Frauen-Bundesliga",
     "J League",
     "K League 1",
@@ -56,306 +55,44 @@
   ],
   "singles": [
     {
-      "id": 2,
-      "home": "Crewe Alexandra",
-      "away": "Bristol Rovers",
-      "league": "League 2",
-      "league_key": "soccer_england_league2",
-      "time": "11:00",
-      "kickoff_at": "2026-10-03T14:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Crewe Alexandra",
-      "sel_key": "home",
-      "odd": 1.72,
-      "book": "Pinnacle",
-      "edge": 18.0,
-      "score": 78,
-      "fairP": 0.761,
-      "odds": {
-        "888sport": 1.2,
-        "Betfair": 1.23,
-        "Betsson": 1.16,
-        "Coolbet": 1.18,
-        "LeoVegas (SE)": 1.09,
-        "Matchbook": 1.21,
-        "NordicBet": 1.16,
-        "Pinnacle": 1.72,
-        "Tipico": 1.12,
-        "Unibet (NL)": 1.16,
-        "Unibet (SE)": 1.16
-      },
-      "models": {
-        "Consensus": 0.761
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 4,
-      "home": "Grimsby Town",
-      "away": "Shrewsbury Town",
-      "league": "League 2",
-      "league_key": "soccer_england_league2",
-      "time": "11:00",
-      "kickoff_at": "2026-10-03T14:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Grimsby Town",
-      "sel_key": "home",
-      "odd": 3.35,
-      "book": "Betfair",
-      "edge": 8.7,
-      "score": 65,
-      "fairP": 0.386,
-      "odds": {
-        "888sport": 2.75,
-        "Betfair": 3.35,
-        "Betsson": 2.75,
-        "Coolbet": 2.88,
-        "LeoVegas (SE)": 2.95,
-        "Matchbook": 3.15,
-        "NordicBet": 2.85,
-        "Pinnacle": 1.67,
-        "Tipico": 2.9,
-        "Unibet (NL)": 3.15,
-        "Unibet (SE)": 3.15
-      },
-      "models": {
-        "Consensus": 0.386
-      },
-      "zebra": true,
-      "zebra_tier": "bronze"
-    },
-    {
-      "id": 5,
-      "home": "Grimsby Town",
-      "away": "Shrewsbury Town",
-      "league": "League 2",
-      "league_key": "soccer_england_league2",
-      "time": "11:00",
-      "kickoff_at": "2026-10-03T14:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Empate",
-      "sel_key": "draw",
-      "odd": 3.61,
-      "book": "Pinnacle",
-      "edge": 8.1,
-      "score": 64,
-      "fairP": 0.358,
-      "odds": {
-        "888sport": 3.1,
-        "Betfair": 3.3,
-        "Betsson": 3.15,
-        "Coolbet": 3.25,
-        "LeoVegas (SE)": 2.88,
-        "Matchbook": 3.25,
-        "NordicBet": 3.15,
-        "Pinnacle": 3.61,
-        "Tipico": 3.4,
-        "Unibet (NL)": 3.05,
-        "Unibet (SE)": 3.05
-      },
-      "models": {
-        "Consensus": 0.358
-      },
-      "zebra": true,
-      "zebra_tier": "silver"
-    },
-    {
       "id": 1,
-      "home": "Hanwell Town FC",
-      "away": "Dover Athletic FC",
-      "league": "FA Cup",
-      "league_key": "soccer_fa_cup",
-      "time": "11:02",
-      "kickoff_at": "2026-10-03T14:02:00Z",
+      "home": "Atletico Goianiense",
+      "away": "América Mineiro",
+      "league": "Brasileirão B",
+      "league_key": "soccer_brazil_serie_b",
+      "time": "16:00",
+      "kickoff_at": "2026-10-03T19:00:00Z",
       "market": "Resultado Final",
-      "sel": "Dover Athletic FC",
-      "sel_key": "away",
-      "odd": 2.17,
+      "sel": "Atletico Goianiense",
+      "sel_key": "home",
+      "odd": 1.33,
       "book": "Codere (IT)",
-      "edge": 9.6,
-      "score": 60,
-      "fairP": 0.557,
+      "edge": 20.5,
+      "score": 76,
+      "fairP": 0.957,
       "odds": {
-        "Codere (IT)": 2.17,
-        "LeoVegas (SE)": 1.43,
-        "Unibet (SE)": 1.43,
-        "Winamax (DE)": 1.36
+        "888sport": 1.01,
+        "Betfair": 1.02,
+        "Betsson": 1.01,
+        "Codere (IT)": 1.33,
+        "Coolbet": 1.01,
+        "Matchbook": 1.02,
+        "NordicBet": 1.01,
+        "Pinnacle": 1.15,
+        "Unibet (SE)": 1.02
       },
       "models": {
-        "Consensus": 0.557
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 6,
-      "home": "Grimsby Town",
-      "away": "Shrewsbury Town",
-      "league": "League 2",
-      "league_key": "soccer_england_league2",
-      "time": "11:00",
-      "kickoff_at": "2026-10-03T14:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Shrewsbury Town",
-      "sel_key": "away",
-      "odd": 5.03,
-      "book": "Pinnacle",
-      "edge": 5.8,
-      "score": 59,
-      "fairP": 0.257,
-      "odds": {
-        "888sport": 2.4,
-        "Betfair": 2.46,
-        "Betsson": 2.25,
-        "Coolbet": 2.3,
-        "LeoVegas (SE)": 2.05,
-        "Matchbook": 2.56,
-        "NordicBet": 2.25,
-        "Pinnacle": 5.03,
-        "Tipico": 2.2,
-        "Unibet (NL)": 2.18,
-        "Unibet (SE)": 2.18
-      },
-      "models": {
-        "Consensus": 0.257
-      },
-      "zebra": true,
-      "zebra_tier": "gold"
-    },
-    {
-      "id": 3,
-      "home": "Crewe Alexandra",
-      "away": "Bristol Rovers",
-      "league": "League 2",
-      "league_key": "soccer_england_league2",
-      "time": "11:00",
-      "kickoff_at": "2026-10-03T14:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Empate",
-      "sel_key": "draw",
-      "odd": 8.0,
-      "book": "Matchbook",
-      "edge": 3.9,
-      "score": 56,
-      "fairP": 0.164,
-      "odds": {
-        "888sport": 6.0,
-        "Betfair": 7.4,
-        "Betsson": 5.8,
-        "Coolbet": 6.0,
-        "LeoVegas (SE)": 6.25,
-        "Matchbook": 8.0,
-        "NordicBet": 5.8,
-        "Pinnacle": 3.64,
-        "Tipico": 7.5,
-        "Unibet (NL)": 6.5,
-        "Unibet (SE)": 6.5
-      },
-      "models": {
-        "Consensus": 0.164
+        "Consensus": 0.957
       },
       "zebra": false,
       "zebra_tier": ""
     }
   ],
-  "multiples": [
-    {
-      "id": "m1",
-      "type": "Dupla",
-      "legs": [
-        {
-          "home": "Crewe Alexandra",
-          "away": "Bristol Rovers",
-          "sel": "Crewe Alexandra",
-          "odd": 1.72,
-          "book": "Pinnacle"
-        },
-        {
-          "home": "Grimsby Town",
-          "away": "Shrewsbury Town",
-          "sel": "Grimsby Town",
-          "odd": 3.35,
-          "book": "Betfair"
-        }
-      ],
-      "score": 72
-    },
-    {
-      "id": "m2",
-      "type": "Dupla",
-      "legs": [
-        {
-          "home": "Crewe Alexandra",
-          "away": "Bristol Rovers",
-          "sel": "Crewe Alexandra",
-          "odd": 1.72,
-          "book": "Pinnacle"
-        },
-        {
-          "home": "Hanwell Town FC",
-          "away": "Dover Athletic FC",
-          "sel": "Dover Athletic FC",
-          "odd": 2.17,
-          "book": "Codere (IT)"
-        }
-      ],
-      "score": 69
-    },
-    {
-      "id": "m3",
-      "type": "Dupla",
-      "legs": [
-        {
-          "home": "Grimsby Town",
-          "away": "Shrewsbury Town",
-          "sel": "Grimsby Town",
-          "odd": 3.35,
-          "book": "Betfair"
-        },
-        {
-          "home": "Hanwell Town FC",
-          "away": "Dover Athletic FC",
-          "sel": "Dover Athletic FC",
-          "odd": 2.17,
-          "book": "Codere (IT)"
-        }
-      ],
-      "score": 62
-    },
-    {
-      "id": "m4",
-      "type": "Tripla",
-      "legs": [
-        {
-          "home": "Crewe Alexandra",
-          "away": "Bristol Rovers",
-          "sel": "Crewe Alexandra",
-          "odd": 1.72,
-          "book": "Pinnacle"
-        },
-        {
-          "home": "Grimsby Town",
-          "away": "Shrewsbury Town",
-          "sel": "Grimsby Town",
-          "odd": 3.35,
-          "book": "Betfair"
-        },
-        {
-          "home": "Hanwell Town FC",
-          "away": "Dover Athletic FC",
-          "sel": "Dover Athletic FC",
-          "odd": 2.17,
-          "book": "Codere (IT)"
-        }
-      ],
-      "score": 68
-    }
-  ],
+  "multiples": [],
   "kpis": {
-    "roi": 10.8,
-    "hitRate": 57.2,
-    "brier": 0.205,
-    "edge": 9.0
+    "roi": 24.6,
+    "hitRate": 66.4,
+    "brier": 0.15,
+    "edge": 20.5
   }
 }
