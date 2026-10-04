@@ -1,6 +1,6 @@
 {
   "date": "2026-10-03",
-  "generated_at": "2026-10-03T20:17:14.060173+00:00",
+  "generated_at": "2026-10-04T02:12:32.160907+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -53,46 +53,12 @@
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
-  "singles": [
-    {
-      "id": 1,
-      "home": "Atletico Goianiense",
-      "away": "América Mineiro",
-      "league": "Brasileirão B",
-      "league_key": "soccer_brazil_serie_b",
-      "time": "16:00",
-      "kickoff_at": "2026-10-03T19:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Atletico Goianiense",
-      "sel_key": "home",
-      "odd": 1.33,
-      "book": "Codere (IT)",
-      "edge": 20.5,
-      "score": 76,
-      "fairP": 0.957,
-      "odds": {
-        "888sport": 1.01,
-        "Betfair": 1.02,
-        "Betsson": 1.01,
-        "Codere (IT)": 1.33,
-        "Coolbet": 1.01,
-        "Matchbook": 1.02,
-        "NordicBet": 1.01,
-        "Pinnacle": 1.15,
-        "Unibet (SE)": 1.02
-      },
-      "models": {
-        "Consensus": 0.957
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    }
-  ],
+  "singles": [],
   "multiples": [],
   "kpis": {
-    "roi": 24.6,
-    "hitRate": 66.4,
-    "brier": 0.15,
-    "edge": 20.5
+    "roi": 0,
+    "hitRate": 0,
+    "brier": 0,
+    "edge": 0
   }
 }
