@@ -407,6 +407,8 @@ table.res td{padding:8px;border-bottom:1px solid var(--line)}
 .ltext i{font-size:12px;font-style:normal;color:var(--mut);line-height:1.35}
 .lsel{width:auto;flex:0 0 auto;max-width:44%;background:transparent;border:none;color:var(--gold2);font-family:var(--sans);font-size:13px;text-align:right;padding:0;border-radius:0}
 .lsel:focus{border:none;outline:none}
+.lsel-inline{width:auto;align-self:flex-start;background:transparent;border:none;color:var(--gold2);font-family:var(--sans);font-size:13px;padding:2px 0 0;border-radius:0}
+.lsel-inline:focus{border:none;outline:none}
 .rangerow{flex-direction:column;align-items:stretch;gap:6px}
 .rangerow input[type=range]{margin:0}
 .switch{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px}
@@ -816,32 +818,32 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="ltext"><b>Nome da OAE</b><i>Ponte/viaduto quando estiver sobre um</i></span>
         <input type="checkbox" id="cfg-oae" checked>
       </div>
-      <label class="listrow">
-        <span class="ltext"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i></span>
-        <input type="checkbox" id="cfg-coord" checked>
-        <select id="cfg-coordstyle" class="lsel">
+      <div class="listrow">
+        <span class="ltext"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i>
+        <select id="cfg-coordstyle" class="lsel-inline">
           <option value="decimal" selected>-6,077710, -37,891500</option>
           <option value="decimal_label">Lat -6,077710  Long -37,891500</option>
           <option value="compact">-6,077710 -37,891500</option>
           <option value="dms">6°04'39,8"S 37°53'29,4"O</option>
           <option value="dms_label">Lat 6°04'39,8"S  Long 37°53'29,4"O</option>
           <option value="gmd">6°04,663'S 37°53,490'O</option>
-        </select>
-      </label>
+        </select></span>
+        <input type="checkbox" id="cfg-coord" checked>
+      </div>
       <div class="listrow">
         <span class="ltext"><b>Precisão do GPS</b><i>Margem de erro (±m) na legenda</i></span>
         <input type="checkbox" id="cfg-acc" checked>
       </div>
-      <label class="listrow">
-        <span class="ltext"><b>Formato da data</b><i>Data/hora na legenda</i></span>
-        <input type="checkbox" id="cfg-date" checked>
-        <select id="cfg-datestyle" class="lsel">
+      <div class="listrow">
+        <span class="ltext"><b>Formato da data</b><i>Data/hora na legenda</i>
+        <select id="cfg-datestyle" class="lsel-inline">
           <option value="curta">29/07/2026</option>
           <option value="curta_hora" selected>29/07/2026, 14:35</option>
           <option value="extensa">29 de julho de 2026</option>
           <option value="extensa_hora">29 de julho de 2026 às 14:35</option>
-        </select>
-      </label>
+        </select></span>
+        <input type="checkbox" id="cfg-date" checked>
+      </div>
     </div>
 
     <h2 class="sec">Descrição de serviços</h2>
@@ -3414,7 +3416,12 @@ for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],[
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
-  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0'); paintGps(); refreshLive() };
+  /* select associado ao checkbox — fica opaco/desabilitado quando desmarcado */
+  const buddy=document.getElementById(id+'style');
+  if(buddy){ buddy.disabled=!el.checked; buddy.style.opacity=el.checked?'1':'.35' }
+  el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0');
+    if(buddy){ buddy.disabled=!el.checked; buddy.style.opacity=el.checked?'1':'.35' }
+    paintGps(); refreshLive() };
 }
 
 /* listas suspensas */
