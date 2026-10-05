@@ -816,12 +816,9 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="ltext"><b>Nome da OAE</b><i>Ponte/viaduto quando estiver sobre um</i></span>
         <input type="checkbox" id="cfg-oae" checked>
       </div>
-      <div class="listrow">
-        <span class="ltext"><b>Coordenadas</b><i>Latitude e longitude na legenda</i></span>
-        <input type="checkbox" id="cfg-coord" checked>
-      </div>
       <label class="listrow">
-        <span class="ltext"><b>Estilo das coordenadas</b><i>Como o valor aparece na legenda</i></span>
+        <span class="ltext"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i></span>
+        <input type="checkbox" id="cfg-coord" checked>
         <select id="cfg-coordstyle" class="lsel">
           <option value="decimal" selected>-6,077710, -37,891500</option>
           <option value="decimal_label">Lat -6,077710  Long -37,891500</option>
@@ -836,7 +833,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="checkbox" id="cfg-acc" checked>
       </div>
       <label class="listrow">
-        <span class="ltext"><b>Formato da data</b><i>Como a data/hora aparece na legenda</i></span>
+        <span class="ltext"><b>Formato da data</b><i>Data/hora na legenda</i></span>
+        <input type="checkbox" id="cfg-date" checked>
         <select id="cfg-datestyle" class="lsel">
           <option value="curta">29/07/2026</option>
           <option value="curta_hora" selected>29/07/2026, 14:35</option>
@@ -1085,6 +1083,7 @@ const CFG = {
   get legop(){ return (+localStorage.getItem('kc-legop') || 100)/100 },
   get legsz(){ return (+localStorage.getItem('kc-legsz') || 100)/100 },
   get coordstyle(){ return localStorage.getItem('kc-coordstyle') || 'decimal' },
+  get date(){ return ls('date', true) },
   get datestyle(){ return localStorage.getItem('kc-datestyle') || 'curta_hora' },
   get legbold(){ return ls('legbold', true) },
   get legbg(){ return ls('legbg', true) },
@@ -1932,7 +1931,7 @@ function legendLines(info){
     if(CFG.acc && info.src==='gps' && info.acc!=null) lc+=` (±${Math.round(info.acc)}m)`;
     L.push(lc);
   }
-  L.push(formatDateLine(info.dt||new Date()));
+  if(CFG.date) L.push(formatDateLine(info.dt||new Date()));
   /* tag do SNV — renderizada à direita na linha da data (separada para posicionar no canvas/HTML) */
   const snvTag = CFG.snv ? fmtSnv(info.fonte) : '';
   return {L,err,snvTag};
@@ -3410,7 +3409,7 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 });
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
-for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
+for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-date',true],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
                         ['cfg-estaca',true],['cfg-snv',true],['cfg-autoaccept',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
