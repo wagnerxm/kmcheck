@@ -1272,7 +1272,7 @@ function renderBases(){
 const UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
 /* rodovias por UF — carregado do index.json para listar TODAS as BRs com dados geométricos;
    a opção "Outra BR..." permite digitar qualquer número fora da lista */
-let BR_POR_UF={};
+let BR_POR_UF={}, _localSnv=null;
 function renderBrOptions(){
   const uf=document.getElementById('dl-uf').value;
   const sel=document.getElementById('dl-br');
@@ -1291,6 +1291,7 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
     const r=await fetch('data/rodovias/index.json',{signal:AbortSignal.timeout(5000)});
     if(r.ok){
       const idx=await r.json();
+      _localSnv=idx.snv||null;
       const m={};
       for(const rd of idx.roads)(m[rd.uf]=m[rd.uf]||[]).push(rd.br);
       for(const u in m) m[u]=[...new Set(m[u])].sort();
@@ -1302,33 +1303,39 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
 
 /* ================= seletor de versão SNV =================
    Busca as versões disponíveis no servidor (API ControlCheck).
-   Se o servidor não responder, o seletor fica só com "Mais recente". */
+   Se o servidor não responder, usa a versão do index.json local como fallback. */
 const SNV_API='https://controlcheck.duckdns.org/api';
+const _snvMonths=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function fmtSnvId(id){ const mi=parseInt(id.slice(4,6),10); return _snvMonths[mi-1]+'/'+id.slice(0,4) }
 (async function loadSnvVersions(){
   const sel=document.getElementById('dl-snv');
   const hint=document.getElementById('dl-snv-hint');
-  const _m=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const fmtId=id=>{ const mi=parseInt(id.slice(4,6),10); return _m[mi-1]+'/'+id.slice(0,4); };
   try{
     const r=await fetch(SNV_API+'/rodovias/versoes',{signal:AbortSignal.timeout(8000)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const vers=await r.json();
     const ok=vers.filter(v=>v.status==='concluido');
-    if(!ok.length){ hint.textContent='Nenhuma versão no servidor.'; hint.style.display=''; return }
-    /* Substitui placeholder por versões reais (mais recente primeiro) */
+    if(!ok.length) throw new Error('Nenhuma versão concluída');
     sel.innerHTML='';
     for(const v of ok){
       const o=document.createElement('option');
-      o.value=v.id;
-      o.textContent=fmtId(v.id);
+      o.value=v.id; o.textContent=fmtSnvId(v.id);
       sel.appendChild(o);
     }
-    /* Restaurar última seleção */
     const saved=localStorage.getItem('kc-dlsnv');
     if(saved && [...sel.options].some(o=>o.value===saved)) sel.value=saved;
     sel.onchange=()=>localStorage.setItem('kc-dlsnv', sel.value);
   }catch(e){
-    hint.textContent='Servidor indisponível — usando dados locais.'; hint.style.display='';
+    /* fallback: versão embutida no index.json (já carregado pelo bloco anterior) */
+    if(_localSnv){
+      sel.innerHTML='';
+      const o=document.createElement('option');
+      o.value=''; o.textContent=fmtSnvId(_localSnv)+' (local)';
+      sel.appendChild(o);
+      hint.textContent='Usando dados locais (servidor indisponível).'; hint.style.display='';
+    } else {
+      hint.textContent='Servidor indisponível — usando dados locais.'; hint.style.display='';
+    }
   }
 })();
 
