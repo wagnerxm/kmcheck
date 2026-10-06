@@ -2572,6 +2572,9 @@ function camConstraints(){
   }, audio:false};
 }
 async function openCam(){
+  /* cancela animação de saída pendente (closeCam sem instant) — evita que o
+     animationend remova a classe 'on' DEPOIS de openCam tê-la adicionado */
+  camwrap.style.animation='';
   /* ── Câmera abre INSTANTÂNEA ──
      Mostra a UI (botões, ratio, legenda) sobre fundo preto ANTES de pedir o stream.
      O fundo preto é natural — igual câmera nativa do iPhone/Android.
@@ -2721,13 +2724,18 @@ function playShutterSound(){
     click(t0+0.055, 0.06,  1700, 0.32);  // fecha
   }catch(e){}
 }
+let _capturing=false;
 document.getElementById('shutter').onclick=async()=>{
+  if(_capturing) return; _capturing=true;
+  try{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
   /* GPS OBRIGATÓRIO — bloqueia captura se não houver posição válida.
      Aceita posição do watchPosition OU do cache (localStorage) — garante que
-     pelo menos uma coordenada real esteja disponível para gravar no EXIF. */
-  if(!S.pos || !_validGps(S.pos.lat, S.pos.lon)){
-    toast('⚠ GPS obrigatório — ative a localização para tirar fotos.');
+     pelo menos uma coordenada real esteja disponível para gravar no EXIF.
+     Também rejeita posição com mais de 2 min (pode ser cache do localStorage de outra sessão). */
+  const _posAge=S.pos?.t ? Date.now()-S.pos.t : Infinity;
+  if(!S.pos || !_validGps(S.pos.lat, S.pos.lon) || _posAge>120000){
+    toast(_posAge>120000 ? '⚠ GPS desatualizado — aguarde nova leitura.' : '⚠ GPS obrigatório — ative a localização para tirar fotos.');
     if(S.gpsDenied) showGpsDeniedDialog();
     else startGps();
     return;
@@ -2784,7 +2792,7 @@ document.getElementById('shutter').onclick=async()=>{
   /* toBlob é assíncrono e não gera string base64 gigante na memória (ao contrário de toDataURL) */
   const jpegBlob=await new Promise(res=>c.toBlob(res,'image/jpeg',CFG.qual));
   let bytes=new Uint8Array(await jpegBlob.arrayBuffer());
-  const meta=buildCaptureMeta(info, W, H);
+  const meta=buildCaptureMeta(info, W, H, info.dt);
   console.log('[KMCheck] EXIF GPS:', meta.lat, meta.lon, '| S.pos:', S.pos?`${S.pos.lat},${S.pos.lon} acc=${S.pos.acc}`:'NULL', '| watchId:', S.watchId, '| validGps:', _validGps(meta.lat,meta.lon));
   try{
     bytes=insertExif(bytes, buildExifApp1(meta));
@@ -2796,11 +2804,13 @@ document.getElementById('shutter').onclick=async()=>{
       bytes=insertExif(new Uint8Array(await jpegBlob.arrayBuffer()), buildExifApp1(minMeta));
     }catch(e2){ console.error('[KMCheck] EXIF retry FALHOU:', e2); }
   }
+  c.width=0; c.height=0;
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
   }catch(err){
     console.error('[KMCheck] captura falhou:', err);
     toast('⚠ Erro ao capturar foto — tente novamente.');
   }
+  }finally{ _capturing=false }
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -3397,8 +3407,8 @@ function insertExif(jpeg, app1){
   out.set(clean.subarray(2),2+app1.length);
   return out;
 }
-function buildCaptureMeta(info, imgW, imgH){
-  const dt=new Date();
+function buildCaptureMeta(info, imgW, imgH, captureDate){
+  const dt=captureDate||new Date();
   /* Cascata de fontes GPS: S.pos (live) → info (legenda) → localStorage (cache).
      Garante que a foto SEMPRE tenha coordenadas se o GPS funcionou ao menos 1 vez. */
   /* Cascata com validação anti-Null-Island: rejeita (0,0) em todas as fontes */
@@ -3502,7 +3512,7 @@ function saveAndShare(blob){
   const info=S.lastInfo||{}, t=new Date();
   const {L}=legendLines(info);
   const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
-  const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
+  const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0')+String(t.getMilliseconds()).padStart(3,'0');
   const name=`${base}_${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
   /* 1) salva na galeria interna do app (IndexedDB) — sempre, independente de CFG.autosave */
