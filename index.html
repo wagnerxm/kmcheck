@@ -436,6 +436,25 @@ dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:
 #dlg-rotlock .rl-actions button:active{background:rgba(255,255,255,.06)}
 #dlg-rotlock .rl-actions button:first-child{border-right:1px solid var(--glassborder);color:var(--mut);font-weight:400}
 #dlg-rotlock .rl-actions button:last-child{font-weight:700}
+/* diálogo: GPS obrigatório — mesmo visual de alerta iOS do dlg-rotlock */
+#dlg-gps{max-width:min(82vw,290px);padding:0;overflow:hidden;text-align:center}
+#dlg-gps .rl-body{padding:22px 20px 18px}
+#dlg-gps .rl-icon{width:46px;height:46px;display:block;margin:0 auto 12px}
+#dlg-gps h3{margin:0 0 6px;font-size:17px;font-weight:700;font-family:var(--sans);color:var(--text)}
+#dlg-gps p{margin:0;font-size:13px;line-height:1.45;color:var(--mut)}
+#dlg-gps .rl-actions{display:flex;border-top:1px solid var(--glassborder)}
+#dlg-gps .rl-actions button{flex:1;background:none;border:none;padding:13px 8px;font-size:15px;
+  font-family:var(--sans);color:var(--gold);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#dlg-gps .rl-actions button:active{background:rgba(255,255,255,.06)}
+#dlg-gps .rl-actions button:first-child{border-right:1px solid var(--glassborder);color:var(--mut);font-weight:400}
+#dlg-gps .rl-actions button:last-child{font-weight:700}
+/* banner de GPS desativado na câmera — faixa vermelha/amarela sobre o preview */
+#gps-banner{display:none;position:absolute;top:44px;left:0;right:0;z-index:20;
+  background:rgba(200,40,40,.92);color:#fff;font-size:12px;font-family:var(--sans);
+  padding:7px 14px;text-align:center;cursor:pointer;gap:6px;align-items:center;justify-content:center;
+  letter-spacing:.02em}
+#gps-banner.on{display:flex}
+#gps-banner svg{width:15px;height:15px;flex-shrink:0}
 .checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
@@ -892,6 +911,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <span id="camgpsdot" title="GPS"></span>
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
+  <!-- banner de GPS desativado — aparece quando a câmera abre sem localização -->
+  <div id="gps-banner">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="1" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="19"/><line x1="1" y1="10" x2="4.5" y2="10"/><line x1="15.5" y1="10" x2="19" y2="10"/></svg>
+    <span>GPS desativado — toque para ativar</span>
+  </div>
   <div id="camstage">
     <div id="camrot">
       <video id="camvideo" autoplay playsinline muted></video>
@@ -1001,6 +1025,23 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 </dialog>
 
+<!-- diálogo: GPS obrigatório — aparece quando permissão de localização é negada -->
+<dialog id="dlg-gps">
+  <div class="rl-body">
+    <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="22" cy="22" r="7"/><line x1="22" y1="2" x2="22" y2="11"/>
+      <line x1="22" y1="33" x2="22" y2="42"/><line x1="2" y1="22" x2="11" y2="22"/>
+      <line x1="33" y1="22" x2="42" y2="22"/>
+    </svg>
+    <h3>Localização Obrigatória</h3>
+    <p id="gps-msg">O KM Check precisa do GPS para gravar as coordenadas em cada foto. Sem localização, não é possível tirar fotos.</p>
+  </div>
+  <div class="rl-actions">
+    <button id="gps-dismiss">Fechar</button>
+    <button id="gps-retry">Tentar novamente</button>
+  </div>
+</dialog>
+
 <!-- diálogo: recorte do fundo da logo -->
 <dialog id="dlg-logo">
   <h2 class="sec" style="margin-top:0">Recorte do fundo da logo</h2>
@@ -1063,6 +1104,7 @@ const S = {
   pos: _cachedPos,     // {lat, lon, acc, t} — restaurado do cache, atualizado pelo watchPosition
   fix: null,           // resultado findKm mais recente
   watchId: null,
+  gpsDenied: false,    // true quando o usuário negou a permissão de localização
   stream: null,
   facing: 'environment',
   lastBlob: null, lastName: 'foto.jpg',
@@ -1780,25 +1822,112 @@ function importCsv(text, fname){
 }
 
 /* ================= GPS ================= */
+/* GPS é OBRIGATÓRIO — todas as fotos devem conter coordenadas.
+   startGps() inicia o watchPosition; se a permissão for negada, registra o estado
+   e mostra diálogo com instruções por plataforma. O obturador da câmera bloqueia
+   a captura quando não há posição GPS válida (S.pos nulo). */
 function startGps(){
-  if(S.watchId!=null || !navigator.geolocation) return;
+  if(S.watchId!=null) return;
+  if(!navigator.geolocation){
+    S.gpsDenied=true;
+    toast('⚠ GPS não disponível neste dispositivo.');
+    paintGpsBanner();
+    return;
+  }
   S.watchId=navigator.geolocation.watchPosition(p=>{
     const _la=p.coords.latitude, _lo=p.coords.longitude;
     /* Rejeita (0,0) — "Null Island": alguns Androids (Samsung, Xiaomi, Motorola) retornam
-       lat=0 lon=0 como posição padrão antes do GPS travar o fix real. Gravar (0,0) no EXIF
-       gera "GPS 0; 0; 0" que confunde o usuário. Ignoramos e esperamos o fix real. */
+       lat=0 lon=0 como posição padrão antes do GPS travar o fix real. */
     if(_la===0&&_lo===0) return;
+    S.gpsDenied=false;
     S.pos={lat:_la, lon:_lo, acc:p.coords.accuracy, alt:p.coords.altitude,
            spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
-    /* Persiste posição no localStorage — garante que o próximo app-start já tenha
-       coordenadas disponíveis mesmo antes do 1º fix do watchPosition. */
     try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
     paintGps();
+    paintGpsBanner();
   }, err=>{
+    if(err.code===1){
+      /* PERMISSION_DENIED — o watch não vai entregar mais nada.
+         Limpa o ID para permitir nova tentativa após o usuário ativar nas configurações. */
+      navigator.geolocation.clearWatch(S.watchId);
+      S.watchId=null;
+      S.gpsDenied=true;
+      showGpsDeniedDialog();
+    }
+    /* POSITION_UNAVAILABLE (2) e TIMEOUT (3): watchPosition continua tentando sozinho */
     const gl=document.getElementById('gpsline'); if(gl) gl.textContent='GPS indisponível: '+err.message;
     paintGps();
+    paintGpsBanner();
   }, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
+}
+/* Mostra diálogo explicando que GPS é obrigatório, com instrução por plataforma */
+function showGpsDeniedDialog(){
+  const dlg=document.getElementById('dlg-gps');
+  if(!dlg || dlg.open) return;
+  const msg=document.getElementById('gps-msg');
+  /* Instrução específica por plataforma para reativar localização */
+  if(_isIOS){
+    msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
+      '<b>No iPhone:</b> vá em <b>Ajustes → Privacidade → Serviços de Localização → Safari</b> e selecione "Ao Usar o App".';
+  } else if(_isAndroid){
+    msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
+      '<b>No Android:</b> toque no <b>cadeado 🔒 na barra de endereço</b> do Chrome → <b>Permissões → Localização</b> → Permitir.';
+  } else {
+    msg.textContent='O KM Check precisa do GPS para gravar as coordenadas em cada foto. Permita o acesso à localização nas configurações do navegador.';
+  }
+  dlg.showModal();
+}
+document.getElementById('gps-dismiss').onclick=()=>document.getElementById('dlg-gps').close();
+document.getElementById('gps-retry').onclick=()=>{
+  document.getElementById('dlg-gps').close();
+  S.gpsDenied=false;
+  startGps();
+};
+/* Banner vermelho na câmera quando GPS está desativado */
+function paintGpsBanner(){
+  const b=document.getElementById('gps-banner'); if(!b) return;
+  const hasGps=S.pos && _validGps(S.pos.lat, S.pos.lon);
+  b.classList.toggle('on', !hasGps);
+}
+document.getElementById('gps-banner').onclick=()=>{
+  if(S.gpsDenied) showGpsDeniedDialog();
+  else { startGps(); toast('Tentando obter localização…'); }
+};
+/* Detecta mudança de permissão em tempo real (Android Chrome)
+   e tenta reiniciar GPS quando o app volta ao foreground (iOS/Android) */
+function initGpsPermWatch(){
+  /* navigator.permissions.query NÃO funciona para geolocation no Safari/iOS —
+     envolvemos em try/catch para não quebrar silenciosamente. */
+  if(navigator.permissions && navigator.permissions.query){
+    try{
+      navigator.permissions.query({name:'geolocation'}).then(perm=>{
+        if(perm.state==='denied'){
+          S.gpsDenied=true;
+          paintGpsBanner();
+        }
+        perm.addEventListener('change', ()=>{
+          if(perm.state==='granted' && (S.gpsDenied || S.watchId==null)){
+            S.gpsDenied=false;
+            startGps();
+            paintGpsBanner();
+          } else if(perm.state==='denied'){
+            S.gpsDenied=true;
+            if(S.watchId!=null){ navigator.geolocation.clearWatch(S.watchId); S.watchId=null; }
+            paintGpsBanner();
+          }
+        });
+      }).catch(()=>{});
+    }catch(e){}
+  }
+  /* Quando o app volta ao foreground (ex: usuário foi nos Ajustes ativar GPS),
+     tenta reiniciar o watch se estava negado. */
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden && S.gpsDenied){
+      S.gpsDenied=false;
+      startGps();
+    }
+  });
 }
 let _gpsEls=null;
 function _getGpsEls(){
@@ -2432,6 +2561,9 @@ async function openCam(){
     }catch(e){}
   }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
+  /* Garante que o GPS esteja rodando ao abrir a câmera.
+     Se a permissão foi negada antes, tenta novamente (o usuário pode ter ativado nos ajustes). */
+  if(S.gpsDenied){ S.gpsDenied=false; }
   startGps();
 
   /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
@@ -2444,6 +2576,7 @@ async function openCam(){
   camwrap.classList.add('on');
   camGeom=null;
   paintRatioSel();
+  paintGpsBanner();
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
 
   try{
@@ -2550,6 +2683,15 @@ function playShutterSound(){
 }
 document.getElementById('shutter').onclick=()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
+  /* GPS OBRIGATÓRIO — bloqueia captura se não houver posição válida.
+     Aceita posição do watchPosition OU do cache (localStorage) — garante que
+     pelo menos uma coordenada real esteja disponível para gravar no EXIF. */
+  if(!S.pos || !_validGps(S.pos.lat, S.pos.lon)){
+    toast('⚠ GPS obrigatório — ative a localização para tirar fotos.');
+    if(S.gpsDenied) showGpsDeniedDialog();
+    else startGps();
+    return;
+  }
   // feedback imediato no toque, sincronizado com o disparo: piscada + vibração + som, ANTES do
   // processamento pesado do canvas (senão o retorno chegaria com atraso perceptível)
   const fx=document.getElementById('camflashfx');
@@ -3581,6 +3723,8 @@ function showInstallPrompt(){
      NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
      interfere com o watchPosition, cancelando os callbacks e deixando S.pos vazio. */
   startGps();
+  /* Monitora estado da permissão GPS (change events no Android, visibilitychange em todos) */
+  initGpsPermWatch();
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{
       /* Força atualização imediata: checa o sw.js no servidor agora, e se houver
