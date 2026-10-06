@@ -1094,6 +1094,8 @@ const _validGps=(la,lo)=>la!=null&&lo!=null&&isFinite(la)&&isFinite(lo)&&(la!==0
 if(!AbortSignal.timeout) AbortSignal.timeout=ms=>{const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal};
 /* escape HTML para interpolar strings em innerHTML sem risco de XSS */
 const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+/* Safari 15.0-15.3 não tem showModal — fallback para open attribute */
+function showDlg(dlg){ if(typeof dlg.showModal==='function') dlg.showModal(); else dlg.setAttribute('open','') }
 const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
@@ -1413,8 +1415,10 @@ function wfsToBase(features, br, uf, snvLabel){
     }
     const range=seg.kf-seg.ki;
     for(let i=0;i<cc.length;i++){
+      const lo=cc[i][0], la=cc[i][1];
+      if(!isFinite(lo)||!isFinite(la)||la<-90||la>90||lo<-180||lo>180) continue;
       const frac=total>0?cum[i]/total:0;
-      km.push(seg.ki+frac*range); lon.push(cc[i][0]); lat.push(cc[i][1]);
+      km.push(seg.ki+frac*range); lon.push(lo); lat.push(la);
     }
   }
   return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvLabel}`,
@@ -1480,8 +1484,8 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
   if(onStatus) onStatus('Baixando geometria…');
   const fields='vl_br,sg_uf,vl_km_inic,vl_km_fina,the_geom';
   const cql=encodeURIComponent(`vl_br='${br}' AND sg_uf='${uf}' AND sg_tipo_tr='B'`);
-  let all=[],start=0;
-  while(true){
+  let all=[],start=0,_wfsIter=0;
+  while(_wfsIter++<200){
     const url=`${WFS_URL}?service=WFS&request=GetFeature&typeName=${layer}&outputFormat=application/json&propertyName=${fields}&CQL_FILTER=${cql}&maxFeatures=1000&startIndex=${start}`;
     let data;
     for(let _try=0;_try<3;_try++){
@@ -1496,7 +1500,9 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
     start+=1000;
   }
   if(!all.length) throw new Error('Nenhum trecho encontrado para BR-'+br+'/'+uf);
-  return wfsToBase(filterFeats(all), br, uf, snv);
+  const filtered=filterFeats(all);
+  if(!filtered.length) throw new Error('Nenhum trecho restou após filtro de KM/tipo para BR-'+br+'/'+uf);
+  return wfsToBase(filtered, br, uf, snv);
 }
 const DL_DEFAULT_HINT='Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.';
 function parseNum(v){ const n=parseFloat(v.replace(',','.')); return isNaN(n)?null:n }
@@ -1653,15 +1659,17 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
     for(const s of g){ if(s.kmi<kmMin) kmMin=s.kmi; if(s.kmf<kmMin) kmMin=s.kmf; if(s.kmi>kmMax) kmMax=s.kmi; if(s.kmf>kmMax) kmMax=s.kmf }
     return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
-  dlg.showModal();
+  showDlg(dlg);
   dlg.addEventListener('close',()=>{ importShapefile._full=null },{once:true});
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
   document.getElementById('kmz-ok').onclick=async()=>{
-    const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
-    let n=0;
-    for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
-    dlg.close(); renderBases();
-    toast(n+' rodovia(s) instalada(s) do shapefile oficial.');
+    try{
+      const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
+      let n=0;
+      for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
+      dlg.close(); renderBases();
+      toast(n+' rodovia(s) instalada(s) do shapefile oficial.');
+    }catch(e){ toast('Erro ao salvar: '+e.message) }
   };
 }
 function readShpSequential(buf){
@@ -1693,10 +1701,11 @@ function importKml(xml, fname){
     if(!lines.length) continue;
     // atributos: ExtendedData (SimpleData/Data) + description
     const attrs={};
-    [...pm.getElementsByTagName('SimpleData')].forEach(sd=>attrs[sd.getAttribute('name').toLowerCase()]=sd.textContent.trim());
+    [...pm.getElementsByTagName('SimpleData')].forEach(sd=>{const n=sd.getAttribute('name'); if(n) attrs[n.toLowerCase()]=sd.textContent.trim()});
     [...pm.getElementsByTagName('Data')].forEach(d=>{
+      const n=d.getAttribute('name'); if(!n) return;
       const v=d.getElementsByTagName('value')[0];
-      if(v) attrs[d.getAttribute('name').toLowerCase()]=v.textContent.trim();
+      if(v) attrs[n.toLowerCase()]=v.textContent.trim();
     });
     let desc=''; const de=pm.getElementsByTagName('description')[0]; if(de) desc=de.textContent.replace(/<[^>]+>/g,' ');
     const get=(res)=>{ for(const k in attrs){ if(res.some(r=>r.test(k))) return attrs[k]; }
@@ -1726,17 +1735,20 @@ function importKml(xml, fname){
   for(const s of segs){ const k=s.br+'/'+s.uf; (groups[k]=groups[k]||[]).push(s) }
   const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
   list.innerHTML=Object.keys(groups).sort().map(k=>{
-    const g=groups[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
+    const g=groups[k]; let kmMin=Infinity, kmMax=-Infinity;
+    for(const s of g){ if(s.kmi<kmMin) kmMin=s.kmi; if(s.kmf<kmMin) kmMin=s.kmf; if(s.kmi>kmMax) kmMax=s.kmi; if(s.kmf>kmMax) kmMax=s.kmf }
     return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
-  dlg.showModal();
+  showDlg(dlg);
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
   document.getElementById('kmz-ok').onclick=async()=>{
-    const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
-    let n=0;
-    for(const k of sel){ if(await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')')) n++ }
-    dlg.close(); renderBases();
-    toast(n+' rodovia(s) instalada(s).');
+    try{
+      const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
+      let n=0;
+      for(const k of sel){ if(await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')')) n++ }
+      dlg.close(); renderBases();
+      toast(n+' rodovia(s) instalada(s).');
+    }catch(e){ toast('Erro ao salvar: '+e.message) }
   };
 }
 function normBr(v){
@@ -1823,18 +1835,20 @@ function importCsv(text, fname){
   // pré-preencher a partir do nome do arquivo
   const mbr=fname.match(/(\d{3})/); document.getElementById('csv-br').value=mbr?('BR-'+mbr[1]):'';
   const muf=fname.toUpperCase().match(/[_\- ]([A-Z]{2})[_\-. ]/); document.getElementById('csv-uf').value=muf?muf[1]:'';
-  dlg.showModal();
+  showDlg(dlg);
   document.getElementById('csv-cancel').onclick=()=>dlg.close();
   document.getElementById('csv-ok').onclick=async()=>{
-    const br=normBr(document.getElementById('csv-br').value), uf=(document.getElementById('csv-uf').value||'?').toUpperCase();
-    withKm.sort((a,b)=>a.km-b.km);
-    const b={id:br+'/'+uf, br, uf, fonte:'CSV ('+fname+')',
-      kmMin:withKm[0].km, kmMax:withKm[withKm.length-1].km,
-      lat:withKm.map(r=>r.lat), lon:withKm.map(r=>r.lon), km:withKm.map(r=>r.km)};
-    await dbPut(b);
-    S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
-    dlg.close(); renderBases();
-    toast(b.id+' instalada ('+withKm.length.toLocaleString('pt-BR')+' pontos).');
+    try{
+      const br=normBr(document.getElementById('csv-br').value), uf=(document.getElementById('csv-uf').value||'?').toUpperCase();
+      withKm.sort((a,b)=>a.km-b.km);
+      const b={id:br+'/'+uf, br, uf, fonte:'CSV ('+fname+')',
+        kmMin:withKm[0].km, kmMax:withKm[withKm.length-1].km,
+        lat:withKm.map(r=>r.lat), lon:withKm.map(r=>r.lon), km:withKm.map(r=>r.km)};
+      await dbPut(b);
+      S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
+      dlg.close(); renderBases();
+      toast(b.id+' instalada ('+withKm.length.toLocaleString('pt-BR')+' pontos).');
+    }catch(e){ toast('Erro ao salvar: '+e.message) }
   };
 }
 
@@ -1894,7 +1908,7 @@ function showGpsDeniedDialog(){
   } else {
     msg.textContent='O KM Check precisa do GPS para gravar as coordenadas em cada foto. Permita o acesso à localização nas configurações do navegador.';
   }
-  dlg.showModal();
+  showDlg(dlg);
 }
 document.getElementById('gps-dismiss').onclick=()=>document.getElementById('dlg-gps').close();
 document.getElementById('gps-retry').onclick=()=>{
@@ -2233,7 +2247,7 @@ document.getElementById('logoin').onchange=async e=>{
     const cv=document.getElementById('logo-cv');
     cv.width=c.width; cv.height=c.height;
     logoPreview();
-    document.getElementById('dlg-logo').showModal();
+    showDlg(document.getElementById('dlg-logo'));
   }catch(err){ toast('Não consegui ler a imagem da logo: '+err.message) }
 };
 function logoPreview(){
@@ -2704,7 +2718,7 @@ function closeCam(instant){
   if(S.stream){
     try{ const vt=S.stream.getVideoTracks()[0]; if(vt) vt.applyConstraints({advanced:[{torch:false}]}).catch(()=>{}) }catch(e){}
     S.stream.getTracks().forEach(t=>t.stop()); S.stream=null;
-    const vid=document.getElementById('cam'); if(vid) vid.srcObject=null;
+    const vid=document.getElementById('camvideo'); if(vid) vid.srcObject=null;
   }
 }
 document.getElementById('camback').onclick=closeCam;
@@ -2873,7 +2887,7 @@ function renderSvcGrid(){
     };
   });
 }
-document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); document.getElementById('dlg-svc').showModal() };
+document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); showDlg(document.getElementById('dlg-svc')) };
 document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
 document.getElementById('rotlock-ok').onclick=()=>document.getElementById('dlg-rotlock').close();
 document.getElementById('rotlock-never').onclick=()=>{ localStorage.setItem('kc-rotlock-never','1'); document.getElementById('dlg-rotlock').close(); };
