@@ -32,8 +32,8 @@
   --gold:#b7d92d; --gold2:#c9e463; --text:#eef1f6; --mut:#8791a3;
   --ok:#b7d92d; --warn:#d9a22b; --err:#e05c5c; --line:#212528;
   --btnbg:var(--panel2); --btntext:var(--text); --btnborder:rgba(255,255,255,.14);
-  --mono:-apple-system,'SF Pro Display','SF Pro Text','Inter Variable',Inter,Helvetica,Arial,sans-serif;
-  --sans:-apple-system,'SF Pro Display','SF Pro Text','Inter Variable',Inter,Helvetica,Arial,sans-serif;
+  --mono:-apple-system,'SF Pro Display','SF Pro Text',Inter,Helvetica,Arial,sans-serif;
+  --sans:-apple-system,'SF Pro Display','SF Pro Text',Inter,Helvetica,Arial,sans-serif;
   --legend:Arial,Helvetica,sans-serif;
 }
 :root{
@@ -370,7 +370,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:51;display:none;flex-direction:column;
   bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
 #gallerywrap.on{display:flex;animation:scrIn .2s ease-out}
-#gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
+#gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:calc(14px + env(safe-area-inset-left, 0px));z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
   color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #gal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -422,7 +422,8 @@ dialog{background:
   box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 20px 50px rgba(0,0,0,.5);
   animation:dlgIn .2s ease-out}
 @keyframes dlgIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
-dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:bdIn .2s ease-out}
+dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
+@supports (backdrop-filter:blur(1px)){dialog::backdrop{background:rgba(0,0,0,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}}
 @keyframes bdIn{from{opacity:0}to{opacity:1}}
 /* dica de bloqueio de orientação: estilo compacto de ALERTA do iOS (centralizado, curto) */
 #dlg-rotlock{max-width:min(82vw,290px);padding:0;overflow:hidden;text-align:center}
@@ -1481,9 +1482,12 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
   let all=[],start=0;
   while(true){
     const url=`${WFS_URL}?service=WFS&request=GetFeature&typeName=${layer}&outputFormat=application/json&propertyName=${fields}&CQL_FILTER=${cql}&maxFeatures=1000&startIndex=${start}`;
-    const r=await fetch(url);
-    if(!r.ok) throw new Error('Erro HTTP '+r.status);
-    const data=await r.json();
+    let data;
+    for(let _try=0;_try<3;_try++){
+      const r=await fetch(url);
+      if(!r.ok){ if(_try<2){await new Promise(r=>setTimeout(r,1500));continue} throw new Error('Erro HTTP '+r.status) }
+      data=await r.json(); break;
+    }
     if(!data.features||!data.features.length) break;
     all=all.concat(data.features);
     if(onStatus) onStatus(`Baixando… ${all.length} trechos`);
@@ -1653,6 +1657,7 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
     const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
     let n=0;
     for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
+    importShapefile._full=null;
     dlg.close(); renderBases();
     toast(n+' rodovia(s) instalada(s) do shapefile oficial.');
   };
@@ -2634,6 +2639,8 @@ async function openCam(){
     video.addEventListener('resize', layoutOverlays);
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
+    clearInterval(camTick); camTick=null;
+    if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
     camwrap.classList.remove('on');
     document.querySelector('nav').style.display='';
     document.querySelector('header.top').style.display='';
@@ -2714,7 +2721,7 @@ function playShutterSound(){
     click(t0+0.055, 0.06,  1700, 0.32);  // fecha
   }catch(e){}
 }
-document.getElementById('shutter').onclick=()=>{
+document.getElementById('shutter').onclick=async()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
   /* GPS OBRIGATÓRIO — bloqueia captura se não houver posição válida.
      Aceita posição do watchPosition OU do cache (localStorage) — garante que
@@ -2757,6 +2764,7 @@ document.getElementById('shutter').onclick=()=>{
   if(rot>180) rot-=360;
   const turned=Math.abs(rot)===90;
   const W=turned?sh:sw, H=turned?sw:sh;
+  if(W<=0||H<=0){ toast('⚠ Proporção inválida — ajuste o formato.'); return }
   const c=document.createElement('canvas');
   c.width=W; c.height=H;
   const ctx=c.getContext('2d');
@@ -2773,12 +2781,9 @@ document.getElementById('shutter').onclick=()=>{
   const info=buildInfo(); S.lastInfo=info;
   // 3) imagem já está em pé -> legenda queimada na horizontal (canto padrão do formato)
   burnLegend(ctx,W,H,info,0);
-  // geração SÍNCRONA (toDataURL) para o menu de salvar nativo abrir ainda dentro do toque
-  let bytes=dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual));
-  /* ── EXIF OBRIGATÓRIO ──
-     Sempre injeta EXIF com todos os dados disponíveis. Se GPS estiver indisponível,
-     ainda grava EXIF com data/hora/descrição e avisa o usuário com toast destacado.
-     Nunca silencia falhas — EXIF é requisito do registro fotográfico. */
+  /* toBlob é assíncrono e não gera string base64 gigante na memória (ao contrário de toDataURL) */
+  const jpegBlob=await new Promise(res=>c.toBlob(res,'image/jpeg',CFG.qual));
+  let bytes=new Uint8Array(await jpegBlob.arrayBuffer());
   const meta=buildCaptureMeta(info, W, H);
   console.log('[KMCheck] EXIF GPS:', meta.lat, meta.lon, '| S.pos:', S.pos?`${S.pos.lat},${S.pos.lon} acc=${S.pos.acc}`:'NULL', '| watchId:', S.watchId, '| validGps:', _validGps(meta.lat,meta.lon));
   try{
@@ -2788,7 +2793,7 @@ document.getElementById('shutter').onclick=()=>{
     console.error('[KMCheck] EXIF FALHOU:', e);
     try{
       const minMeta={dt:meta.dt, lat:meta.lat, lon:meta.lon, desc:meta.desc, imgW:W, imgH:H, ms:meta.ms, tz:meta.tz};
-      bytes=insertExif(dataURLToBytes(c.toDataURL('image/jpeg', CFG.qual)), buildExifApp1(minMeta));
+      bytes=insertExif(new Uint8Array(await jpegBlob.arrayBuffer()), buildExifApp1(minMeta));
     }catch(e2){ console.error('[KMCheck] EXIF retry FALHOU:', e2); }
   }
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
@@ -4089,7 +4094,6 @@ function showInstallPrompt(){
       }catch(e){}},4000);
     }
   }).catch(()=>{});
-  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   // cobre o rearranjo do giro com preto (só age com a câmera aberta) — ver _maskRotation
   window.addEventListener('orientationchange', _maskRotation);
   if(window.screen && screen.orientation) screen.orientation.addEventListener('change', _maskRotation);
