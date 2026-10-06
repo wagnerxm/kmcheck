@@ -1095,8 +1095,10 @@ const OAES = [{"n":1,"nome":"Ponte sobre o Riacho Poço dos Bois","br":"BR-110",
 /* (0,0) = "Null Island" no Golfo da Guiné — alguns Androids retornam isso como posição
    padrão antes do fix real do GPS. Rejeitamos aqui, no watchPosition e no buildCaptureMeta. */
 const _validGps=(la,lo)=>la!=null&&lo!=null&&isFinite(la)&&isFinite(lo)&&(la!==0||lo!==0);
+/* polyfill para iOS 15 (não tem AbortSignal.timeout nativo) */
+if(!AbortSignal.timeout) AbortSignal.timeout=ms=>{const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal};
 /* escape HTML para interpolar strings em innerHTML sem risco de XSS */
-const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
@@ -1484,7 +1486,7 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
     const url=`${WFS_URL}?service=WFS&request=GetFeature&typeName=${layer}&outputFormat=application/json&propertyName=${fields}&CQL_FILTER=${cql}&maxFeatures=1000&startIndex=${start}`;
     let data;
     for(let _try=0;_try<3;_try++){
-      const r=await fetch(url);
+      const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
       if(!r.ok){ if(_try<2){await new Promise(r=>setTimeout(r,1500));continue} throw new Error('Erro HTTP '+r.status) }
       data=await r.json(); break;
     }
@@ -1652,12 +1654,12 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
     return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
   dlg.showModal();
+  dlg.addEventListener('close',()=>{ importShapefile._full=null },{once:true});
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
   document.getElementById('kmz-ok').onclick=async()=>{
     const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
     let n=0;
     for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
-    importShapefile._full=null;
     dlg.close(); renderBases();
     toast(n+' rodovia(s) instalada(s) do shapefile oficial.');
   };
@@ -2222,6 +2224,7 @@ document.getElementById('logoin').onchange=async e=>{
     const c=document.createElement('canvas');
     c.width=Math.round(bmp.width*sc); c.height=Math.round(bmp.height*sc);
     const cx=c.getContext('2d'); cx.drawImage(bmp,0,0,c.width,c.height);
+    bmp.close();
     LOGO.src=cx.getImageData(0,0,c.width,c.height);
     const cv=document.getElementById('logo-cv');
     cv.width=c.width; cv.height=c.height;
@@ -2251,6 +2254,7 @@ function saveLogoFromCanvas(cv){
       c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
       c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
       data=c2.toDataURL('image/png');
+      c2.width=0; c2.height=0;
     }
     localStorage.setItem('kc-logo', data);
   }
@@ -2260,6 +2264,7 @@ function saveLogoFromCanvas(cv){
     c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
     c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
     localStorage.setItem('kc-logo', c2.toDataURL('image/png'));
+    c2.width=0; c2.height=0;
   }
   loadLogo(); toast('Logo salva — sairá no canto superior esquerdo das fotos.');
 }
@@ -2690,7 +2695,10 @@ function closeCam(instant){
   document.querySelector('main').style.display='';
   clearInterval(camTick); camTick=null;
   disableTiltSensor();
-  if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
+  if(S.stream){
+    try{ const vt=S.stream.getVideoTracks()[0]; if(vt) vt.applyConstraints({advanced:[{torch:false}]}).catch(()=>{}) }catch(e){}
+    S.stream.getTracks().forEach(t=>t.stop()); S.stream=null
+  }
 }
 document.getElementById('camback').onclick=closeCam;
 /* Debounce no flip: impede double-click de iniciar dois getUserMedia simultâneos */
