@@ -223,7 +223,7 @@ h2.sec::after{content:none}
 .row{display:flex;gap:10px}
 .row .btn{flex:1}
 /* ---------- campos ---------- */
-input[type=text],input[type=number],textarea,select{width:100%;background:#0b0d0f;border:1px solid rgba(255,255,255,.07);border-radius:14px;color:var(--text);padding:12px 14px;font-size:15px;font-family:var(--mono);outline:none}
+input[type=text],input[type=number],textarea,select{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;color:var(--text);padding:12px 14px;font-size:15px;font-family:var(--mono);outline:none}
 input:focus,textarea:focus,select:focus{border-color:rgba(183,217,45,.5)}
 textarea{min-height:110px;resize:vertical}
 label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin:12px 0 6px}
@@ -305,13 +305,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 [data-android] dialog{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--glassbg)}
 [data-android] dialog::backdrop{backdrop-filter:none}
 [data-android] .toast{backdrop-filter:none;-webkit-backdrop-filter:none}
-[data-android] #camframe{transition:transform .15s ease,width .15s ease,height .15s ease}
+[data-android] #camframe{transition:transform .15s ease}
 [data-android] .cbtn,[data-android] .topbtn{transition:none}
 [data-android] .card::before,[data-android] .gcard::after{display:none}
 /* #camframe (legenda/logo) é a CAMADA que gira junto com o aparelho — só a interface, não o
    vídeo. O JS troca largura<->altura e rotaciona por uiTilt, dentro da mesma área útil. */
 #camframe{position:absolute;left:50%;top:50%;pointer-events:none;overflow:visible;z-index:2;
-  transition:transform .3s ease,width .3s ease,height .3s ease;will-change:transform}
+  transition:transform .3s ease;will-change:transform}
 .cbtn,.topbtn{will-change:transform}
 #camlogo{position:absolute;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 #liveplate{position:absolute;pointer-events:none}
@@ -369,7 +369,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* ---------- galeria de fotos registradas ---------- */
 #gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:51;display:none;flex-direction:column;
   bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
-#gallerywrap.on{display:flex;animation:camIn .2s ease-out}
+#gallerywrap.on{display:flex;animation:scrIn .2s ease-out}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
   color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -466,22 +466,22 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 /* ── prompt de instalação ── */
 .install-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:900;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .3s;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .install-overlay.on{opacity:1;pointer-events:auto}
-.install-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:420px;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.install-sheet{background:var(--panel);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:420px;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1)}
 .install-overlay.on .install-sheet{transform:translateY(0)}
-.install-sheet .handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.install-sheet .handle{width:36px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 18px}
 .install-sheet .app-info{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .install-sheet .app-icon{width:52px;height:52px;border-radius:14px;object-fit:cover}
-.install-sheet .app-name{font-size:17px;font-weight:700;color:var(--fg)}
-.install-sheet .app-origin{font-size:12px;color:var(--dim);margin-top:2px}
-.install-sheet .app-desc{font-size:13px;color:var(--dim);line-height:1.55;margin-bottom:18px}
+.install-sheet .app-name{font-size:17px;font-weight:700;color:var(--text)}
+.install-sheet .app-origin{font-size:12px;color:var(--mut);margin-top:2px}
+.install-sheet .app-desc{font-size:13px;color:var(--mut);line-height:1.55;margin-bottom:18px}
 .install-sheet .steps{margin-bottom:18px}
 .install-sheet .step{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
-.install-sheet .step-n{min-width:26px;height:26px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold)}
-.install-sheet .step-text{font-size:13px;color:var(--fg);padding-top:3px;line-height:1.45}
-.install-sheet .step-text .key{display:inline-flex;align-items:center;gap:3px;background:var(--input-bg);border-radius:4px;padding:1px 7px;font-size:12px;vertical-align:middle}
+.install-sheet .step-n{min-width:26px;height:26px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold)}
+.install-sheet .step-text{font-size:13px;color:var(--text);padding-top:3px;line-height:1.45}
+.install-sheet .step-text .key{display:inline-flex;align-items:center;gap:3px;background:var(--panel2);border-radius:4px;padding:1px 7px;font-size:12px;vertical-align:middle}
 .install-btns{display:flex;gap:10px}
 .install-btns button{flex:1;padding:13px;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;border:none}
-.install-btns .btn-dismiss{background:var(--input-bg);color:var(--dim)}
+.install-btns .btn-dismiss{background:var(--panel2);color:var(--mut)}
 .install-btns .btn-install{background:var(--gold);color:#1a1c1e}
 .install-share-icon{display:inline-block;vertical-align:middle;margin:0 2px}
 .safari-bar-hint{position:fixed;bottom:0;left:0;right:0;z-index:901;display:flex;justify-content:center;padding-bottom:calc(8px + env(safe-area-inset-bottom));pointer-events:none;opacity:0;transition:opacity .3s}
