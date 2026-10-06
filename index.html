@@ -523,7 +523,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <div><label for="dl-br" style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Rodovia</label>
         <select id="dl-br" style="width:100%"></select></div>
     </div>
-    <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
+    <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" aria-label="Número da BR" style="margin-top:8px;display:none">
     <!-- Linha 2: SNV + Código -->
     <div style="display:grid;grid-template-columns:1fr 60px;gap:10px;align-items:end;margin-top:10px">
       <div><label for="dl-snv" style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Versão SNV</label>
@@ -541,8 +541,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <p class="hint" id="dl-snv-hint" style="margin-top:2px;font-size:11px;display:none"></p>
     <!-- Linha 3: Km inicial + Km final -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-      <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)">
-      <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)">
+      <input type="text" id="dl-kmi" inputmode="decimal" placeholder="Km inicial (0)" aria-label="Km inicial">
+      <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)" aria-label="Km final">
     </div>
     <button class="btn gold" id="dl-go" style="margin-top:14px">Baixar rodovia</button>
     <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.</p>
@@ -573,7 +573,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="btn small ghost" id="q-gps" style="flex:0 0 auto">📍 Usar GPS</button>
     </div>
     <div class="scrollbox" id="q-out" style="display:none;margin-top:12px">
-      <table class="res"><thead><tr><th>LAT</th><th>LONG</th><th>BR</th><th>KM</th><th>DIST</th></tr></thead><tbody id="q-tbody"></tbody></table>
+      <table class="res"><thead><tr><th scope="col">LAT</th><th scope="col">LONG</th><th scope="col">BR</th><th scope="col">KM</th><th scope="col">DIST</th></tr></thead><tbody id="q-tbody"></tbody></table>
     </div>
     <button class="btn ghost small" id="q-copy" style="display:none;margin-top:10px">Copiar resultado (colar no Excel)</button>
   </div>
@@ -595,7 +595,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <section class="pad">
   <div class="card hero heroPhoto">
     <div class="herotop">
-      <svg id="kmsign" viewBox="0 0 150 186" class="kmsign">
+      <svg id="kmsign" viewBox="0 0 150 186" class="kmsign" aria-hidden="true">
         <rect x="3" y="3" width="144" height="180" rx="14" fill="#fff"/>
         <rect x="11" y="11" width="128" height="164" rx="8" fill="#1d3557"/>
         <text id="sign-br" x="75" y="52" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="30" fill="#fff">—</text>
@@ -621,16 +621,16 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
   <div class="gridcards">
     <button class="gcard" data-goto="scr-settings">
-      <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></span>
+      <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></span>
       <span class="gtitle">Configurações</span>
       <span class="glink">Legenda, câmera e tema</span>
-      <svg class="garrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      <svg class="garrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
     <button class="gcard" data-goto="scr-bases">
-      <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg></span>
+      <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg></span>
       <span class="gtitle">Gestão de Eixo</span>
       <span class="glink">Baixar/gerenciar rodovias</span>
-      <svg class="garrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      <svg class="garrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
   </div>
 
@@ -660,7 +660,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Qualidade</h2>
     <div class="card listcard">
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10v4M7 12h2.6M9.6 10v4M13 10v4h1.8a1.6 1.6 0 0 0 1.6-1.6v-.8A1.6 1.6 0 0 0 14.8 10z"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10v4M7 12h2.6M9.6 10v4M13 10v4h1.8a1.6 1.6 0 0 0 1.6-1.6v-.8A1.6 1.6 0 0 0 14.8 10z"/></svg></span>
         <span class="ltext"><b>Resolução</b><i id="lbl-res">Máxima disponível</i></span>
         <select id="cfg-res" class="lsel">
           <option value="max">Máxima disponível</option>
@@ -670,7 +670,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         </select>
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/></svg></span>
         <span class="ltext"><b>Qualidade</b><i id="lbl-qual">Alta</i></span>
         <select id="cfg-qual" class="lsel">
           <option value="0.95">Máxima</option>
@@ -680,7 +680,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         </select>
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M6 3v14a1 1 0 0 0 1 1h14"/><path d="M18 21V7a1 1 0 0 0-1-1H3"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v14a1 1 0 0 0 1 1h14"/><path d="M18 21V7a1 1 0 0 0-1-1H3"/></svg></span>
         <span class="ltext"><b>Formato</b><i>Proporção da foto capturada</i></span>
         <select id="cfg-format" class="lsel">
           <option value="1:1">1:1</option>
@@ -689,7 +689,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         </select>
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M12 3.5a4.5 4.5 0 0 0-4.5 4.5v3.2c0 .8-.3 1.6-.85 2.2L5 15.5h14l-1.65-2.1a3.4 3.4 0 0 1-.85-2.2V8a4.5 4.5 0 0 0-4.5-4.5z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a4.5 4.5 0 0 0-4.5 4.5v3.2c0 .8-.3 1.6-.85 2.2L5 15.5h14l-1.65-2.1a3.4 3.4 0 0 1-.85-2.2V8a4.5 4.5 0 0 0-4.5-4.5z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg></span>
         <span class="ltext"><b>Alerta sonoro</b><i>Som ao capturar a foto</i></span>
         <input type="checkbox" id="cfg-soundalert">
       </label>
@@ -698,7 +698,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Comportamento após o disparo</h2>
     <div class="card listcard">
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></svg></span>
         <span class="ltext"><b>Envio automático para a galeria</b><i>Salvar a foto automaticamente</i></span>
         <input type="checkbox" id="cfg-autosave" checked>
       </label>
@@ -707,7 +707,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Aparência</h2>
     <div class="card listcard">
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg></span>
         <span class="ltext"><b>Tema claro</b><i>Fundo claro com cartões escuros</i></span>
         <input type="checkbox" id="cfg-lighttheme">
       </label>
@@ -730,7 +730,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Ajustes</h2>
     <div class="card listcard">
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><rect x="5.6" y="6.6" width="6" height="4.5" rx="1" fill="currentColor" stroke="none"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><rect x="5.6" y="6.6" width="6" height="4.5" rx="1" fill="currentColor" stroke="none"/></svg></span>
         <span class="ltext"><b>Posição</b><i>Canto onde a logo aparece</i></span>
         <select id="cfg-logopos" class="lsel">
           <option value="tl" selected>Superior esquerdo</option>
@@ -755,7 +755,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Legenda</h2>
     <div class="card listcard">
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><rect x="5.6" y="13" width="9" height="4" rx="1" fill="currentColor" stroke="none"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><rect x="5.6" y="13" width="9" height="4" rx="1" fill="currentColor" stroke="none"/></svg></span>
         <span class="ltext"><b>Posição</b><i>Canto onde a legenda aparece</i></span>
         <select id="cfg-legpos" class="lsel">
           <option value="bl" selected>Inferior esquerdo</option>
@@ -765,7 +765,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         </select>
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><text x="2.5" y="18" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="700" fill="currentColor" stroke="none">A</text><text x="12" y="19.5" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="currentColor" stroke="none">A</text></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="2.5" y="18" font-family="Arial,Helvetica,sans-serif" font-size="11" font-weight="700" fill="currentColor" stroke="none">A</text><text x="12" y="19.5" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="700" fill="currentColor" stroke="none">A</text></svg></span>
         <span class="ltext"><b>Tamanho</b><i>Tamanho do texto gravado na foto</i></span>
         <select id="cfg-legsz" class="lsel">
           <option value="90">Pequena</option>
@@ -775,7 +775,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         </select>
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/></svg></span>
         <span class="ltext"><b>Cor</b><i>Cor do texto gravado</i></span>
         <select id="cfg-legcolor" class="lsel">
           <option value="#ffffff" selected>Branco</option>
@@ -786,7 +786,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         </select>
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M7 4h6a4 4 0 0 1 0 8H7z"/><path d="M7 12h7a4 4 0 0 1 0 8H7z"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h6a4 4 0 0 1 0 8H7z"/><path d="M7 12h7a4 4 0 0 1 0 8H7z"/></svg></span>
         <span class="ltext"><b>Negrito</b><i>Texto da legenda em negrito</i></span>
         <input type="checkbox" id="cfg-legbold">
       </label>
@@ -799,12 +799,12 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Fundo da legenda</h2>
     <div class="card listcard">
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="18" height="8" rx="2" fill="currentColor" stroke="none" opacity=".35"/><path d="M5 17h10M5 14.5h14" stroke-width="1.6"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="12" width="18" height="8" rx="2" fill="currentColor" stroke="none" opacity=".35"/><path d="M5 17h10M5 14.5h14" stroke-width="1.6"/></svg></span>
         <span class="ltext"><b>Fundo da legenda</b><i>Tarja atrás do texto</i></span>
         <input type="checkbox" id="cfg-legbg">
       </label>
       <label class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" stroke="none"/></svg></span>
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" stroke="none"/></svg></span>
         <span class="ltext"><b>Tom do fundo</b><i>Claro ou escuro</i></span>
         <select id="cfg-legbgtone" class="lsel">
           <option value="dark" selected>Escuro</option>
@@ -863,7 +863,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <div class="card">
       <div id="svclist"></div>
       <div class="row" style="margin-top:10px">
-        <input type="text" id="svc-new" placeholder="ex.: Pintura de guarda-corpo" style="flex:1">
+        <input type="text" id="svc-new" placeholder="ex.: Pintura de guarda-corpo" aria-label="Novo serviço" style="flex:1">
         <button class="btn small gold" id="svc-add" style="flex:0 0 auto">Adicionar</button>
       </div>
       <p class="hint">Serviços cadastrados aparecem para escolha rápida na câmera.</p>
@@ -873,7 +873,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <div class="card">
       <div id="ctlist"></div>
       <div class="row" style="margin-top:10px">
-        <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" style="flex:1">
+        <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" aria-label="Novo contrato" style="flex:1">
         <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
       </div>
       <p class="hint">Contratos cadastrados aparecem para escolha rápida na câmera.</p>
@@ -882,7 +882,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Alerta</h2>
     <div class="card">
       <label class="f" for="cfg-maxdist" style="margin-top:0">Distância máxima ao eixo (m) antes de alertar</label>
-      <input type="number" id="cfg-maxdist" value="300" min="20" step="10">
+      <input type="number" id="cfg-maxdist" value="300" min="20" max="10000" step="10">
     </div>
   </div>
 
@@ -909,7 +909,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
   <!-- banner de GPS desativado — aparece quando a câmera abre sem localização -->
   <div id="gps-banner">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="1" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="19"/><line x1="1" y1="10" x2="4.5" y2="10"/><line x1="15.5" y1="10" x2="19" y2="10"/></svg>
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="1" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="19"/><line x1="1" y1="10" x2="4.5" y2="10"/><line x1="15.5" y1="10" x2="19" y2="10"/></svg>
     <span>GPS desativado — toque para ativar</span>
   </div>
   <div id="camstage">
@@ -954,14 +954,14 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <h2 class="sec" id="dlg-svc-title" style="margin-top:0">Serviço</h2>
   <div class="pk-list" id="svc-grid"></div>
   <div class="row" style="margin-top:12px">
-    <input type="text" id="svc-new2" placeholder="Adicionar novo serviço" style="flex:1">
+    <input type="text" id="svc-new2" placeholder="Adicionar novo serviço" aria-label="Novo serviço" style="flex:1">
     <button class="btn small gold" id="svc-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
 
   <h2 class="sec" style="margin-top:22px">Contrato</h2>
   <div class="pk-list" id="ctlist2"></div>
   <div class="row" style="margin-top:12px">
-    <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" style="flex:1">
+    <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
 
@@ -972,7 +972,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
      do iPhone está DESLIGADO). Ensina a ativar o bloqueio para a câmera ficar sempre em pé. -->
 <dialog id="dlg-rotlock" aria-labelledby="dlg-rotlock-title">
   <div class="rl-body">
-    <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M8 22a14 14 0 0 1 23-10.4"/><path d="M31 6.5v5.5h-5.5"/>
       <path d="M36 22a14 14 0 0 1-23 10.4"/><path d="M13 37.5v-5.5h5.5"/>
       <rect x="16.5" y="21" width="11" height="8.6" rx="1.7"/>
@@ -1024,7 +1024,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <!-- diálogo: GPS obrigatório — aparece quando permissão de localização é negada -->
 <dialog id="dlg-gps" aria-labelledby="dlg-gps-title">
   <div class="rl-body">
-    <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="22" cy="22" r="7"/><line x1="22" y1="2" x2="22" y2="11"/>
       <line x1="22" y1="33" x2="22" y2="42"/><line x1="2" y1="22" x2="11" y2="22"/>
       <line x1="33" y1="22" x2="42" y2="22"/>
@@ -1054,7 +1054,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </dialog>
 
 <!-- prompt de instalação na tela inicial -->
-<div class="install-overlay" id="install-overlay">
+<div class="install-overlay" id="install-overlay" role="dialog" aria-modal="true" aria-label="Instalar KM Check">
   <div class="install-sheet" id="install-sheet">
     <div class="handle"></div>
     <div class="app-info">
@@ -1074,7 +1074,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </div>
 <!-- seta pulsante apontando pro botão compartilhar do Safari (iOS) -->
 <div class="safari-bar-hint" id="safari-hint">
-  <div class="arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1c1e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
+  <div class="arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1c1e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2062,8 +2062,9 @@ function buildInfo(){
 function estacaDe(km){
   const m = km*1000;
   const est = Math.floor(m/20);
-  const resto = m - est*20;
-  return `Est. ${est}+${Math.round(resto)}`;
+  let resto = Math.round(m - est*20);
+  if(resto>=20) return `Est. ${est+1}+0`;
+  return `Est. ${est}+${resto}`;
 }
 /* formata versão do SNV para exibição curta na legenda — "SNV 202607a B" → "Jul/26" */
 function fmtSnv(fonte){
@@ -4127,7 +4128,7 @@ function showInstallPrompt(){
         if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(4),lon:+S.pos.lon.toFixed(4),acc:Math.round(S.pos.acc||0)};
         /* Bases baixadas no IndexedDB */
         let bases=[];
-        try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.n||0}))}catch(e){}
+        try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.lat?.length||0}))}catch(e){}
         fetch(SNV_API+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({device_id:did,app_version:m[1],platform:plat,user_agent:ua,
             screen:screen.width+'x'+screen.height,brand,os_version:osVer,model,hw,
@@ -4142,15 +4143,17 @@ function showInstallPrompt(){
   // mantém a TELA ACESA enquanto o app está aberto/visível (acompanhar o KM andando no carro sem
   // o celular apagar). iOS 16.4+ e Android suportam. O bloqueio é liberado quando o app sai de
   // foco; reativamos ao voltar, a cada toque e por uma rede de segurança periódica.
-  let _wakeLock=null;
+  let _wakeLock=null, _wakeAcquiring=false;
   async function acquireWake(){
-    if(_wakeLock) return;
+    if(_wakeLock||_wakeAcquiring) return;
     try{
       if('wakeLock' in navigator && document.visibilityState==='visible'){
+        _wakeAcquiring=true;
         _wakeLock=await navigator.wakeLock.request('screen');
         _wakeLock.addEventListener('release', function(){ _wakeLock=null; });
       }
     }catch(e){ /* não suportado ou negado — o app segue funcionando */ }
+    finally{ _wakeAcquiring=false }
   }
   document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') acquireWake(); });
   document.addEventListener('pointerdown', acquireWake, {passive:true});
