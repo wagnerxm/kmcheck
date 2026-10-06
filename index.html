@@ -459,7 +459,7 @@ dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
 .checker{background:#2a2e33;background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:#eef1f6;padding:11px 20px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s;max-width:88vw;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:#eef1f6;padding:11px 20px;border-radius:999px;font-size:13px;z-index:70;opacity:0;transition:opacity .25s;max-width:88vw;text-align:center}
 .toast.on{opacity:1}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
@@ -1218,8 +1218,11 @@ function dmsParts(v, isLat){
   return {deg,min,sec,hemi};
 }
 function fmtDMS(v,isLat){
-  const {deg,min,sec,hemi}=dmsParts(v,isLat);
-  return `${deg}°${String(min).padStart(2,'0')}'${sec.toFixed(1).replace('.',',').padStart(4,'0')}"${hemi}`;
+  let {deg,min,sec,hemi}=dmsParts(v,isLat);
+  let s=Math.round(sec*10)/10;
+  if(s>=60){ s-=60; min++; }
+  if(min>=60){ min-=60; deg++; }
+  return `${deg}°${String(min).padStart(2,'0')}'${s.toFixed(1).replace('.',',').padStart(4,'0')}"${hemi}`;
 }
 function fmtGMD(v,isLat){
   const {deg,hemi}=dmsParts(v,isLat);
@@ -2260,12 +2263,14 @@ function saveLogoFromCanvas(cv){
     localStorage.setItem('kc-logo', data);
   }
   catch(err){
-    const c2=document.createElement('canvas');
-    const sc=400/Math.max(cv.width,cv.height);
-    c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
-    c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
-    localStorage.setItem('kc-logo', c2.toDataURL('image/png'));
-    c2.width=0; c2.height=0;
+    try{
+      const c2=document.createElement('canvas');
+      const sc=400/Math.max(cv.width,cv.height);
+      c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
+      c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
+      localStorage.setItem('kc-logo', c2.toDataURL('image/png'));
+      c2.width=0; c2.height=0;
+    }catch(e2){ toast('Erro ao salvar logo — libere espaço.'); return }
   }
   loadLogo(); toast('Logo salva — sairá no canto superior esquerdo das fotos.');
 }
@@ -2698,13 +2703,14 @@ function closeCam(instant){
   disableTiltSensor();
   if(S.stream){
     try{ const vt=S.stream.getVideoTracks()[0]; if(vt) vt.applyConstraints({advanced:[{torch:false}]}).catch(()=>{}) }catch(e){}
-    S.stream.getTracks().forEach(t=>t.stop()); S.stream=null
+    S.stream.getTracks().forEach(t=>t.stop()); S.stream=null;
+    const vid=document.getElementById('cam'); if(vid) vid.srcObject=null;
   }
 }
 document.getElementById('camback').onclick=closeCam;
 /* Debounce no flip: impede double-click de iniciar dois getUserMedia simultâneos */
 let _flipping=false;
-document.getElementById('camflip').onclick=async()=>{ if(_flipping) return; _flipping=true; S.facing=S.facing==='environment'?'user':'environment'; closeCam(true); openCam(); setTimeout(()=>{_flipping=false},800) };
+document.getElementById('camflip').onclick=async()=>{ if(_flipping) return; _flipping=true; try{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(true); await openCam(); }finally{ _flipping=false } };
 /* som clássico de obturador: dois "clicks" mecânicos curtos (ruído filtrado com envelope bem
    rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular.
    Reutiliza um único AudioContext (iOS Safari limita a ~4-6 simultâneos). */
@@ -3057,11 +3063,11 @@ document.getElementById('gal-close').onclick=()=>{
 (function(){
   const stage=document.getElementById('gal-stage');
   const img=document.getElementById('gal-img');
-  let sx=0, st=0, dx=0, dragging=false, vx=0, lastX=0, lastT=0;
+  let sx=0, st=0, dx=0, dragging=false, vx=0, lastX=0, lastT=0, _galAnimating=false;
   const W=()=>stage.clientWidth;
 
   stage.addEventListener('touchstart', e=>{
-    if(!galMetas.length) return;
+    if(!galMetas.length || _galAnimating) return;
     const touch=e.touches[0];
     sx=touch.clientX; st=performance.now(); dx=0; dragging=true; vx=0; lastX=sx; lastT=st;
     img.classList.remove('gal-anim');
@@ -3090,16 +3096,19 @@ document.getElementById('gal-close').onclick=()=>{
 
     if(goNext || goPrev){
       const dir=goNext?1:-1;
+      _galAnimating=true;
       img.classList.add('gal-anim');
       img.style.transform=`translateX(${dir*w}px)`;
       img.addEventListener('transitionend', async function h(){
         img.removeEventListener('transitionend', h);
+        const gw=document.getElementById('gallerywrap');
+        if(!gw||!gw.classList.contains('on')){ _galAnimating=false; return }
         galIdx+=goNext?1:-1;
         img.classList.remove('gal-anim');
         img.style.transform=`translateX(${-dir*w}px)`;
-        /* revogar blob URL antigo antes de criar novo */
         if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
         const blob=await getPhotoBlob(galMetas[galIdx].id);
+        if(!gw.classList.contains('on')){ _galAnimating=false; return }
         if(blob){
           _galBlobUrl=URL.createObjectURL(blob);
           img.src=_galBlobUrl;
@@ -3108,6 +3117,7 @@ document.getElementById('gal-close').onclick=()=>{
         void img.offsetWidth;
         img.classList.add('gal-anim');
         img.style.transform='translateX(0)';
+        _galAnimating=false;
       });
     } else {
       img.classList.add('gal-anim');
@@ -3867,7 +3877,9 @@ function showInstallPrompt(){
         try{const c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
           if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');
             if(ext) gpuRenderer=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)||'';
+            try{gl.getExtension('WEBGL_lose_context')?.loseContext()}catch(e){}
           }
+          c.width=0;c.height=0;
         }catch(e){}
         /* Micro-benchmark de CPU — fingerprint do chip Apple/Qualcomm.
            Roda num Web Worker via Blob URL para NÃO travar a UI.
@@ -3895,7 +3907,10 @@ function showInstallPrompt(){
         let glExtCount=0;
         try{const c2=document.createElement('canvas');
           const gl2=c2.getContext('webgl2')||c2.getContext('webgl');
-          if(gl2) glExtCount=(gl2.getSupportedExtensions()||[]).length;
+          if(gl2){ glExtCount=(gl2.getSupportedExtensions()||[]).length;
+            try{gl2.getExtension('WEBGL_lose_context')?.loseContext()}catch(e){}
+          }
+          c2.width=0;c2.height=0;
         }catch(e){}
         /* Info de câmeras (salva no localStorage quando o usuário abre a câmera).
            Fundamental para iPhones: Pro = tem teleobjetiva (3 câmeras traseiras). */
