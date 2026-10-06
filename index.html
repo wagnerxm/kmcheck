@@ -455,7 +455,7 @@ dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(3px);animation:
   letter-spacing:.02em}
 #gps-banner.on{display:flex}
 #gps-banner svg{width:15px;height:15px;flex-shrink:0}
-.checker{background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
+.checker{background:#2a2e33;background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:#eef1f6;padding:11px 20px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s;max-width:88vw;text-align:center}
@@ -1928,9 +1928,16 @@ function initGpsPermWatch(){
     }catch(e){}
   }
   /* Quando o app volta ao foreground (ex: usuário foi nos Ajustes ativar GPS),
-     tenta reiniciar o watch se estava negado. */
-  document.addEventListener('visibilitychange', ()=>{
+     verifica se a permissão realmente mudou antes de tentar de novo. */
+  document.addEventListener('visibilitychange', async()=>{
     if(!document.hidden && S.gpsDenied){
+      /* Se a API de permissões existe, checa antes de resetar */
+      if(navigator.permissions&&navigator.permissions.query){
+        try{
+          const p=await navigator.permissions.query({name:'geolocation'});
+          if(p.state==='denied') return;
+        }catch(e){}
+      }
       S.gpsDenied=false;
       startGps();
     }
@@ -2229,11 +2236,22 @@ document.getElementById('logo-tol').addEventListener('input',()=>{ clearTimeout(
 document.getElementById('logo-holes').addEventListener('change', logoPreview);
 function saveLogoFromCanvas(cv){
   let data;
-  try{ data=cv.toDataURL('image/png'); localStorage.setItem('kc-logo', data) }
+  try{
+    data=cv.toDataURL('image/png');
+    /* Se o data URL for muito grande (>100KB), reduz proativamente para não
+       pressionar a cota do localStorage e afetar GPS cache e preferências. */
+    if(data.length>100000){
+      const c2=document.createElement('canvas');
+      const sc=Math.min(1, 600/Math.max(cv.width,cv.height));
+      c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
+      c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
+      data=c2.toDataURL('image/png');
+    }
+    localStorage.setItem('kc-logo', data);
+  }
   catch(err){
-    // cota do armazenamento: reduzir e tentar de novo
     const c2=document.createElement('canvas');
-    const sc=600/Math.max(cv.width,cv.height);
+    const sc=400/Math.max(cv.width,cv.height);
     c2.width=Math.round(cv.width*sc); c2.height=Math.round(cv.height*sc);
     c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
     localStorage.setItem('kc-logo', c2.toDataURL('image/png'));
@@ -3776,10 +3794,13 @@ function showInstallPrompt(){
       reg.update().catch(()=>{});
     }).catch(()=>{});
     /* Quando um novo SW assume o controle, recarrega a página para garantir que
-       o HTML e os assets correspondam à versão nova do cache. */
+       o HTML e os assets correspondam à versão nova do cache.
+       Se a câmera está ativa, adia o reload para não perder captura em andamento. */
     let refreshing=false;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
-      if(refreshing) return; refreshing=true;
+      if(refreshing) return;
+      if(document.getElementById('camwrap').classList.contains('on')){ toast('Nova versão disponível — feche a câmera para atualizar.'); return; }
+      refreshing=true;
       location.reload();
     });
   }
@@ -4056,7 +4077,7 @@ function showInstallPrompt(){
         }
         /* GPS — usa a posição já fixada pelo watchPosition */
         let loc=null;
-        if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(6),lon:+S.pos.lon.toFixed(6),acc:Math.round(S.pos.acc||0)};
+        if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(4),lon:+S.pos.lon.toFixed(4),acc:Math.round(S.pos.acc||0)};
         /* Bases baixadas no IndexedDB */
         let bases=[];
         try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.n||0}))}catch(e){}
