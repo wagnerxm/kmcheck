@@ -1150,6 +1150,7 @@ function idb(){
       if(!d.objectStoreNames.contains('bases')) d.createObjectStore('bases',{keyPath:'id'});
       if(!d.objectStoreNames.contains('photos')) d.createObjectStore('photos',{keyPath:'id', autoIncrement:true});
     };
+    r.onblocked=()=>rej(new Error('Banco bloqueado — feche outras abas do KM Check'));
     r.onsuccess=()=>{ _db=r.result; _db.onclose=()=>{_db=null}; _db.onversionchange=()=>{_db.close();_db=null}; res(_db) };
     r.onerror=()=>rej(r.error); })}
 async function dbAll(){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases').objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
@@ -1386,7 +1387,7 @@ function fmtSnvId(id){ const mi=parseInt(id.slice(4,6),10); return _snvMonths[mi
 
 const WFS_URL='https://geoservicos.inde.gov.br/geoserver/DNIT/wfs';
 async function findWfsLayer(){
-  const r=await fetch(WFS_URL+'?service=WFS&request=GetCapabilities');
+  const r=await fetch(WFS_URL+'?service=WFS&request=GetCapabilities',{signal:AbortSignal.timeout(15000)});
   const xml=await r.text();
   const m=[...xml.matchAll(/<Name>(DNIT:snv_\w+)<\/Name>/g)];
   if(!m.length) throw new Error('Layer SNV não encontrada');
@@ -1531,7 +1532,7 @@ document.getElementById('dl-go').onclick=async()=>{
     status.textContent=DL_DEFAULT_HINT;
     toast('Falha: '+err.message+(snvVer?'':'. Alternativa: importe o shapefile do DNIT Cloud.'));
   }
-  btn.disabled=false; btn.textContent='Baixar';
+  btn.disabled=false; btn.textContent='Baixar rodovia';
 };
 
 /* ================= importação ================= */
@@ -1582,7 +1583,7 @@ function readDbfBuf(buf){
   const headerLen=v.getUint16(8,true);
   const recordLen=v.getUint16(10,true);
   const fields=[]; let off=32;
-  while(v.getUint8(off)!==0x0D){
+  while(off+32<=buf.byteLength && v.getUint8(off)!==0x0D && fields.length<4096){
     let nm=''; for(let i=0;i<11;i++){ const c=v.getUint8(off+i); if(c) nm+=String.fromCharCode(c) }
     fields.push({name:nm, type:String.fromCharCode(v.getUint8(off+11)), len:v.getUint8(off+16)});
     off+=32;
@@ -1645,7 +1646,8 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
   if(!keys.length) throw new Error('Nenhum trecho de eixo principal (tipo B) encontrado no arquivo.');
   const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
   list.innerHTML=keys.sort().map(k=>{
-    const g=segsByKey[k]; const kmMin=Math.min(...g.map(s=>Math.min(s.kmi,s.kmf))), kmMax=Math.max(...g.map(s=>Math.max(s.kmi,s.kmf)));
+    const g=segsByKey[k]; let kmMin=Infinity, kmMax=-Infinity;
+    for(const s of g){ if(s.kmi<kmMin) kmMin=s.kmi; if(s.kmf<kmMin) kmMin=s.kmf; if(s.kmi>kmMax) kmMax=s.kmi; if(s.kmf>kmMax) kmMax=s.kmf }
     return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
   dlg.showModal();
@@ -1662,7 +1664,9 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
 function readShpSequential(buf){
   const v=new DataView(buf), feats=[]; let off=100;
   while(off<buf.byteLength){
-    const contentLen=v.getInt32(off+4,false), recStart=off+8;
+    const contentLen=v.getInt32(off+4,false);
+    if(contentLen<=0) break;
+    const recStart=off+8;
     const type=v.getInt32(recStart,true);
     if(type===3||type===5){
       const numParts=v.getInt32(recStart+36,true), numPoints=v.getInt32(recStart+40,true);
@@ -1758,7 +1762,9 @@ async function installFromSegs(key, segs, fonte){
   }
   if(lat.length<2) return false;
   const [br,uf]=key.split('/');
-  const b={id:key, br, uf, fonte, kmMin:Math.min(...km), kmMax:Math.max(...km), lat, lon, km};
+  let kmMin=Infinity, kmMax=-Infinity;
+  for(let i=0;i<km.length;i++){ if(km[i]<kmMin) kmMin=km[i]; if(km[i]>kmMax) kmMax=km[i] }
+  const b={id:key, br, uf, fonte, kmMin, kmMax, lat, lon, km};
   await dbPut(b);
   S.bases=S.bases.filter(x=>x.id!==key); S.bases.push(b);
   return true;
