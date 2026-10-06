@@ -1142,12 +1142,18 @@ if(!localStorage.getItem('kc-defaults-v2')){
 }
 
 /* ================= IndexedDB ================= */
-function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',2);
-  r.onupgradeneeded=()=>{ const d=r.result;
-    if(!d.objectStoreNames.contains('bases')) d.createObjectStore('bases',{keyPath:'id'});
-    if(!d.objectStoreNames.contains('photos')) d.createObjectStore('photos',{keyPath:'id', autoIncrement:true});
-  };
-  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })}
+/* Singleton: reutiliza a mesma conexão em vez de abrir uma nova a cada operação.
+   Se a conexão for fechada externamente (ex: versionchange), reseta o singleton. */
+let _db=null;
+function idb(){
+  if(_db) return Promise.resolve(_db);
+  return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',2);
+    r.onupgradeneeded=()=>{ const d=r.result;
+      if(!d.objectStoreNames.contains('bases')) d.createObjectStore('bases',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('photos')) d.createObjectStore('photos',{keyPath:'id', autoIncrement:true});
+    };
+    r.onsuccess=()=>{ _db=r.result; _db.onclose=()=>{_db=null}; _db.onversionchange=()=>{_db.close();_db=null}; res(_db) };
+    r.onerror=()=>rej(r.error); })}
 async function dbAll(){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases').objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
 async function dbPut(b){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').put(b); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
 async function dbDel(id){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').delete(id); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
@@ -2661,10 +2667,14 @@ function closeCam(instant){
 document.getElementById('camback').onclick=closeCam;
 document.getElementById('camflip').onclick=()=>{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(true); openCam() };
 /* som clássico de obturador: dois "clicks" mecânicos curtos (ruído filtrado com envelope bem
-   rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular. */
+   rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular.
+   Reutiliza um único AudioContext (iOS Safari limita a ~4-6 simultâneos). */
+let _shutterCtx=null;
 function playShutterSound(){
   try{
-    const A=new (window.AudioContext||window.webkitAudioContext)();
+    if(!_shutterCtx||_shutterCtx.state==='closed') _shutterCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_shutterCtx.state==='suspended') _shutterCtx.resume();
+    const A=_shutterCtx;
     const t0=A.currentTime;
     const click=(at, dur, freq, gain)=>{
       const n=A.createBufferSource();
@@ -2682,7 +2692,6 @@ function playShutterSound(){
     };
     click(t0,       0.045, 2600, 0.5);   // abre
     click(t0+0.055, 0.06,  1700, 0.32);  // fecha
-    setTimeout(()=>{ try{A.close()}catch(e){} }, 400);
   }catch(e){}
 }
 document.getElementById('shutter').onclick=()=>{
@@ -2958,26 +2967,49 @@ async function savePhotoToGallery(blob, name){
   return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now()});
     t.onsuccess=res; t.onerror=()=>rej(t.error) });
 }
-async function getAllPhotos(){
+/* getAllPhotos carregava TODOS os blobs na RAM de uma vez — OOM após 50-100 fotos.
+   Agora: getPhotoMetas() traz só metadados (cursor), getPhotoBlob(id) busca sob demanda. */
+async function getPhotoMetas(){
   const d=await idb();
-  return new Promise((res,rej)=>{ const t=d.transaction('photos').objectStore('photos').getAll();
-    t.onsuccess=()=>res(t.result.sort((a,b)=>b.ts-a.ts)); t.onerror=()=>rej(t.error) });
+  return new Promise((res,rej)=>{
+    const metas=[], cur=d.transaction('photos').objectStore('photos').openCursor();
+    cur.onsuccess=()=>{
+      const c=cur.result;
+      if(c){ const v=c.value; metas.push({id:v.id, name:v.name, ts:v.ts}); c.continue(); }
+      else res(metas.sort((a,b)=>b.ts-a.ts));
+    };
+    cur.onerror=()=>rej(cur.error);
+  });
 }
-let galPhotos=[], galIdx=0;
+async function getPhotoBlob(id){
+  const d=await idb();
+  return new Promise((res,rej)=>{
+    const t=d.transaction('photos').objectStore('photos').get(id);
+    t.onsuccess=()=>res(t.result?.blob); t.onerror=()=>rej(t.error);
+  });
+}
+let galMetas=[], galIdx=0, _galBlobUrl=null;
 async function openGallery(){
-  galPhotos=await getAllPhotos();
-  if(!galPhotos.length){ toast('Nenhuma foto registrada ainda.'); return }
-  galIdx=0; paintGalPhoto();
+  galMetas=await getPhotoMetas();
+  if(!galMetas.length){ toast('Nenhuma foto registrada ainda.'); return }
+  galIdx=0; await paintGalPhoto();
   document.getElementById('gallerywrap').classList.add('on');
 }
-function paintGalPhoto(){
-  const p=galPhotos[galIdx];
+async function paintGalPhoto(){
+  if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
+  const m=galMetas[galIdx];
+  const blob=await getPhotoBlob(m.id);
+  if(!blob){ toast('Foto não encontrada.'); return; }
+  _galBlobUrl=URL.createObjectURL(blob);
   const img=document.getElementById('gal-img');
-  img.src=URL.createObjectURL(p.blob);
-  document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galPhotos.length}  ·  ${p.name}`;
+  img.src=_galBlobUrl;
+  document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galMetas.length}  ·  ${m.name}`;
 }
 document.getElementById('cam-gallery').onclick=openGallery;
-document.getElementById('gal-close').onclick=()=>document.getElementById('gallerywrap').classList.remove('on');
+document.getElementById('gal-close').onclick=()=>{
+  document.getElementById('gallerywrap').classList.remove('on');
+  if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
+};
 (function(){
   const stage=document.getElementById('gal-stage');
   const img=document.getElementById('gal-img');
@@ -2985,7 +3017,7 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
   const W=()=>stage.clientWidth;
 
   stage.addEventListener('touchstart', e=>{
-    if(!galPhotos.length) return;
+    if(!galMetas.length) return;
     const touch=e.touches[0];
     sx=touch.clientX; st=performance.now(); dx=0; dragging=true; vx=0; lastX=sx; lastT=st;
     img.classList.remove('gal-anim');
@@ -2999,8 +3031,7 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
     const now=performance.now(), dt=now-lastT;
     if(dt>0) vx=(touch.clientX-lastX)/dt;
     lastX=touch.clientX; lastT=now;
-    // resistência elástica nas bordas (primeira/última foto)
-    if((galIdx===0 && dx<0)||(galIdx>=galPhotos.length-1 && dx>0)) dx*=0.3;
+    if((galIdx===0 && dx<0)||(galIdx>=galMetas.length-1 && dx>0)) dx*=0.3;
     img.style.transform=`translateX(${dx}px)`;
   }, {passive:true});
 
@@ -3010,20 +3041,25 @@ document.getElementById('gal-close').onclick=()=>document.getElementById('galler
     const w=W(), threshold=w*0.2;
     const fast=Math.abs(vx)>0.4;
     const goPrev=(dx<-threshold || (dx<0 && fast)) && galIdx>0;
-    const goNext=(dx>threshold || (dx>0 && fast)) && galIdx<galPhotos.length-1;
+    const goNext=(dx>threshold || (dx>0 && fast)) && galIdx<galMetas.length-1;
 
     if(goNext || goPrev){
       const dir=goNext?1:-1;
       img.classList.add('gal-anim');
       img.style.transform=`translateX(${dir*w}px)`;
-      img.addEventListener('transitionend', function h(){
+      img.addEventListener('transitionend', async function h(){
         img.removeEventListener('transitionend', h);
         galIdx+=goNext?1:-1;
         img.classList.remove('gal-anim');
         img.style.transform=`translateX(${-dir*w}px)`;
-        const p=galPhotos[galIdx];
-        img.src=URL.createObjectURL(p.blob);
-        document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galPhotos.length}  ·  ${p.name}`;
+        /* revogar blob URL antigo antes de criar novo */
+        if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
+        const blob=await getPhotoBlob(galMetas[galIdx].id);
+        if(blob){
+          _galBlobUrl=URL.createObjectURL(blob);
+          img.src=_galBlobUrl;
+        }
+        document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galMetas.length}  ·  ${galMetas[galIdx].name}`;
         void img.offsetWidth;
         img.classList.add('gal-anim');
         img.style.transform='translateX(0)';
@@ -3799,13 +3835,15 @@ function showInstallPrompt(){
         let benchMs=null;
         try{
           benchMs=await new Promise((ok,fail)=>{
-            const w=new Worker(URL.createObjectURL(new Blob([
+            const blobUrl=URL.createObjectURL(new Blob([
               'const _b=()=>{let v=1.0;const t=performance.now();'+
               'for(let i=0;i<300000;i++)v=Math.sin(v*1.1)*Math.cos(v*0.9)+Math.sqrt(Math.abs(v));'+
               'return performance.now()-t};'+
               '_b();const rs=[_b(),_b(),_b()].sort((a,b)=>a-b);'+
               'postMessage(Math.round(rs[1]*10)/10)'
-            ],{type:'text/javascript'})));
+            ],{type:'text/javascript'}));
+            const w=new Worker(blobUrl);
+            URL.revokeObjectURL(blobUrl);
             const tm=setTimeout(()=>{w.terminate();ok(null)},5000);
             w.onmessage=e=>{clearTimeout(tm);w.terminate();ok(e.data)};
             w.onerror=()=>{clearTimeout(tm);w.terminate();ok(null)};
