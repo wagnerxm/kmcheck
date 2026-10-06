@@ -3231,14 +3231,8 @@ function burnLegend(ctx,W,H,info,tiltDeg){
 function sanitizeFilename(s){
   return s.replace(/⚠/g,'').replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
 }
-function dataURLToBytes(u){
-  const bin=atob(u.slice(u.indexOf(',')+1));
-  const n=bin.length, arr=new Uint8Array(n);
-  for(let i=0;i<n;i++) arr[i]=bin.charCodeAt(i);
-  return arr;
-}
 /* ================= EXIF =================
-   O canvas (toDataURL/toBlob) gera um JPEG SEM metadados. Aqui montamos um segmento EXIF (APP1)
+   O canvas toBlob gera um JPEG SEM metadados. Aqui montamos um segmento EXIF (APP1)
    com GPS (lat/lon/altitude/precisão), data/hora e descrição, e injetamos logo após o SOI do
    JPEG — assim a foto salva carrega os dados corretamente, sem depender de biblioteca externa. */
 function exifDateStr(d){ const z=n=>String(n).padStart(2,'0');
