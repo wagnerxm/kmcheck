@@ -377,7 +377,10 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #gal-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
 #gal-img{max-width:100%;max-height:100%;object-fit:contain;will-change:transform;pointer-events:none}
 #gal-img.gal-anim{transition:transform .3s cubic-bezier(.25,.46,.45,.94)}
-#gal-caption{text-align:center;color:#d8d8d8;font-size:12px;letter-spacing:.05em;padding:12px 0 calc(12px + env(safe-area-inset-bottom))}
+#gal-caption{text-align:center;color:#d8d8d8;font-size:12px;letter-spacing:.05em;padding:8px 0 calc(12px + env(safe-area-inset-bottom))}
+#gal-actions{display:flex;justify-content:center;gap:10px;padding:10px 16px 0}
+#gal-actions .btn{min-height:44px;background:#1b1f22;color:#fff;border-color:rgba(255,255,255,.18)}
+#gal-actions #gal-del{background:transparent;color:#ff8a80;border-color:rgba(255,138,128,.4)}
 .gpsdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);margin-right:7px;vertical-align:1px}
 .gpsdot.ok{background:var(--ok);box-shadow:0 0 8px rgba(183,217,45,.7)}
 .gpsdot.mid{background:var(--warn)}
@@ -993,6 +996,10 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div id="gal-stage">
     <img id="gal-img" alt="Foto registrada">
   </div>
+  <div id="gal-actions">
+    <button id="gal-share" class="btn small">Compartilhar / salvar</button>
+    <button id="gal-del" class="btn small ghost">Excluir</button>
+  </div>
   <div id="gal-caption"></div>
 </div>
 
@@ -1161,10 +1168,29 @@ async function dbDel(id){ const d=await idb(); return new Promise((res,rej)=>{ c
 
 /* ================= geometria ================= */
 const R=6371008.8, D2R=Math.PI/180;
+/* caixa envolvente de cada base (calculada 1x) — no findKm, uma rodovia cuja caixa já está mais
+   longe que o melhor trecho encontrado é pulada inteira. Com várias rodovias instaladas, a varredura
+   a cada leitura do GPS cai de centenas de milhares de trechos para só os da rodovia próxima. */
+const _bbox=new WeakMap();
+function baseBBox(b){
+  let bb=_bbox.get(b);
+  if(!bb){
+    let a=Infinity,c=-Infinity,e=Infinity,f=-Infinity;
+    for(let i=0;i<b.lat.length;i++){ const la=b.lat[i], lo=b.lon[i];
+      if(la<a)a=la; if(la>c)c=la; if(lo<e)e=lo; if(lo>f)f=lo }
+    bb=[a,c,e,f]; _bbox.set(b,bb);
+  }
+  return bb;
+}
 function findKm(lat,lon){
   let best=null;
-  for(const b of S.bases){
-    const cos=Math.cos(lat*D2R), px=lon, py=lat;
+  const cos=Math.cos(lat*D2R), px=lon, py=lat;
+  /* ordena pela distância até a caixa: a rodovia mais próxima é varrida primeiro e poda as demais */
+  const order=S.bases.map((b,bi)=>{ const bb=baseBBox(b);
+    const dy=py<bb[0]?bb[0]-py:(py>bb[1]?py-bb[1]:0), dx=(px<bb[2]?bb[2]-px:(px>bb[3]?px-bb[3]:0))*cos;
+    return {b, bi, d2:dx*dx+dy*dy} }).sort((p,q)=>p.d2-q.d2);
+  for(const {b,bi,d2:bd2} of order){
+    if(best && bd2>best.d2) break;
     for(let i=0;i<b.lat.length-1;i++){
       const ax=b.lon[i],ay=b.lat[i],bx=b.lon[i+1],by=b.lat[i+1];
       const dx=(bx-ax)*cos, dy=by-ay, ex=(px-ax)*cos, ey=py-ay;
@@ -1172,8 +1198,10 @@ function findKm(lat,lon){
       let t=(ex*dx+ey*dy)/L2; t=t<0?0:(t>1?1:t);
       const fx=ex-t*dx, fy=ey-t*dy;
       const d2=fx*fx+fy*fy;
-      if(!best || d2<best.d2){
-        best={d2, t, i, b};
+      /* empate exato (rodovias com traçado coincidente): vence a base que vem antes em S.bases,
+         igual à varredura linear antiga — o resultado não depende da ordem da poda */
+      if(!best || d2<best.d2 || (d2===best.d2 && bi<best.bi)){
+        best={d2, t, i, b, bi};
       }
     }
   }
@@ -1288,7 +1316,9 @@ document.getElementById('header-back').onclick=()=>{
 };
 document.getElementById('search-toggle').onclick=()=>goToScreen('scr-query');
 document.getElementById('nav-cam').onclick=openCam;
-function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),ms||2600) }
+let _toastT=0;
+function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(_toastT); _toastT=setTimeout(()=>t.classList.remove('on'),ms||2600) }
 
 /* ================= lista de bases ================= */
 function renderBases(){
@@ -1308,12 +1338,15 @@ function renderBases(){
       </div>`).join('');
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
       if(!confirm('Remover '+btn.dataset.id+'?')) return;
-      await dbDel(btn.dataset.id);
+      try{ await dbDel(btn.dataset.id) }catch(e){ toast('Erro ao remover: '+e.message); return }
       S.bases=S.bases.filter(x=>x.id!==btn.dataset.id);
       renderBases();
     });
   }
   for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
+  /* bases mudaram: recalcula o KM na hora — parado (iOS quase não manda leitura nova) a tela
+     continuava mostrando "—" após baixar, ou o KM de uma rodovia já removida */
+  if(S.pos && typeof paintGps==='function'){ S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null; paintGps(); }
 }
 
 /* ================= download direto do DNIT (API SGPLAN, ponto a ponto) =================
@@ -1435,22 +1468,24 @@ async function downloadRoadFromApi(br, uf, snvVer, onStatus, kmi, kmf, tipoTr){
     throw new Error('Servidor: HTTP '+r.status);
   }
   const d=await r.json();
-  /* O servidor retorna arrays planos de lat[], lon[], km[] — montar o objeto base */
-  let lat=d.lat||[], lon=d.lon||[], km=d.km||[];
-  /* Aplicar filtro de km se pedido */
-  if((kmi!=null||kmf!=null) && lat.length){
-    const fLat=[],fLon=[],fKm=[];
-    for(let i=0;i<km.length;i++){
-      if(kmi!=null && km[i]<kmi) continue;
-      if(kmf!=null && km[i]>kmf) continue;
-      fLat.push(lat[i]); fLon.push(lon[i]); fKm.push(km[i]);
-    }
-    lat=fLat; lon=fLon; km=fKm;
+  /* O servidor retorna arrays planos de lat[], lon[], km[] — montar o objeto base.
+     Valida cada ponto (resposta truncada/corrompida não pode virar eixo com NaN) e aplica a faixa de KM. */
+  const sLat=d.lat||[], sLon=d.lon||[], sKm=d.km||[];
+  const n=Math.min(sLat.length, sLon.length, sKm.length);
+  const lat=[],lon=[],km=[];
+  for(let i=0;i<n;i++){
+    const la=+sLat[i], lo=+sLon[i], k=+sKm[i];
+    if(!isFinite(la)||!isFinite(lo)||!isFinite(k)||la<-90||la>90||lo<-180||lo>180) continue;
+    if(kmi!=null && k<kmi) continue;
+    if(kmf!=null && k>kmf) continue;
+    lat.push(la); lon.push(lo); km.push(k);
   }
-  if(!lat.length) throw new Error(`Nenhum ponto na faixa de KM informada (SNV ${snvVer})`);
+  if(lat.length<2) throw new Error(`Nenhum ponto na faixa de KM informada (SNV ${snvVer})`);
   const suffix=t!=='B'?`(${t})`:'';
+  let kmMin=Infinity, kmMax=-Infinity;
+  for(const k of km){ if(k<kmMin) kmMin=k; if(k>kmMax) kmMax=k }
   return {id:`BR-${br}/${uf}${suffix}`, br:`BR-${br}`, uf, fonte:`SNV ${snvVer} ${t}`.trim(),
-    kmMin:km[0], kmMax:km[km.length-1], lat, lon, km};
+    kmMin, kmMax, lat, lon, km};
 }
 
 async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
@@ -1520,6 +1555,10 @@ document.getElementById('dl-go').onclick=async()=>{
   if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.5;
   const snvVer=document.getElementById('dl-snv').value;
   const tipoTr=document.getElementById('dl-tipo').value;
+  /* os dados locais/GeoServer só têm o eixo principal (B). Sem o servidor, baixar "tipo A" trazia o B
+     e gravava POR CIMA da base B, dizendo que era A. */
+  if(!snvVer && tipoTr!=='B'){ toast(`Tipo ${tipoTr} só pode ser baixado com o servidor disponível (escolha uma versão SNV).`, 4000); return }
+  if(kmi!=null && kmf!=null && kmi>kmf){ toast('Km inicial maior que o km final.'); return }
   btn.disabled=true; btn.textContent='Baixando…';
   try{
     let b;
@@ -1627,7 +1666,7 @@ function parseShpRecord(buf){ // buf = bytes daquele registro (inclui os 8 bytes
 async function importShapefile(shpFile, dbfFile, shxFile, fname){
   const recs=readDbfBuf(await dbfFile.arrayBuffer());
   if(!recs.length || recs[0].vl_br===undefined) throw new Error('.dbf não tem os campos esperados do SNV (vl_br, sg_uf, vl_km_inic...).');
-  let offsets;
+  let offsets, full=null;   // full: .shp lido inteiro (só sem .shx) — local, não vaza para a próxima importação
   if(shxFile) offsets=readShxOffsets(await shxFile.arrayBuffer());
   const segsByKey={};
   for(let i=0;i<recs.length;i++){
@@ -1642,13 +1681,11 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
       points=parseShpRecord(chunk);
     } else {
       // sem .shx: precisa varrer o .shp sequencialmente (mais lento, mas funciona)
-      if(!importShapefile._full){
-        importShapefile._full=readShpSequential(await shpFile.arrayBuffer());
-      }
-      points=importShapefile._full[i];
+      if(!full) full=readShpSequential(await shpFile.arrayBuffer());
+      points=full[i];
     }
     if(!points||points.length<2) continue;
-    const key='BR-'+r.vl_br.padStart(3,'0')+'/'+r.sg_uf;
+    const key='BR-'+String(r.vl_br).padStart(3,'0')+'/'+r.sg_uf;
     (segsByKey[key]=segsByKey[key]||[]).push({kmi, kmf, pts:points});
   }
   const keys=Object.keys(segsByKey);
@@ -1659,17 +1696,21 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
     for(const s of g){ if(s.kmi<kmMin) kmMin=s.kmi; if(s.kmf<kmMin) kmMin=s.kmf; if(s.kmi>kmMax) kmMax=s.kmi; if(s.kmf>kmMax) kmMax=s.kmf }
     return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
   }).join('');
+  full=null;
   showDlg(dlg);
-  dlg.addEventListener('close',()=>{ importShapefile._full=null },{once:true});
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
-  document.getElementById('kmz-ok').onclick=async()=>{
+  const ok=document.getElementById('kmz-ok');
+  ok.disabled=false;
+  ok.onclick=async()=>{
+    if(ok.disabled) return; ok.disabled=true;   // toque duplo instalava tudo duas vezes
     try{
       const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
       let n=0;
       for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
       dlg.close(); renderBases();
-      toast(n+' rodovia(s) instalada(s) do shapefile oficial.');
+      toast(n||!sel.length ? n+' rodovia(s) instalada(s) do shapefile oficial.' : NO_COORD_MSG, n?2600:5000);
     }catch(e){ toast('Erro ao salvar: '+e.message) }
+    finally{ ok.disabled=false }
   };
 }
 function readShpSequential(buf){
@@ -1741,14 +1782,18 @@ function importKml(xml, fname){
   }).join('');
   showDlg(dlg);
   document.getElementById('kmz-cancel').onclick=()=>dlg.close();
-  document.getElementById('kmz-ok').onclick=async()=>{
+  const ok=document.getElementById('kmz-ok');
+  ok.disabled=false;
+  ok.onclick=async()=>{
+    if(ok.disabled) return; ok.disabled=true;
     try{
       const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
       let n=0;
       for(const k of sel){ if(await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')')) n++ }
       dlg.close(); renderBases();
-      toast(n+' rodovia(s) instalada(s).');
+      toast(n||!sel.length ? n+' rodovia(s) instalada(s).' : NO_COORD_MSG, n?2600:5000);
     }catch(e){ toast('Erro ao salvar: '+e.message) }
+    finally{ ok.disabled=false }
   };
 }
 function normBr(v){
@@ -1756,6 +1801,7 @@ function normBr(v){
   const m=String(v).match(/(\d{3})/);
   return m?('BR-'+m[1]):String(v).toUpperCase();
 }
+const NO_COORD_MSG='Nenhuma rodovia instalada — as coordenadas precisam estar em latitude/longitude (SIRGAS 2000/WGS 84), não em UTM.';
 async function installFromSegs(key, segs, fonte){
   // ordenar por km inicial; dentro de cada trecho, km linear por comprimento de arco
   segs.sort((a,b)=>Math.min(a.kmi,a.kmf)-Math.min(b.kmi,b.kmf));
@@ -1771,7 +1817,11 @@ async function installFromSegs(key, segs, fonte){
     }
     const total=acc[acc.length-1]||1;
     for(let i=0;i<pts.length;i++){
-      lat.push(pts[i][1]); lon.push(pts[i][0]);
+      const lo=pts[i][0], la=pts[i][1];
+      /* shapefile/KML fora de lat/lon em graus (ex.: projetado em UTM, valores em metros) ou com
+         ponto corrompido: descarta o ponto em vez de instalar um eixo absurdo */
+      if(!isFinite(lo)||!isFinite(la)||la<-90||la>90||lo<-180||lo>180) continue;
+      lat.push(la); lon.push(lo);
       km.push(s.kmi + (s.kmf-s.kmi)*(acc[i]/total));
     }
   }
@@ -1981,7 +2031,9 @@ function paintCamGps(){
   const dot=document.getElementById('camgpsdot'); if(!dot) return;
   dot.classList.remove('fix','weak');
   if(S.pos && isFinite(S.pos.lat)){
-    if(S.pos.acc!=null && S.pos.acc<50){ dot.classList.add('fix'); dot.setAttribute('aria-label','GPS: sinal forte') }
+    /* leitura com mais de 1 min (ex.: posição restaurada da sessão anterior) não conta como sinal forte */
+    const fresh=S.pos.t && Date.now()-S.pos.t<60000;
+    if(fresh && S.pos.acc!=null && S.pos.acc<50){ dot.classList.add('fix'); dot.setAttribute('aria-label','GPS: sinal forte') }
     else{ dot.classList.add('weak'); dot.setAttribute('aria-label','GPS: sinal fraco') }
   } else { dot.setAttribute('aria-label','GPS: sem sinal') }
 }
@@ -2005,6 +2057,9 @@ function paintGps(){
       hest.textContent='';
     }
   }
+  /* câmera fechada: a placa ao vivo não aparece — não monta legenda/DOM a cada leitura do GPS.
+     O openCam chama paintGps() na abertura, então ela já entra atualizada. */
+  if(!camwrap.classList.contains('on')) return;
   // placa da câmera — atualiza texto sem recriar o DOM (evita reflow/flicker no Android)
   const {L,err,snvTag}=legendLines(buildInfo());
   const lp=document.getElementById('liveplate');
@@ -2049,7 +2104,9 @@ function paintGps(){
 function buildInfo(){
   const t=now();
   const info={data:t.data, hora:t.hora, dt:t.d, src:'gps'};
-  if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc }
+  /* info.gps guarda a MESMA leitura usada na legenda — o EXIF lê daqui, e não do S.pos, que pode
+     ter mudado durante o processamento da foto (toBlob é assíncrono; no carro isso dá metros) */
+  if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc; info.gps=S.pos }
   if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist; info.fonte=S.fix.fonte }
   return info;
 }
@@ -2287,17 +2344,25 @@ function saveLogoFromCanvas(cv){
       c2.width=0; c2.height=0;
     }catch(e2){ toast('Erro ao salvar logo — libere espaço.'); return }
   }
-  loadLogo(); toast('Logo salva — sairá no canto superior esquerdo das fotos.');
+  loadLogo(); toast('Logo salva — sairá nas fotos.');
 }
-document.getElementById('logo-use').onclick=()=>{ document.getElementById('dlg-logo').close(); saveLogoFromCanvas(document.getElementById('logo-cv')) };
+/* libera a imagem de trabalho (~4 MB) e o canvas de prévia (~4 MB) depois de escolher a logo */
+function freeLogoWork(){ LOGO.src=null; const cv=document.getElementById('logo-cv'); cv.width=0; cv.height=0; }
+document.getElementById('logo-use').onclick=()=>{ document.getElementById('dlg-logo').close(); saveLogoFromCanvas(document.getElementById('logo-cv')); freeLogoWork() };
 document.getElementById('logo-orig').onclick=()=>{
   document.getElementById('dlg-logo').close();
+  if(!LOGO.src) return;
   const c=document.createElement('canvas');
   c.width=LOGO.src.width; c.height=LOGO.src.height;
   c.getContext('2d').putImageData(LOGO.src,0,0);
   saveLogoFromCanvas(c);
+  c.width=0; c.height=0;
+  freeLogoWork();
 };
-document.getElementById('logo-cancel').onclick=()=>document.getElementById('dlg-logo').close();
+document.getElementById('logo-cancel').onclick=()=>{ document.getElementById('dlg-logo').close(); freeLogoWork() };
+/* fechado pelo botão Voltar/Esc do sistema — o evento 'close' é assíncrono, então os botões acima
+   já terminaram de usar LOGO.src quando ele chega */
+document.getElementById('dlg-logo').addEventListener('close', freeLogoWork);
 
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
@@ -2597,10 +2662,18 @@ function camConstraints(){
     videoStabilizationMode:{ideal:'cinematic-video'}
   }, audio:false};
 }
+/* _camGen: "geração" da câmera. Cada openCam/closeCam incrementa. Se o usuário fecha a câmera (ou
+   toca 2x no botão) enquanto o getUserMedia ainda está pendente, o stream que chegar depois pertence
+   a uma geração velha e é descartado — antes ele ficava ligado em segundo plano (LED aceso, bateria)
+   ou sobrescrevia o anterior sem parar (câmera "presa" no Android). */
+let _camGen=0, _camClosing=false;
 async function openCam(){
+  const gen=++_camGen;
   /* cancela animação de saída pendente (closeCam sem instant) — evita que o
      animationend remova a classe 'on' DEPOIS de openCam tê-la adicionado */
+  _camClosing=false;
   camwrap.style.animation='';
+  if(S.stream){ S.stream.getTracks().forEach(t=>t.stop()); S.stream=null; }
   /* ── Câmera abre INSTANTÂNEA ──
      Mostra a UI (botões, ratio, legenda) sobre fundo preto ANTES de pedir o stream.
      O fundo preto é natural — igual câmera nativa do iPhone/Android.
@@ -2618,6 +2691,7 @@ async function openCam(){
         window.addEventListener('devicemotion', onDeviceMotion);
       }
     }catch(e){}
+    if(gen!==_camGen) return;
   }
   try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}) }catch(e){}
   /* Garante que o GPS esteja rodando ao abrir a câmera.
@@ -2639,12 +2713,16 @@ async function openCam(){
   camGeom=null;
   paintRatioSel();
   paintGpsBanner();
+  paintGps();   // legenda ao vivo pronta já na abertura (com a câmera fechada o paintGps não monta a placa)
   clearInterval(camTick); camTick=setInterval(paintGps, _isAndroid?2000:1000);
 
   try{
-    S.stream=await navigator.mediaDevices.getUserMedia(camConstraints());
+    const stream=await navigator.mediaDevices.getUserMedia(camConstraints());
+    if(gen!==_camGen){ stream.getTracks().forEach(t=>t.stop()); return; }
+    S.stream=stream;
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
+    if(gen!==_camGen) return;
     /* ── Enumera câmeras para fingerprint de modelo ── */
     try{
       const devs=await navigator.mediaDevices.enumerateDevices();
@@ -2668,6 +2746,7 @@ async function openCam(){
     video.addEventListener('resize', layoutOverlays);
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
+    if(gen!==_camGen) return;
     clearInterval(camTick); camTick=null;
     if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
     camwrap.classList.remove('on');
@@ -2680,7 +2759,7 @@ async function openCam(){
     document.body.style.backgroundColor=_bg;
     document.getElementById('meta-theme').content=_bg;
     toast('Câmera negada ou indisponível.');
-    return;
+    return false;   // o flip usa isso para voltar à câmera anterior
   }
   /* Ativa (ou reativa) o sensor de inclinação.
      1ª abertura: pede permissão (Android não precisa; iOS já pediu no início desta função).
@@ -2693,15 +2772,25 @@ async function openCam(){
     window.addEventListener('devicemotion', onDeviceMotion);
     refreshTilt();
   }
+  return true;
+}
+function _finishCloseAnim(){
+  if(!_camClosing) return;   // openCam reabriu no meio da animação — não esconde
+  _camClosing=false;
+  camwrap.classList.remove('on');
+  camwrap.style.animation='';
 }
 function closeCam(instant){
+  _camGen++;   // invalida qualquer openCam ainda aguardando o getUserMedia
   if(!instant){
+    _camClosing=true;
     camwrap.style.animation='camOut .15s ease-in forwards';
-    camwrap.addEventListener('animationend',function(){
-      camwrap.classList.remove('on');
-      camwrap.style.animation='';
-    },{once:true});
+    camwrap.addEventListener('animationend',_finishCloseAnim,{once:true});
+    /* Com "Reduzir Movimento" (iOS) / "Remover animações" (Android) o CSS zera as animações e o
+       animationend NUNCA dispara — a câmera ficava presa numa tela preta. O timer garante o fechamento. */
+    setTimeout(_finishCloseAnim, 220);
   } else {
+    _camClosing=false;
     camwrap.classList.remove('on');
     camwrap.style.animation='';
   }
@@ -2721,11 +2810,27 @@ function closeCam(instant){
     S.stream.getTracks().forEach(t=>t.stop()); S.stream=null;
     const vid=document.getElementById('camvideo'); if(vid) vid.srcObject=null;
   }
+  /* nova versão chegou com a câmera aberta (ver controllerchange no boot) — atualiza agora */
+  if(_pendingReload) setTimeout(()=>location.reload(), 250);
 }
-document.getElementById('camback').onclick=closeCam;
+let _pendingReload=false;
+document.getElementById('camback').onclick=()=>closeCam();
 /* Debounce no flip: impede double-click de iniciar dois getUserMedia simultâneos */
 let _flipping=false;
-document.getElementById('camflip').onclick=async()=>{ if(_flipping) return; _flipping=true; try{ S.facing=S.facing==='environment'?'user':'environment'; closeCam(true); await openCam(); }finally{ _flipping=false } };
+document.getElementById('camflip').onclick=async()=>{ if(_flipping) return; _flipping=true; try{
+  const prev=S.facing;
+  S.facing=prev==='environment'?'user':'environment'; closeCam(true);
+  /* aparelho sem a outra câmera (ou ocupada): volta para a anterior em vez de deixar o app
+     tentando abrir para sempre uma câmera que não existe */
+  if(!(await openCam())){ S.facing=prev; await openCam(); }
+}finally{ _flipping=false } };
+/* iOS pausa/encerra a captura quando o app vai para segundo plano; ao voltar, a prévia podia ficar
+   preta (track 'ended') e o obturador gravava foto preta. Reabre a câmera só se ela morreu. */
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden || !camwrap.classList.contains('on') || _camClosing || _flipping) return;
+  const vt=S.stream && S.stream.getVideoTracks()[0];
+  if(vt && vt.readyState==='ended'){ closeCam(true); openCam(); }
+});
 /* som clássico de obturador: dois "clicks" mecânicos curtos (ruído filtrado com envelope bem
    rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular.
    Reutiliza um único AudioContext (iOS Safari limita a ~4-6 simultâneos). */
@@ -2759,15 +2864,22 @@ document.getElementById('shutter').onclick=async()=>{
   if(_capturing) return; _capturing=true;
   try{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
-  /* GPS OBRIGATÓRIO — bloqueia captura se não houver posição válida.
-     Aceita posição do watchPosition OU do cache (localStorage) — garante que
-     pelo menos uma coordenada real esteja disponível para gravar no EXIF.
-     Também rejeita posição com mais de 2 min (pode ser cache do localStorage de outra sessão). */
+  const _vt=S.stream && S.stream.getVideoTracks()[0];
+  if(!_vt || _vt.readyState!=='live'){ toast('Reabrindo a câmera…'); closeCam(true); openCam(); return }
+  /* GPS OBRIGATÓRIO — bloqueia captura se não houver posição válida, recente e minimamente precisa.
+     Idade máxima: 2 min parado, mas só 15 s em movimento (>10 km/h) — a 80 km/h uma leitura de
+     2 min atrás estaria ~2,7 km para trás e a legenda gravaria o KM errado.
+     Precisão pior que 500 m = posição por antena/Wi-Fi, não GPS: o KM sairia sem sentido. */
   const _posAge=S.pos?.t ? Date.now()-S.pos.t : Infinity;
-  if(!S.pos || !_validGps(S.pos.lat, S.pos.lon) || _posAge>120000){
-    toast(_posAge>120000 ? '⚠ GPS desatualizado — aguarde nova leitura.' : '⚠ GPS obrigatório — ative a localização para tirar fotos.');
+  const _maxAge=(S.pos && S.pos.spd>3) ? 15000 : 120000;
+  if(!S.pos || !_validGps(S.pos.lat, S.pos.lon) || _posAge>_maxAge){
+    toast(S.pos && _posAge>_maxAge ? '⚠ GPS desatualizado — aguarde nova leitura.' : '⚠ GPS obrigatório — ative a localização para tirar fotos.');
     if(S.gpsDenied) showGpsDeniedDialog();
     else startGps();
+    return;
+  }
+  if(S.pos.acc!=null && S.pos.acc>500){
+    toast(`⚠ GPS impreciso (±${Math.round(S.pos.acc)} m) — aguarde o sinal melhorar.`);
     return;
   }
   // feedback imediato no toque, sincronizado com o disparo: piscada + vibração + som, ANTES do
@@ -2962,10 +3074,11 @@ function paintFlashIcon(){
 }
 document.getElementById('cam-flash').onclick=async()=>{
   if(!flashSupported){ toast('Este aparelho/navegador não permite controlar o flash pelo app.'); return }
+  const want=!flashOn;
   try{
     const track=S.stream.getVideoTracks()[0];
-    flashOn=!flashOn;
-    await track.applyConstraints({advanced:[{torch:flashOn}]});
+    await track.applyConstraints({advanced:[{torch:want}]});
+    flashOn=want;   // só muda o estado se o aparelho aceitou (antes o ícone ficava invertido após falha)
     paintFlashIcon();
   }catch(e){ toast('Não consegui controlar o flash.'); }
 };
@@ -2991,14 +3104,20 @@ function initZoom(){
     }
   }catch(e){}
 }
+let _zoomRaf=0;
 function applyZoom(z){
   z=Math.max(zoomMin, Math.min(zoomMax, z));
   if(z===zoomCur && zoomLabel.style.display!=='none') return;
   zoomCur=z;
-  try{
-    const track=S.stream.getVideoTracks()[0];
-    track.applyConstraints({advanced:[{zoom:zoomCur}]});
-  }catch(e){}
+  /* no máximo 1 comando de zoom por quadro — o touchmove dispara ~60-120x/s e cada
+     applyConstraints reconfigura o sensor (engasgava a prévia em Androids modestos) */
+  if(!_zoomRaf) _zoomRaf=requestAnimationFrame(()=>{
+    _zoomRaf=0;
+    try{
+      const track=S.stream && S.stream.getVideoTracks()[0];
+      if(track) track.applyConstraints({advanced:[{zoom:zoomCur}]}).catch(()=>{});
+    }catch(e){}
+  });
   /* indicador visual */
   zoomLabel.textContent=zoomCur.toFixed(1)+'×';
   zoomLabel.style.display='';
@@ -3016,7 +3135,7 @@ function applyZoom(z){
     startZoom=zoomCur;
   }, {passive:true});
   camstage.addEventListener('touchmove', e=>{
-    if(!zoomSupported || e.touches.length!==2) return;
+    if(!zoomSupported || e.touches.length!==2 || !startDist) return;
     e.preventDefault(); /* evita scroll/zoom da página */
     const d=dist(e.touches);
     const scale=d/startDist;
@@ -3114,7 +3233,11 @@ document.getElementById('gal-close').onclick=()=>{
       _galAnimating=true;
       img.classList.add('gal-anim');
       img.style.transform=`translateX(${dir*w}px)`;
-      img.addEventListener('transitionend', async function h(){
+      /* roda UMA vez: no transitionend ou no timer. Com "Reduzir Movimento" a transição é zerada
+         pelo CSS e o transitionend nunca vinha — a galeria travava para sempre após o 1º deslize. */
+      let fired=false;
+      const h=async function(){
+        if(fired) return; fired=true;
         img.removeEventListener('transitionend', h);
         const gw=document.getElementById('gallerywrap');
         if(!gw||!gw.classList.contains('on')){ _galAnimating=false; return }
@@ -3133,13 +3256,54 @@ document.getElementById('gal-close').onclick=()=>{
         img.classList.add('gal-anim');
         img.style.transform='translateX(0)';
         _galAnimating=false;
-      });
+      };
+      img.addEventListener('transitionend', h);
+      setTimeout(h, 360);
     } else {
       img.classList.add('gal-anim');
       img.style.transform='translateX(0)';
     }
   }, {passive:true});
+  /* gesto interrompido pelo sistema (notificação, gesto de borda): volta a foto ao lugar */
+  stage.addEventListener('touchcancel', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    img.classList.add('gal-anim');
+    img.style.transform='translateX(0)';
+  }, {passive:true});
 })();
+async function deletePhoto(id){
+  const d=await idb();
+  return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').delete(id);
+    t.onsuccess=res; t.onerror=()=>rej(t.error) });
+}
+/* Compartilhar/salvar a foto aberta na galeria — é a saída para fotos que ficaram só no app
+   (share sheet cancelado ou falhou no iPhone, "Envio automático" desligado, etc.) */
+document.getElementById('gal-share').onclick=async()=>{
+  const m=galMetas[galIdx]; if(!m) return;
+  try{
+    const blob=await getPhotoBlob(m.id);
+    if(!blob){ toast('Foto não encontrada.'); return }
+    const file=new File([blob], m.name, {type:'image/jpeg'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file]}).catch(e=>{ if(e.name!=='AbortError') throw e });
+    } else if(_isAndroid && _isPWAStandalone && navigator.serviceWorker && navigator.serviceWorker.controller){
+      if(await _downloadViaSW(blob, m.name)) toast('📸 Foto salva');
+      else toast('⚠ Não consegui salvar a foto.');
+    } else { _downloadDirect(blob, m.name); toast('📸 Foto salva'); }
+  }catch(e){ toast('⚠ Não consegui compartilhar a foto.') }
+};
+document.getElementById('gal-del').onclick=async()=>{
+  const m=galMetas[galIdx]; if(!m) return;
+  if(!confirm('Excluir esta foto da galeria do app?\n(Cópias já salvas no aparelho não são afetadas.)')) return;
+  try{
+    await deletePhoto(m.id);
+    galMetas.splice(galIdx,1);
+    if(!galMetas.length){ document.getElementById('gal-close').click(); toast('Galeria vazia.'); return }
+    if(galIdx>=galMetas.length) galIdx=galMetas.length-1;
+    await paintGalPhoto();
+  }catch(e){ toast('⚠ Não consegui excluir a foto.') }
+};
 
 
 /* legenda queimada na foto — texto branco simples, canto inferior esquerdo.
@@ -3446,7 +3610,7 @@ function buildCaptureMeta(info, imgW, imgH, captureDate){
   /* Cascata de fontes GPS: S.pos (live) → info (legenda) → localStorage (cache).
      Garante que a foto SEMPRE tenha coordenadas se o GPS funcionou ao menos 1 vez. */
   /* Cascata com validação anti-Null-Island: rejeita (0,0) em todas as fontes */
-  const _g=S.pos||(info&&info.lat!=null?info:null)||(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(isFinite(p.lat)&&isFinite(p.lon)) return p; } }catch(e){} return null; })();
+  const _g=(info&&info.gps)||S.pos||(info&&info.lat!=null?info:null)||(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(isFinite(p.lat)&&isFinite(p.lon)) return p; } }catch(e){} return null; })();
   const gps=(_g&&_validGps(_g.lat,_g.lon))?_g:null;
   const lat=gps?gps.lat:null;
   const lon=gps?gps.lon:null;
@@ -3502,10 +3666,15 @@ async function _downloadViaSW(blob, name){
     const safeName=name.replace(/\s+/g,'_');
     const dlUrl=new URL('__dl/'+encodeURIComponent(safeName), location.href).href;
     const cache=await caches.open('kmcheck-dl');
-    /* Limpa downloads anteriores (evita acumular blobs de fotos passadas) */
-    try{ const old=await cache.keys(); await Promise.all(old.map(k=>cache.delete(k))) }catch(e){}
+    /* Limpa só downloads com mais de 1 min (que o SW não chegou a servir). Apagar TODOS aqui fazia a
+       foto anterior, numa sequência rápida de disparos, sumir antes de o iframe baixá-la. */
+    try{
+      const old=await cache.keys();
+      await Promise.all(old.map(async k=>{ const r=await cache.match(k);
+        if(!r || Date.now()-(+r.headers.get('X-KC-Ts')||0)>60000) await cache.delete(k) }));
+    }catch(e){}
     await cache.put(dlUrl, new Response(blob,{
-      headers:{'Content-Type':'image/jpeg',
+      headers:{'Content-Type':'image/jpeg','X-KC-Ts':String(Date.now()),
         'Content-Disposition':'attachment; filename="'+safeName+'"; filename*=UTF-8\'\''+encodeURIComponent(safeName)}
     }));
     /* Método 1: <a download> — funciona em Chrome browser */
@@ -3559,21 +3728,16 @@ function saveAndShare(blob){
   if(_isIOS){
     /* iOS: share sheet é o ÚNICO caminho para salvar na galeria de Fotos via web.
        <a download> não funciona em PWA standalone do Safari. */
+    /* Sem share sheet (cancelado, falhou ou outro já aberto) a foto fica SÓ na galeria do app —
+       antes caía num <a download> que não funciona no PWA do iPhone e mostrava "Foto salva" falso.
+       O botão "Compartilhar / salvar" da galeria resolve depois. */
+    const onlyInApp=()=>toast('📷 Foto na galeria do app — use "Compartilhar / salvar" para levar ao Fotos', 4200);
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
-        if(e.name==='AbortError'){
-          /* usuário cancelou o share sheet — foto está só na galeria do app */
-          toast('📷 Foto na galeria do app');
-        } else {
-          console.error('[KMCheck] share iOS falhou:', e);
-          _downloadDirect(blob, name);
-          toast('📸 Foto salva');
-        }
+        if(e.name!=='AbortError') console.error('[KMCheck] share iOS falhou:', e);
+        onlyInApp();
       });
-    } else {
-      _downloadDirect(blob, name);
-      toast('📸 Foto salva');
-    }
+    } else onlyInApp();
   } else if(_isAndroid){
     if(_isPWAStandalone){
       /* Android PWA standalone: <a download> com blob: é ignorado pelo Chrome 120+.
@@ -3697,7 +3861,12 @@ for(const [id, key, lbl] of [['cfg-logoop','logoop','lbl-logoop'],['cfg-logosz',
 
 const md=document.getElementById('cfg-maxdist');
 md.value=CFG.maxdist;
-md.onchange=()=>localStorage.setItem('kc-maxdist', md.value);
+md.onchange=()=>{
+  /* o min/max do input não impede digitar fora da faixa — limita aqui (5 m deixaria tudo em alerta) */
+  const v=Math.round(Math.min(10000, Math.max(20, +md.value.replace(',','.')||300)));
+  md.value=v; localStorage.setItem('kc-maxdist', v);
+  paintGps();   // KM vermelho/normal na tela inicial reflete o novo limite na hora
+};
 
 /* ================= descrição de serviços ================= */
 function getServices(){ try{ return JSON.parse(localStorage.getItem('kc-services')||'[]') }catch(e){ return [] } }
@@ -3710,7 +3879,9 @@ function renderServices(){
     item.querySelector('.del').onclick=()=>{
       const s=item.dataset.s;
       localStorage.setItem('kc-services', JSON.stringify(getServices().filter(x=>x!==s)));
-      renderServices();
+      /* serviço removido não pode continuar saindo na legenda */
+      if(getSvcSel()===s) localStorage.removeItem('kc-svcsel');
+      renderServices(); paintTags(); paintGps();
     };
   });
 }
@@ -3829,6 +4000,10 @@ function showInstallPrompt(){
   startGps();
   /* Monitora estado da permissão GPS (change events no Android, visibilitychange em todos) */
   initGpsPermWatch();
+  /* Armazenamento PERSISTENTE: sem isso, com o aparelho cheio o sistema pode apagar TODOS os dados
+     do app (rodovias baixadas, fotos da galeria, configurações) sem aviso. App instalado costuma
+     receber a permissão automaticamente; se negar, segue como antes. */
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p=>{ if(!p) navigator.storage.persist() }).catch(()=>{}) }catch(e){}
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').then(reg=>{
       /* Força atualização imediata: checa o sw.js no servidor agora, e se houver
@@ -3842,7 +4017,7 @@ function showInstallPrompt(){
     let refreshing=false;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
       if(refreshing) return;
-      if(document.getElementById('camwrap').classList.contains('on')){ toast('Nova versão disponível — feche a câmera para atualizar.'); return; }
+      if(document.getElementById('camwrap').classList.contains('on')){ _pendingReload=true; toast('Nova versão disponível — atualiza ao fechar a câmera.'); return; }
       refreshing=true;
       location.reload();
     });
@@ -3852,10 +4027,15 @@ function showInstallPrompt(){
     const m=t.match(/kmcheck-v(\d+)/); if(m) document.getElementById('app-ver').textContent='VERSÃO '+m[1];
     /* ── Ping aprimorado para o painel admin — coleta dados do dispositivo, GPS e bases ── */
     if(m && SNV_API){
+      /* O fingerprint de hardware (benchmark de CPU num worker + 2 contextos WebGL + medição de fps)
+         não muda entre aberturas — antes rodava em TODA abertura, gastando CPU/bateria no campo.
+         Agora roda 1x por versão do app e fica guardado; o ping em si continua a cada abertura. */
+      let _hwCache=null;
+      try{ const j=JSON.parse(localStorage.getItem('kc-hw')||'null'); if(j && j.v===m[1]) _hwCache=j }catch(e){}
       /* Detecta ProMotion (120Hz) via requestAnimationFrame — sinais de hardware do iPhone Pro.
          Roda antes do setTimeout para ter ~4s de frames coletados. */
-      let _proMotion=null; // null=não testou, true=120Hz, false=60Hz
-      if(/iPhone/.test(navigator.userAgent)){
+      let _proMotion=_hwCache?_hwCache.proMotion:null; // null=não testou, true=120Hz, false=60Hz
+      if(!_hwCache && /iPhone/.test(navigator.userAgent)){
         const ts=[];
         const rAF=t=>{ts.push(t);if(ts.length<30)requestAnimationFrame(rAF);else{
           /* Calcula fps médio pelos intervalos entre frames */
@@ -3888,8 +4068,8 @@ function showInstallPrompt(){
            - ProMotion 120Hz → modelo Pro (13 Pro em diante)
            - Teleobjetiva → modelo Pro (qualquer geração)
            - Benchmark CPU → identifica o chip (A14/A15/A16/A17/A18) */
-        let gpuRenderer='';
-        try{const c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+        let gpuRenderer=_hwCache?_hwCache.gpu:'';
+        if(!_hwCache) try{const c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
           if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');
             if(ext) gpuRenderer=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)||'';
             try{gl.getExtension('WEBGL_lose_context')?.loseContext()}catch(e){}
@@ -3901,8 +4081,8 @@ function showInstallPrompt(){
            300K iterações de sin/cos/sqrt, warmup + 3 runs (mediana).
            Tempo esperado: A14 ~150-200ms, A15 ~110-150ms, A16 ~80-110ms,
            A17 ~60-80ms, A18 ~40-60ms (valores aproximados). */
-        let benchMs=null;
-        try{
+        let benchMs=_hwCache?_hwCache.bench:null;
+        if(!_hwCache) try{
           benchMs=await new Promise((ok,fail)=>{
             const blobUrl=URL.createObjectURL(new Blob([
               'const _b=()=>{let v=1.0;const t=performance.now();'+
@@ -3919,14 +4099,15 @@ function showInstallPrompt(){
           });
         }catch(e){}
         /* Extensões WebGL — cada geração de GPU suporta lista diferente */
-        let glExtCount=0;
-        try{const c2=document.createElement('canvas');
+        let glExtCount=_hwCache?_hwCache.glExts:0;
+        if(!_hwCache) try{const c2=document.createElement('canvas');
           const gl2=c2.getContext('webgl2')||c2.getContext('webgl');
           if(gl2){ glExtCount=(gl2.getSupportedExtensions()||[]).length;
             try{gl2.getExtension('WEBGL_lose_context')?.loseContext()}catch(e){}
           }
           c2.width=0;c2.height=0;
         }catch(e){}
+        if(!_hwCache) try{ localStorage.setItem('kc-hw', JSON.stringify({v:m[1], proMotion:_proMotion, gpu:gpuRenderer, bench:benchMs, glExts:glExtCount})) }catch(e){}
         /* Info de câmeras (salva no localStorage quando o usuário abre a câmera).
            Fundamental para iPhones: Pro = tem teleobjetiva (3 câmeras traseiras). */
         let camInfo=null;

@@ -1,18 +1,42 @@
-const CACHE = 'kmcheck-v247';
+const CACHE = 'kmcheck-v248';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== 'kmcheck-dl').map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// Estratégia: o DOCUMENTO (index.html / navegação) usa REDE PRIMEIRO — sempre pega a versão
-// mais nova quando há internet, caindo pro cache só quando offline. Isso impede o app de ficar
-// "preso" numa versão antiga (era o que acontecia com o cache-first no HTML). Os demais assets
-// (fontes, ícones, fflate) continuam cache-first, que é rápido e raramente muda.
+// Estratégia: o DOCUMENTO (index.html / navegação) e os dados das rodovias usam REDE PRIMEIRO — sempre
+// pegam a versão mais nova quando há internet, caindo pro cache quando offline. Os demais assets
+// (ícones, fflate) continuam cache-first, que é rápido e raramente muda.
+// Na estrada o sinal fraco ("1 barrinha") não falha o fetch — ele PENDURA por dezenas de segundos e o
+// app demorava a abrir. Por isso a rede tem 4 s: se não respondeu e há cópia em cache, usa o cache
+// (a resposta da rede, se chegar depois, ainda atualiza o cache para a próxima abertura).
+const NET_TIMEOUT = 4000;
+function networkFirst(req, isDoc) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = r => { if (!done && r) { done = true; resolve(r); } };
+    const fromCache = () => caches.match(req, { ignoreSearch: true })
+      .then(r => r || (isDoc ? caches.match('index.html') : null));
+    const timer = setTimeout(() => { fromCache().then(finish); }, NET_TIMEOUT);
+    fetch(req).then(resp => {
+      clearTimeout(timer);
+      if (resp.ok) { const copy = resp.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+      finish(resp);
+    }).catch(() => {
+      clearTimeout(timer);
+      fromCache().then(r => finish(r || Response.error()));
+    });
+  });
+}
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
+  // APIs externas (servidor SNV, GeoServer do DNIT): o SW não intercepta. Antes elas eram cacheadas
+  // com ignoreSearch — offline, pedir outra versão/tipo do SNV devolvia a resposta guardada de OUTRA
+  // consulta, e cada rodovia baixada ficava duplicada no cache. O app já trata a falta de rede.
+  if (url.origin !== self.location.origin) return;
   /* ── Download forçado via SW ──
      O app coloca o blob no cache 'kmcheck-dl' e navega um iframe para /__dl/nome.jpg.
      Servimos com Content-Disposition: attachment → Chrome baixa automaticamente,
@@ -37,14 +61,8 @@ self.addEventListener('fetch', e => {
                 url.pathname.endsWith('index.html') ||
                 url.pathname.endsWith('/');
   const isData = url.pathname.includes('/data/rodovias/');
-  const isApi = url.hostname !== self.location.hostname; // APIs externas (controlcheck, etc.)
-  if (isDoc || isData || isApi) {
-    e.respondWith(
-      fetch(e.request).then(resp => {
-        if(resp.ok){ const copy = resp.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
-        return resp;
-      }).catch(() => caches.match(e.request, {ignoreSearch: true}).then(r => r || caches.match('index.html')))
-    );
+  if (isDoc || isData) {
+    e.respondWith(networkFirst(e.request, isDoc));
     return;
   }
   e.respondWith(
