@@ -410,13 +410,32 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
   color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #gal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-#gal-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
-#gal-img{max-width:100%;max-height:100%;object-fit:contain;will-change:transform;pointer-events:none}
-#gal-img.gal-anim{transition:transform .3s cubic-bezier(.25,.46,.45,.94)}
-#gal-caption{text-align:center;color:#d8d8d8;font-size:12px;letter-spacing:.05em;padding:8px 0 calc(12px + env(safe-area-inset-bottom))}
-#gal-actions{display:flex;justify-content:center;gap:10px;padding:10px 16px 0}
-#gal-actions .btn{min-height:44px;background:#1b1f22;color:#fff;border-color:rgba(255,255,255,.18)}
-#gal-actions #gal-del{background:transparent;color:#ff8a80;border-color:rgba(255,138,128,.4)}
+/* A foto fica no CENTRO DA TELA: o palco ocupa a tela toda e cada slide reserva o MESMO espaço em
+   cima (botão voltar) e embaixo (barra) — o maior dos dois —, então a foto nunca fica "mais pra cima"
+   nem encosta nos botões, em qualquer aparelho. */
+#gallerywrap{--galpad:max(calc(68px + env(safe-area-inset-top, 0px)), calc(112px + env(safe-area-inset-bottom, 0px)))}
+#gal-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#gal-track{position:absolute;inset:0;will-change:transform}
+.gal-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:var(--galpad) 0;box-sizing:border-box}
+.gal-slide img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;transform-origin:center center;will-change:transform}
+/* barra no estilo do menu da tela inicial: vidro escuro, cantos redondos, ícone + texto */
+#gal-bar{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:0 16px calc(14px + env(safe-area-inset-bottom, 0px));pointer-events:none}
+#gal-dock{pointer-events:auto;display:flex;align-items:center;gap:6px;padding:6px;border-radius:999px;max-width:100%;
+  background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 55%), rgba(24,26,28,.72);
+  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(255,255,255,.05), 0 14px 34px rgba(0,0,0,.5)}
+#gal-dock button{display:flex;align-items:center;gap:8px;height:48px;padding:0 18px;border-radius:999px;border:none;cursor:pointer;
+  background:rgba(255,255,255,.07);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;transition:background .15s,transform .12s}
+#gal-dock button:active{transform:scale(.96);background:rgba(255,255,255,.14)}
+#gal-dock svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#gal-share svg{color:#b7d92d}
+#gal-del{color:#ff8a80!important}
+#gal-count{min-width:76px;text-align:center;color:#fff;font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+#gal-caption{max-width:100%;color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-android] #gal-dock{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(24,26,28,.94)}
+/* deitado: pouca altura — a barra passa a flutuar sobre a foto e o nome some */
+@media (orientation:landscape){ #gallerywrap{--galpad:8px} #gal-caption{display:none} }
 .gpsdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);margin-right:7px;vertical-align:1px}
 .gpsdot.ok{background:var(--ok);box-shadow:0 0 8px rgba(183,217,45,.7)}
 .gpsdot.mid{background:var(--warn)}
@@ -1046,14 +1065,22 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <!-- galeria de fotos registradas -->
 <div id="gallerywrap">
   <button id="gal-close" aria-label="Fechar galeria"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+  <!-- carrossel: 3 posições (esquerda = foto mais antiga, centro = atual, direita = mais nova) -->
   <div id="gal-stage">
-    <img id="gal-img" alt="Foto registrada">
+    <div id="gal-track">
+      <div class="gal-slide"><img alt="Foto anterior" draggable="false"></div>
+      <div class="gal-slide"><img alt="Foto registrada" draggable="false"></div>
+      <div class="gal-slide"><img alt="Próxima foto" draggable="false"></div>
+    </div>
   </div>
-  <div id="gal-actions">
-    <button id="gal-share" class="btn small">Compartilhar / salvar</button>
-    <button id="gal-del" class="btn small ghost">Excluir</button>
+  <div id="gal-bar">
+    <div id="gal-dock">
+      <button id="gal-share" aria-label="Compartilhar ou salvar a foto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg><span>Salvar</span></button>
+      <div id="gal-count" aria-live="polite"></div>
+      <button id="gal-del" aria-label="Excluir a foto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.9 12.1A2 2 0 0 0 9.4 21h5.2a2 2 0 0 0 2-1.9L17.5 7M10 11v6M14 11v6"/></svg><span>Excluir</span></button>
+    </div>
+    <div id="gal-caption"></div>
   </div>
-  <div id="gal-caption"></div>
 </div>
 
 
@@ -3476,104 +3503,186 @@ async function getPhotoBlob(id){
     t.onsuccess=()=>res(t.result?.blob); t.onerror=()=>rej(t.error);
   });
 }
-let galMetas=[], galIdx=0, _galBlobUrl=null;
+/* ---- galeria: carrossel estilo iPhone ----
+   3 slides lado a lado (esquerda = foto mais ANTIGA galIdx+1, centro = atual, direita = mais NOVA
+   galIdx-1 — como no app Fotos: arrastar para a direita mostra a anterior). Ao arrastar, a vizinha já
+   vem grudada acompanhando o dedo; ao soltar, desliza com a velocidade do gesto e os slides são
+   "girados" (o que entrou vira o centro e o que saiu é reaproveitado para a próxima vizinha).
+   Só as 3 fotos ficam em memória (blob URLs). Zoom: dois toques ou pinça; com zoom, arrastar move a
+   foto e o deslize entre fotos fica desligado. */
+let galMetas=[], galIdx=0, galBusy=false;
+const GAL_GAP=16;
+const _galUrls=new Map();   // id da foto → blob URL
+const galStage=document.getElementById('gal-stage'), galTrack=document.getElementById('gal-track');
+let galSlides=[...galTrack.children];
+function galPlace(){ galSlides.forEach((s,k)=>{ s.style.transform=`translateX(calc(${k-1} * (100% + ${GAL_GAP}px)))` }) }
+async function galUrl(id){
+  if(_galUrls.has(id)) return _galUrls.get(id);
+  const blob=await getPhotoBlob(id); if(!blob) return null;
+  if(_galUrls.has(id)) return _galUrls.get(id);
+  const u=URL.createObjectURL(blob); _galUrls.set(id,u); return u;
+}
+async function galFill(slide, i){
+  const img=slide.querySelector('img');
+  slide.dataset.i=i; img.style.transition='none'; img.style.transform='';
+  if(i<0 || i>=galMetas.length){ img.removeAttribute('src'); img.style.visibility='hidden'; return }
+  const u=await galUrl(galMetas[i].id);
+  if(+slide.dataset.i!==i) return;   // o slide foi reaproveitado enquanto a foto carregava
+  if(u){ img.src=u; img.style.visibility='' } else { img.removeAttribute('src'); img.style.visibility='hidden' }
+}
+function galPrune(){
+  const keep=new Set([galIdx-1,galIdx,galIdx+1].filter(i=>i>=0 && i<galMetas.length).map(i=>galMetas[i].id));
+  for(const [id,u] of _galUrls) if(!keep.has(id)){ URL.revokeObjectURL(u); _galUrls.delete(id) }
+}
+function galCaption(){
+  document.getElementById('gal-count').textContent=`${galIdx+1} / ${galMetas.length}`;
+  document.getElementById('gal-caption').textContent=galMetas[galIdx] ? galMetas[galIdx].name : '';
+}
+async function galRender(){
+  zs=1; ztx=0; zty=0;
+  galTrack.style.transition='none'; galTrack.style.transform=''; galPlace(); galCaption();
+  await galFill(galSlides[1], galIdx);
+  galFill(galSlides[0], galIdx+1); galFill(galSlides[2], galIdx-1);
+  galPrune();
+}
 async function openGallery(){
   galMetas=await getPhotoMetas();
   if(!galMetas.length){ toast('Nenhuma foto registrada ainda.'); return }
-  galIdx=0; await paintGalPhoto();
+  galIdx=0; galBusy=false; await galRender();
   document.getElementById('gallerywrap').classList.add('on');
-}
-async function paintGalPhoto(){
-  if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
-  const m=galMetas[galIdx];
-  const blob=await getPhotoBlob(m.id);
-  if(!blob){ toast('Foto não encontrada.'); return; }
-  _galBlobUrl=URL.createObjectURL(blob);
-  const img=document.getElementById('gal-img');
-  img.src=_galBlobUrl;
-  document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galMetas.length}  ·  ${m.name}`;
 }
 document.getElementById('cam-gallery').onclick=openGallery;
 document.getElementById('gal-close').onclick=()=>{
   document.getElementById('gallerywrap').classList.remove('on');
-  if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
+  for(const u of _galUrls.values()) URL.revokeObjectURL(u);
+  _galUrls.clear();
+  galSlides.forEach(s=>s.querySelector('img').removeAttribute('src'));
 };
+/* roda fn uma vez: no transitionend ou no timer (com "Reduzir Movimento" a transição é zerada e o
+   transitionend nunca vem — sem o timer a galeria travava) */
+function galOnce(el, ms, fn){
+  let done=false; const h=()=>{ if(done) return; done=true; el.removeEventListener('transitionend', h); fn() };
+  el.addEventListener('transitionend', h); setTimeout(h, ms);
+}
+let galVx=0;
+function galSnap(){
+  galTrack.style.transition='transform .26s cubic-bezier(.2,.8,.25,1)';
+  galTrack.style.transform='translateX(0px)';
+}
+function galGo(dir, fromDx){   // dir +1 = foto mais antiga (entra pela esquerda), -1 = mais nova
+  const target=galIdx+dir;
+  if(target<0 || target>=galMetas.length) return galSnap();
+  galBusy=true;
+  const W=galStage.clientWidth+GAL_GAP, dist=Math.abs(dir*W-fromDx);
+  /* duração pela velocidade do dedo: arrasto rápido termina rápido (160–340 ms) */
+  const ms=Math.round(Math.max(160, Math.min(340, dist/Math.max(0.9, Math.abs(galVx)))));
+  galTrack.style.transition=`transform ${ms}ms cubic-bezier(.2,.8,.25,1)`;
+  galTrack.style.transform=`translateX(${dir*W}px)`;
+  galOnce(galTrack, ms+80, ()=>{
+    if(!document.getElementById('gallerywrap').classList.contains('on')){ galBusy=false; return }
+    galIdx=target;
+    galSlides = dir>0 ? [galSlides[2], galSlides[0], galSlides[1]] : [galSlides[1], galSlides[2], galSlides[0]];
+    galTrack.style.transition='none'; galTrack.style.transform=''; galPlace(); galCaption();
+    galFill(dir>0 ? galSlides[0] : galSlides[2], dir>0 ? galIdx+1 : galIdx-1);
+    galPrune(); galBusy=false;
+  });
+}
+/* ---- zoom da foto atual ---- */
+let zs=1, ztx=0, zty=0, zb=null;
+const galCur=()=>galSlides[1].querySelector('img');
+function zApply(anim){
+  const img=galCur();
+  img.style.transition=anim?'transform .25s cubic-bezier(.2,.8,.25,1)':'none';
+  img.style.transform=(zs===1 && !ztx && !zty)?'':`translate(${ztx}px,${zty}px) scale(${zs})`;
+}
+/* tamanho e centro da foto SEM zoom (o centro com zoom = centro base + translação) */
+function zBase(){ const r=galCur().getBoundingClientRect(); return {w:r.width/zs, h:r.height/zs, cx:(r.left+r.right)/2-ztx, cy:(r.top+r.bottom)/2-zty} }
+function zClamp(){
+  const W=galStage.clientWidth, H=galStage.clientHeight;
+  const mx=Math.max(0,(zb.w*zs-W)/2), my=Math.max(0,(zb.h*zs-H)/2);
+  ztx=Math.min(mx,Math.max(-mx,ztx)); zty=Math.min(my,Math.max(-my,zty));
+}
+function galToggleZoom(x,y){
+  zb=zBase();
+  if(zs>1){ zs=1; ztx=0; zty=0 }
+  else { zs=2.5; const px=x-zb.cx, py=y-zb.cy; ztx=px*(1-zs); zty=py*(1-zs); zClamp() }   // o ponto tocado fica parado
+  zApply(true);
+}
+/* ---- gestos da galeria: deslizar entre fotos, pinça, arrastar com zoom e dois toques ---- */
 (function(){
-  const stage=document.getElementById('gal-stage');
-  const img=document.getElementById('gal-img');
-  let sx=0, st=0, dx=0, dragging=false, vx=0, lastX=0, lastT=0, _galAnimating=false;
-  const W=()=>stage.clientWidth;
-
-  stage.addEventListener('touchstart', e=>{
-    if(!galMetas.length || _galAnimating) return;
-    const touch=e.touches[0];
-    sx=touch.clientX; st=performance.now(); dx=0; dragging=true; vx=0; lastX=sx; lastT=st;
-    img.classList.remove('gal-anim');
-    img.style.transform='translateX(0)';
-  }, {passive:true});
-
-  stage.addEventListener('touchmove', e=>{
-    if(!dragging) return;
-    e.preventDefault();
-    const touch=e.touches[0];
-    dx=touch.clientX-sx;
-    const now=performance.now(), dt=now-lastT;
-    if(dt>0) vx=(touch.clientX-lastX)/dt;
-    lastX=touch.clientX; lastT=now;
-    if((galIdx===0 && dx<0)||(galIdx>=galMetas.length-1 && dx>0)) dx*=0.3;
-    img.style.transform=`translateX(${dx}px)`;
-  }, {passive:false});
-
-  stage.addEventListener('touchend', e=>{
-    if(!dragging) return;
-    dragging=false;
-    const w=W(), threshold=w*0.2;
-    const fast=Math.abs(vx)>0.4;
-    const goPrev=(dx<-threshold || (dx<0 && fast)) && galIdx>0;
-    const goNext=(dx>threshold || (dx>0 && fast)) && galIdx<galMetas.length-1;
-
-    if(goNext || goPrev){
-      const dir=goNext?1:-1;
-      _galAnimating=true;
-      img.classList.add('gal-anim');
-      img.style.transform=`translateX(${dir*w}px)`;
-      /* roda UMA vez: no transitionend ou no timer. Com "Reduzir Movimento" a transição é zerada
-         pelo CSS e o transitionend nunca vinha — a galeria travava para sempre após o 1º deslize. */
-      let fired=false;
-      const h=async function(){
-        if(fired) return; fired=true;
-        img.removeEventListener('transitionend', h);
-        const gw=document.getElementById('gallerywrap');
-        if(!gw||!gw.classList.contains('on')){ _galAnimating=false; return }
-        galIdx+=goNext?1:-1;
-        img.classList.remove('gal-anim');
-        img.style.transform=`translateX(${-dir*w}px)`;
-        if(_galBlobUrl){ URL.revokeObjectURL(_galBlobUrl); _galBlobUrl=null; }
-        const blob=await getPhotoBlob(galMetas[galIdx].id);
-        if(!gw.classList.contains('on')){ _galAnimating=false; return }
-        if(blob){
-          _galBlobUrl=URL.createObjectURL(blob);
-          img.src=_galBlobUrl;
-        }
-        document.getElementById('gal-caption').textContent=`${galIdx+1} / ${galMetas.length}  ·  ${galMetas[galIdx].name}`;
-        void img.offsetWidth;
-        img.classList.add('gal-anim');
-        img.style.transform='translateX(0)';
-        _galAnimating=false;
-      };
-      img.addEventListener('transitionend', h);
-      setTimeout(h, 360);
-    } else {
-      img.classList.add('gal-anim');
-      img.style.transform='translateX(0)';
+  let mode=null, sx=0, sy=0, dx=0, lastX=0, lastT=0, moved=false, pinch=null, pan=null;
+  let lastTap=0, lastTapX=0, lastTapY=0;
+  const dist2=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  const mid=t=>[(t[0].clientX+t[1].clientX)/2, (t[0].clientY+t[1].clientY)/2];
+  function startPinch(t){
+    zb=zBase();
+    const [mx,my]=mid(t);
+    pinch={d0:dist2(t)||1, s0:zs, qx:(mx-zb.cx-ztx)/zs, qy:(my-zb.cy-zty)/zs};
+    mode='pinch';
+  }
+  function startOne(p){
+    sx=p.clientX; sy=p.clientY; dx=0; moved=false; lastX=sx; lastT=performance.now(); galVx=0;
+    if(zs>1){ zb=zBase(); mode='pan'; pan={x0:ztx, y0:zty} }
+    else { mode='swipe'; galTrack.style.transition='none' }
+  }
+  galStage.addEventListener('touchstart', e=>{
+    if(!galMetas.length || galBusy) return;
+    if(e.touches.length>=2){
+      if(mode==='swipe') galSnap();   // 2º dedo no meio de um deslize: cancela o deslize e vira pinça
+      startPinch(e.touches); return;
     }
+    startOne(e.touches[0]);
   }, {passive:true});
-  /* gesto interrompido pelo sistema (notificação, gesto de borda): volta a foto ao lugar */
-  stage.addEventListener('touchcancel', ()=>{
-    if(!dragging) return;
-    dragging=false;
-    img.classList.add('gal-anim');
-    img.style.transform='translateX(0)';
+  galStage.addEventListener('touchmove', e=>{
+    if(!mode) return;
+    e.preventDefault();
+    const t=e.touches;
+    if(mode==='pinch'){
+      if(t.length<2) return;
+      const [mx,my]=mid(t);
+      zs=Math.min(5, Math.max(1, pinch.s0*dist2(t)/pinch.d0));
+      /* o ponto da foto que estava entre os dedos continua entre os dedos */
+      ztx=(mx-zb.cx)-pinch.qx*zs; zty=(my-zb.cy)-pinch.qy*zs;
+      zClamp(); zApply(false); return;
+    }
+    const p=t[0], ddx=p.clientX-sx, ddy=p.clientY-sy;
+    if(Math.abs(ddx)>6 || Math.abs(ddy)>6) moved=true;
+    const now=performance.now(), dt=now-lastT;
+    if(dt>0) galVx=(p.clientX-lastX)/dt;
+    lastX=p.clientX; lastT=now;
+    if(mode==='pan'){ ztx=pan.x0+ddx; zty=pan.y0+ddy; zClamp(); zApply(false); return }
+    dx=ddx;
+    /* nas pontas (primeira/última foto) a vizinha não existe: resistência elástica */
+    if((galIdx===0 && dx<0) || (galIdx>=galMetas.length-1 && dx>0)) dx*=0.3;
+    galTrack.style.transform=`translateX(${dx}px)`;
+  }, {passive:false});
+  galStage.addEventListener('touchend', e=>{
+    if(!mode) return;
+    if(mode==='pinch'){
+      if(e.touches.length===1){ startOne(e.touches[0]); moved=true; if(mode==='swipe') mode=null; return }
+      mode=null;
+      if(zs<1.05){ zs=1; ztx=0; zty=0; zApply(true) }
+      return;
+    }
+    const m=mode; mode=null;
+    if(!moved){
+      /* toque parado: dois toques rápidos no mesmo lugar = zoom (ou volta ao normal) */
+      const p=e.changedTouches[0], now=performance.now();
+      if(now-lastTap<300 && Math.hypot(p.clientX-lastTapX, p.clientY-lastTapY)<30){ lastTap=0; galToggleZoom(p.clientX, p.clientY) }
+      else { lastTap=now; lastTapX=p.clientX; lastTapY=p.clientY }
+      if(m==='swipe') galSnap();
+      return;
+    }
+    if(m==='pan') return;
+    const w=galStage.clientWidth, fast=Math.abs(galVx)>0.4;
+    if((dx>w*0.2 || (dx>0 && fast)) && galIdx<galMetas.length-1) galGo(1, dx);
+    else if((dx<-w*0.2 || (dx<0 && fast)) && galIdx>0) galGo(-1, dx);
+    else galSnap();
+  }, {passive:true});
+  /* gesto interrompido pelo sistema (notificação, gesto de borda): volta tudo ao lugar */
+  galStage.addEventListener('touchcancel', ()=>{
+    if(mode==='swipe') galSnap();
+    mode=null;
   }, {passive:true});
 })();
 async function deletePhoto(id){
@@ -3597,14 +3706,15 @@ document.getElementById('gal-share').onclick=async()=>{
   }catch(e){ toast('⚠ Não consegui compartilhar a foto.') }
 };
 document.getElementById('gal-del').onclick=async()=>{
-  const m=galMetas[galIdx]; if(!m) return;
+  const m=galMetas[galIdx]; if(!m || galBusy) return;
   if(!confirm('Excluir esta foto da galeria do app?\n(Cópias já salvas no aparelho não são afetadas.)')) return;
   try{
     await deletePhoto(m.id);
     galMetas.splice(galIdx,1);
+    if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) }
     if(!galMetas.length){ document.getElementById('gal-close').click(); return }
     if(galIdx>=galMetas.length) galIdx=galMetas.length-1;
-    await paintGalPhoto();
+    await galRender();
   }catch(e){ toast('⚠ Não consegui excluir a foto.') }
 };
 
@@ -3739,8 +3849,26 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   ctx.textAlign='left';
   ctx.restore();
 }
-function sanitizeFilename(s){
-  return s.replace(/⚠/g,'').replace(/[\/\\:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
+/* Nome do arquivo: curto, legível, sem espaços/vírgulas (que dão problema em e-mail, WhatsApp e Excel)
+   e com a DATA (ordena por dia no computador). Ex.: BR-110-RN_KM47+924_LE_2026-10-06_20-06-13.jpg
+   A estaca não entra no nome — continua gravada na legenda da foto. Duas fotos no mesmo segundo:
+   a segunda ganha "-2", a terceira "-3"… */
+let _lastPhotoBase='', _photoSeq=1;
+function photoName(info){
+  const d=info.dt||new Date(), z=n=>String(n).padStart(2,'0');
+  const quando=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}-${z(d.getSeconds())}`;
+  const parts=[];
+  if(info.km!=null && info.br){
+    let k=Math.floor(info.km), m=Math.round((info.km-k)*1000);
+    if(m>=1000){ k++; m=0 }
+    parts.push(`${info.br}-${info.uf}`.replace(/[^\w\-]/g,''), `KM${k}+${String(m).padStart(3,'0')}`);
+    const side=getSide(); if(side) parts.push(side);
+  } else parts.push('FOTO');
+  parts.push(quando);
+  const base=parts.join('_');
+  _photoSeq = base===_lastPhotoBase ? _photoSeq+1 : 1;
+  _lastPhotoBase=base;
+  return base+(_photoSeq>1?'-'+_photoSeq:'')+'.jpg';
 }
 /* ================= EXIF =================
    O canvas toBlob gera um JPEG SEM metadados. Aqui montamos um segmento EXIF (APP1)
@@ -4015,11 +4143,7 @@ function _downloadDirect(blob, name){
   }
 }
 function saveAndShare(blob){
-  const info=S.lastInfo||{}, t=new Date();
-  const {L}=legendLines(info);
-  const base=(info.km!=null && L[0]) ? sanitizeFilename(L[0]) : 'FOTO';
-  const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0')+String(t.getMilliseconds()).padStart(3,'0');
-  const name=`${base}_${hhmmss}.jpg`;
+  const name=photoName(S.lastInfo||{});
   const file=new File([blob], name, {type:'image/jpeg'});
   /* 1) salva na galeria interna do app (IndexedDB) — sempre, independente de CFG.autosave */
   savePhotoToGallery(blob, name).catch(e=>{
