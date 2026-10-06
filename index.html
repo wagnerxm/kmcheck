@@ -1600,7 +1600,7 @@ function renderBases(){
     el.querySelectorAll('.blink.est').forEach(btn=>btn.onclick=async()=>{
       const r=await askEstaca(btn.dataset.id,'Salvar');
       if(r===null) return;
-      setEstRefs(btn.dataset.id, r); renderBases(); toast(r.length?'Estaca definida.':'Estaca automática.');
+      setEstRefs(btn.dataset.id, r); renderBases();
     });
     el.querySelectorAll('.blink.ovl').forEach(btn=>btn.onclick=async()=>{
       const list=getOverlaps(), o=list[+btn.dataset.i]; if(!o) return;
@@ -1842,8 +1842,6 @@ document.getElementById('dl-go').onclick=async()=>{
     setEstRefs(b.id, estRefs);
     renderBases();
     status.textContent=DL_DEFAULT_HINT;
-    const tipoLabel=tipoTr!=='B'?' tipo '+tipoTr:'';
-    toast(`✅ BR-${brPad}/${uf}${tipoLabel} baixada${snvVer?' (SNV '+snvVer+')':''}`);
     await checkOverlaps(b); renderBases();
   }catch(err){
     status.textContent=DL_DEFAULT_HINT;
@@ -1977,7 +1975,7 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
       let n=0; const inst=[];
       for(const k of sel){ const b=await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname); if(b){ n++; inst.push(b) } }
       dlg.close(); renderBases();
-      toast(n||!sel.length ? n+' rodovia(s) instalada(s) do shapefile oficial.' : NO_COORD_MSG, n?2600:5000);
+      if(!n && sel.length) toast(NO_COORD_MSG, 5000);
       for(const b of inst) await checkOverlaps(b);
       if(inst.length) renderBases();
     }catch(e){ toast('Erro ao salvar: '+e.message) }
@@ -2062,7 +2060,7 @@ function importKml(xml, fname){
       let n=0; const inst=[];
       for(const k of sel){ const b=await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')'); if(b){ n++; inst.push(b) } }
       dlg.close(); renderBases();
-      toast(n||!sel.length ? n+' rodovia(s) instalada(s).' : NO_COORD_MSG, n?2600:5000);
+      if(!n && sel.length) toast(NO_COORD_MSG, 5000);
       for(const b of inst) await checkOverlaps(b);
       if(inst.length) renderBases();
     }catch(e){ toast('Erro ao salvar: '+e.message) }
@@ -2170,7 +2168,6 @@ function importCsv(text, fname){
       await dbPut(b);
       S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
       dlg.close(); renderBases();
-      toast(b.id+' instalada ('+withKm.length.toLocaleString('pt-BR')+' pontos).');
       await checkOverlaps(b); renderBases();
     }catch(e){ toast('Erro ao salvar: '+e.message) }
   };
@@ -2248,7 +2245,7 @@ function paintGpsBanner(){
 }
 document.getElementById('gps-banner').onclick=()=>{
   if(S.gpsDenied) showGpsDeniedDialog();
-  else { startGps(); toast('Tentando obter localização…'); }
+  else startGps();
 };
 /* Detecta mudança de permissão em tempo real (Android Chrome)
    e tenta reiniciar GPS quando o app volta ao foreground (iOS/Android) */
@@ -2487,7 +2484,6 @@ document.getElementById('ct-add').onclick=()=>{
   localStorage.setItem('kc-contract', c);
   inp.value='';
   renderContracts(); paintGps();
-  toast('Contrato '+c+' selecionado.');
 };
 
 /* ================= logo da empresa ================= */
@@ -2524,16 +2520,14 @@ document.getElementById('cam-logo').onclick=()=>{
     closeCam(); goToScreen('scr-settings');
     document.querySelector('.settab[data-tab="tab-logo"]').click();
     settingsFromCam=true;   // depois do goToScreen, que zera a flag
-    toast('Escolha a logo da empresa — depois toque em Voltar para retornar à câmera.', 3600);
     return;
   }
   localStorage.setItem('kc-logoon', CFG.logoon?'0':'1');
   paintLogoToggle();
   layoutCamLogo();   // com a logo visível de novo, recalcula a posição (offsetWidth era 0 escondida)
-  toast(CFG.logoon?'Logo ativada na foto':'Logo desativada na foto', 1400);
 };
 document.getElementById('logo-add').onclick=()=>document.getElementById('logoin').click();
-document.getElementById('logo-del').onclick=()=>{ localStorage.removeItem('kc-logo'); loadLogo(); toast('Logo removida.') };
+document.getElementById('logo-del').onclick=()=>{ localStorage.removeItem('kc-logo'); loadLogo() };
 /* remoção de fundo v2: vazado opcional, borda suave (feather) e remoção de halo */
 function removeBackground(src, tol, holes){
   const w=src.width, h=src.height, s=src.data;
@@ -2654,7 +2648,7 @@ function saveLogoFromCanvas(cv){
     }catch(e2){ toast('Erro ao salvar logo — libere espaço.'); return }
   }
   localStorage.setItem('kc-logoon','1');   // acabou de escolher a logo: o botão LOGO da câmera volta aceso
-  loadLogo(); toast('Logo salva — sairá nas fotos.');
+  loadLogo();
 }
 /* libera a imagem de trabalho (~4 MB) e o canvas de prévia (~4 MB) depois de escolher a logo */
 function freeLogoWork(){ LOGO.src=null; const cv=document.getElementById('logo-cv'); cv.width=0; cv.height=0; }
@@ -3598,9 +3592,8 @@ document.getElementById('gal-share').onclick=async()=>{
     if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file]}).catch(e=>{ if(e.name!=='AbortError') throw e });
     } else if(_isAndroid && _isPWAStandalone && navigator.serviceWorker && navigator.serviceWorker.controller){
-      if(await _downloadViaSW(blob, m.name)) toast('📸 Foto salva');
-      else toast('⚠ Não consegui salvar a foto.');
-    } else { _downloadDirect(blob, m.name); toast('📸 Foto salva'); }
+      if(!(await _downloadViaSW(blob, m.name))) toast('⚠ Não consegui salvar a foto.');
+    } else _downloadDirect(blob, m.name);
   }catch(e){ toast('⚠ Não consegui compartilhar a foto.') }
 };
 document.getElementById('gal-del').onclick=async()=>{
@@ -3609,7 +3602,7 @@ document.getElementById('gal-del').onclick=async()=>{
   try{
     await deletePhoto(m.id);
     galMetas.splice(galIdx,1);
-    if(!galMetas.length){ document.getElementById('gal-close').click(); toast('Galeria vazia.'); return }
+    if(!galMetas.length){ document.getElementById('gal-close').click(); return }
     if(galIdx>=galMetas.length) galIdx=galMetas.length-1;
     await paintGalPhoto();
   }catch(e){ toast('⚠ Não consegui excluir a foto.') }
@@ -4033,18 +4026,19 @@ function saveAndShare(blob){
     console.error('[KMCheck] IndexedDB falhou:', e);
     toast('⚠ Erro ao salvar foto internamente');
   });
-  /* 2) salva no dispositivo (apenas quando "Envio automático" está ligado) */
-  if(!CFG.autosave){ toast('📷 Foto registrada'); return }
+  /* 2) salva no dispositivo (apenas quando "Envio automático" está ligado).
+     Sem mensagens de confirmação (pedido do usuário: tela limpa — a piscada e o som já confirmam o
+     disparo). Só aparece aviso ⚠ quando a foto NÃO chegou ao aparelho por falha. */
+  if(!CFG.autosave) return;
   if(_isIOS){
     /* iOS: share sheet é o ÚNICO caminho para salvar na galeria de Fotos via web.
-       <a download> não funciona em PWA standalone do Safari. */
-    /* Sem share sheet (cancelado, falhou ou outro já aberto) a foto fica SÓ na galeria do app —
-       antes caía num <a download> que não funciona no PWA do iPhone e mostrava "Foto salva" falso.
-       O botão "Compartilhar / salvar" da galeria resolve depois. */
-    const onlyInApp=()=>toast('📷 Foto na galeria do app — use "Compartilhar / salvar" para levar ao Fotos', 4200);
+       <a download> não funciona em PWA standalone do Safari. Falhou (não foi cancelamento):
+       a foto fica SÓ na galeria do app — o botão "Compartilhar / salvar" de lá resolve depois. */
+    const onlyInApp=()=>toast('⚠ A foto não foi para o Fotos — use "Compartilhar / salvar" na galeria do app', 4200);
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
-        if(e.name!=='AbortError') console.error('[KMCheck] share iOS falhou:', e);
+      navigator.share({files:[file]}).catch(e=>{
+        if(e.name==='AbortError') return;   // o próprio usuário cancelou — sem aviso
+        console.error('[KMCheck] share iOS falhou:', e);
         onlyInApp();
       });
     } else onlyInApp();
@@ -4058,25 +4052,12 @@ function saveAndShare(blob){
         _downloadViaSW(blob, name).then(ok=>{
           if(!ok) toast('⚠ Falha ao baixar — foto na galeria do app');
         });
-        toast('📸 Foto salva');
       } else if(navigator.canShare && navigator.canShare({files:[file]})){
         /* sem SW: share sheet como fallback (ainda dentro do gesto do obturador) */
-        navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
-          if(e.name==='AbortError') toast('📷 Foto na galeria do app');
-          else { _downloadDirect(blob, name); toast('📸 Foto salva') }
-        });
-      } else {
-        _downloadDirect(blob, name);
-        toast('📸 Foto salva');
-      }
-    } else {
-      _downloadDirect(blob, name);
-      toast('📸 Foto salva');
-    }
-  } else {
-    _downloadDirect(blob, name);
-    toast('📸 Foto salva');
-  }
+        navigator.share({files:[file]}).catch(e=>{ if(e.name!=='AbortError') _downloadDirect(blob, name) });
+      } else _downloadDirect(blob, name);
+    } else _downloadDirect(blob, name);
+  } else _downloadDirect(blob, name);
 }
 
 /* ================= consulta ================= */
@@ -4104,7 +4085,7 @@ document.getElementById('q-copy').onclick=async()=>{
   const tsv='LAT\tLONG\tBR\tKM\tDIST_M\n'+qres.map(r=>[
     fc(r.lat), fc(r.lon), r.f?`${r.f.br}/${r.f.uf}`:'', r.f?fkm(r.f.km):'', r.f?Math.round(r.f.dist):''
   ].join('\t')).join('\n');
-  try{ await navigator.clipboard.writeText(tsv); toast('Resultado copiado — cole no Excel.') }
+  try{ await navigator.clipboard.writeText(tsv) }
   catch(e){ toast('Não consegui copiar automaticamente.') }
 };
 document.getElementById('q-gps').onclick=()=>{
@@ -4281,8 +4262,7 @@ function showInstallPrompt(){
       overlay.classList.remove('on');
       try{
         _deferredInstall.prompt();
-        const choice=await _deferredInstall.userChoice;
-        if(choice.outcome==='accepted') toast('App instalado com sucesso!');
+        await _deferredInstall.userChoice;
       }catch(e){}
       _deferredInstall=null;
     };
@@ -4344,7 +4324,7 @@ function showInstallPrompt(){
     let refreshing=false;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
       if(refreshing) return;
-      if(document.getElementById('camwrap').classList.contains('on')){ _pendingReload=true; toast('Nova versão disponível — atualiza ao fechar a câmera.'); return; }
+      if(document.getElementById('camwrap').classList.contains('on')){ _pendingReload=true; return; }   // atualiza sozinho ao fechar a câmera
       refreshing=true;
       location.reload();
     });
