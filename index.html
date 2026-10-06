@@ -444,6 +444,11 @@ table.res td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .lselval{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
 .lselbox svg{width:13px;height:13px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
 .lselbox.dis{opacity:.35}
+/* linha com checkbox E lista (formato das coordenadas/data): o quadradinho fica na borda direita,
+   na mesma coluna dos demais, e a lista desce para uma linha própria, também à direita — com a
+   largura toda, a coordenada não é mais cortada com "…" */
+.listrow.withsel{flex-wrap:wrap;row-gap:8px}
+.listrow.withsel .lselbox{flex:0 0 100%;max-width:100%}
 /* font-size 16px no select invisível: abaixo disso o iOS dá zoom na página ao tocar */
 .lselbox select.lsel{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;font-size:16px;cursor:pointer}
 .rangerow{flex-direction:column;align-items:stretch;gap:6px}
@@ -870,7 +875,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="ltext"><b>Nome da OAE</b><i>Ponte/viaduto quando estiver sobre um</i></span>
         <input type="checkbox" id="cfg-oae" checked>
       </label>
-      <div class="listrow">
+      <div class="listrow withsel">
         <label class="ltext" for="cfg-coord"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i></label>
         <input type="checkbox" id="cfg-coord" checked>
         <select id="cfg-coordstyle" class="lsel">
@@ -886,7 +891,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="ltext"><b>Precisão do GPS</b><i>Margem de erro (±m) na legenda</i></span>
         <input type="checkbox" id="cfg-acc" checked>
       </label>
-      <div class="listrow">
+      <div class="listrow withsel">
         <label class="ltext" for="cfg-date"><b>Formato da data</b><i>Data/hora na legenda</i></label>
         <input type="checkbox" id="cfg-date" checked>
         <select id="cfg-datestyle" class="lsel">
