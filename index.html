@@ -435,6 +435,17 @@ table.res td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .ltext i{font-size:12px;font-style:normal;color:var(--mut);line-height:1.35}
 .lsel{width:auto;flex:0 0 auto;max-width:44%;background:transparent;border:none;color:var(--gold2);font-family:var(--sans);font-size:13px;text-align:right;padding:0;border-radius:0}
 .lsel:focus{border:none;outline:none}
+/* Valor das listas SEMPRE encostado na borda direita. O <select> do iOS ignora text-align: reserva a
+   largura da opção mais longa e escreve à esquerda dentro dela — os valores ficavam desalinhados.
+   Agora o valor é um texto próprio alinhado à direita (.lselval) e o <select> fica invisível por cima,
+   ocupando a caixa toda: o toque continua abrindo o seletor nativo do sistema. */
+.lselbox{position:relative;flex:0 1 auto;min-width:0;max-width:48%;margin-left:auto;display:flex;align-items:center;
+  justify-content:flex-end;gap:6px;color:var(--gold2);font-family:var(--sans);font-size:13px}
+.lselval{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.lselbox svg{width:13px;height:13px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+.lselbox.dis{opacity:.35}
+/* font-size 16px no select invisível: abaixo disso o iOS dá zoom na página ao tocar */
+.lselbox select.lsel{position:absolute;inset:0;width:100%;height:100%;max-width:none;opacity:0;font-size:16px;cursor:pointer}
 .rangerow{flex-direction:column;align-items:stretch;gap:6px}
 .rangerow input[type=range]{margin:0}
 .switch{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px}
@@ -2699,7 +2710,7 @@ function setFormat(fmt){
   localStorage.setItem('kc-format', fmt);
   paintRatioSel();
   const sel=document.getElementById('cfg-format');
-  if(sel && sel.value!==fmt){ sel.value=fmt; const t=document.getElementById('lbl-format'); if(t && sel.selectedIndex>=0) t.textContent=sel.options[sel.selectedIndex].textContent; }
+  if(sel && sel.value!==fmt){ sel.value=fmt; syncLsel(sel); const t=document.getElementById('lbl-format'); if(t && sel.selectedIndex>=0) t.textContent=sel.options[sel.selectedIndex].textContent; }
   refreshLive();   // recorta a área útil na hora; a legenda e a foto seguem o mesmo formato
 }
 document.querySelectorAll('#camfmts .ratiobtn').forEach(b=>b.onclick=()=>setFormat(b.dataset.fmt));
@@ -3875,6 +3886,22 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
   document.getElementById(t.dataset.tab).classList.add('on');
 });
 
+/* listas das Configurações: envolve cada <select class="lsel"> numa caixa com o valor em texto
+   alinhado à direita + setinha (ver CSS .lselbox). syncLsel copia o texto da opção escolhida —
+   chamar sempre que o valor ou o "desabilitado" mudar por código. */
+function syncLsel(el){
+  const b=el && el.parentNode; if(!b || !b.classList.contains('lselbox')) return;
+  b.querySelector('.lselval').textContent = el.selectedIndex>=0 ? el.options[el.selectedIndex].textContent : '';
+  b.classList.toggle('dis', el.disabled);
+}
+document.querySelectorAll('select.lsel').forEach(el=>{
+  const box=document.createElement('span'); box.className='lselbox';
+  box.innerHTML='<span class="lselval"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"/></svg>';
+  el.parentNode.insertBefore(box, el); box.appendChild(el);
+  el.addEventListener('change', ()=>syncLsel(el));
+  syncLsel(el);
+});
+
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-date',true],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
                         ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true]]){
@@ -3883,9 +3910,9 @@ for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],[
   el.checked=ls(key,def);
   /* select associado ao checkbox — fica opaco/desabilitado quando desmarcado */
   const buddy=document.getElementById(id+'style');
-  if(buddy){ buddy.disabled=!el.checked; buddy.style.opacity=el.checked?'1':'.35' }
+  if(buddy){ buddy.disabled=!el.checked; syncLsel(buddy) }
   el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0');
-    if(buddy){ buddy.disabled=!el.checked; buddy.style.opacity=el.checked?'1':'.35' }
+    if(buddy){ buddy.disabled=!el.checked; syncLsel(buddy) }
     paintGps(); refreshLive() };
 }
 
@@ -3896,6 +3923,7 @@ for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl
   const el=document.getElementById(id); if(!el) continue;
   const saved=localStorage.getItem('kc-'+key);
   if(saved!==null) el.value=saved;
+  syncLsel(el);
   const paintLbl=()=>{ if(lbl){ const t=document.getElementById(lbl); if(t) t.textContent=el.options[el.selectedIndex].textContent } };
   paintLbl();
   el.onchange=()=>{ localStorage.setItem('kc-'+key, el.value); paintLbl(); paintGps(); refreshLive();
