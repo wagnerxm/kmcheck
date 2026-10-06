@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>KM Check</title>
+<meta name="description" content="Documentação fotográfica de rodovias com KM interpolado do SNV/DNIT — funciona offline.">
 <meta name="theme-color" id="meta-theme" content="#f1f2f3">
 <meta name="color-scheme" content="dark light">
 <link rel="manifest" href="manifest.v143.webmanifest">
@@ -137,7 +138,6 @@ nav.nav1{padding:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:
 .camcaption{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);position:relative;z-index:1}
 .dev-credit{position:fixed;left:0;right:0;bottom:2px;text-align:center;
   font-size:8px;letter-spacing:.08em;color:var(--mut);opacity:.4;font-family:var(--sans);z-index:1;pointer-events:none}
-.screen{display:none}.screen.on{display:block}
 section.pad{padding:18px 18px 8px}
 /* ---------- tipografia de seção ---------- */
 h2.sec{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--mut);margin:22px 2px 10px;font-weight:600}
@@ -565,7 +565,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <section class="pad">
   <h2 class="sec">Coordenada → KM</h2>
   <div class="card">
-    <label class="f">Cole coordenadas (uma por linha · direto do Excel)</label>
+    <label class="f" for="q-coords">Cole coordenadas (uma por linha · direto do Excel)</label>
     <textarea id="q-coords" placeholder="-6,077710&#9;-37,891500&#10;-6.081234 -37.902000"></textarea>
     <div class="hint" id="q-count">0 pontos detectados</div>
     <div class="row" style="margin-top:10px">
@@ -580,9 +580,9 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
   <h2 class="sec">KM → Coordenada</h2>
   <div class="card">
-    <label class="f">Rodovia</label>
+    <label class="f" for="k-base">Rodovia</label>
     <select id="k-base"></select>
-    <label class="f">KM</label>
+    <label class="f" for="k-km">KM</label>
     <input type="text" id="k-km" inputmode="decimal" placeholder="409,120">
     <button class="btn gold" id="k-run" style="margin-top:12px">Localizar coordenada</button>
     <div id="k-out" class="hint" style="font-family:var(--mono);font-size:14px;color:var(--text)"></div>
@@ -688,34 +688,29 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <option value="9:16">16:9</option>
         </select>
       </label>
-      <div class="listrow">
+      <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M12 3.5a4.5 4.5 0 0 0-4.5 4.5v3.2c0 .8-.3 1.6-.85 2.2L5 15.5h14l-1.65-2.1a3.4 3.4 0 0 1-.85-2.2V8a4.5 4.5 0 0 0-4.5-4.5z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg></span>
         <span class="ltext"><b>Alerta sonoro</b><i>Som ao capturar a foto</i></span>
         <input type="checkbox" id="cfg-soundalert">
-      </div>
+      </label>
     </div>
 
     <h2 class="sec">Comportamento após o disparo</h2>
     <div class="card listcard">
-      <div class="listrow">
-        <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span>
-        <span class="ltext"><b>Aceitação automática</b><i>Aceitar foto automaticamente após o disparo</i></span>
-        <input type="checkbox" id="cfg-autoaccept" checked>
-      </div>
-      <div class="listrow">
+      <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></svg></span>
         <span class="ltext"><b>Envio automático para a galeria</b><i>Salvar a foto automaticamente</i></span>
         <input type="checkbox" id="cfg-autosave" checked>
-      </div>
+      </label>
     </div>
 
     <h2 class="sec">Aparência</h2>
     <div class="card listcard">
-      <div class="listrow">
+      <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg></span>
         <span class="ltext"><b>Tema claro</b><i>Fundo claro com cartões escuros</i></span>
         <input type="checkbox" id="cfg-lighttheme">
-      </div>
+      </label>
     </div>
   </div>
 
@@ -790,11 +785,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <option value="#111111">Preto</option>
         </select>
       </label>
-      <div class="listrow">
+      <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><path d="M7 4h6a4 4 0 0 1 0 8H7z"/><path d="M7 12h7a4 4 0 0 1 0 8H7z"/></svg></span>
         <span class="ltext"><b>Negrito</b><i>Texto da legenda em negrito</i></span>
         <input type="checkbox" id="cfg-legbold">
-      </div>
+      </label>
       <div class="listrow rangerow">
         <span class="ltext"><b>Opacidade</b><i><span id="lbl-legop">100</span>%</i></span>
         <input type="range" id="cfg-legop" min="30" max="100" value="100">
@@ -803,11 +798,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
     <h2 class="sec">Fundo da legenda</h2>
     <div class="card listcard">
-      <div class="listrow">
+      <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="18" height="8" rx="2" fill="currentColor" stroke="none" opacity=".35"/><path d="M5 17h10M5 14.5h14" stroke-width="1.6"/></svg></span>
         <span class="ltext"><b>Fundo da legenda</b><i>Tarja atrás do texto</i></span>
         <input type="checkbox" id="cfg-legbg">
-      </div>
+      </label>
       <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" stroke="none"/></svg></span>
         <span class="ltext"><b>Tom do fundo</b><i>Claro ou escuro</i></span>
@@ -824,19 +819,19 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
     <h2 class="sec">Conteúdo</h2>
     <div class="card listcard">
-      <div class="listrow">
+      <label class="listrow">
         <span class="ltext"><b>Exibir estaca</b><i>Estaca correspondente ao KM (20 m)</i></span>
         <input type="checkbox" id="cfg-estaca">
-      </div>
-      <div class="listrow">
+      </label>
+      <label class="listrow">
         <span class="ltext"><b>Exibir SNV</b><i>Versão do SNV na linha da data (ex.: Out/19)</i></span>
         <input type="checkbox" id="cfg-snv">
-      </div>
-      <div class="listrow">
+      </label>
+      <label class="listrow">
         <span class="ltext"><b>Nome da OAE</b><i>Ponte/viaduto quando estiver sobre um</i></span>
         <input type="checkbox" id="cfg-oae" checked>
-      </div>
-      <div class="listrow">
+      </label>
+      <label class="listrow">
         <span class="ltext"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i></span>
         <input type="checkbox" id="cfg-coord" checked>
         <select id="cfg-coordstyle" class="lsel">
@@ -847,12 +842,12 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <option value="dms_label">Lat 6°04'39,8"S  Long 37°53'29,4"O</option>
           <option value="gmd">6°04,663'S 37°53,490'O</option>
         </select>
-      </div>
-      <div class="listrow">
+      </label>
+      <label class="listrow">
         <span class="ltext"><b>Precisão do GPS</b><i>Margem de erro (±m) na legenda</i></span>
         <input type="checkbox" id="cfg-acc" checked>
-      </div>
-      <div class="listrow">
+      </label>
+      <label class="listrow">
         <span class="ltext"><b>Formato da data</b><i>Data/hora na legenda</i></span>
         <input type="checkbox" id="cfg-date" checked>
         <select id="cfg-datestyle" class="lsel">
@@ -861,7 +856,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <option value="extensa">29 de julho de 2026</option>
           <option value="extensa_hora">29 de julho de 2026 às 14:35</option>
         </select>
-      </div>
+      </label>
     </div>
 
     <h2 class="sec">Descrição de serviços</h2>
@@ -886,7 +881,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
     <h2 class="sec">Alerta</h2>
     <div class="card">
-      <label class="f" style="margin-top:0">Distância máxima ao eixo (m) antes de alertar</label>
+      <label class="f" for="cfg-maxdist" style="margin-top:0">Distância máxima ao eixo (m) antes de alertar</label>
       <input type="number" id="cfg-maxdist" value="300" min="20" step="10">
     </div>
   </div>
@@ -939,9 +934,9 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
-      <button class="cbtn cbtag cbmini" id="cam-ld">LD</button>
-      <button class="cbtn cbtag cbmini" id="cam-le">LE</button>
-      <button class="cbtn cbtag cbmini" id="cam-svc">i</button>
+      <button class="cbtn cbtag cbmini" id="cam-ld" aria-label="Lado direito">LD</button>
+      <button class="cbtn cbtag cbmini" id="cam-le" aria-label="Lado esquerdo">LE</button>
+      <button class="cbtn cbtag cbmini" id="cam-svc" aria-label="Serviço e contrato">i</button>
     </div>
     <button id="shutter" aria-label="Tirar foto"></button>
     <div class="cbside cbright">
@@ -1015,9 +1010,9 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <!-- diálogo de importação CSV: identificar rodovia -->
 <dialog id="dlg-csv">
   <h2 class="sec" style="margin-top:0">Identificar a rodovia do CSV</h2>
-  <label class="f">BR (ex.: BR-226)</label>
+  <label class="f" for="csv-br">BR (ex.: BR-226)</label>
   <input type="text" id="csv-br" placeholder="BR-226">
-  <label class="f">UF</label>
+  <label class="f" for="csv-uf">UF</label>
   <input type="text" id="csv-uf" placeholder="RN" maxlength="2">
   <p class="hint" id="csv-info"></p>
   <div class="row" style="margin-top:12px">
@@ -1048,7 +1043,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <h2 class="sec" style="margin-top:0">Recorte do fundo da logo</h2>
   <div class="checker"><canvas id="logo-cv"></canvas></div>
   <div class="switch" style="border-bottom:none;padding:4px 0"><span>Vazar áreas internas do fundo</span><input type="checkbox" id="logo-holes" checked></div>
-  <label class="f">Tolerância do recorte</label>
+  <label class="f" for="logo-tol">Tolerância do recorte</label>
   <input type="range" id="logo-tol" min="5" max="80" value="32">
   <p class="hint">O fundo detectado vira transparência. "Vazar áreas internas" remove o fundo também dentro de círculos e letras (desligue se a logo tiver detalhes da mesma cor do fundo). Se sumir parte da logo, diminua a tolerância; se sobrar resíduo, aumente.</p>
   <div class="row" style="margin-top:12px">
@@ -1117,7 +1112,7 @@ const CFG = {
   get oae(){ return ls('oae', false) }, get coord(){ return ls('coord', true) },
   get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 },
   get estaca(){ return ls('estaca', true) }, get snv(){ return ls('snv', true) },
-  get preview(){ return ls('preview', false) }, get autosave(){ return ls('autosave', true) },
+  get autosave(){ return ls('autosave', true) },
   get res(){ return localStorage.getItem('kc-res') || 'max' },
   get qual(){ return +localStorage.getItem('kc-qual') || 0.92 },
   get logopos(){ return localStorage.getItem('kc-logopos') || 'tl' },
@@ -1126,7 +1121,7 @@ const CFG = {
   get legpos(){ return localStorage.getItem('kc-legpos') || 'bl' },
   get legcolor(){ return localStorage.getItem('kc-legcolor') || '#ffffff' },
   get legop(){ return (+localStorage.getItem('kc-legop') || 100)/100 },
-  get legsz(){ return (+localStorage.getItem('kc-legsz') || 100)/100 },
+  get legsz(){ return (+localStorage.getItem('kc-legsz') || 115)/100 },
   get coordstyle(){ return localStorage.getItem('kc-coordstyle') || 'decimal' },
   get date(){ return ls('date', true) },
   get datestyle(){ return localStorage.getItem('kc-datestyle') || 'curta_hora' },
@@ -3633,7 +3628,7 @@ document.querySelectorAll('.settab').forEach(t=>t.onclick=()=>{
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-date',true],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
-                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autoaccept',true],['cfg-autosave',true]]){
+                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
