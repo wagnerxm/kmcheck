@@ -237,6 +237,17 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .base-item:last-child{border-bottom:none}
 .base-item .bname{font-weight:800;font-size:16px;letter-spacing:.03em;color:#fff}
 .base-item .bmeta{font-size:11px;color:#fff;font-family:var(--mono);margin-top:3px}
+.base-item .binfo{flex:1;min-width:0}
+/* linhas tocáveis da rodovia (estaca / trecho coincidente): abrem o diálogo para mudar */
+.base-item .blink{display:block;text-align:left;background:none;border:none;padding:6px 0 0;margin:0;cursor:pointer;
+  color:var(--gold2);font-family:var(--sans);font-size:12px;line-height:1.4}
+.estrow{display:grid;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr) auto minmax(0,.9fr) 36px;gap:6px;align-items:center;margin-top:8px}
+.estrow input{padding:10px 8px;font-size:16px;text-align:center}
+.estrow > span{color:var(--mut);font-size:14px}
+.estrow.esthead{margin-top:10px}
+.estrow.esthead span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
+.est-x{width:36px;height:36px;border-radius:50%;background:none;border:1px solid var(--line);color:var(--err);font-size:18px;cursor:pointer}
+.ovl-list{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px;font-size:14px;color:var(--text)}
 .base-item .del{margin-left:auto;background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 .ct-item{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}
 .ct-item:last-child{border-bottom:none}
@@ -1070,6 +1081,33 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 </dialog>
 
+<!-- diálogo: estaca automática ou zero(s) do lote -->
+<dialog id="dlg-est" aria-labelledby="dlg-est-title">
+  <h2 class="sec" id="dlg-est-title" style="margin-top:0">Estaca</h2>
+  <p id="est-road" style="font-weight:800;font-size:16px;margin:-4px 0 6px"></p>
+  <div class="switch"><label for="est-auto">Automática — contada desde o km 0 (20 m por estaca)</label><input type="radio" name="estmode" id="est-auto"></div>
+  <div class="switch"><label for="est-man">Definir o zero do lote</label><input type="radio" name="estmode" id="est-man"></div>
+  <div id="est-manbox">
+    <div class="estrow esthead" aria-hidden="true"><span>KM</span><span></span><span>Estaca</span><span></span><span>Metros</span><span></span></div>
+    <div id="est-rows"></div>
+    <button class="btn small ghost" id="est-add" style="margin-top:10px">+ Outro lote (outro zero)</button>
+    <p class="hint">Cada zero vale do KM informado em diante, até o próximo zero. Antes do primeiro zero a estaca não aparece.</p>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="btn ghost" id="est-cancel">Cancelar</button>
+    <button class="btn gold" id="est-ok">Salvar</button>
+  </div>
+</dialog>
+
+<!-- diálogo: trecho coincidente entre duas rodovias — qual vale -->
+<dialog id="dlg-ovl" aria-labelledby="dlg-ovl-title">
+  <h2 class="sec" id="dlg-ovl-title" style="margin-top:0">Trecho coincidente</h2>
+  <p class="hint" style="margin-top:0;color:var(--text)">Estas rodovias usam o mesmo traçado neste trecho:</p>
+  <div id="ovl-list" class="ovl-list"></div>
+  <p class="hint">Qual o app deve usar aqui para o KM e a legenda?</p>
+  <div id="ovl-btns" style="display:flex;flex-direction:column;gap:8px;margin-top:12px"></div>
+</dialog>
+
 <!-- diálogo: GPS obrigatório — aparece quando permissão de localização é negada -->
 <dialog id="dlg-gps" aria-labelledby="dlg-gps-title">
   <div class="rl-body">
@@ -1234,7 +1272,11 @@ function findKm(lat,lon){
     return {b, bi, d2:dx*dx+dy*dy} }).sort((p,q)=>p.d2-q.d2);
   for(const {b,bi,d2:bd2} of order){
     if(best && bd2>best.d2) break;
+    const cedidos=_excl[b.id];   // trechos desta base cedidos a outra BR (trecho coincidente)
     for(let i=0;i<b.lat.length-1;i++){
+      if(cedidos){ const mk=(b.km[i]+b.km[i+1])/2; let skip=false;
+        for(const r of cedidos) if(mk>=r[0] && mk<=r[1]){ skip=true; break }
+        if(skip) continue; }
       const ax=b.lon[i],ay=b.lat[i],bx=b.lon[i+1],by=b.lat[i+1];
       const dx=(bx-ax)*cos, dy=by-ay, ex=(px-ax)*cos, ey=py-ay;
       const L2=dx*dx+dy*dy; if(L2===0) continue;
@@ -1253,7 +1295,7 @@ function findKm(lat,lon){
   const km=b.km[i]+t*(b.km[i+1]-b.km[i]);
   const dist=Math.sqrt(best.d2)*D2R*R;
   const lat2=b.lat[i]+t*(b.lat[i+1]-b.lat[i]), lon2=b.lon[i]+t*(b.lon[i+1]-b.lon[i]);
-  return {km, dist, br:b.br, uf:b.uf, axLat:lat2, axLon:lon2, fonte:b.fonte};
+  return {km, dist, br:b.br, uf:b.uf, axLat:lat2, axLon:lon2, fonte:b.fonte, id:b.id};
 }
 function kmToCoord(base, km){
   const a=base.km;
@@ -1363,6 +1405,164 @@ let _toastT=0;
 function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(_toastT); _toastT=setTimeout(()=>t.classList.remove('on'),ms||2600) }
 
+/* ================= estaca por referência e trechos coincidentes =================
+   ESTACA: automática = contada desde o km 0 (20 m por estaca). O usuário pode definir "zeros" por
+   rodovia — {km, e, m}: no KM informado a estaca é e+m. Cada zero vale dali em diante até o próximo
+   (vários zeros = vários lotes na mesma BR); antes do primeiro zero não há estaca. Guardado no
+   localStorage por id da base, então sobrevive a baixar a mesma rodovia de novo.
+   TRECHO COINCIDENTE: duas BRs com o mesmo traçado (ex.: BR-226 e BR-304 perto de Natal). Ao instalar
+   uma rodovia o app procura esses trechos e pergunta qual vale; a outra é ignorada SÓ naquele
+   intervalo de KM no findKm (_excl). "Manter as duas" = vale a mais próxima, como sempre foi. */
+function getAllEstRefs(){ try{ return JSON.parse(localStorage.getItem('kc-estrefs')||'{}') }catch(e){ return {} } }
+function getEstRefs(id){ return getAllEstRefs()[id]||[] }
+function setEstRefs(id, refs){ const all=getAllEstRefs(); if(refs && refs.length) all[id]=refs; else delete all[id]; localStorage.setItem('kc-estrefs', JSON.stringify(all)) }
+function getOverlaps(){ try{ return JSON.parse(localStorage.getItem('kc-overlaps')||'[]') }catch(e){ return [] } }
+let _excl={};
+function rebuildExcl(){
+  _excl={};
+  for(const o of getOverlaps()){
+    if(o.keep==='a') (_excl[o.b]=_excl[o.b]||[]).push([o.bKi,o.bKf]);
+    else if(o.keep==='b') (_excl[o.a]=_excl[o.a]||[]).push([o.aKi,o.aKf]);
+  }
+}
+function setOverlaps(list){ localStorage.setItem('kc-overlaps', JSON.stringify(list)); rebuildExcl() }
+rebuildExcl();
+/* Trechos onde a base N passa a menos de 30 m do eixo da base E por pelo menos 300 m seguidos (um
+   simples cruzamento/entroncamento dá poucas dezenas de metros e é ignorado). Índice em grade
+   (~1 km) com os segmentos de E: cada ponto de N só testa os segmentos da sua célula. */
+function detectOverlaps(N, E){
+  const A=baseBBox(N), B=baseBBox(E), pad=0.002;
+  if(A[0]>B[1]+pad || B[0]>A[1]+pad || A[2]>B[3]+pad || B[2]>A[3]+pad) return [];
+  const TOL=30, MIN_LEN=300, GAP_KM=0.3, C=0.01;
+  const cosL=Math.cos(((A[0]+A[1])/2)*D2R), tolDeg=TOL/(R*D2R), tol2=tolDeg*tolDeg;
+  const grid=new Map();
+  for(let i=0;i<E.lat.length-1;i++){
+    const la0=Math.min(E.lat[i],E.lat[i+1])-tolDeg, la1=Math.max(E.lat[i],E.lat[i+1])+tolDeg;
+    const lo0=Math.min(E.lon[i],E.lon[i+1])-tolDeg/cosL, lo1=Math.max(E.lon[i],E.lon[i+1])+tolDeg/cosL;
+    for(let gx=Math.floor(lo0/C); gx<=Math.floor(lo1/C); gx++)
+      for(let gy=Math.floor(la0/C); gy<=Math.floor(la1/C); gy++){
+        const k=gx+','+gy; let arr=grid.get(k); if(!arr) grid.set(k, arr=[]); arr.push(i) }
+  }
+  const n=N.lat.length, near=new Uint8Array(n), ekm=new Float64Array(n);
+  for(let j=0;j<n;j++){
+    const py=N.lat[j], px=N.lon[j], arr=grid.get(Math.floor(px/C)+','+Math.floor(py/C));
+    if(!arr) continue;
+    let best=Infinity, bk=0;
+    for(const i of arr){
+      const ax=E.lon[i],ay=E.lat[i],bx=E.lon[i+1],by=E.lat[i+1];
+      const dx=(bx-ax)*cosL, dy=by-ay, ex=(px-ax)*cosL, ey=py-ay, L2=dx*dx+dy*dy;
+      let t=L2?(ex*dx+ey*dy)/L2:0; t=t<0?0:(t>1?1:t);
+      const fx=ex-t*dx, fy=ey-t*dy, d2=fx*fx+fy*fy;
+      if(d2<best){ best=d2; bk=E.km[i]+t*(E.km[i+1]-E.km[i]) }
+    }
+    if(best<=tol2){ near[j]=1; ekm[j]=bk }
+  }
+  const runs=[]; let s=-1;
+  for(let j=0;j<=n;j++){
+    if(j<n && near[j]){ if(s<0) s=j; continue }
+    if(s>=0){ runs.push([s,j-1]); s=-1 }
+  }
+  /* junta sequências separadas por menos de 300 m — pequenas diferenças de desenho entre as BRs */
+  const merged=[];
+  for(const r of runs){ const last=merged[merged.length-1];
+    if(last && Math.abs(N.km[r[0]]-N.km[last[1]])<GAP_KM) last[1]=r[1]; else merged.push(r.slice()) }
+  const out=[];
+  for(const [s0,e0] of merged){
+    let len=0, aKi=Infinity, aKf=-Infinity, bKi=Infinity, bKf=-Infinity;
+    for(let j=s0;j<=e0;j++){
+      if(j>s0){ const dx=(N.lon[j]-N.lon[j-1])*cosL, dy=N.lat[j]-N.lat[j-1]; len+=Math.sqrt(dx*dx+dy*dy)*D2R*R }
+      if(!near[j]) continue;
+      if(N.km[j]<aKi) aKi=N.km[j]; if(N.km[j]>aKf) aKf=N.km[j];
+      if(ekm[j]<bKi) bKi=ekm[j]; if(ekm[j]>bKf) bKf=ekm[j];
+    }
+    if(len>=MIN_LEN) out.push({a:N.id, b:E.id, aKi, aKf, bKi, bKf});
+  }
+  return out;
+}
+/* pergunta qual rodovia vale num trecho coincidente → 'a' | 'b' | 'both' */
+function askOverlap(o){
+  return new Promise(resolve=>{
+    const dlg=document.getElementById('dlg-ovl');
+    document.getElementById('ovl-list').innerHTML=
+      `<div><b>${_esc(o.a)}</b> — km ${fkm(o.aKi)} a ${fkm(o.aKf)}</div><div><b>${_esc(o.b)}</b> — km ${fkm(o.bKi)} a ${fkm(o.bKf)}</div>`;
+    const bx=document.getElementById('ovl-btns');
+    bx.innerHTML=`<button class="btn gold" data-k="a">Usar ${_esc(o.a)}</button><button class="btn" data-k="b">Usar ${_esc(o.b)}</button>`+
+      `<button class="btn ghost" data-k="both">Manter as duas</button><p class="hint" style="margin-top:0;text-align:center">"Manter as duas": o app usa a que estiver mais perto.</p>`;
+    let done=false;
+    const fin=k=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(k) };
+    bx.querySelectorAll('button').forEach(b=>b.onclick=()=>fin(b.dataset.k));
+    dlg.oncancel=e=>{ e.preventDefault(); fin(o.keep||'both') };   // Voltar/Esc: mantém como estava
+    showDlg(dlg);
+  });
+}
+/* depois de instalar N: procura trechos coincidentes com as outras rodovias e pergunta qual vale.
+   Rodovia baixada de novo: reaproveita a escolha já feita para o mesmo trecho (não pergunta outra vez). */
+async function checkOverlaps(N){
+  let list=getOverlaps();
+  for(const E of S.bases){
+    if(E.id===N.id) continue;
+    const found=detectOverlaps(N, E);
+    const old=list.filter(o=>(o.a===N.id && o.b===E.id) || (o.a===E.id && o.b===N.id));
+    list=list.filter(o=>!old.includes(o));
+    for(const f of found){
+      let keep=null;
+      for(const o of old){
+        const nKi=o.a===N.id?o.aKi:o.bKi, nKf=o.a===N.id?o.aKf:o.bKf;
+        if(nKi<=f.aKf && nKf>=f.aKi){ keep = o.a===N.id ? o.keep : (o.keep==='a'?'b':o.keep==='b'?'a':'both'); break }
+      }
+      if(!keep) keep=await askOverlap(f);
+      list.push({...f, keep});
+    }
+  }
+  setOverlaps(list);
+}
+/* diálogo da estaca → Promise: [] = automática, [{km,e,m}…] = zeros definidos, null = cancelou */
+function estRowHtml(r){
+  return `<div class="estrow"><input type="text" class="est-km" inputmode="decimal" placeholder="300,000" aria-label="KM do zero" value="${r&&r.km!=null?fkm(r.km):''}">`+
+    `<span>=</span><input type="text" class="est-e" inputmode="numeric" placeholder="0" aria-label="Estaca" value="${r?r.e:''}">`+
+    `<span>+</span><input type="text" class="est-m" inputmode="decimal" placeholder="0" aria-label="Metros" value="${r&&r.m?String(r.m).replace('.',','):''}">`+
+    `<button class="est-x" aria-label="Remover este zero">×</button></div>`;
+}
+function askEstaca(id, okLabel, kmSugerido){
+  return new Promise(resolve=>{
+    const dlg=document.getElementById('dlg-est'), rows=document.getElementById('est-rows');
+    if(dlg.open) return resolve(null);   // toque duplo em "Baixar": não abre o diálogo por cima dele mesmo
+    const auto=document.getElementById('est-auto'), man=document.getElementById('est-man'), box=document.getElementById('est-manbox');
+    const refs=getEstRefs(id);
+    document.getElementById('est-road').textContent=id;
+    document.getElementById('est-ok').textContent=okLabel;
+    rows.innerHTML=(refs.length?refs:[{km:kmSugerido!=null?kmSugerido:null, e:0, m:0}]).map(estRowHtml).join('');
+    (refs.length?man:auto).checked=true;
+    const paint=()=>{ box.style.display=man.checked?'':'none' };
+    auto.onchange=man.onchange=paint; paint();
+    const bindX=()=>rows.querySelectorAll('.est-x').forEach(x=>x.onclick=()=>{
+      if(rows.children.length>1) x.parentNode.remove(); else x.parentNode.querySelectorAll('input').forEach(i=>i.value='') });
+    bindX();
+    document.getElementById('est-add').onclick=()=>{ rows.insertAdjacentHTML('beforeend', estRowHtml({km:null,e:0,m:0})); bindX(); rows.lastElementChild.querySelector('.est-km').focus() };
+    let done=false;
+    const fin=v=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(v) };
+    document.getElementById('est-cancel').onclick=()=>fin(null);
+    dlg.oncancel=e=>{ e.preventDefault(); fin(null) };
+    document.getElementById('est-ok').onclick=()=>{
+      if(auto.checked) return fin([]);
+      const out=[];
+      for(const row of rows.children){
+        const kmv=row.querySelector('.est-km').value.trim(), ev=row.querySelector('.est-e').value.trim(), mv=row.querySelector('.est-m').value.trim();
+        if(!kmv && !ev && !mv) continue;
+        const km=parseNum(kmv), e=ev===''?0:Number(ev), m=mv===''?0:parseNum(mv);
+        if(km==null || km<0){ toast('Informe o KM de cada zero (ex.: 300,000).'); return }
+        if(!Number.isInteger(e) || e<0){ toast('A estaca precisa ser um número inteiro (ex.: 0).'); return }
+        if(m==null || m<0 || m>=20){ toast('Os metros vão de 0 a 19 (cada estaca tem 20 m).'); return }
+        if(out.some(r=>Math.abs(r.km-km)<1e-6)){ toast('Há dois zeros no mesmo KM.'); return }
+        out.push({km, e, m});
+      }
+      if(!out.length){ toast('Informe o KM do zero ou escolha "Automática".'); return }
+      fin(out.sort((p,q)=>p.km-q.km));
+    };
+    showDlg(dlg);
+  });
+}
+
 /* ================= lista de bases ================= */
 function renderBases(){
   const el=document.getElementById('baselist');
@@ -1371,19 +1571,40 @@ function renderBases(){
   if(!S.bases.length){
     el.innerHTML='<p class="empty">Nenhuma rodovia baixada.<br>Importe o KMZ do SNV/DNIT ou um CSV com o eixo (KM · LAT · LONG).</p>';
   } else {
-    el.innerHTML=S.bases.map(b=>`
+    const ovl=getOverlaps();
+    el.innerHTML=S.bases.map(b=>{
+      const refs=getEstRefs(b.id);
+      const est=refs.length ? 'Estaca: zero '+refs.map(r=>`no km ${fkm(r.km)} (${r.e}+${String(r.m).replace('.',',')})`).join(' · ') : 'Estaca automática';
+      const ovs=ovl.map((o,i)=>({o,i})).filter(({o})=>o.a===b.id||o.b===b.id).map(({o,i})=>{
+        const me=o.a===b.id, other=me?o.b:o.a, ki=me?o.aKi:o.bKi, kf=me?o.aKf:o.bKf;
+        const vale=o.keep==='both'?'as duas':(o.keep==='a'?o.a:o.b);
+        return `<button class="blink ovl" data-i="${i}">Km ${fkm(ki)}–${fkm(kf)} coincide com ${_esc(other)} · vale: ${_esc(vale)} ›</button>`;
+      }).join('');
+      return `
       <div class="base-item">
-        <div>
+        <div class="binfo">
           <div class="bname">${_esc(b.br)}/${_esc(b.uf)}</div>
           <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+_esc(b.fonte):''}</div>
+          <button class="blink est" data-id="${_esc(b.id)}">${_esc(est)} ›</button>
+          ${ovs}
         </div>
         <button class="del" data-id="${_esc(b.id)}">remover</button>
-      </div>`).join('');
+      </div>`}).join('');
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
       if(!confirm('Remover '+btn.dataset.id+'?')) return;
       try{ await dbDel(btn.dataset.id) }catch(e){ toast('Erro ao remover: '+e.message); return }
       S.bases=S.bases.filter(x=>x.id!==btn.dataset.id);
+      setOverlaps(getOverlaps().filter(o=>o.a!==btn.dataset.id && o.b!==btn.dataset.id));
       renderBases();
+    });
+    el.querySelectorAll('.blink.est').forEach(btn=>btn.onclick=async()=>{
+      const r=await askEstaca(btn.dataset.id,'Salvar');
+      if(r===null) return;
+      setEstRefs(btn.dataset.id, r); renderBases(); toast(r.length?'Estaca definida.':'Estaca automática.');
+    });
+    el.querySelectorAll('.blink.ovl').forEach(btn=>btn.onclick=async()=>{
+      const list=getOverlaps(), o=list[+btn.dataset.i]; if(!o) return;
+      o.keep=await askOverlap(o); setOverlaps(list); renderBases();
     });
   }
   for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
@@ -1593,15 +1814,19 @@ document.getElementById('dl-go').onclick=async()=>{
   const brPad=br.replace(/\D/g,'').padStart(3,'0');
   let kmi=parseNum(document.getElementById('dl-kmi').value);
   let kmf=parseNum(document.getElementById('dl-kmf').value);
-  /* BR-110/RN: só até KM 128,50 — a partir daí é coincidente com a BR-226/RN e ter os dois
-     eixos sobrepostos confunde o findKm em campo (128,50 puxa o último trecho até ~128,60) */
-  if(brPad==='110' && uf==='RN' && kmf==null) kmf=128.5;
+  /* (a antiga regra fixa "BR-110/RN só até o km 128,50" saiu: trechos coincidentes entre BRs agora
+     são detectados ao instalar e o usuário escolhe qual vale — ver checkOverlaps) */
   const snvVer=document.getElementById('dl-snv').value;
   const tipoTr=document.getElementById('dl-tipo').value;
   /* os dados locais/GeoServer só têm o eixo principal (B). Sem o servidor, baixar "tipo A" trazia o B
      e gravava POR CIMA da base B, dizendo que era A. */
   if(!snvVer && tipoTr!=='B'){ toast(`Tipo ${tipoTr} só pode ser baixado com o servidor disponível (escolha uma versão SNV).`, 4000); return }
   if(kmi!=null && kmf!=null && kmi>kmf){ toast('Km inicial maior que o km final.'); return }
+  /* estaca: automática ou zero(s) do lote — perguntado antes de baixar (o km inicial digitado já vem
+     sugerido como zero). Só é gravada se o download der certo. */
+  const targetId=`BR-${brPad}/${uf}`+(snvVer && tipoTr!=='B' ? `(${tipoTr})` : '');
+  const estRefs=await askEstaca(targetId, 'Baixar', kmi);
+  if(estRefs===null) return;
   btn.disabled=true; btn.textContent='Baixando…';
   try{
     let b;
@@ -1614,11 +1839,12 @@ document.getElementById('dl-go').onclick=async()=>{
     }
     await dbPut(b);
     S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
+    setEstRefs(b.id, estRefs);
     renderBases();
     status.textContent=DL_DEFAULT_HINT;
     const tipoLabel=tipoTr!=='B'?' tipo '+tipoTr:'';
     toast(`✅ BR-${brPad}/${uf}${tipoLabel} baixada${snvVer?' (SNV '+snvVer+')':''}`);
-
+    await checkOverlaps(b); renderBases();
   }catch(err){
     status.textContent=DL_DEFAULT_HINT;
     toast('Falha: '+err.message+(snvVer?'':'. Alternativa: importe o shapefile do DNIT Cloud.'));
@@ -1748,10 +1974,12 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
     if(ok.disabled) return; ok.disabled=true;   // toque duplo instalava tudo duas vezes
     try{
       const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
-      let n=0;
-      for(const k of sel){ if(await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname)) n++ }
+      let n=0; const inst=[];
+      for(const k of sel){ const b=await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname); if(b){ n++; inst.push(b) } }
       dlg.close(); renderBases();
       toast(n||!sel.length ? n+' rodovia(s) instalada(s) do shapefile oficial.' : NO_COORD_MSG, n?2600:5000);
+      for(const b of inst) await checkOverlaps(b);
+      if(inst.length) renderBases();
     }catch(e){ toast('Erro ao salvar: '+e.message) }
     finally{ ok.disabled=false }
   };
@@ -1831,10 +2059,12 @@ function importKml(xml, fname){
     if(ok.disabled) return; ok.disabled=true;
     try{
       const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
-      let n=0;
-      for(const k of sel){ if(await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')')) n++ }
+      let n=0; const inst=[];
+      for(const k of sel){ const b=await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')'); if(b){ n++; inst.push(b) } }
       dlg.close(); renderBases();
       toast(n||!sel.length ? n+' rodovia(s) instalada(s).' : NO_COORD_MSG, n?2600:5000);
+      for(const b of inst) await checkOverlaps(b);
+      if(inst.length) renderBases();
     }catch(e){ toast('Erro ao salvar: '+e.message) }
     finally{ ok.disabled=false }
   };
@@ -1875,7 +2105,7 @@ async function installFromSegs(key, segs, fonte){
   const b={id:key, br, uf, fonte, kmMin, kmMax, lat, lon, km};
   await dbPut(b);
   S.bases=S.bases.filter(x=>x.id!==key); S.bases.push(b);
-  return true;
+  return b;
 }
 
 /* ---- CSV: KM LAT LONG ---- */
@@ -1941,6 +2171,7 @@ function importCsv(text, fname){
       S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
       dlg.close(); renderBases();
       toast(b.id+' instalada ('+withKm.length.toLocaleString('pt-BR')+' pontos).');
+      await checkOverlaps(b); renderBases();
     }catch(e){ toast('Erro ao salvar: '+e.message) }
   };
 }
@@ -2092,7 +2323,7 @@ function paintGps(){
       herobr.textContent=`${S.fix.br}/${S.fix.uf}`;
       signBr.textContent=S.fix.br;
       signKm.textContent=String(Math.floor(S.fix.km)).padStart(3,'0');
-      hest.textContent=estacaDe(S.fix.km);
+      hest.textContent=estacaDe(S.fix.km, S.fix.id);
     } else {
       kb.textContent='—'; kb.className='herokm';
       herobr.textContent='—';
@@ -2150,7 +2381,7 @@ function buildInfo(){
   /* info.gps guarda a MESMA leitura usada na legenda — o EXIF lê daqui, e não do S.pos, que pode
      ter mudado durante o processamento da foto (toBlob é assíncrono; no carro isso dá metros) */
   if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc; info.gps=S.pos }
-  if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist; info.fonte=S.fix.fonte }
+  if(S.fix){ info.br=S.fix.br; info.uf=S.fix.uf; info.km=S.fix.km; info.dist=S.fix.dist; info.fonte=S.fix.fonte; info.baseId=S.fix.id }
   return info;
 }
 /* formato da legenda (padrão do exemplo do usuário):
@@ -2158,9 +2389,17 @@ function buildInfo(){
    [texto livre ou nome da OAE]
    -5.591172,-37.301907
    21/07/2026, 14:15                              */
-/* estaca rodoviária: 1 estaca = 20 m; ex.: km 12,345 -> "Est. 617+5,00" */
-function estacaDe(km){
-  const m = km*1000;
+/* estaca rodoviária: 1 estaca = 20 m. Automática: contada desde o km 0 (km 12,345 -> "Est. 617+5").
+   Com zeros definidos pelo usuário para a rodovia (getEstRefs), conta a partir do zero mais próximo
+   ATRÁS do KM atual; antes do primeiro zero devolve '' (lote não começou — não mostra estaca). */
+function estacaDe(km, baseId){
+  let m = km*1000;
+  const refs = baseId ? getEstRefs(baseId) : [];
+  if(refs.length){
+    let r=null; for(const x of refs) if(x.km<=km+1e-9 && (!r || x.km>r.km)) r=x;
+    if(!r) return '';
+    m = (r.e*20 + r.m) + (km - r.km)*1000;
+  }
   const est = Math.floor(m/20);
   let resto = Math.round(m - est*20);
   if(resto>=20) return `Est. ${est+1}+0`;
@@ -2181,7 +2420,8 @@ function legendLines(info){
     let l1=`${info.br}/${info.uf} - KM ${fkm(info.km)}`;
     const side=getSide();
     if(side) l1+='  '+side;
-    if(CFG.estaca) l1+=' · '+estacaDe(info.km);
+    const est=CFG.estaca ? estacaDe(info.km, info.baseId) : '';
+    if(est) l1+=' · '+est;
     if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
     L.push(l1);
   }
