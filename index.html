@@ -89,7 +89,7 @@ body{margin:0;height:100%;overflow:hidden;background-color:var(--bg);color:var(-
 body::before{content:'';position:fixed;inset:-15%;z-index:-1;pointer-events:none;
   background:radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,.04), transparent 70%)}
 #app{display:flex;flex-direction:column;height:100%}
-main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+main{flex:1;overflow-y:auto;padding-bottom:calc(96px + env(safe-area-inset-bottom))}
 /* transições suaves entre telas */
 .screen{display:none;animation:scrIn .18s ease-out}
 .screen.on{display:block}
@@ -244,7 +244,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 /* listas de serviços/contratos: a partir de ~3 itens, rola DENTRO do cartão (igual ao cartão "i"
    da câmera). O input "Adicionar" e a dica continuam fixos abaixo, fora da rolagem. */
-#svclist,#ctlist{max-height:168px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#svclist,#ctlist{max-height:168px;overflow-y:auto}
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
@@ -361,7 +361,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   #camwrap.on #cambar2 .cbside{flex-direction:column}
 }
 /* ---------- diálogo de serviço/contrato: listas roláveis em ordem alfabética ---------- */
-.pk-list{max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+.pk-list{max-height:150px;overflow-y:auto;
   border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:0 12px}
 .pk-list .ct-item{padding:12px 0}
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
@@ -372,7 +372,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #gallerywrap.on{display:flex;animation:scrIn .2s ease-out}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:calc(14px + env(safe-area-inset-left, 0px));z-index:2;
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
-  color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #gal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #gal-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
 #gal-img{max-width:100%;max-height:100%;object-fit:contain;will-change:transform;pointer-events:none}
@@ -518,17 +518,17 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <label class="f" style="margin-top:0">Baixar do SNV (DNIT)</label>
     <!-- Linha 1: UF + Rodovia -->
     <div style="display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:end">
-      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">UF</span>
+      <div><label for="dl-uf" style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">UF</label>
         <select id="dl-uf" style="width:100%"></select></div>
-      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Rodovia</span>
+      <div><label for="dl-br" style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Rodovia</label>
         <select id="dl-br" style="width:100%"></select></div>
     </div>
     <input type="text" id="dl-br-custom" inputmode="numeric" placeholder="Número da BR" style="margin-top:8px;display:none">
     <!-- Linha 2: SNV + Código -->
     <div style="display:grid;grid-template-columns:1fr 60px;gap:10px;align-items:end;margin-top:10px">
-      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Versão SNV</span>
+      <div><label for="dl-snv" style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Versão SNV</label>
         <select id="dl-snv" style="width:100%"><option value="">—</option></select></div>
-      <div><span style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Código</span>
+      <div><label for="dl-tipo" style="font-size:11px;color:var(--mut);display:block;margin-bottom:2px">Código</label>
         <select id="dl-tipo" style="width:100%">
           <option value="B">B</option>
           <option value="A">A</option>
@@ -622,14 +622,14 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="gridcards">
     <button class="gcard" data-goto="scr-settings">
       <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4z"/></svg></span>
-      <div class="gtitle">Configurações</div>
-      <div class="glink">Legenda, câmera e tema</div>
+      <span class="gtitle">Configurações</span>
+      <span class="glink">Legenda, câmera e tema</span>
       <svg class="garrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
     <button class="gcard" data-goto="scr-bases">
       <span class="gbadge"><svg class="gicon" viewBox="0 0 24 24"><path d="M7 21 10 3M17 21 14 3"/><path d="M12 7v2M12 12v2M12 17v2"/></svg></span>
-      <div class="gtitle">Gestão de Eixo</div>
-      <div class="glink">Baixar/gerenciar rodovias</div>
+      <span class="gtitle">Gestão de Eixo</span>
+      <span class="glink">Baixar/gerenciar rodovias</span>
       <svg class="garrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
   </div>
@@ -741,11 +741,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </label>
       <div class="listrow rangerow">
         <span class="ltext"><b>Opacidade</b><i><span id="lbl-logoop">100</span>%</i></span>
-        <input type="range" id="cfg-logoop" min="20" max="100" value="100">
+        <input type="range" id="cfg-logoop" min="20" max="100" value="100" aria-label="Opacidade da logo">
       </div>
       <div class="listrow rangerow">
         <span class="ltext"><b>Tamanho</b><i><span id="lbl-logosz">100</span>%</i></span>
-        <input type="range" id="cfg-logosz" min="50" max="180" value="100">
+        <input type="range" id="cfg-logosz" min="50" max="180" value="100" aria-label="Tamanho da logo">
       </div>
     </div>
   </div>
@@ -792,7 +792,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </label>
       <div class="listrow rangerow">
         <span class="ltext"><b>Opacidade</b><i><span id="lbl-legop">100</span>%</i></span>
-        <input type="range" id="cfg-legop" min="30" max="100" value="100">
+        <input type="range" id="cfg-legop" min="30" max="100" value="100" aria-label="Opacidade da legenda">
       </div>
     </div>
 
@@ -813,7 +813,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </label>
       <div class="listrow rangerow">
         <span class="ltext"><b>Transparência</b><i><span id="lbl-legbgop">50</span>%</i></span>
-        <input type="range" id="cfg-legbgop" min="10" max="90" value="50">
+        <input type="range" id="cfg-legbgop" min="10" max="90" value="50" aria-label="Transparência do fundo da legenda">
       </div>
     </div>
 
@@ -831,8 +831,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="ltext"><b>Nome da OAE</b><i>Ponte/viaduto quando estiver sobre um</i></span>
         <input type="checkbox" id="cfg-oae" checked>
       </label>
-      <label class="listrow">
-        <span class="ltext"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i></span>
+      <div class="listrow">
+        <label class="ltext" for="cfg-coord"><b>Formato das coordenadas</b><i>Latitude e longitude na legenda</i></label>
         <input type="checkbox" id="cfg-coord" checked>
         <select id="cfg-coordstyle" class="lsel">
           <option value="decimal" selected>-6,077710, -37,891500</option>
@@ -842,13 +842,13 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <option value="dms_label">Lat 6°04'39,8"S  Long 37°53'29,4"O</option>
           <option value="gmd">6°04,663'S 37°53,490'O</option>
         </select>
-      </label>
+      </div>
       <label class="listrow">
         <span class="ltext"><b>Precisão do GPS</b><i>Margem de erro (±m) na legenda</i></span>
         <input type="checkbox" id="cfg-acc" checked>
       </label>
-      <label class="listrow">
-        <span class="ltext"><b>Formato da data</b><i>Data/hora na legenda</i></span>
+      <div class="listrow">
+        <label class="ltext" for="cfg-date"><b>Formato da data</b><i>Data/hora na legenda</i></label>
         <input type="checkbox" id="cfg-date" checked>
         <select id="cfg-datestyle" class="lsel">
           <option value="curta">29/07/2026</option>
@@ -856,7 +856,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <option value="extensa">29 de julho de 2026</option>
           <option value="extensa_hora">29 de julho de 2026 às 14:35</option>
         </select>
-      </label>
+      </div>
     </div>
 
     <h2 class="sec">Descrição de serviços</h2>
@@ -904,7 +904,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <!-- barra superior fina: Voltar + Trocar câmera, ambos no canto superior esquerdo -->
   <div id="camtopbar">
     <button id="camback" class="topbtn" aria-label="Voltar ao início"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
-    <span id="camgpsdot" title="GPS"></span>
+    <span id="camgpsdot" title="GPS" role="status" aria-label="GPS: sem sinal"></span>
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <!-- banner de GPS desativado — aparece quando a câmera abre sem localização -->
@@ -950,8 +950,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </div>
 
 <!-- diálogo: serviço + contrato (botão "i") -->
-<dialog id="dlg-svc">
-  <h2 class="sec" style="margin-top:0">Serviço</h2>
+<dialog id="dlg-svc" aria-labelledby="dlg-svc-title">
+  <h2 class="sec" id="dlg-svc-title" style="margin-top:0">Serviço</h2>
   <div class="pk-list" id="svc-grid"></div>
   <div class="row" style="margin-top:12px">
     <input type="text" id="svc-new2" placeholder="Adicionar novo serviço" style="flex:1">
@@ -970,7 +970,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
 <!-- dica: aparece só quando detectamos que a página GIROU (prova de que o bloqueio de orientação
      do iPhone está DESLIGADO). Ensina a ativar o bloqueio para a câmera ficar sempre em pé. -->
-<dialog id="dlg-rotlock">
+<dialog id="dlg-rotlock" aria-labelledby="dlg-rotlock-title">
   <div class="rl-body">
     <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M8 22a14 14 0 0 1 23-10.4"/><path d="M31 6.5v5.5h-5.5"/>
@@ -978,7 +978,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <rect x="16.5" y="21" width="11" height="8.6" rx="1.7"/>
       <path d="M18.7 21v-2a3.3 3.3 0 0 1 6.6 0v2"/>
     </svg>
-    <h3>Bloqueio de Orientação</h3>
+    <h3 id="dlg-rotlock-title">Bloqueio de Orientação</h3>
     <p>Toque no 🔒 da Central de Controle para a tela ficar sempre em pé.</p>
   </div>
   <div class="rl-actions">
@@ -998,8 +998,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 
 
 <!-- diálogo de importação KMZ: escolher BRs -->
-<dialog id="dlg-kmz">
-  <h2 class="sec" style="margin-top:0">Rodovias encontradas no arquivo</h2>
+<dialog id="dlg-kmz" aria-labelledby="dlg-kmz-title">
+  <h2 class="sec" id="dlg-kmz-title" style="margin-top:0">Rodovias encontradas no arquivo</h2>
   <div class="kmzlist" id="kmz-list"></div>
   <div class="row">
     <button class="btn ghost" id="kmz-cancel">Cancelar</button>
@@ -1008,8 +1008,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </dialog>
 
 <!-- diálogo de importação CSV: identificar rodovia -->
-<dialog id="dlg-csv">
-  <h2 class="sec" style="margin-top:0">Identificar a rodovia do CSV</h2>
+<dialog id="dlg-csv" aria-labelledby="dlg-csv-title">
+  <h2 class="sec" id="dlg-csv-title" style="margin-top:0">Identificar a rodovia do CSV</h2>
   <label class="f" for="csv-br">BR (ex.: BR-226)</label>
   <input type="text" id="csv-br" placeholder="BR-226">
   <label class="f" for="csv-uf">UF</label>
@@ -1022,14 +1022,14 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </dialog>
 
 <!-- diálogo: GPS obrigatório — aparece quando permissão de localização é negada -->
-<dialog id="dlg-gps">
+<dialog id="dlg-gps" aria-labelledby="dlg-gps-title">
   <div class="rl-body">
     <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="22" cy="22" r="7"/><line x1="22" y1="2" x2="22" y2="11"/>
       <line x1="22" y1="33" x2="22" y2="42"/><line x1="2" y1="22" x2="11" y2="22"/>
       <line x1="33" y1="22" x2="42" y2="22"/>
     </svg>
-    <h3>Localização Obrigatória</h3>
+    <h3 id="dlg-gps-title">Localização Obrigatória</h3>
     <p id="gps-msg">O KM Check precisa do GPS para gravar as coordenadas em cada foto. Sem localização, não é possível tirar fotos.</p>
   </div>
   <div class="rl-actions">
@@ -1039,10 +1039,10 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </dialog>
 
 <!-- diálogo: recorte do fundo da logo -->
-<dialog id="dlg-logo">
-  <h2 class="sec" style="margin-top:0">Recorte do fundo da logo</h2>
+<dialog id="dlg-logo" aria-labelledby="dlg-logo-title">
+  <h2 class="sec" id="dlg-logo-title" style="margin-top:0">Recorte do fundo da logo</h2>
   <div class="checker"><canvas id="logo-cv"></canvas></div>
-  <div class="switch" style="border-bottom:none;padding:4px 0"><span>Vazar áreas internas do fundo</span><input type="checkbox" id="logo-holes" checked></div>
+  <div class="switch" style="border-bottom:none;padding:4px 0"><label for="logo-holes">Vazar áreas internas do fundo</label><input type="checkbox" id="logo-holes" checked></div>
   <label class="f" for="logo-tol">Tolerância do recorte</label>
   <input type="range" id="logo-tol" min="5" max="80" value="32">
   <p class="hint">O fundo detectado vira transparência. "Vazar áreas internas" remove o fundo também dentro de círculos e letras (desligue se a logo tiver detalhes da mesma cor do fundo). Se sumir parte da logo, diminua a tolerância; se sobrar resíduo, aumente.</p>
@@ -1967,9 +1967,9 @@ function paintCamGps(){
   const dot=document.getElementById('camgpsdot'); if(!dot) return;
   dot.classList.remove('fix','weak');
   if(S.pos && isFinite(S.pos.lat)){
-    if(S.pos.acc!=null && S.pos.acc<50) dot.classList.add('fix');
-    else dot.classList.add('weak');
-  }
+    if(S.pos.acc!=null && S.pos.acc<50){ dot.classList.add('fix'); dot.setAttribute('aria-label','GPS: sinal forte') }
+    else{ dot.classList.add('weak'); dot.setAttribute('aria-label','GPS: sinal fraco') }
+  } else { dot.setAttribute('aria-label','GPS: sem sinal') }
 }
 function paintGps(){
   paintCamGps();
