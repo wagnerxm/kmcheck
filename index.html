@@ -3303,54 +3303,57 @@ function saveAndShare(blob){
   const hhmmss=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+String(t.getSeconds()).padStart(2,'0');
   const name=`${base}_${hhmmss}.jpg`;
   const file=new File([blob], name, {type:'image/jpeg'});
-  /* 1) salva na galeria interna do app (IndexedDB) — silencioso */
-  savePhotoToGallery(blob, name).catch(e=>console.error('[KMCheck] IndexedDB falhou:', e));
-  /* 2) salva no dispositivo */
+  /* 1) salva na galeria interna do app (IndexedDB) — sempre, independente de CFG.autosave */
+  savePhotoToGallery(blob, name).catch(e=>{
+    console.error('[KMCheck] IndexedDB falhou:', e);
+    toast('⚠ Erro ao salvar foto internamente');
+  });
+  /* 2) salva no dispositivo (apenas quando "Envio automático" está ligado) */
+  if(!CFG.autosave){ toast('📷 Foto registrada'); return }
   if(_isIOS){
-    /* iOS (Safari browser e PWA standalone):
-       1. navigator.share com files — mostra o share sheet do iOS onde o usuário
-          pode salvar nas Fotos, copiar, enviar etc. É o único caminho que funciona
-          de forma confiável no Safari, tanto browser quanto standalone.
-       2. Fallback <a download> — funciona no Safari browser (não standalone).
-       Não há como salvar automaticamente nas Fotos do iOS via web, mas o share
-       sheet com imagem já traz "Salvar Imagem" como opção proeminente. */
+    /* iOS: share sheet é o ÚNICO caminho para salvar na galeria de Fotos via web.
+       <a download> não funciona em PWA standalone do Safari. */
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
-        if(e.name!=='AbortError'){
+        if(e.name==='AbortError'){
+          /* usuário cancelou o share sheet — foto está só na galeria do app */
+          toast('📷 Foto na galeria do app');
+        } else {
           console.error('[KMCheck] share iOS falhou:', e);
           _downloadDirect(blob, name);
+          toast('📸 Foto salva');
         }
-        toast('📸 Foto salva');
       });
     } else {
       _downloadDirect(blob, name);
       toast('📸 Foto salva');
     }
   } else if(_isAndroid){
-    /* Android: estratégia por modo.
-       • PWA standalone: <a download> com blob: é ignorado pelo Chrome 120+.
-         Usamos SW download com <a download> + iframe em paralelo (v217).
-         Se SW indisponível, dispara download direto + share como seguro.
-       • Chrome browser: <a download> com blob funciona normalmente. */
     if(_isPWAStandalone){
-      _downloadViaSW(blob, name).then(ok=>{
-        if(!ok){
-          /* SW indisponível: tenta tudo que puder */
-          _downloadDirect(blob, name);
-          try{
-            if(navigator.canShare && navigator.canShare({files:[file]})){
-              navigator.share({files:[file]}).catch(()=>{});
-            }
-          }catch(e){}
-        }
-      });
+      /* Android PWA standalone: <a download> com blob: é ignorado pelo Chrome 120+.
+         Precisa do SW para download silencioso. Se o SW não está ativo, usa
+         navigator.share DENTRO do gesto do usuário (fallback síncrono). */
+      const hasSW=navigator.serviceWorker && navigator.serviceWorker.controller;
+      if(hasSW){
+        _downloadViaSW(blob, name).then(ok=>{
+          if(!ok) toast('⚠ Falha ao baixar — foto na galeria do app');
+        });
+        toast('📸 Foto salva');
+      } else if(navigator.canShare && navigator.canShare({files:[file]})){
+        /* sem SW: share sheet como fallback (ainda dentro do gesto do obturador) */
+        navigator.share({files:[file]}).then(()=>toast('📸 Foto salva')).catch(e=>{
+          if(e.name==='AbortError') toast('📷 Foto na galeria do app');
+          else { _downloadDirect(blob, name); toast('📸 Foto salva') }
+        });
+      } else {
+        _downloadDirect(blob, name);
+        toast('📸 Foto salva');
+      }
     } else {
-      /* Chrome browser: <a download> com blob funciona */
       _downloadDirect(blob, name);
+      toast('📸 Foto salva');
     }
-    toast('📸 Foto salva');
   } else {
-    /* Desktop / outros */
     _downloadDirect(blob, name);
     toast('📸 Foto salva');
   }
