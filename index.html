@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Check">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
 (function(){
   var light=localStorage.getItem('kc-theme')!=='dark';
@@ -1849,11 +1849,12 @@ function startGps(){
   }, err=>{
     if(err.code===1){
       /* PERMISSION_DENIED — o watch não vai entregar mais nada.
-         Limpa o ID para permitir nova tentativa após o usuário ativar nas configurações. */
+         Limpa o ID para permitir nova tentativa após o usuário ativar nas configurações.
+         NÃO mostra diálogo aqui — deixa pra mostrar quando o usuário abrir a câmera
+         ou tentar tirar foto, pra não travar a tela inicial com modal. */
       navigator.geolocation.clearWatch(S.watchId);
       S.watchId=null;
       S.gpsDenied=true;
-      showGpsDeniedDialog();
     }
     /* POSITION_UNAVAILABLE (2) e TIMEOUT (3): watchPosition continua tentando sozinho */
     const gl=document.getElementById('gpsline'); if(gl) gl.textContent='GPS indisponível: '+err.message;
@@ -2565,6 +2566,9 @@ async function openCam(){
      Se a permissão foi negada antes, tenta novamente (o usuário pode ter ativado nos ajustes). */
   if(S.gpsDenied){ S.gpsDenied=false; }
   startGps();
+  /* Se GPS estiver negado, mostra o diálogo de instruções após 600ms (tempo para o
+     error callback do watchPosition disparar). Só na câmera — não no boot. */
+  setTimeout(()=>{ if(S.gpsDenied && !S.pos) showGpsDeniedDialog() }, 600);
 
   /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
   document.querySelector('nav').style.display='none';
@@ -3788,20 +3792,24 @@ function showInstallPrompt(){
           }
         }catch(e){}
         /* Micro-benchmark de CPU — fingerprint do chip Apple/Qualcomm.
-           300K iterações de sin/cos/sqrt, roda 3x e pega a mediana.
-           Cada geração de chip Apple (A14→A18) tem performance mensurável
-           diferente, permitindo identificar o chip mesmo sem acesso ao
-           nome do GPU (Safari esconde desde iOS 16).
+           Roda num Web Worker via Blob URL para NÃO travar a UI.
+           300K iterações de sin/cos/sqrt, warmup + 3 runs (mediana).
            Tempo esperado: A14 ~150-200ms, A15 ~110-150ms, A16 ~80-110ms,
-           A17 ~60-80ms, A18 ~40-60ms (valores aproximados, serão calibrados). */
+           A17 ~60-80ms, A18 ~40-60ms (valores aproximados). */
         let benchMs=null;
         try{
-          const _b=()=>{const t=performance.now();let v=1.0;
-            for(let i=0;i<300000;i++)v=Math.sin(v*1.1)*Math.cos(v*0.9)+Math.sqrt(Math.abs(v));
-            return performance.now()-t};
-          _b(); /* warmup — descarta a 1ª rodada (JIT ainda frio) */
-          const rs=[_b(),_b(),_b(),_b(),_b()].sort((a,b)=>a-b);
-          benchMs=Math.round(rs[2]*10)/10; /* mediana de 5 runs (mais estável) */
+          benchMs=await new Promise((ok,fail)=>{
+            const w=new Worker(URL.createObjectURL(new Blob([
+              'const _b=()=>{let v=1.0;const t=performance.now();'+
+              'for(let i=0;i<300000;i++)v=Math.sin(v*1.1)*Math.cos(v*0.9)+Math.sqrt(Math.abs(v));'+
+              'return performance.now()-t};'+
+              '_b();const rs=[_b(),_b(),_b()].sort((a,b)=>a-b);'+
+              'postMessage(Math.round(rs[1]*10)/10)'
+            ],{type:'text/javascript'})));
+            const tm=setTimeout(()=>{w.terminate();ok(null)},5000);
+            w.onmessage=e=>{clearTimeout(tm);w.terminate();ok(e.data)};
+            w.onerror=()=>{clearTimeout(tm);w.terminate();ok(null)};
+          });
         }catch(e){}
         /* Extensões WebGL — cada geração de GPU suporta lista diferente */
         let glExtCount=0;
