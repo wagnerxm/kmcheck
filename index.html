@@ -56,7 +56,7 @@
 :root[data-theme="light"] dialog,
 :root[data-theme="light"] nav{
   --panel:#101010; --panel2:#141414; --text:#ffffff; --mut:#d8d8d8; --line:rgba(255,255,255,.14);
-  --gold:#b7d92d; --gold2:#c9e463; --ok:#b7d92d;
+  --gold:#b7d92d; --gold2:#c9e463; --ok:#b7d92d; --warn:#d9a22b; --err:#e05c5c;   /* tons do tema escuro: legíveis no cartão preto */
   --btnbg:#141414; --btntext:#ffffff; --btnborder:rgba(255,255,255,.14);
   --glassbg:#121212; --glassbg2:#151515; --glassborder:rgba(255,255,255,.18);
   --glassrimtop:rgba(255,255,255,.16); --glassrimbot:rgba(255,255,255,.05);
@@ -150,6 +150,9 @@ h2.sec::after{content:none}
     var(--glassbg);
   backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
   border:1px solid var(--glassborder);
+  /* color explícito: no tema claro o cartão é PRETO e redefine --text para branco, mas o texto sem cor
+     própria herdava a cor JÁ CALCULADA do body (escura) — a tabela da Consulta ficava ilegível */
+  color:var(--text);
   border-radius:32px;padding:22px;margin-bottom:16px;
   box-shadow:inset 0 1px 0 var(--glassrimtop), 0 20px 45px rgba(0,0,0,.30), 0 8px 18px rgba(0,0,0,.18);
   transition:transform .16s ease, box-shadow .16s ease}
@@ -409,7 +412,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* ---------- tabelas / consulta ---------- */
 table.res{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:10px}
 table.res th{position:sticky;top:0;background:var(--panel2);color:var(--gold);text-align:left;padding:8px;font-size:9px;letter-spacing:.12em;text-transform:uppercase}
-table.res td{padding:8px;border-bottom:1px solid var(--line)}
+table.res td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .scrollbox{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:14px}
 .okc{color:var(--ok)}.warnc{color:var(--warn)}.errc{color:var(--err)}
 /* ---------- ajustes / diálogos ---------- */
