@@ -323,9 +323,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
    375–390pt (iPhone mini, 12 a 16) a barra pedia ~412pt: o lado esquerdo empurrava o obturador
    ~11pt para a direita e o botão da galeria saía cortado da tela. Agora as colunas laterais são
    iguais por construção (minmax(0,1fr)) — obturador no centro exato — e o tamanho dos botões
-   acompanha a largura: --cbs = (largura − margens 20 − vãos 16+20 − obturador 84) ÷ 6, entre 34 e 44px. */
+   acompanha a largura: --cbs = (largura − margens 20 − vãos 16+20 − obturador) ÷ 6, entre 26 e 44px.
+   Em telas bem estreitas (<320: iPhone SE 1ª, Android com "tamanho da exibição" grande, tela
+   externa de dobráveis) o obturador --sh também encolhe (84 → 64px) para tudo caber até ~280pt. */
 #cambar2{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;
-  --cbs:clamp(34px, calc((100vw - 140px) / 6), 44px);
+  --sh:clamp(64px, calc(100vw - 236px), 84px);
+  --cbs:clamp(26px, calc((100vw - 56px - var(--sh)) / 6), 44px);
   gap:8px;padding:12px 10px calc(12px + env(safe-area-inset-bottom));
   background:#141414;
   border-top:1px solid rgba(255,255,255,.10);
@@ -343,12 +346,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
 .cbmini{width:var(--cbs,44px);height:var(--cbs,44px);font-size:11px}
 .cbmini svg{width:17px;height:17px}
-#shutter{width:84px;height:84px;flex:0 0 84px;border-radius:50%;
+#shutter{width:var(--sh,84px);height:var(--sh,84px);flex:0 0 var(--sh,84px);border-radius:50%;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 35%), rgba(20,20,20,.92);
   border:1px solid rgba(255,255,255,.22);cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 22px rgba(0,0,0,.4);
   display:flex;align-items:center;justify-content:center;transition:transform .16s ease}
-#shutter::before{content:'';width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
+#shutter::before{content:'';width:calc(var(--sh,84px) * .76);height:calc(var(--sh,84px) * .76);border-radius:50%;background:radial-gradient(circle at 35% 30%, #fff, #d8d8d8 60%, #b5b5b5)}
 #shutter:active{transform:scale(1.04)}
 /* ===== PAISAGEM (bloqueio de orientação do iPhone DESLIGADO): quando a página gira para
    paisagem, os controles vão para a LATERAL DIREITA como na câmera nativa do iPhone — barra
@@ -362,7 +365,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
   /* deitado a barra é vertical: a mesma conta vale para a ALTURA (obturador no meio exato) */
   #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);
-    --cbs:clamp(34px, calc((100vh - 148px) / 6), 44px);
+    --sh:clamp(64px, calc(100vh - 244px), 84px);
+    --cbs:clamp(26px, calc((100vh - 64px - var(--sh)) / 6), 44px);
     width:auto;height:100%;padding:14px calc(14px + env(safe-area-inset-right)) 14px 14px;
     border-top:none;border-left:1px solid rgba(255,255,255,.10);
     box-shadow:-8px 0 24px rgba(0,0,0,.3)}
