@@ -270,11 +270,19 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #camratio{flex:0 0 auto;display:flex;justify-content:center;align-items:center;gap:4px;
   padding:9px 0 5px;background:rgba(16,16,16,.86);position:relative;z-index:3}
 .ratiobtn{background:transparent;border:none;color:rgba(255,255,255,.55);font-family:var(--sans);
-  font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:7px 16px;border-radius:999px;cursor:pointer;
+  font-size:12.5px;font-weight:700;letter-spacing:.04em;padding:7px clamp(10px, 4vw, 16px);border-radius:999px;cursor:pointer;
   transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .ratiobtn:active{transform:scale(.92)}
 .ratiobtn.on{color:#0d0f08;background:var(--gold)}
 #camfmts{display:flex;gap:4px}
+/* botão LOGO: liga/desliga a logo na prévia E na foto (escolha salva). Fica na linha do formato,
+   encostado na borda direita e FORA do fluxo — o 1:1/4:3/16:9 continua no centro exato.
+   top:4px compensa o padding assimétrico (9/5) da linha, alinhando com os botões de formato.
+   Apagado = contorno; aceso = cor de destaque; tracejado = ainda não há logo cadastrada. */
+#cam-logo{position:absolute;right:calc(8px + env(safe-area-inset-right, 0px));top:4px;bottom:0;margin:auto 0;
+  height:30px;padding:0 clamp(7px, calc(3.4vw - 1px), 11px);font-size:11.5px;border:1px solid rgba(255,255,255,.28)}
+#cam-logo.on{border-color:transparent}
+#cam-logo.none{border-style:dashed}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
@@ -363,6 +371,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   #camwrap.on #camtopbar{flex-direction:column;height:auto;width:56px;justify-content:flex-start;
     gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 0 8px calc(env(safe-area-inset-left, 0px) + 0px)}
   #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
+  /* deitado a linha do formato vira coluna: o LOGO vai para a ponta de baixo dela */
+  #camwrap.on #cam-logo{top:auto;bottom:calc(12px + env(safe-area-inset-bottom, 0px));left:0;right:0;margin:0 auto;width:max-content}
   /* deitado a barra é vertical: a mesma conta vale para a ALTURA (obturador no meio exato) */
   #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);
     --sh:clamp(64px, calc(100vh - 244px), 84px);
@@ -946,6 +956,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="ratiobtn" data-fmt="3:4">4:3</button>
       <button class="ratiobtn" data-fmt="9:16">16:9</button>
     </div>
+    <button class="ratiobtn" id="cam-logo" aria-pressed="false">LOGO</button>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -1139,6 +1150,7 @@ const CFG = {
   get logopos(){ return localStorage.getItem('kc-logopos') || 'tl' },
   get logoop(){ return (+localStorage.getItem('kc-logoop') || 100)/100 },
   get logosz(){ return (+localStorage.getItem('kc-logosz') || 100)/100 },
+  get logoon(){ return ls('logoon', true) },   // botão LOGO da câmera — liga/desliga a logo na foto
   get legpos(){ return localStorage.getItem('kc-legpos') || 'bl' },
   get legcolor(){ return localStorage.getItem('kc-legcolor') || '#ffffff' },
   get legop(){ return (+localStorage.getItem('kc-legop') || 100)/100 },
@@ -2234,7 +2246,33 @@ function loadLogo(){
     cl.style.display='none'; th.style.display='none'; del.style.display='none';
     add.textContent='Escolher logo';
   }
+  paintLogoToggle();
 }
+/* ---- botão LOGO da câmera ----
+   Aceso: logo na prévia e na foto. Apagado: some das duas. A escolha fica salva (kc-logoon).
+   Sem logo cadastrada: leva direto à aba Logo das Configurações; o Voltar de lá retorna à câmera
+   (settingsFromCam) e, ao salvar a logo, o botão já volta aceso. */
+function paintLogoToggle(){
+  const has=!!localStorage.getItem('kc-logo'), on=has && CFG.logoon;
+  const b=document.getElementById('cam-logo');
+  b.classList.toggle('on', on); b.classList.toggle('none', !has);
+  b.setAttribute('aria-pressed', on?'true':'false');
+  b.setAttribute('aria-label', has ? (on?'Logo na foto: ligada':'Logo na foto: desligada') : 'Adicionar a logo da empresa');
+  document.getElementById('camlogo').style.display = on ? 'block' : 'none';
+}
+document.getElementById('cam-logo').onclick=()=>{
+  if(!localStorage.getItem('kc-logo')){
+    closeCam(); goToScreen('scr-settings');
+    document.querySelector('.settab[data-tab="tab-logo"]').click();
+    settingsFromCam=true;   // depois do goToScreen, que zera a flag
+    toast('Escolha a logo da empresa — depois toque em Voltar para retornar à câmera.', 3600);
+    return;
+  }
+  localStorage.setItem('kc-logoon', CFG.logoon?'0':'1');
+  paintLogoToggle();
+  layoutCamLogo();   // com a logo visível de novo, recalcula a posição (offsetWidth era 0 escondida)
+  toast(CFG.logoon?'Logo ativada na foto':'Logo desativada na foto', 1400);
+};
 document.getElementById('logo-add').onclick=()=>document.getElementById('logoin').click();
 document.getElementById('logo-del').onclick=()=>{ localStorage.removeItem('kc-logo'); loadLogo(); toast('Logo removida.') };
 /* remoção de fundo v2: vazado opcional, borda suave (feather) e remoção de halo */
@@ -2356,6 +2394,7 @@ function saveLogoFromCanvas(cv){
       c2.width=0; c2.height=0;
     }catch(e2){ toast('Erro ao salvar logo — libere espaço.'); return }
   }
+  localStorage.setItem('kc-logoon','1');   // acabou de escolher a logo: o botão LOGO da câmera volta aceso
   loadLogo(); toast('Logo salva — sairá nas fotos.');
 }
 /* libera a imagem de trabalho (~4 MB) e o canvas de prévia (~4 MB) depois de escolher a logo */
@@ -2651,7 +2690,7 @@ function refreshLive(){
 if(localStorage.getItem('kc-format')==='16:9') localStorage.setItem('kc-format','9:16');
 function paintRatioSel(){
   const f=CFG.format;
-  document.querySelectorAll('#camratio .ratiobtn').forEach(b=>b.classList.toggle('on', b.dataset.fmt===f));
+  document.querySelectorAll('#camfmts .ratiobtn').forEach(b=>b.classList.toggle('on', b.dataset.fmt===f));
 }
 function setFormat(fmt){
   localStorage.setItem('kc-format', fmt);
@@ -2660,7 +2699,7 @@ function setFormat(fmt){
   if(sel && sel.value!==fmt){ sel.value=fmt; const t=document.getElementById('lbl-format'); if(t && sel.selectedIndex>=0) t.textContent=sel.options[sel.selectedIndex].textContent; }
   refreshLive();   // recorta a área útil na hora; a legenda e a foto seguem o mesmo formato
 }
-document.querySelectorAll('#camratio .ratiobtn').forEach(b=>b.onclick=()=>setFormat(b.dataset.fmt));
+document.querySelectorAll('#camfmts .ratiobtn').forEach(b=>b.onclick=()=>setFormat(b.dataset.fmt));
 paintRatioSel();
 let camTick=null;
 function camConstraints(){
@@ -3427,7 +3466,7 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   }
   ctx.globalAlpha=1;
   // logo da empresa
-  if(S.logoImg && S.logoImg.complete && S.logoImg.naturalWidth){
+  if(CFG.logoon && S.logoImg && S.logoImg.complete && S.logoImg.naturalWidth){
     const maxH=118*u*CFG.logosz, maxW=440*u*CFG.logosz;
     const s=Math.min(maxH/S.logoImg.naturalHeight, maxW/S.logoImg.naturalWidth);
     const lw=S.logoImg.naturalWidth*s, lhh=S.logoImg.naturalHeight*s;
