@@ -3995,11 +3995,6 @@ function showInstallPrompt(){
             if(chip==='A19') model='iPhone 17 Pro';
             else model='iPhone 16 Pro'; /* A18 ou sem bench → 16 Pro (mais antigo) */
           }
-          /* 428x926@3 — 13ProMax(A15,120Hz) / 14Plus(A15,60Hz) */
-          else if(k==='428x926@3'){
-            if(pro120) model='iPhone 13 Pro Max';
-            else model='iPhone 14 Plus';
-          }
           /* 430x932@3 — 14ProMax(A16,120Hz)/15ProMax(A17,120Hz)/15Plus(A16)/16Plus(A18)/17Air(A19) */
           else if(k==='430x932@3'){
             if(pro120&&chip==='A16') model='iPhone 14 Pro Max';
