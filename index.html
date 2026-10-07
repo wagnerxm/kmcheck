@@ -4993,22 +4993,33 @@ function _ensureSWController(){
     navigator.serviceWorker.addEventListener('controllerchange', h, {once:true});
   });
 }
-/* ── Download via SW: coloca blob no cache, dispara <a download> + iframe ──
-   O <a download> funciona em Chrome browser normal.
-   O iframe funciona em PWA standalone (Chrome Android 120+), onde <a download>
-   com blob: é ignorado silenciosamente.
-   Dispara AMBOS em paralelo — o SW mantém o blob em cache por 30s, então
-   ambos conseguem ler do mesmo cache sem race condition.
-   Pelo menos um dos dois métodos funciona em cada Chrome/Android. */
+/* ── Download via SW (Android com o app instalado) ──
+   O blob vai para o cache 'kmcheck-dl' e o SW o serve em /__dl/nome.jpg com Content-Disposition:
+   attachment — o Chrome baixa sem sair do app.
+   UM método por vez: antes os dois (iframe + <a download>) disparavam juntos e, nos Chromes em que os
+   dois funcionam, a foto era baixada DUAS vezes e o Chrome perguntava "Baixar o arquivo novamente?".
+   Agora: 1º o iframe (o caminho que funciona no app instalado); o SW avisa a página quando entregou
+   o arquivo ('kc-dl-served'). Só se ele NÃO for entregue em 4 s tenta o <a download>; se nem esse
+   for entregue, devolve false e quem chamou mostra o aviso ⚠ (a foto continua na galeria do app). */
+function _waitDlServed(path, ms){
+  return new Promise(res=>{
+    const sw=navigator.serviceWorker;
+    const done=v=>{ clearTimeout(t); sw.removeEventListener('message',h); res(v) };
+    const h=ev=>{ if(ev.data && ev.data.type==='kc-dl-served' && ev.data.path===path) done(true) };
+    const t=setTimeout(()=>done(false), ms);
+    sw.addEventListener('message',h);
+    if(sw.startMessages) sw.startMessages();   // sem isso as mensagens do SW ficam presas na fila
+  });
+}
 async function _downloadViaSW(blob, name){
   try{
     const hasCtrl=await _ensureSWController();
     if(!hasCtrl) return false;
     const safeName=name.replace(/\s+/g,'_');
-    const dlUrl=new URL('__dl/'+encodeURIComponent(safeName), location.href).href;
+    const dlUrl=new URL('__dl/'+encodeURIComponent(safeName), location.href).href, path=new URL(dlUrl).pathname;
     const cache=await caches.open('kmcheck-dl');
     /* Limpa só downloads com mais de 1 min (que o SW não chegou a servir). Apagar TODOS aqui fazia a
-       foto anterior, numa sequência rápida de disparos, sumir antes de o iframe baixá-la. */
+       foto anterior, numa sequência rápida de disparos, sumir antes de ser baixada. */
     try{
       const old=await cache.keys();
       await Promise.all(old.map(async k=>{ const r=await cache.match(k);
@@ -5018,22 +5029,20 @@ async function _downloadViaSW(blob, name){
       headers:{'Content-Type':'image/jpeg','X-KC-Ts':String(Date.now()),
         'Content-Disposition':'attachment; filename="'+safeName+'"; filename*=UTF-8\'\''+encodeURIComponent(safeName)}
     }));
-    /* Método 1: <a download> — funciona em Chrome browser */
-    const a=document.createElement('a');
-    a.href=dlUrl; a.download=safeName; a.style.display='none';
-    document.body.appendChild(a); a.click();
-    /* Método 2: iframe — funciona em PWA standalone.
-       Content-Disposition: attachment na resposta do SW faz o Chrome baixar
-       automaticamente, sem navegar para fora do app. */
+    const tmp=[]; const cleanup=()=>setTimeout(()=>tmp.forEach(el=>{ try{ el.remove() }catch(e){} }), 5000);
+    /* 1º método: iframe oculto */
+    let served=_waitDlServed(path, 4000);
     const iframe=document.createElement('iframe');
     iframe.style.cssText='width:0;height:0;border:none;position:absolute;left:-9999px';
-    document.body.appendChild(iframe);
+    document.body.appendChild(iframe); tmp.push(iframe);
     iframe.src=dlUrl;
-    setTimeout(()=>{
-      try{ document.body.removeChild(a) }catch(e){}
-      try{ document.body.removeChild(iframe) }catch(e){}
-    }, 5000);
-    return true;
+    if(await served){ cleanup(); return true }
+    /* 2º método (só se o 1º não foi entregue): <a download> */
+    served=_waitDlServed(path, 3000);
+    const a=document.createElement('a');
+    a.href=dlUrl; a.download=safeName; a.style.display='none';
+    document.body.appendChild(a); tmp.push(a); a.click();
+    const ok=await served; cleanup(); return ok;
   }catch(e){
     console.error('[KMCheck] download via SW falhou:', e);
     return false;
@@ -5089,7 +5098,7 @@ function saveAndShare(blob){
       const hasSW=navigator.serviceWorker && navigator.serviceWorker.controller;
       if(hasSW){
         _downloadViaSW(blob, name).then(ok=>{
-          if(ok) saida(); else toast('⚠ Falha ao baixar — foto na galeria do app');
+          if(ok) saida(); else toast('⚠ A foto não foi salva no celular — use "Salvar" na galeria do app', 4200);
         });
       } else if(navigator.canShare && navigator.canShare({files:[file]})){
         /* sem SW: share sheet como fallback (ainda dentro do gesto do obturador) */

@@ -1,4 +1,4 @@
-const CACHE = 'kmcheck-v281';
+const CACHE = 'kmcheck-v282';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -45,6 +45,10 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       caches.match(e.request).then(r => {
         if (r) {
+          /* avisa a página que o arquivo foi entregue: ela só tenta o 2º método de download se o 1º
+             não chegar aqui (antes os dois disparavam juntos e a foto baixava em dobro) */
+          self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(cs => cs.forEach(c => c.postMessage({ type: 'kc-dl-served', path: url.pathname }))).catch(() => {});
           /* Apaga do cache após 30s — dá tempo para ambos os métodos de download
              (<a download> + iframe) lerem o blob do mesmo cache sem race condition.
              Na v216 era deleção imediata, o que impedia o 2º método de funcionar. */
