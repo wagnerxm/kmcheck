@@ -532,81 +532,89 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 [data-android] #gal-dock{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(24,26,28,.94)}
 /* deitado: pouca altura — a barra passa a flutuar sobre a foto e o nome some */
 @media (orientation:landscape){ #gallerywrap{--galpad:8px} #gal-caption{display:none} }
-/* ---------- modo carro: tela de painel (fundo claro com estrada esmaecida + cartões pretos) ----------
+/* ---------- modo carro: tela de painel (fundo claro com estrada esmaecida + cartões grafite) ----------
    Visual fixo (não segue o tema): é o layout aprovado pelo usuário. Medidas em --u (1% da largura,
-   limitado pela altura) para caber igual em qualquer celular sem rolar. */
+   limitado pela altura) para caber igual em qualquer celular sem rolar. --m encolhe só o conteúdo do
+   cartão do KM quando a tela é baixa demais (ajustado por carFitMain). */
 #carwrap{position:fixed;top:0;left:0;right:0;bottom:calc(-1 * env(safe-area-inset-bottom, 0px));z-index:53;display:none;
-  background:#f4f5f6;color:#fff;font-family:var(--sans);overflow:hidden;--u:min(1vw,.47vh);--lime:#c4e24a}
+  background:#f4f5f6;color:#fff;font-family:var(--sans);overflow:hidden;--u:min(1vw,.47vh);--m:1;--lime:#c4e24a}
 #carwrap.on{display:block;animation:scrIn .2s ease-out}
 #car-road{position:absolute;inset:0;width:100%;height:100%;display:block}
 #car-wash{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(246,247,248,.96) 0%,rgba(246,247,248,.86) 30%,rgba(246,247,248,.66) 46%,rgba(246,247,248,.76) 75%,rgba(246,247,248,.8) 100%)}
 #car-topo{position:absolute;left:0;top:0;width:75%;height:22%;pointer-events:none}
 #car-x{position:absolute;z-index:3;top:calc(14px + env(safe-area-inset-top, 0px));right:calc(16px + env(safe-area-inset-right, 0px));
-  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;
-  background:radial-gradient(circle at 50% 30%,#2a2c2f,#101112);border:1.5px solid #45484c;box-shadow:0 10px 22px -8px rgba(0,0,0,.6)}
+  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;border:none;
+  background:radial-gradient(circle at 50% 28%,#2e3034,#0e0f10 72%);
+  box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.16),0 10px 22px -8px rgba(0,0,0,.6)}
 #car-x svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 #car-x:active{transform:scale(.94)}
-#car-body{position:absolute;left:0;right:0;top:calc(72px + env(safe-area-inset-top, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:2;display:flex;flex-direction:column;align-items:center}
-/* camada própria (translateZ): as ondas com desfoque são rasterizadas uma vez e não são redesenhadas
-   a cada quadro da estrada animada que passa por trás — importante no Android */
-.cdk{position:relative;overflow:hidden;box-sizing:border-box;transform:translateZ(0);background:linear-gradient(180deg,#232528 0%,#151618 48%,#0f1011 100%);
-  border:1px solid rgba(255,255,255,.17);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 24px 40px -14px rgba(20,24,30,.45),0 6px 14px rgba(20,24,30,.15)}
+#car-body{position:absolute;left:0;right:0;top:calc(72px + env(safe-area-inset-top, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index:2;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*3)}
+/* material grafite: luz no canto de cima, sombra no canto de baixo, degradê grafite→preto e borda com brilho
+   no topo (borda em degradê pelo truque padding-box/border-box). translateZ: camada própria — as dobras com
+   desfoque e o granulado são rasterizados uma vez e não redesenhados a cada quadro da estrada (Android). */
+.cdk{position:relative;overflow:hidden;box-sizing:border-box;transform:translateZ(0);border:1px solid transparent;
+  background:
+    radial-gradient(120% 60% at 12% -8%,rgba(255,255,255,.10),rgba(255,255,255,0) 55%) padding-box,
+    radial-gradient(90% 70% at 105% 110%,rgba(0,0,0,.55),rgba(0,0,0,0) 60%) padding-box,
+    linear-gradient(168deg,#2a2c30 0%,#1d1f22 30%,#141517 62%,#0b0c0d 100%) padding-box,
+    linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06) 30%,rgba(255,255,255,.03) 70%,rgba(255,255,255,.10)) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 1px 1px rgba(0,0,0,.10),0 10px 18px -6px rgba(15,20,30,.22),0 34px 54px -22px rgba(15,20,30,.55)}
 .cdk .cwv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.cdk>*:not(.cwv):not(.cwm):not(.cwt){position:relative}
-/* ondas do cartão do KM presas à ÁREA DO CONTEÚDO (do topo da placa ao texto de baixo, mais o respiro):
-   o cartão estica com a tela, mas a linha verde continua passando atrás da placa como na referência */
-#car-main .cwm{position:absolute;grid-column:1/-1;grid-row:plate-start/next-end;pointer-events:none;
-  left:calc(var(--u)*-5);top:calc(var(--u)*-6);width:calc(100% + var(--u)*10);height:calc(100% + var(--u)*12)}
-#car-main .cwt{position:absolute;right:0;bottom:0;width:48%;height:auto;aspect-ratio:360/80;pointer-events:none}
+.cdk>*:not(.cwv){position:relative}
 /* cartão do KM cresce até ocupar toda a altura que sobra acima dos cartões menores (pedido do usuário: quanto maior, melhor) */
-#car-main{width:90%;flex:1 1 auto;min-height:0;border-radius:calc(var(--u)*8);padding:calc(var(--u)*6) calc(var(--u)*5);
+#car-main{width:90%;flex:1 1 auto;min-height:0;border-radius:calc(var(--u)*8);padding:calc(var(--u)*5) calc(var(--u)*5);
   display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;align-content:center;grid-template-areas:"plate" "br" "km" "lbl" "track" "next"}
-#car-plate{grid-area:plate;width:calc(var(--u)*36);height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.55))}
-#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*8);margin-top:calc(var(--u)*4);white-space:nowrap}
-#car-km{grid-area:km;color:#fff;font-weight:800;font-size:calc(var(--u)*20);letter-spacing:-.03em;line-height:1;margin-top:calc(var(--u)*1.5);
-  white-space:nowrap;max-width:100%;font-variant-numeric:tabular-nums}
-#car-km.errc{color:#e05c5c}
-#car-lbl{grid-area:lbl;text-transform:uppercase;color:#d4d6da;font-weight:500;font-size:calc(var(--u)*4.4);letter-spacing:.42em;
-  padding-left:.42em;margin-top:calc(var(--u)*3.5)}
-#car-track{grid-area:track;justify-self:stretch;position:relative;height:calc(var(--u)*2.8);border-radius:999px;background:#2c2e31;margin-top:calc(var(--u)*9)}
-#car-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#a9cc2c,#c3e346)}
-#car-knob{position:absolute;top:50%;left:0;width:calc(var(--u)*5.4);height:calc(var(--u)*5.4);margin:calc(var(--u)*-2.7) 0 0 calc(var(--u)*-2.7);
-  border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.6)}
-#car-next{grid-area:next;margin-top:calc(var(--u)*4.5);font-size:calc(var(--u)*6);color:#e2e4e8;white-space:nowrap;font-variant-numeric:tabular-nums}
+#car-plate{grid-area:plate;width:calc(var(--u)*var(--m)*32);height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.6)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*var(--m)*8);margin-top:calc(var(--u)*var(--m)*3.5);white-space:nowrap;
+  text-shadow:0 0 18px rgba(196,226,74,.18)}
+/* KM com leve degradê prata (texto recortado no fundo) */
+#car-km{grid-area:km;font-weight:800;font-size:calc(var(--u)*var(--m)*20);letter-spacing:-.03em;line-height:1;margin-top:calc(var(--u)*var(--m)*1.5);
+  white-space:nowrap;max-width:100%;font-variant-numeric:tabular-nums;color:#fff;
+  background:linear-gradient(180deg,#ffffff 0%,#ffffff 55%,#dfe3e8 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 4px 14px rgba(0,0,0,.55))}
+#car-km.errc{background:none;-webkit-text-fill-color:#e05c5c;color:#e05c5c}
+#car-lbl{grid-area:lbl;text-transform:uppercase;color:#cfd2d7;font-weight:500;font-size:calc(var(--u)*var(--m)*4.2);letter-spacing:.42em;
+  padding-left:.42em;margin-top:calc(var(--u)*var(--m)*3)}
+/* barra "afundada" no cartão */
+#car-track{grid-area:track;justify-self:stretch;position:relative;height:calc(var(--u)*2.8);border-radius:999px;margin-top:calc(var(--u)*var(--m)*7.5);
+  background:linear-gradient(180deg,#0a0b0c,#18191b);box-shadow:inset 0 1px 2px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.06)}
+#car-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#8eb31f,#c6e64c);box-shadow:0 0 12px rgba(183,217,45,.35)}
+#car-knob{position:absolute;top:50%;left:0;width:calc(var(--u)*5.4);height:calc(var(--u)*5.4);margin:calc(var(--u)*-2.7) 0 0 calc(var(--u)*-2.7);border-radius:50%;
+  background:radial-gradient(circle at 40% 30%,#fff,#e4e7ea 70%);box-shadow:0 0 0 3px rgba(196,226,74,.22),0 3px 8px rgba(0,0,0,.6)}
+#car-next{grid-area:next;margin-top:calc(var(--u)*var(--m)*4);font-size:calc(var(--u)*var(--m)*5.8);color:#e2e4e8;white-space:nowrap;font-variant-numeric:tabular-nums}
 #car-next b{color:var(--lime);font-weight:800}
-#car-tiles{width:90%;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*2.8);margin-top:calc(var(--u)*3)}
-.ctile{border-radius:calc(var(--u)*4.4);padding:calc(var(--u)*3.2) calc(var(--u)*4.6);min-width:0}
-.ctile .cl{text-transform:uppercase;color:#d4d6da;font-weight:500;font-size:calc(var(--u)*3.1);letter-spacing:.26em;white-space:nowrap}
+/* cartões menores: Estaca | GPS, Contrato | Lado, Coordenadas (largura toda) */
+#car-tiles{width:90%;flex:none;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*2.8)}
+#car-tiles .wide{grid-column:1/-1}
+.ctile{border-radius:calc(var(--u)*4.6);padding:calc(var(--u)*3.2) calc(var(--u)*4.6);min-width:0}
+.ctile .cl{text-transform:uppercase;color:#cfd2d7;font-weight:500;font-size:calc(var(--u)*3.1);letter-spacing:.26em;white-space:nowrap}
 .ctile .cv{color:#fff;font-weight:800;font-size:calc(var(--u)*5.4);margin-top:calc(var(--u)*1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 #car-est{color:var(--lime)}
 #car-gdot{display:inline-block;width:calc(var(--u)*2.1);height:calc(var(--u)*2.1);border-radius:50%;margin-right:calc(var(--u)*1.8);
   vertical-align:.2em;background:#e05c5c}
 #car-gdot.ok{background:#b7d92d;box-shadow:0 0 8px rgba(183,217,45,.85)}
 #car-gdot.weak{background:#d9a22b}
-#car-ctt{width:90%;margin-top:calc(var(--u)*3)}
-/* deitado no suporte: cartão grande à esquerda (placa ao lado do KM) e os 3 cartões empilhados à direita */
+/* deitado no suporte: cartão do KM à esquerda (placa ao lado do KM) e os cartões menores numa grade à direita */
 @media (orientation:landscape){
   #carwrap{--u:min(1vh,.5vw)}
   #car-body{top:calc(14px + env(safe-area-inset-top, 0px));bottom:calc(14px + env(safe-area-inset-bottom, 0px));
     left:calc(16px + env(safe-area-inset-left, 0px));right:calc(72px + env(safe-area-inset-right, 0px));
-    display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:calc(var(--u)*2.6);align-items:stretch}
-  #car-main{width:auto;flex:none;grid-column:1;grid-row:1/4;align-self:stretch;border-radius:calc(var(--u)*7);padding:calc(var(--u)*4) calc(var(--u)*5);
+    display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:calc(var(--u)*2.6);align-items:stretch}
+  #car-main{width:auto;flex:none;border-radius:calc(var(--u)*7);padding:calc(var(--u)*4) calc(var(--u)*5);
     grid-template-columns:auto minmax(0,1fr);column-gap:calc(var(--u)*4.5);justify-items:start;align-content:center;
     grid-template-areas:"plate br" "plate km" "plate lbl" "track track" "next next"}
-  #car-plate{width:calc(var(--u)*26);align-self:center}
-  #car-main .cwm{top:calc(var(--u)*-4);height:calc(100% + var(--u)*8)}
-  #car-br{font-size:calc(var(--u)*6.4);margin-top:0;align-self:end}
-  #car-km{font-size:calc(var(--u)*18)}
-  #car-lbl{font-size:calc(var(--u)*3.3);padding-left:0;margin-top:calc(var(--u)*2.4);align-self:start}
-  #car-track{margin-top:calc(var(--u)*6)}
-  #car-next{justify-self:center;font-size:calc(var(--u)*4.8)}
-  #car-tiles{display:contents}
-  #car-ctt{width:auto;margin:0}
+  #car-plate{width:calc(var(--u)*var(--m)*26);align-self:center}
+  #car-br{font-size:calc(var(--u)*var(--m)*6.4);margin-top:0;align-self:end}
+  #car-km{font-size:calc(var(--u)*var(--m)*18)}
+  #car-lbl{font-size:calc(var(--u)*var(--m)*3.3);padding-left:0;margin-top:calc(var(--u)*var(--m)*2.4);align-self:start}
+  #car-track{margin-top:calc(var(--u)*var(--m)*6)}
+  #car-next{justify-self:center;font-size:calc(var(--u)*var(--m)*4.8)}
+  #car-tiles{width:auto;grid-template-rows:repeat(3,minmax(0,1fr));gap:calc(var(--u)*2.6)}
   .ctile{display:flex;flex-direction:column;justify-content:center;padding:calc(var(--u)*2) calc(var(--u)*4.2)}
   .ctile .cl{font-size:calc(var(--u)*2.7)}
   .ctile .cv{font-size:calc(var(--u)*4.8)}
-  #car-ct{font-size:calc(var(--u)*4.2)}
 }
 /* botão que abre o modo carro, no canto do cartão do KM da tela inicial */
 .herocar{position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -1290,40 +1298,47 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <!-- modo carro: KM grande para acompanhar a rodovia com o celular no suporte do painel -->
 <div id="carwrap" role="dialog" aria-modal="true" aria-label="Modo carro">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-    <filter id="car-glow" x="-10%" y="-60%" width="120%" height="220%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <!-- "seda" das ondas: faixas claras/escuras com degradê e borda suave, como dobras de tecido -->
-    <filter id="car-soft" x="-5%" y="-25%" width="110%" height="150%"><feGaussianBlur stdDeviation="5"/></filter>
-    <linearGradient id="car-gsilk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <linearGradient id="car-gshade" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
-    <!-- cartão do KM: desenho preso à área do conteúdo (a linha verde passa atrás da placa, como na referência) -->
-    <symbol id="car-wmid" viewBox="0 0 800 820" preserveAspectRatio="none">
-      <path d="M0,310 C60,282 120,252 185,250 C265,248 335,296 420,322 C485,342 540,342 600,318 C680,286 735,232 800,222 L800,150 C735,165 680,215 600,248 C540,272 485,272 420,252 C335,226 265,178 185,180 C120,182 60,212 0,240 Z" fill="url(#car-gshade)" filter="url(#car-soft)"/>
-      <path d="M0,310 C60,282 120,252 185,250 C265,248 335,296 420,322 C485,342 540,342 600,318 C680,286 735,232 800,222 L800,430 C720,438 640,476 540,474 C430,472 350,416 240,426 C150,434 70,466 0,486 Z" fill="url(#car-gsilk)" filter="url(#car-soft)"/>
-      <g fill="none" stroke="#fff" stroke-width="1" vector-effect="non-scaling-stroke">
-        <path d="M420,322 C485,342 540,342 600,318 C680,286 735,232 800,222" transform="translate(0,-18)" stroke-opacity=".06"/>
-        <path d="M420,322 C485,342 540,342 600,318 C680,286 735,232 800,222" transform="translate(0,-36)" stroke-opacity=".05"/>
-        <path d="M420,322 C485,342 540,342 600,318 C680,286 735,232 800,222" transform="translate(0,-54)" stroke-opacity=".04"/>
-        <path d="M420,322 C485,342 540,342 600,318 C680,286 735,232 800,222" transform="translate(0,-72)" stroke-opacity=".03"/>
-        <path d="M0,310 C60,282 120,252 185,250 C265,248 335,296 420,322 C485,342 540,342 600,318 C680,286 735,232 800,222" transform="translate(0,26)" stroke-opacity=".05"/>
+    <!-- cetim grafite: cada dobra = sombra escura acima + reflexo cinza abaixo, com borda suave -->
+    <filter id="car-soft" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="car-glow" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="3"/></filter>
+    <!-- granulado fosco bem leve: tira o aspecto de plástico chapado -->
+    <filter id="car-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .07 0 0 0 0"/></filter>
+    <linearGradient id="car-hi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa0a8" stop-opacity=".30"/><stop offset=".35" stop-color="#6b7078" stop-opacity=".14"/><stop offset="1" stop-color="#3a3d42" stop-opacity="0"/></linearGradient>
+    <linearGradient id="car-sh" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <linearGradient id="car-crest" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity=".22"/><stop offset=".8" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <!-- fio de luz verde: acende, some (atrás da placa) e acende de novo — nada de linha sólida -->
+    <linearGradient id="car-lime" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c4e24a" stop-opacity="0"/><stop offset=".22" stop-color="#c4e24a" stop-opacity=".55"/><stop offset=".4" stop-color="#c4e24a" stop-opacity=".1"/><stop offset=".62" stop-color="#c4e24a" stop-opacity=".15"/><stop offset=".82" stop-color="#d6f06a" stop-opacity=".8"/><stop offset="1" stop-color="#c4e24a" stop-opacity="0"/></linearGradient>
+    <linearGradient id="car-lime2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c4e24a" stop-opacity="0"/><stop offset=".7" stop-color="#c4e24a" stop-opacity=".55"/><stop offset="1" stop-color="#d6f06a" stop-opacity=".75"/></linearGradient>
+    <symbol id="car-amain" viewBox="0 0 360 600" preserveAspectRatio="none">
+      <path d="M0,212 C70,170 140,176 205,206 C262,232 318,226 360,196 L360,140 C318,170 262,176 205,150 C140,120 70,114 0,156 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,212 C70,170 140,176 205,206 C262,232 318,226 360,196 L360,272 C318,302 262,306 205,280 C140,250 70,246 0,290 Z" fill="url(#car-hi)" filter="url(#car-soft)"/>
+      <path d="M0,352 C80,312 160,336 235,352 C292,364 332,344 360,326 L360,276 C332,294 292,314 235,302 C160,286 80,262 0,302 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,352 C80,312 160,336 235,352 C292,364 332,344 360,326 L360,396 C332,414 292,434 235,422 C160,406 80,384 0,424 Z" fill="url(#car-hi)" filter="url(#car-soft)" opacity=".8"/>
+      <path d="M0,472 C90,432 190,472 270,462 C312,457 340,444 360,436 L360,390 C340,398 312,411 270,416 C190,426 90,386 0,426 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,472 C90,432 190,472 270,462 C312,457 340,444 360,436 L360,500 C340,508 312,521 270,526 C190,536 90,500 0,536 Z" fill="url(#car-hi)" filter="url(#car-soft)" opacity=".65"/>
+      <path d="M0,548 C120,520 240,566 360,536 L360,600 L0,600 Z" fill="#000" fill-opacity=".45" filter="url(#car-soft)"/>
+      <g fill="none" stroke="url(#car-crest)" stroke-width="1" vector-effect="non-scaling-stroke">
+        <path d="M0,212 C70,170 140,176 205,206 C262,232 318,226 360,196"/>
+        <path d="M0,352 C80,312 160,336 235,352 C292,364 332,344 360,326" opacity=".7"/>
+        <path d="M0,472 C90,432 190,472 270,462 C312,457 340,444 360,436" opacity=".5"/>
       </g>
-      <path d="M0,600 C140,560 290,640 450,625 C600,610 700,550 800,530 L800,664 C690,694 560,724 420,716 C270,708 150,664 0,694 Z" fill="url(#car-gsilk)" filter="url(#car-soft)"/>
-      <path d="M0,600 C140,560 290,640 450,625 C600,610 700,550 800,530" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width="1" vector-effect="non-scaling-stroke"/>
-      <path d="M0,724 C240,674 450,784 800,714 L800,820 L0,820 Z" fill="#000" fill-opacity=".3" filter="url(#car-soft)"/>
-      <path d="M0,310 C60,282 120,252 185,250 C265,248 335,296 420,322 C485,342 540,342 600,318 C680,286 735,232 800,222" fill="none" stroke="#b7d92d" stroke-opacity=".9" stroke-width="1.5" filter="url(#car-glow)" vector-effect="non-scaling-stroke"/>
+      <path d="M0,214 C70,172 140,178 205,208 C262,234 318,228 360,198" fill="none" stroke="url(#car-lime)" stroke-width="3" opacity=".5" filter="url(#car-glow)"/>
+      <path d="M0,214 C70,172 140,178 205,208 C262,234 318,228 360,198" fill="none" stroke="url(#car-lime)" stroke-width=".9" vector-effect="non-scaling-stroke"/>
+      <path d="M180,600 C250,574 310,556 360,552" fill="none" stroke="url(#car-lime2)" stroke-width="3" opacity=".45" filter="url(#car-glow)"/>
+      <path d="M180,600 C250,574 310,556 360,552" fill="none" stroke="url(#car-lime2)" stroke-width=".9" vector-effect="non-scaling-stroke"/>
+      <rect width="360" height="600" filter="url(#car-grain)"/>
     </symbol>
-    <!-- fio verde no canto inferior direito do cartão do KM -->
-    <symbol id="car-wtail" viewBox="0 0 360 80" preserveAspectRatio="none">
-      <path d="M40,80 C120,60 230,44 360,44" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="1" vector-effect="non-scaling-stroke"/>
-      <path d="M0,80 C90,52 200,28 360,24" fill="none" stroke="#b7d92d" stroke-opacity=".8" stroke-width="1.4" filter="url(#car-glow)" vector-effect="non-scaling-stroke"/>
+    <symbol id="car-atile" viewBox="0 0 200 90" preserveAspectRatio="none">
+      <path d="M0,56 C50,42 110,68 200,46 L200,24 C110,46 50,20 0,34 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,56 C50,42 110,68 200,46 L200,80 C110,100 50,76 0,90 Z" fill="url(#car-hi)" filter="url(#car-soft)" opacity=".8"/>
+      <path d="M0,56 C50,42 110,68 200,46" fill="none" stroke="url(#car-crest)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <path d="M0,84 C70,74 130,94 200,80 L200,90 L0,90 Z" fill="#000" fill-opacity=".4" filter="url(#car-soft)"/>
+      <rect width="200" height="90" filter="url(#car-grain)"/>
     </symbol>
-    <symbol id="car-wsg" viewBox="0 0 400 180" preserveAspectRatio="none">
-      <path d="M0,104 C110,76 230,132 400,88 L400,150 C270,172 150,128 0,160 Z" fill="url(#car-gsilk)" filter="url(#car-soft)"/>
-      <path d="M0,104 C110,76 230,132 400,88" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width="1" vector-effect="non-scaling-stroke"/>
-      <path d="M0,163 C140,140 260,182 400,156 L400,180 L0,180 Z" fill="#000" fill-opacity=".32" filter="url(#car-soft)"/>
-    </symbol>
-    <symbol id="car-ws" viewBox="0 0 400 180" preserveAspectRatio="none">
-      <use href="#car-wsg"/>
-      <path d="M240,180 C298,158 344,128 400,120" fill="none" stroke="#b7d92d" stroke-opacity=".8" stroke-width="1.3" filter="url(#car-glow)" vector-effect="non-scaling-stroke"/>
+    <symbol id="car-atilel" viewBox="0 0 200 90" preserveAspectRatio="none">
+      <use href="#car-atile"/>
+      <path d="M110,90 C145,80 172,66 200,62" fill="none" stroke="url(#car-lime2)" stroke-width="3" opacity=".45" filter="url(#car-glow)"/>
+      <path d="M110,90 C145,80 172,66 200,62" fill="none" stroke="url(#car-lime2)" stroke-width=".9" vector-effect="non-scaling-stroke"/>
     </symbol>
   </defs></svg>
   <canvas id="car-road" aria-hidden="true"></canvas>
@@ -1332,9 +1347,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <button id="car-x" aria-label="Sair do modo carro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <div id="car-body">
     <div id="car-main" class="cdk">
-      <svg class="cwm" aria-hidden="true"><use href="#car-wmid"/></svg>
-      <svg class="cwt" aria-hidden="true"><use href="#car-wtail"/></svg>
-      <svg id="car-plate" viewBox="0 0 150 178" aria-hidden="true"><rect x="2" y="2" width="146" height="174" rx="14" fill="#fff"/><rect x="10" y="10" width="130" height="158" rx="9" fill="#13305c"/><text id="car-sbr" x="75" y="52" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="31" fill="#fff">—</text><line x1="24" y1="68" x2="126" y2="68" stroke="#fff" stroke-width="3"/><text x="75" y="110" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="34" fill="#fff">KM</text><text id="car-skm" x="75" y="156" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="42" fill="#fff">—</text></svg>
+      <svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg>
+      <svg id="car-plate" viewBox="0 0 150 178" aria-hidden="true"><rect x="2" y="2" width="146" height="174" rx="14" fill="#fff"/><rect x="10" y="10" width="130" height="158" rx="9" fill="#13305c"/><rect x="10" y="10" width="130" height="70" rx="9" fill="#fff" fill-opacity=".05"/><text id="car-sbr" x="75" y="52" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="31" fill="#fff">—</text><line x1="24" y1="68" x2="126" y2="68" stroke="#fff" stroke-width="3"/><text x="75" y="110" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="34" fill="#fff">KM</text><text id="car-skm" x="75" y="156" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-weight="800" font-size="42" fill="#fff">—</text></svg>
       <div id="car-br">—</div>
       <div id="car-km">—</div>
       <div id="car-lbl">Quilômetro</div>
@@ -1342,10 +1356,12 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <div id="car-next"></div>
     </div>
     <div id="car-tiles">
-      <div class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-wsg"/></svg><div class="cl">Estaca</div><div class="cv" id="car-est">—</div></div>
-      <div class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-ws"/></svg><div class="cl">GPS</div><div class="cv"><span id="car-gdot"></span><span id="car-acc">—</span></div></div>
+      <div class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><div class="cl">Estaca</div><div class="cv" id="car-est">—</div></div>
+      <div class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-atilel"/></svg><div class="cl">GPS</div><div class="cv"><span id="car-gdot"></span><span id="car-acc">—</span></div></div>
+      <div class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><div class="cl">Contrato</div><div class="cv" id="car-ct">—</div></div>
+      <div class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><div class="cl">Lado</div><div class="cv" id="car-dir">—</div></div>
+      <div class="cdk ctile wide"><svg class="cwv" aria-hidden="true"><use href="#car-atilel"/></svg><div class="cl">Coordenadas</div><div class="cv" id="car-coord">—</div></div>
     </div>
-    <div id="car-ctt" class="cdk ctile"><svg class="cwv" aria-hidden="true"><use href="#car-ws"/></svg><div class="cl">Contrato - Lado</div><div class="cv" id="car-ct">—</div></div>
   </div>
 </div>
 
@@ -2836,7 +2852,7 @@ function legendLines(info){
 /* `var` de propósito: o paintGps() consulta _carOn e pode rodar no boot antes desta linha — com let
    daria erro de TDZ (variável ainda não inicializada). */
 var _carOn=false;
-let _carRaf=0, _carDist=0, _carLast=0, _carDrawT=0, _carDir=1, _carPrev=null, _carScene=null, _carKmLen=0;
+let _carRaf=0, _carDist=0, _carLast=0, _carDrawT=0, _carDir=0, _carPrev=null, _carScene=null;
 const _carRM=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* Estrada de fundo desenhada em perspectiva (linha a linha no canvas) e esmaecida pelo #car-wash.
    Resolução 1:1 (sem devicePixelRatio): o fundo é quase branco, nitidez não aparece e no Android
@@ -2893,7 +2909,24 @@ function openCar(){
   carwrap.classList.add('on'); _carOn=true;
   if(!_carScene) _carScene=carScene(document.getElementById('car-road'));
   _carScene.size(); _carScene.draw(_carDist);
-  _carKmLen=0; paintCar(); _carKick();
+  _carDir=0; _carPrev=null;   // sentido só aparece depois que o KM andar (parado = "—")
+  carRefit(); _carKick();
+}
+/* encolhe o conteúdo do cartão do KM (--m) só se a tela for baixa demais para ele; depois ajusta os
+   textos longos (KM com milhar, contrato, coordenadas em graus, "Decrescente") à largura do seu cartão */
+function carRefit(){
+  const main=document.getElementById('car-main'); let m=1;
+  carwrap.style.setProperty('--m',m);
+  while(main.scrollHeight>main.clientHeight+1 && m>.6){ m-=.04; carwrap.style.setProperty('--m',m.toFixed(2)) }
+  ['car-km','car-ct','car-coord','car-dir'].forEach(id=>{ document.getElementById(id).dataset.fit='' });
+  paintCar();
+}
+function _carFit(el){
+  const key=el.textContent.length+'';
+  if(el.dataset.fit===key) return;   // só refaz quando o tamanho do texto muda
+  el.dataset.fit=key; el.style.fontSize='';
+  let fs=parseFloat(getComputedStyle(el).fontSize);
+  while(el.scrollWidth>el.clientWidth+1 && fs>11){ fs-=1; el.style.fontSize=fs+'px' }
 }
 function closeCar(){
   carwrap.classList.remove('on'); _carOn=false;
@@ -2904,17 +2937,17 @@ document.getElementById('car-open').addEventListener('click', e=>{ e.stopPropaga
 document.getElementById('car-x').addEventListener('click', closeCar);
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && _carOn) closeCar() });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _carKick() });
-window.addEventListener('resize', ()=>{ if(_carOn && _carScene){ _carScene.size(); _carScene.draw(_carDist); _carKmLen=0; paintCar() } });
+window.addEventListener('resize', ()=>{ if(_carOn && _carScene){ _carScene.size(); _carScene.draw(_carDist); carRefit() } });
 function paintCar(){
   const $=id=>document.getElementById(id), f=S.fix, km=$('car-km'), nx=$('car-next');
   if(f){
     const off=f.dist>CFG.maxdist, k=f.km;
     /* sentido de marcha pelo próprio KM: só troca com variação > 5 m (ruído do GPS parado não inverte) */
-    if(!_carPrev || _carPrev.id!==f.id) _carPrev={id:f.id, km:k};
+    if(!_carPrev || _carPrev.id!==f.id){ _carPrev={id:f.id, km:k}; _carDir=0 }
     else if(Math.abs(k-_carPrev.km)>.005){ _carDir=k>_carPrev.km?1:-1; _carPrev.km=k }
     const base=Math.floor(k+1e-9), frac=k-base;
     let next, rest, prog;
-    if(_carDir>0){ next=base+1; rest=(1-frac)*1000; prog=frac }
+    if(_carDir>=0){ next=base+1; rest=(1-frac)*1000; prog=frac }
     else if(frac<1e-6){ next=base-1; rest=1000; prog=0 }
     else { next=base; rest=frac*1000; prog=1-frac }
     $('car-sbr').textContent=f.br;
@@ -2932,21 +2965,18 @@ function paintCar(){
     nx.textContent=S.pos?'Nenhuma rodovia baixada por perto':'Aguardando o GPS…';
     $('car-est').textContent='—';
   }
-  /* KM com mais dígitos (ex.: 1.234,567) encolhe para caber no cartão — só refaz quando o tamanho muda */
-  if(km.textContent.length!==_carKmLen){
-    _carKmLen=km.textContent.length; km.style.fontSize='';
-    let fs=parseFloat(getComputedStyle(km).fontSize);
-    while(km.scrollWidth>km.clientWidth+1 && fs>18){ fs-=2; km.style.fontSize=fs+'px' }
-  }
   const dot=$('car-gdot'), p=S.pos;
   dot.className='';
   if(p && isFinite(p.lat)){
     const fresh=p.t && Date.now()-p.t<60000;
     dot.className=(fresh && p.acc!=null && p.acc<50)?'ok':'weak';
     $('car-acc').textContent=p.acc!=null?'±'+Math.round(p.acc)+' m':'—';
-  } else $('car-acc').textContent='—';
-  const ct=[getContract(), getSide()].filter(Boolean).join(' - ');
-  $('car-ct').textContent=ct||'—';
+    $('car-coord').textContent=formatCoord(p.lat, p.lon);   // mesmo formato escolhido para a legenda
+  } else { $('car-acc').textContent='—'; $('car-coord').textContent='—' }
+  $('car-ct').textContent=getContract()||'—';
+  /* lado = sentido de marcha pelo KM (o LE/LD da legenda da foto não muda) */
+  $('car-dir').textContent=f&&_carDir>0?'Crescente':f&&_carDir<0?'Decrescente':'—';
+  _carFit(km); _carFit($('car-ct')); _carFit($('car-coord')); _carFit($('car-dir'));
   _carKick();
 }
 
