@@ -540,6 +540,16 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   background:#f1f2f3;color:#fff;font-family:var(--sans);overflow:hidden;--u:min(1vw,.47vh);--m:1;--lime:#c4e24a}
 #carwrap.on{display:block;animation:scrIn .2s ease-out}
 html.carmode,html.carmode body{background:#f1f2f3!important}
+html.carmode.carnight,html.carmode.carnight body{background:#07090c!important}
+/* noite: fundo escuro (não ofusca quem dirige); cartões um tom acima do fundo e borda mais viva para
+   não sumirem no escuro */
+#carwrap.night{background:#07090c}
+#carwrap.night #car-wash{background:linear-gradient(180deg,rgba(6,8,12,.75) 0%,rgba(6,8,12,.45) 40%,rgba(6,8,12,.25) 62%,rgba(6,8,12,.35) 85%,rgba(7,9,12,.9) 95%,#07090c 100%)}
+#carwrap.night #car-topo g{stroke:#8fa0b5;stroke-opacity:.10}
+#carwrap.night #car-x{box-shadow:0 0 0 1px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.18),0 10px 22px -8px rgba(0,0,0,.8)}
+#carwrap.night #car-br{text-shadow:0 0 22px rgba(196,226,74,.32)}
+#car-road,#car-wash,#car-topo{transition:opacity .5s ease}
+#carwrap.carfade #car-road,#carwrap.carfade #car-wash,#carwrap.carfade #car-topo{opacity:0}
 #car-road{position:absolute;inset:0;width:100%;height:100%;display:block}
 #car-wash{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(246,247,248,.96) 0%,rgba(246,247,248,.86) 30%,rgba(246,247,248,.66) 46%,rgba(246,247,248,.76) 75%,rgba(241,242,243,.95) 94%,#f1f2f3 100%)}
@@ -566,6 +576,13 @@ html.carmode,html.carmode body{background:#f1f2f3!important}
     linear-gradient(168deg,#2a2c30 0%,#1d1f22 30%,#141517 62%,#0b0c0d 100%) padding-box,
     linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06) 30%,rgba(255,255,255,.03) 70%,rgba(255,255,255,.10)) border-box;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 1px 1px rgba(0,0,0,.10),0 10px 18px -6px rgba(15,20,30,.22),0 34px 54px -22px rgba(15,20,30,.55)}
+#carwrap.night .cdk{
+  background:
+    radial-gradient(120% 60% at 12% -8%,rgba(255,255,255,.12),rgba(255,255,255,0) 55%) padding-box,
+    radial-gradient(90% 70% at 105% 110%,rgba(0,0,0,.5),rgba(0,0,0,0) 60%) padding-box,
+    linear-gradient(168deg,#30333a 0%,#22252a 30%,#18191d 62%,#0f1012 100%) padding-box,
+    linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.10) 30%,rgba(255,255,255,.05) 70%,rgba(196,226,74,.18)) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.6),0 18px 40px -12px rgba(0,0,0,.85)}
 .cdk .cwv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .cdk>*:not(.cwv){position:relative}
 /* cartão do KM cresce até ocupar toda a altura que sobra acima dos cartões menores (pedido do usuário: quanto maior, melhor) */
@@ -987,6 +1004,15 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg></span>
         <span class="ltext"><b>Tema claro</b><i>Fundo claro com cartões escuros</i></span>
         <input type="checkbox" id="cfg-lighttheme">
+      </label>
+      <label class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
+        <span class="ltext"><b>Modo carro à noite</b><i>Escurece depois do pôr do sol</i></span>
+        <select id="cfg-carnight" class="lsel">
+          <option value="auto">Automático (pelo sol)</option>
+          <option value="day">Sempre claro</option>
+          <option value="night">Sempre escuro</option>
+        </select>
       </label>
     </div>
   </div>
@@ -2877,7 +2903,7 @@ const _carRM=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)')
 function carScene(cv){
   const CAMH=2.6, HAZE=[232,236,239], ctx=cv.getContext('2d');
   const mix=(c,f)=>'rgb('+((c[0]+(HAZE[0]-c[0])*f)|0)+','+((c[1]+(HAZE[1]-c[1])*f)|0)+','+((c[2]+(HAZE[2]-c[2])*f)|0)+')';
-  let W=0,H=0,HZ=0,VX=0,F=1,r1,r2,r3;
+  let W=0,H=0,HZ=0,VX=0,F=1,r1,r2,r3,stars=[],night=false;
   function size(){
     W=cv.width=Math.max(2,cv.clientWidth|0); H=cv.height=Math.max(2,cv.clientHeight|0);
     HZ=Math.round(H*(W>H?.46:.44)); VX=W/2; F=(H-HZ)*2.2/CAMH;
@@ -2886,9 +2912,11 @@ function carScene(cv){
       r1[i]=(.35+.6*e+.12*Math.sin(x*17.3+2)+.05*Math.sin(x*43+.5))*m*.17;
       r2[i]=(.3+.4*e+.1*Math.sin(x*29+1)+.04*Math.sin(x*71))*m*.08;
       r3[i]=(.5+.3*Math.sin(x*97)+.2*Math.sin(x*231+1)+.15*Math.sin(x*517))*m*.02; }
+    stars=[]; for(let i=0;i<70;i++) stars.push([Math.random()*W, Math.random()*HZ*.85, Math.random()*.9+.3, Math.random()*.5+.25]);
   }
   function ridge(a,col){ ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(0,HZ+1); for(let i=0;i<a.length;i++) ctx.lineTo(i*2,HZ-a[i]); ctx.lineTo(W,HZ+1); ctx.closePath(); ctx.fill() }
   function draw(dist){
+    if(night){ drawNight(dist); return }
     const g=ctx.createLinearGradient(0,0,0,HZ); g.addColorStop(0,'#eef1f4'); g.addColorStop(1,'#e6eaed');
     ctx.fillStyle=g; ctx.fillRect(0,0,W,HZ+1);
     ridge(r1,mix([140,152,166],.45)); ridge(r2,mix([126,140,130],.4)); ridge(r3,mix([110,128,104],.3));
@@ -2903,7 +2931,41 @@ function carScene(cv){
       if(dz<3 && (w%16)<5) band(-.06,.06,wl);   // tracejado do eixo (some ao longe para não serrilhar)
     }
   }
-  return {size, draw};
+  /* noite: céu escuro com estrelas, serras em silhueta e a pista iluminada só pelo farol (forte perto,
+     some em ~70 m); balizadores refletem âmbar (direita) e branco (esquerda) quando o farol pega */
+  function drawNight(dist){
+    const g=ctx.createLinearGradient(0,0,0,HZ); g.addColorStop(0,'#05070b'); g.addColorStop(.7,'#0d1320'); g.addColorStop(1,'#1a2233');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,HZ+1);
+    ctx.fillStyle='#dfe8ff';
+    for(const st of stars){ ctx.globalAlpha=st[3]; ctx.fillRect(st[0],st[1],st[2],st[2]) }
+    ctx.globalAlpha=1;
+    ridge(r1,'#121a26'); ridge(r2,'#0c121b'); ridge(r3,'#080c12');
+    const hg=ctx.createLinearGradient(0,HZ-H*.05,0,HZ+H*.02); hg.addColorStop(0,'rgba(60,80,110,0)'); hg.addColorStop(.8,'rgba(60,80,110,.25)'); hg.addColorStop(1,'rgba(60,80,110,0)');
+    ctx.fillStyle=hg; ctx.fillRect(0,HZ-H*.05,W,H*.07);
+    for(let y=HZ+1;y<H;y++){
+      const z=F*CAMH/(y-HZ), s=F/z, w=dist+z, dz=z*z/(F*CAMH), L=Math.max(0,Math.min(1,1.15-z/70)), Lf=Math.exp(-z/140);
+      const band=(a,b,c)=>{ const x0=VX+s*a; ctx.fillStyle=c; ctx.fillRect(x0,y,Math.max(1,s*(b-a)),1) };
+      ctx.fillStyle='rgb('+(8+10*L|0)+','+(10+12*L|0)+','+(12+12*L|0)+')'; ctx.fillRect(0,y,W,1);
+      band(-7,7,'rgb('+(14+30*L|0)+','+(15+30*L|0)+','+(17+30*L|0)+')');
+      const as=18+52*L; band(-5.4,5.4,'rgb('+(as|0)+','+(as+2|0)+','+(as+6|0)+')');
+      band(-3,3,'rgba(255,240,210,'+(.05+.10*L).toFixed(3)+')');   // miolo do facho do farol
+      const lw=Math.min(255,60+195*Math.max(L,Lf*.55)), wl='rgb('+(lw|0)+','+(lw|0)+','+(lw*.96|0)+')';
+      band(-5.4,-5.2,wl); band(5.2,5.4,wl); band(-3.6,-3.45,wl); band(3.45,3.6,wl);
+      if(dz<3 && (w%16)<5) band(-.06,.06,wl);
+    }
+    for(let k=Math.ceil((dist+3)/40);k*40<dist+500;k++){
+      const z=k*40-dist, s=F/z, y=HZ+F*CAMH/z, L=Math.max(0,Math.min(1,1.2-z/120));
+      for(const X of [-7.2,7.2]){
+        const x=VX+s*X, h=s, w=Math.max(1,s*.12); if(h<1) continue;
+        ctx.fillStyle='rgba(70,72,78,'+(.4*L).toFixed(2)+')'; ctx.fillRect(x-w/2,y-h,w,h);
+        const rs=Math.max(1.2,s*.12);
+        ctx.fillStyle=X>0?'rgba(255,170,40,'+(.35+.65*L).toFixed(2)+')':'rgba(255,255,255,'+(.3+.6*L).toFixed(2)+')';
+        ctx.fillRect(x-rs/2,y-h*.9,rs,rs);
+        if(L>.2){ ctx.globalAlpha=.25*L; ctx.fillRect(x-rs*1.5,y-h*.9-rs,rs*3,rs*3); ctx.globalAlpha=1 }   // brilho do refletor
+      }
+    }
+  }
+  return {size, draw, setNight(b){ night=!!b }};
 }
 /* velocidade real do GPS (m/s) para a estrada andar junto com o carro; parado/sem leitura recente = 0 */
 function carSpeed(){
@@ -2941,9 +3003,11 @@ function carLayout(){
 }
 function openCar(){
   document.documentElement.classList.add('carmode');
+  const mt=document.getElementById('meta-theme'); _carMetaPrev=mt?mt.getAttribute('content'):null;
   carwrap.classList.add('on'); _carOn=true; carLayout();
   if(!_carScene) _carScene=carScene(document.getElementById('car-road'));
-  _carScene.size(); _carScene.draw(_carDist);
+  _carScene.size(); _carNight=null; carApplyNight(false);   // já abre no modo certo (sem fade)
+  clearInterval(_carNightT); _carNightT=setInterval(()=>carApplyNight(true), 60000);   // confere o sol a cada minuto
   _carDir=0; _carPrev=null;   // sentido só aparece depois que o KM andar (parado = "—")
   carRefit(); _carKick();
 }
@@ -2964,10 +3028,58 @@ function _carFit(el){
   while(el.scrollWidth>el.clientWidth+1 && fs>11){ fs-=1; el.style.fontSize=fs+'px' }
 }
 function closeCar(){
-  carwrap.classList.remove('on'); _carOn=false; document.documentElement.classList.remove('carmode');
+  carwrap.classList.remove('on'); _carOn=false; document.documentElement.classList.remove('carmode','carnight');
+  clearInterval(_carNightT); _carNightT=0;
+  const mt=document.getElementById('meta-theme'); if(mt && _carMetaPrev!=null) mt.setAttribute('content', _carMetaPrev);
   if(_carRaf){ cancelAnimationFrame(_carRaf); _carRaf=0 }
 }
 const carwrap=document.getElementById('carwrap');
+/* ---- modo carro à noite ----
+   kc-carnight: 'auto' (padrão, pelo sol), 'day' (sempre claro) ou 'night' (sempre escuro).
+   No automático o nascer/pôr do sol sai da posição do GPS e da data (equação do nascer do sol,
+   precisão de ~1 min, funciona offline). Sem GPS: noite das 18h às 6h. */
+function sunTimes(lat, lon, now){
+  const r=Math.PI/180, jd=now/86400000+2440587.5, n=Math.round(jd-2451545.0009+lon/360), J=n-lon/360;   // dia solar cujo meio-dia está mais perto de agora
+  const M=(357.5291+.98560028*J)%360, C=1.9148*Math.sin(M*r)+.02*Math.sin(2*M*r)+.0003*Math.sin(3*M*r);
+  const lam=(M+C+282.9372)%360, Jt=2451545+J+.0053*Math.sin(M*r)-.0069*Math.sin(2*lam*r);
+  const sd=Math.sin(lam*r)*Math.sin(23.4397*r), cd=Math.cos(Math.asin(sd));
+  const cw=(Math.sin(-.833*r)-Math.sin(lat*r)*sd)/(Math.cos(lat*r)*cd);
+  if(cw>1) return 'night'; if(cw<-1) return 'day';   // noite/dia polar (não acontece no Brasil)
+  const w=Math.acos(cw)/r/360, ms=j=>(j-2440587.5)*86400000;
+  return [ms(Jt-w), ms(Jt+w)];
+}
+function carIsNight(){
+  const pref=localStorage.getItem('kc-carnight')||'auto';
+  if(pref==='night') return true; if(pref==='day') return false;
+  const p=S.pos, now=Date.now();
+  if(p && isFinite(p.lat) && isFinite(p.lon)){
+    const t=sunTimes(p.lat, p.lon, now);
+    if(t==='night') return true; if(t==='day') return false;
+    return now<t[0] || now>t[1];
+  }
+  const h=new Date().getHours(); return h<6 || h>=18;
+}
+let _carNight=null, _carNightT=0, _carMetaPrev=null;
+/* aplica o modo; fade=true troca suave (fundo some e volta em 0,5 s) — usado quando o sol se põe com
+   a tela aberta. Também pinta a cor da página e a theme-color: é com elas que o iPhone preenche a sobra
+   embaixo da tela do app instalado. */
+function carApplyNight(fade){
+  const n=carIsNight(); if(n===_carNight && !fade) return;
+  const go=()=>{
+    _carNight=n; carwrap.classList.toggle('night', n);
+    document.documentElement.classList.toggle('carnight', n);
+    const mt=document.getElementById('meta-theme'); if(mt) mt.setAttribute('content', n?'#07090c':'#f1f2f3');
+    if(_carScene){ _carScene.setNight(n); _carScene.draw(_carDist) }
+  };
+  if(fade && _carNight!==null && n!==_carNight && !_carRM){
+    carwrap.classList.add('carfade'); setTimeout(()=>{ go(); carwrap.classList.remove('carfade') }, 500);
+  } else go();
+}
+(function(){
+  const sel=document.getElementById('cfg-carnight'); if(!sel) return;
+  sel.value=localStorage.getItem('kc-carnight')||'auto';
+  sel.addEventListener('change', ()=>{ try{ localStorage.setItem('kc-carnight', sel.value) }catch(e){} if(_carOn) carApplyNight(true) });
+})();
 document.getElementById('car-open').addEventListener('click', e=>{ e.stopPropagation(); openCar() });
 document.getElementById('car-x').addEventListener('click', closeCar);
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && _carOn) closeCar() });
