@@ -621,22 +621,26 @@ textarea:focus {
   letter-spacing: -.01em !important;
 }
 
-/* ── 37. Form card — glass branco premium ── */
+/* ── 37. Form card — escuro glassmórfico com brilho ── */
 .min-h-screen.bg-surface.flex.items-center .glass-card-solid,
 .min-h-screen.bg-surface.flex.items-center .glass-card {
   background:
-    linear-gradient(135deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.85) 100%) !important;
-  border: 1px solid rgba(0,0,0,.06) !important;
-  color: #1c2333 !important;
+    linear-gradient(135deg, rgba(255,255,255,.08) 0%, transparent 40%),
+    linear-gradient(200deg, transparent 55%, rgba(255,255,255,.04) 62%, transparent 70%),
+    rgba(18,20,24,.88) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  color: #ffffff !important;
   box-shadow:
-    0 20px 50px rgba(0,0,0,.08),
-    0 8px 20px rgba(0,0,0,.04),
-    inset 0 1px 0 rgba(255,255,255,.90) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
-  backdrop-filter: blur(24px) saturate(140%) !important;
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 -1px 0 rgba(255,255,255,.03),
+    0 24px 60px rgba(0,0,0,.30),
+    0 8px 20px rgba(0,0,0,.18),
+    0 0 0 1px rgba(0,0,0,.10) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(140%) !important;
+  backdrop-filter: blur(30px) saturate(140%) !important;
 }
 
-/* ── 38. Inputs no card claro ── */
+/* ── 38. Inputs no card escuro ── */
 .min-h-screen.bg-surface.flex.items-center input[type="text"],
 .min-h-screen.bg-surface.flex.items-center input[type="password"],
 .min-h-screen.bg-surface.flex.items-center input[type="email"],
@@ -645,28 +649,28 @@ textarea:focus {
 .min-h-screen.bg-surface.flex.items-center input[type="url"],
 .min-h-screen.bg-surface.flex.items-center select,
 .min-h-screen.bg-surface.flex.items-center textarea {
-  background: rgba(0,0,0,.03) !important;
-  border: 1px solid rgba(0,0,0,.10) !important;
-  color: #1c2333 !important;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  color: #ffffff !important;
   border-radius: 12px !important;
 }
 
 .min-h-screen.bg-surface.flex.items-center input::placeholder,
 .min-h-screen.bg-surface.flex.items-center textarea::placeholder {
-  color: #a0a5b0 !important;
+  color: rgba(255,255,255,.30) !important;
 }
 
 .min-h-screen.bg-surface.flex.items-center input:focus,
 .min-h-screen.bg-surface.flex.items-center select:focus,
 .min-h-screen.bg-surface.flex.items-center textarea:focus {
-  border-color: rgba(122,184,0,.50) !important;
+  border-color: rgba(183,217,45,.45) !important;
   box-shadow: 0 0 0 3px rgba(183,217,45,.12) !important;
-  background: #ffffff !important;
+  background: rgba(255,255,255,.08) !important;
 }
 
 /* ── 39. Labels dentro do form ── */
 .min-h-screen.bg-surface.flex.items-center label {
-  color: #5a6170 !important;
+  color: rgba(255,255,255,.50) !important;
 }
 
 /* ── 40. Botão principal — gradiente verde-limão premium ── */
@@ -696,41 +700,42 @@ textarea:focus {
 /* ── 41. Link "Já tenho uma conta" ── */
 .min-h-screen.bg-surface.flex.items-center a,
 .min-h-screen.bg-surface.flex.items-center .cursor-pointer:not(button) {
-  color: #5a6170 !important;
+  color: rgba(255,255,255,.45) !important;
 }
 .min-h-screen.bg-surface.flex.items-center a:hover,
 .min-h-screen.bg-surface.flex.items-center .cursor-pointer:not(button):hover {
-  color: #7ab800 !important;
+  color: #b7d92d !important;
 }
 
 /* ── 42. Info box no setup ── */
 .min-h-screen.bg-surface.flex.items-center .bg-info-soft {
   background: rgba(66,165,245,.08) !important;
   border-color: rgba(66,165,245,.15) !important;
-  color: #1565c0 !important;
+  color: #90caf9 !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-info {
-  color: #1565c0 !important;
+  color: #90caf9 !important;
 }
 
 /* Danger box */
 .min-h-screen.bg-surface.flex.items-center .bg-danger-soft {
   background: rgba(239,83,80,.08) !important;
-  border-color: rgba(239,83,80,.12) !important;
+  border-color: rgba(239,83,80,.15) !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-danger {
-  color: #c62828 !important;
+  color: #ef9a9a !important;
 }
 
-/* ── 43. Logo icon box no login — verde-limão suave ── */
+/* ── 43. Logo icon box no login — glow verde-limão ── */
 .min-h-screen.bg-surface.flex.items-center .bg-sidebar.rounded-xl.shadow-lg {
   background:
-    linear-gradient(135deg, #b7d92d 0%, #7ab800 100%) !important;
-  border: none !important;
+    linear-gradient(135deg, rgba(183,217,45,.15) 0%, rgba(122,184,0,.08) 100%),
+    rgba(18,18,18,.90) !important;
+  border: 1px solid rgba(183,217,45,.20) !important;
   box-shadow:
-    0 8px 24px rgba(183,217,45,.25),
-    0 4px 10px rgba(0,0,0,.08),
-    inset 0 1px 0 rgba(255,255,255,.30) !important;
+    0 0 24px rgba(183,217,45,.15),
+    0 8px 24px rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
 }
 
 /* ── 44. Spinner no botão ── */
@@ -743,10 +748,10 @@ textarea:focus {
 
 /* ── 45. Eye/show password icon ── */
 .min-h-screen.bg-surface.flex.items-center .text-text-3.hover\:text-text-2 {
-  color: #8a8f9c !important;
+  color: rgba(255,255,255,.30) !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-text-3.hover\:text-text-2:hover {
-  color: #5a6170 !important;
+  color: rgba(255,255,255,.55) !important;
 }
 </style>
 
