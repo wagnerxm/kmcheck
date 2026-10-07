@@ -536,13 +536,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
    Visual fixo (não segue o tema): é o layout aprovado pelo usuário. Medidas em --u (1% da largura,
    limitado pela altura) para caber igual em qualquer celular sem rolar. --m encolhe só o conteúdo do
    cartão do KM quando a tela é baixa demais (ajustado por carFitMain). */
-#carwrap{position:fixed;top:0;left:0;right:0;bottom:calc(-1 * env(safe-area-inset-bottom, 0px));z-index:53;display:none;
-  background:#f4f5f6;color:#fff;font-family:var(--sans);overflow:hidden;--u:min(1vw,.47vh);--m:1;--lime:#c4e24a}
+#carwrap{position:fixed;top:0;left:0;right:0;bottom:0;z-index:53;display:none;
+  background:#f1f2f3;color:#fff;font-family:var(--sans);overflow:hidden;--u:min(1vw,.47vh);--m:1;--lime:#c4e24a}
 #carwrap.on{display:block;animation:scrIn .2s ease-out}
-html.carmode,html.carmode body{background:#eef0f1!important}
+html.carmode,html.carmode body{background:#f1f2f3!important}
 #car-road{position:absolute;inset:0;width:100%;height:100%;display:block}
 #car-wash{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(246,247,248,.96) 0%,rgba(246,247,248,.86) 30%,rgba(246,247,248,.66) 46%,rgba(246,247,248,.76) 75%,rgba(246,247,248,.8) 100%)}
+  background:linear-gradient(180deg,rgba(246,247,248,.96) 0%,rgba(246,247,248,.86) 30%,rgba(246,247,248,.66) 46%,rgba(246,247,248,.76) 75%,rgba(241,242,243,.95) 94%,#f1f2f3 100%)}
 #car-topo{position:absolute;left:0;top:0;width:75%;height:22%;pointer-events:none}
 /* × pequeno, colado logo abaixo da barra de status (hora/bateria) */
 #car-x{position:absolute;z-index:3;top:calc(max(6px, env(safe-area-inset-top, 0px)) + 2px);right:calc(14px + env(safe-area-inset-right, 0px));
@@ -568,12 +568,16 @@ html.carmode,html.carmode body{background:#eef0f1!important}
 .cdk .cwv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .cdk>*:not(.cwv){position:relative}
 /* cartão do KM cresce até ocupar toda a altura que sobra acima dos cartões menores (pedido do usuário: quanto maior, melhor) */
-#car-main{width:90%;flex:1 1 auto;min-height:0;border-radius:calc(var(--u)*8);padding:calc(var(--u)*5) calc(var(--u)*5);
-  display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;align-content:center;grid-template-areas:"plate" "br" "km" "lbl" "track" "next"}
+/* conteúdo em 3 grupos (placa | BR+KM+Quilômetro | barra+metros) com linhas vazias IGUAIS entre eles e
+   nas pontas: a distribuição dentro do cartão fica simétrica em qualquer altura de tela */
+#car-main{width:90%;flex:1 1 auto;min-height:0;border-radius:calc(var(--u)*8);padding:0 calc(var(--u)*5);
+  display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;--sp:minmax(calc(var(--u)*2),1fr);
+  grid-template-areas:"." "plate" "." "br" "km" "lbl" "." "track" "next" ".";
+  grid-template-rows:var(--sp) auto var(--sp) auto auto auto var(--sp) auto auto var(--sp)}
 /* altura EXPLÍCITA (proporção 150×178): no iPhone um SVG com height:auto dentro do grid ganhava altura
    errada e a placa invadia a linha do nome da BR */
 #car-plate{grid-area:plate;width:calc(var(--u)*var(--m)*32);height:calc(var(--u)*var(--m)*32*178/150);filter:drop-shadow(0 10px 18px rgba(0,0,0,.6)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*var(--m)*8);margin-top:calc(var(--u)*var(--m)*3.5);white-space:nowrap;
+#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*var(--m)*8);white-space:nowrap;
   text-shadow:0 0 18px rgba(196,226,74,.18)}
 /* KM com leve degradê prata (texto recortado no fundo) */
 #car-km{grid-area:km;font-weight:800;font-size:calc(var(--u)*var(--m)*20);letter-spacing:-.03em;line-height:1;margin-top:calc(var(--u)*var(--m)*1.5);
@@ -584,10 +588,10 @@ html.carmode,html.carmode body{background:#eef0f1!important}
 #car-lbl{grid-area:lbl;text-transform:uppercase;color:#cfd2d7;font-weight:500;font-size:calc(var(--u)*var(--m)*4.2);letter-spacing:.42em;
   padding-left:.42em;margin-top:calc(var(--u)*var(--m)*3)}
 /* barra "afundada" no cartão */
-#car-track{grid-area:track;justify-self:center;width:80%;position:relative;height:calc(var(--u)*2.8);border-radius:999px;margin-top:calc(var(--u)*var(--m)*7.5);
+#car-track{grid-area:track;justify-self:center;width:80%;position:relative;height:calc(var(--u)*1.8);border-radius:999px;
   background:linear-gradient(180deg,#0a0b0c,#18191b);box-shadow:inset 0 1px 2px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.06)}
 #car-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#8eb31f,#c6e64c);box-shadow:0 0 12px rgba(183,217,45,.35)}
-#car-knob{position:absolute;top:50%;left:0;width:calc(var(--u)*5.4);height:calc(var(--u)*5.4);margin:calc(var(--u)*-2.7) 0 0 calc(var(--u)*-2.7);border-radius:50%;
+#car-knob{position:absolute;top:50%;left:0;width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);margin:calc(var(--u)*-2.3) 0 0 calc(var(--u)*-2.3);border-radius:50%;
   background:radial-gradient(circle at 40% 30%,#fff,#e4e7ea 70%);box-shadow:0 0 0 3px rgba(196,226,74,.22),0 3px 8px rgba(0,0,0,.6)}
 #car-next{grid-area:next;margin-top:calc(var(--u)*var(--m)*4);font-size:calc(var(--u)*var(--m)*5.8);color:#e2e4e8;white-space:nowrap;font-variant-numeric:tabular-nums}
 #car-next b{color:var(--lime);font-weight:800}
@@ -608,14 +612,14 @@ html.carmode,html.carmode body{background:#eef0f1!important}
   #car-body{top:calc(14px + env(safe-area-inset-top, 0px));bottom:calc(14px + env(safe-area-inset-bottom, 0px));
     left:calc(16px + env(safe-area-inset-left, 0px));right:calc(62px + env(safe-area-inset-right, 0px));
     display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:calc(var(--u)*2.6);align-items:stretch}
-  #car-main{width:auto;flex:none;border-radius:calc(var(--u)*7);padding:calc(var(--u)*4) calc(var(--u)*5);
-    grid-template-columns:auto minmax(0,1fr);column-gap:calc(var(--u)*4.5);justify-items:start;align-content:center;
-    grid-template-areas:"plate br" "plate km" "plate lbl" "track track" "next next"}
+  #car-main{width:auto;flex:none;border-radius:calc(var(--u)*7);padding:0 calc(var(--u)*5);
+    grid-template-columns:auto minmax(0,1fr);column-gap:calc(var(--u)*4.5);justify-items:start;
+    grid-template-areas:". ." "plate br" "plate km" "plate lbl" ". ." "track track" "next next" ". .";
+    grid-template-rows:var(--sp) auto auto auto var(--sp) auto auto var(--sp)}
   #car-plate{width:calc(var(--u)*var(--m)*26);height:calc(var(--u)*var(--m)*26*178/150);align-self:center}
   #car-br{font-size:calc(var(--u)*var(--m)*6.4);margin-top:0;align-self:end}
   #car-km{font-size:calc(var(--u)*var(--m)*18)}
   #car-lbl{font-size:calc(var(--u)*var(--m)*3.3);padding-left:0;margin-top:calc(var(--u)*var(--m)*2.4);align-self:start}
-  #car-track{margin-top:calc(var(--u)*var(--m)*6)}
   #car-next{justify-self:center;font-size:calc(var(--u)*var(--m)*4.8)}
   #car-tiles{width:auto;grid-template-rows:repeat(3,minmax(0,1fr));gap:calc(var(--u)*2.6)}
   .ctile{display:flex;flex-direction:column;justify-content:center;padding:calc(var(--u)*2) calc(var(--u)*4.2)}
@@ -2911,21 +2915,26 @@ function _carKick(){
   if(!_carOn || _carRaf || document.hidden) return;
   _carLast=performance.now(); _carRaf=requestAnimationFrame(_carTick);
 }
-/* App instalado no iPhone: a camada fixa às vezes termina antes do fim da tela e sobrava uma faixa
-   lisa embaixo. Aqui a tela do modo carro passa a ter a altura FÍSICA da tela (screen), indo até a
-   borda de baixo. Só no iPhone instalado (navigator.standalone): no Android o screen inclui a barra
-   de navegação e os cartões ficariam escondidos atrás dela. O fundo da página também vira o tom da
-   névoa, para qualquer sobra ficar da mesma cor. */
-function carFitScreen(){
-  carwrap.style.height=''; carwrap.style.bottom='';
-  if(navigator.standalone && window.screen){
-    const port=innerHeight>=innerWidth, H=port?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
-    if(H>innerHeight+2){ carwrap.style.bottom='auto'; carwrap.style.height=H+'px' }
-  }
+/* Faixa clara embaixo no iPhone com o app instalado: o iOS deixa a área do web app terminar antes da
+   borda da tela e pinta a sobra com a cor do manifesto (#f1f2f3) — nenhum conteúdo da página chega lá.
+   Por isso o fundo do modo carro termina exatamente nessa cor (a emenda some) e a posição dos cartões
+   desconta essa sobra: margem de baixo FÍSICA (sobra + margem) igual à de cima (abaixo do ×).
+   Só no iPhone instalado (navigator.standalone); deitado o CSS cuida sozinho. */
+let _carSafeB=null;
+function carLayout(){
+  const body=document.getElementById('car-body');
+  body.style.top=''; body.style.bottom='';
+  if(innerWidth>innerHeight) return;
+  if(!_carSafeB){ _carSafeB=document.createElement('div');
+    _carSafeB.style.cssText='position:absolute;visibility:hidden;pointer-events:none;height:env(safe-area-inset-bottom,0px)'; carwrap.appendChild(_carSafeB) }
+  const top=Math.round(document.getElementById('car-x').getBoundingClientRect().bottom+8);
+  const band=(navigator.standalone && window.screen) ? Math.max(0, Math.max(screen.width,screen.height)-innerHeight) : 0;
+  body.style.top=top+'px';
+  body.style.bottom=Math.max(_carSafeB.offsetHeight+12, top-band)+'px';
 }
 function openCar(){
   document.documentElement.classList.add('carmode');
-  carwrap.classList.add('on'); _carOn=true; carFitScreen();
+  carwrap.classList.add('on'); _carOn=true; carLayout();
   if(!_carScene) _carScene=carScene(document.getElementById('car-road'));
   _carScene.size(); _carScene.draw(_carDist);
   _carDir=0; _carPrev=null;   // sentido só aparece depois que o KM andar (parado = "—")
@@ -2956,7 +2965,7 @@ document.getElementById('car-open').addEventListener('click', e=>{ e.stopPropaga
 document.getElementById('car-x').addEventListener('click', closeCar);
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && _carOn) closeCar() });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _carKick() });
-window.addEventListener('resize', ()=>{ if(_carOn && _carScene){ carFitScreen(); _carScene.size(); _carScene.draw(_carDist); carRefit() } });
+window.addEventListener('resize', ()=>{ if(_carOn && _carScene){ carLayout(); _carScene.size(); _carScene.draw(_carDist); carRefit() } });
 function paintCar(){
   const $=id=>document.getElementById(id), f=S.fix, km=$('car-km'), nx=$('car-next');
   if(f){
