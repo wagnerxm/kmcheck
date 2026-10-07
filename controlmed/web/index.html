@@ -545,17 +545,17 @@ textarea:focus {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   33–44. Tela de Login/Setup — fundo escuro uniforme
-   com padrão abstrato de rodovias em verde-limão
+   33–45. Tela de Login/Setup — fundo claro premium
+   com padrão abstrato de rodovias
    ═══════════════════════════════════════════════════════════ */
 
-/* ── 33. Container login/setup — fundo escuro uniforme ── */
+/* ── 33. Container login/setup — fundo claro quente uniforme ── */
 .min-h-screen.bg-surface.flex.items-center {
   background:
-    radial-gradient(ellipse 800px 500px at 50% 30%, rgba(183,217,45,.04), transparent 70%),
-    radial-gradient(ellipse 600px 400px at 20% 70%, rgba(183,217,45,.02), transparent 70%),
-    radial-gradient(ellipse 500px 300px at 80% 60%, rgba(122,184,0,.02), transparent 70%),
-    linear-gradient(180deg, #0e1014 0%, #0b0d10 50%, #08090c 100%) !important;
+    radial-gradient(ellipse 900px 600px at 30% 20%, rgba(183,217,45,.07), transparent 70%),
+    radial-gradient(ellipse 700px 500px at 70% 70%, rgba(183,217,45,.05), transparent 70%),
+    radial-gradient(ellipse 500px 400px at 50% 50%, rgba(122,184,0,.03), transparent 70%),
+    linear-gradient(180deg, #f4f4f2 0%, #edeee8 50%, #e8e9e3 100%) !important;
 }
 
 /* ── 34. Padrão abstrato de rodovias — pseudo-element ── */
@@ -564,13 +564,13 @@ textarea:focus {
   position: absolute !important;
   inset: 0 !important;
   pointer-events: none !important;
-  opacity: .06 !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg fill='none'%3E%3C!-- Curvas de rodovia --%3E%3Cpath d='M-20 80 Q60 30 140 70 T300 55 T420 75' stroke='%23b7d92d' stroke-width='1.2' opacity='0.7'/%3E%3Cpath d='M-20 82 Q60 32 140 72 T300 57 T420 77' stroke='%23b7d92d' stroke-width='0.4' opacity='0.4' stroke-dasharray='8 6'/%3E%3Cpath d='M-10 160 Q80 120 170 155 T340 140 T420 165' stroke='%23b7d92d' stroke-width='1' opacity='0.5'/%3E%3Cpath d='M-10 162 Q80 122 170 157 T340 142 T420 167' stroke='%23b7d92d' stroke-width='0.3' opacity='0.3' stroke-dasharray='6 8'/%3E%3Cpath d='M-30 250 Q70 210 160 245 T330 230 T430 255' stroke='%23b7d92d' stroke-width='0.8' opacity='0.4'/%3E%3Cpath d='M0 330 Q90 295 180 325 T350 310 T420 335' stroke='%23b7d92d' stroke-width='0.6' opacity='0.3'/%3E%3C!-- Marcos KM --%3E%3Crect x='140' y='65' width='2' height='8' rx='1' fill='%23b7d92d' opacity='0.5'/%3E%3Crect x='300' y='50' width='2' height='8' rx='1' fill='%23b7d92d' opacity='0.4'/%3E%3Crect x='170' y='150' width='2' height='7' rx='1' fill='%23b7d92d' opacity='0.35'/%3E%3Crect x='330' y='225' width='2' height='7' rx='1' fill='%23b7d92d' opacity='0.3'/%3E%3C!-- Interseções --%3E%3Ccircle cx='140' cy='70' r='3' fill='none' stroke='%23b7d92d' stroke-width='0.5' opacity='0.3'/%3E%3Ccircle cx='340' cy='140' r='2.5' fill='none' stroke='%23b7d92d' stroke-width='0.4' opacity='0.25'/%3E%3C/g%3E%3C/svg%3E") !important;
-  background-size: 400px 400px !important;
+  opacity: .08 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cg fill='none'%3E%3C!-- Rodovia principal — curva larga --%3E%3Cpath d='M-30 120 Q100 50 220 100 T450 80 T630 110' stroke='%23899a6a' stroke-width='2.5' opacity='0.5'/%3E%3Cpath d='M-30 124 Q100 54 220 104 T450 84 T630 114' stroke='%23899a6a' stroke-width='0.6' opacity='0.35' stroke-dasharray='12 8'/%3E%3C!-- Rodovia secundária --%3E%3Cpath d='M-20 240 Q120 190 260 230 T500 210 T640 250' stroke='%23899a6a' stroke-width='1.8' opacity='0.4'/%3E%3Cpath d='M-20 243 Q120 193 260 233 T500 213 T640 253' stroke='%23899a6a' stroke-width='0.4' opacity='0.25' stroke-dasharray='8 10'/%3E%3C!-- Estrada vicinal --%3E%3Cpath d='M-10 370 Q130 330 250 360 T480 340 T620 375' stroke='%23899a6a' stroke-width='1.2' opacity='0.3'/%3E%3C!-- Transversal --%3E%3Cpath d='M200 -20 Q180 100 210 200 T190 350 T220 500 T200 630' stroke='%23899a6a' stroke-width='1' opacity='0.2'/%3E%3Cpath d='M420 -10 Q440 120 410 230 T430 380 T415 520 T440 640' stroke='%23899a6a' stroke-width='0.8' opacity='0.15'/%3E%3C!-- Estrada terciária --%3E%3Cpath d='M-20 490 Q100 460 230 485 T460 470 T630 500' stroke='%23899a6a' stroke-width='0.8' opacity='0.2'/%3E%3C!-- Marcos KM --%3E%3Crect x='220' y='95' width='3' height='10' rx='1.5' fill='%23899a6a' opacity='0.35'/%3E%3Crect x='450' y='75' width='3' height='10' rx='1.5' fill='%23899a6a' opacity='0.25'/%3E%3Crect x='260' y='225' width='2.5' height='9' rx='1' fill='%23899a6a' opacity='0.25'/%3E%3Crect x='480' y='335' width='2.5' height='9' rx='1' fill='%23899a6a' opacity='0.2'/%3E%3C!-- Interseções / rotatórias --%3E%3Ccircle cx='210' cy='200' r='5' fill='none' stroke='%23899a6a' stroke-width='0.8' opacity='0.2'/%3E%3Ccircle cx='420' cy='230' r='4' fill='none' stroke='%23899a6a' stroke-width='0.6' opacity='0.15'/%3E%3Ccircle cx='200' cy='360' r='3.5' fill='none' stroke='%23899a6a' stroke-width='0.5' opacity='0.15'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 600px 600px !important;
   z-index: 0 !important;
 }
 
-/* ── 35. Fundo SVG original (OA) — recolorir para verde-limão ── */
+/* ── 35. Fundo SVG original (OA) — recolorir para tons suaves ── */
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] {
   opacity: 1 !important;
 }
@@ -583,61 +583,60 @@ textarea:focus {
 }
 
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] svg {
-  opacity: .10 !important;
+  opacity: .06 !important;
 }
 
-/* SVG elements — recolorir montanhas/estrada para tons escuros com lime */
+/* SVG elements — recolorir para tons suaves de verde/sage */
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] svg path {
-  fill: #1a2810 !important;
+  fill: #c5d4a8 !important;
 }
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] svg line {
-  stroke: #2a3a18 !important;
+  stroke: #b0c490 !important;
 }
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] svg rect {
-  fill: #b7d92d !important;
+  fill: #7ab800 !important;
 }
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] svg circle {
-  fill: #b7d92d !important;
+  fill: #7ab800 !important;
 }
 .min-h-screen.bg-surface.flex.items-center > div[aria-hidden="true"] svg ellipse {
   fill: transparent !important;
 }
 
-/* ── 36. Texto sobre fundo escuro — login/setup ── */
+/* ── 36. Texto sobre fundo claro — login/setup ── */
 .min-h-screen.bg-surface.flex.items-center .text-text {
-  color: #ffffff !important;
+  color: #1c2333 !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-text-2 {
-  color: rgba(255,255,255,.60) !important;
+  color: #5a6170 !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-text-3 {
-  color: rgba(255,255,255,.40) !important;
+  color: #8a8f9c !important;
 }
 
 /* Título e subtítulo */
 .min-h-screen.bg-surface.flex.items-center h1 {
-  color: #ffffff !important;
+  color: #1c2333 !important;
   font-weight: 700 !important;
   letter-spacing: -.01em !important;
 }
 
-/* ── 37. Form card — dark glassmorphic sobre fundo escuro ── */
+/* ── 37. Form card — glass branco premium ── */
 .min-h-screen.bg-surface.flex.items-center .glass-card-solid,
 .min-h-screen.bg-surface.flex.items-center .glass-card {
   background:
-    linear-gradient(135deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%),
-    rgba(18,18,18,.85) !important;
-  border: 1px solid rgba(255,255,255,.08) !important;
-  color: #ffffff !important;
+    linear-gradient(135deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.85) 100%) !important;
+  border: 1px solid rgba(0,0,0,.06) !important;
+  color: #1c2333 !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.06),
-    0 16px 40px rgba(0,0,0,.40),
-    0 4px 12px rgba(0,0,0,.25) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
-  backdrop-filter: blur(24px) saturate(130%) !important;
+    0 20px 50px rgba(0,0,0,.08),
+    0 8px 20px rgba(0,0,0,.04),
+    inset 0 1px 0 rgba(255,255,255,.90) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+  backdrop-filter: blur(24px) saturate(140%) !important;
 }
 
-/* ── 38. Inputs dentro do card escuro ── */
+/* ── 38. Inputs no card claro ── */
 .min-h-screen.bg-surface.flex.items-center input[type="text"],
 .min-h-screen.bg-surface.flex.items-center input[type="password"],
 .min-h-screen.bg-surface.flex.items-center input[type="email"],
@@ -646,28 +645,28 @@ textarea:focus {
 .min-h-screen.bg-surface.flex.items-center input[type="url"],
 .min-h-screen.bg-surface.flex.items-center select,
 .min-h-screen.bg-surface.flex.items-center textarea {
-  background: rgba(255,255,255,.06) !important;
-  border: 1px solid rgba(255,255,255,.10) !important;
-  color: #ffffff !important;
+  background: rgba(0,0,0,.03) !important;
+  border: 1px solid rgba(0,0,0,.10) !important;
+  color: #1c2333 !important;
   border-radius: 12px !important;
 }
 
 .min-h-screen.bg-surface.flex.items-center input::placeholder,
 .min-h-screen.bg-surface.flex.items-center textarea::placeholder {
-  color: rgba(255,255,255,.30) !important;
+  color: #a0a5b0 !important;
 }
 
 .min-h-screen.bg-surface.flex.items-center input:focus,
 .min-h-screen.bg-surface.flex.items-center select:focus,
 .min-h-screen.bg-surface.flex.items-center textarea:focus {
-  border-color: rgba(183,217,45,.40) !important;
-  box-shadow: 0 0 0 3px rgba(183,217,45,.10) !important;
-  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(122,184,0,.50) !important;
+  box-shadow: 0 0 0 3px rgba(183,217,45,.12) !important;
+  background: #ffffff !important;
 }
 
 /* ── 39. Labels dentro do form ── */
 .min-h-screen.bg-surface.flex.items-center label {
-  color: rgba(255,255,255,.45) !important;
+  color: #5a6170 !important;
 }
 
 /* ── 40. Botão principal — gradiente verde-limão premium ── */
@@ -679,60 +678,59 @@ textarea:focus {
   border: none !important;
   border-radius: 14px !important;
   box-shadow:
-    0 6px 20px rgba(183,217,45,.30),
-    0 2px 6px rgba(183,217,45,.15),
-    inset 0 1px 0 rgba(255,255,255,.20) !important;
+    0 6px 20px rgba(183,217,45,.25),
+    0 2px 6px rgba(183,217,45,.12),
+    inset 0 1px 0 rgba(255,255,255,.25) !important;
   letter-spacing: .01em !important;
 }
 
 .min-h-screen.bg-surface.flex.items-center button[type="submit"]:hover {
   background: linear-gradient(135deg, #c4e340 0%, #b7d92d 50%, #8ecc10 100%) !important;
   box-shadow:
-    0 8px 28px rgba(183,217,45,.40),
-    0 4px 10px rgba(183,217,45,.20),
-    inset 0 1px 0 rgba(255,255,255,.25) !important;
+    0 8px 28px rgba(183,217,45,.35),
+    0 4px 10px rgba(183,217,45,.18),
+    inset 0 1px 0 rgba(255,255,255,.30) !important;
   transform: translateY(-1px) !important;
 }
 
 /* ── 41. Link "Já tenho uma conta" ── */
 .min-h-screen.bg-surface.flex.items-center a,
 .min-h-screen.bg-surface.flex.items-center .cursor-pointer:not(button) {
-  color: rgba(255,255,255,.45) !important;
+  color: #5a6170 !important;
 }
 .min-h-screen.bg-surface.flex.items-center a:hover,
 .min-h-screen.bg-surface.flex.items-center .cursor-pointer:not(button):hover {
-  color: #b7d92d !important;
+  color: #7ab800 !important;
 }
 
 /* ── 42. Info box no setup ── */
 .min-h-screen.bg-surface.flex.items-center .bg-info-soft {
   background: rgba(66,165,245,.08) !important;
   border-color: rgba(66,165,245,.15) !important;
-  color: #90caf9 !important;
+  color: #1565c0 !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-info {
-  color: #90caf9 !important;
+  color: #1565c0 !important;
 }
 
 /* Danger box */
 .min-h-screen.bg-surface.flex.items-center .bg-danger-soft {
   background: rgba(239,83,80,.08) !important;
-  border-color: rgba(239,83,80,.15) !important;
+  border-color: rgba(239,83,80,.12) !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-danger {
-  color: #ef9a9a !important;
+  color: #c62828 !important;
 }
 
-/* ── 43. Logo icon box no login — glow verde-limão ── */
+/* ── 43. Logo icon box no login — verde-limão suave ── */
 .min-h-screen.bg-surface.flex.items-center .bg-sidebar.rounded-xl.shadow-lg {
   background:
-    linear-gradient(135deg, rgba(183,217,45,.15) 0%, rgba(122,184,0,.08) 100%),
-    rgba(18,18,18,.90) !important;
-  border: 1px solid rgba(183,217,45,.20) !important;
+    linear-gradient(135deg, #b7d92d 0%, #7ab800 100%) !important;
+  border: none !important;
   box-shadow:
-    0 0 24px rgba(183,217,45,.15),
-    0 8px 24px rgba(0,0,0,.40),
-    inset 0 1px 0 rgba(255,255,255,.08) !important;
+    0 8px 24px rgba(183,217,45,.25),
+    0 4px 10px rgba(0,0,0,.08),
+    inset 0 1px 0 rgba(255,255,255,.30) !important;
 }
 
 /* ── 44. Spinner no botão ── */
@@ -745,10 +743,10 @@ textarea:focus {
 
 /* ── 45. Eye/show password icon ── */
 .min-h-screen.bg-surface.flex.items-center .text-text-3.hover\:text-text-2 {
-  color: rgba(255,255,255,.30) !important;
+  color: #8a8f9c !important;
 }
 .min-h-screen.bg-surface.flex.items-center .text-text-3.hover\:text-text-2:hover {
-  color: rgba(255,255,255,.55) !important;
+  color: #5a6170 !important;
 }
 </style>
 
