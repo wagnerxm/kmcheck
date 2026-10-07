@@ -236,11 +236,24 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .base-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
 .base-item:last-child{border-bottom:none}
 .base-item .bname{font-weight:800;font-size:16px;letter-spacing:.03em;color:#fff}
-.base-item .bmeta{font-size:11px;color:#fff;font-family:var(--mono);margin-top:3px}
+.base-item .bmeta{font-size:11px;color:#fff;font-family:var(--mono);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .base-item .binfo{flex:1;min-width:0}
-/* linhas tocáveis da rodovia (estaca / trecho coincidente): abrem o diálogo para mudar */
-.base-item .blink{display:block;text-align:left;background:none;border:none;padding:6px 0 0;margin:0;cursor:pointer;
-  color:var(--gold2);font-family:var(--sans);font-size:12px;line-height:1.4}
+/* botão ⋯ (detalhes da rodovia) — pontinho verde quando há estaca manual ou trecho coincidente */
+.bdet{position:relative;flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.06);
+  border:1px solid var(--line);color:var(--text);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.bdet svg{width:20px;height:20px;fill:currentColor}
+.bdet.has::after{content:'';position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:#b7d92d;
+  box-shadow:0 0 6px rgba(183,217,45,.7)}
+.base-item .bdet + .del{margin-left:0}
+/* diálogo de detalhes: seções e linhas tocáveis */
+.dsec{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:16px 0 8px;font-weight:600}
+.drow{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel2);border:1px solid var(--line);
+  border-radius:14px;padding:12px 14px;color:var(--text);font-family:var(--sans);cursor:pointer}
+.drow span{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.drow b{font-size:14px}
+.drow i{font-style:normal;font-size:12px;color:var(--mut)}
+.drow i.ok{color:var(--gold2)}
+.drow em{font-style:normal;font-size:20px;color:var(--mut)}
 .estrow{display:grid;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr) auto minmax(0,.9fr) 36px;gap:6px;align-items:center;margin-top:8px}
 .estrow input{padding:10px 8px;font-size:16px;text-align:center}
 .estrow > span{color:var(--mut);font-size:14px}
@@ -1126,6 +1139,18 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 </dialog>
 
+<!-- diálogo: detalhes de uma rodovia baixada (botão ⋯ da lista) -->
+<dialog id="dlg-base" aria-labelledby="base-name">
+  <h2 class="sec" style="margin-top:0">Detalhes da rodovia</h2>
+  <p id="base-name" style="font-weight:800;font-size:18px;margin:-4px 0 2px"></p>
+  <p id="base-meta" class="hint" style="margin-top:0"></p>
+  <div class="dsec">Estaca</div>
+  <button class="drow" id="base-est"></button>
+  <div class="dsec">Trechos coincidentes</div>
+  <div id="base-ovls" style="display:flex;flex-direction:column;gap:8px"></div>
+  <button class="btn ghost" id="base-close" style="margin-top:16px">Fechar</button>
+</dialog>
+
 <!-- diálogo: trecho coincidente entre duas rodovias — qual vale -->
 <dialog id="dlg-ovl" aria-labelledby="dlg-ovl-title">
   <h2 class="sec" id="dlg-ovl-title" style="margin-top:0">Trecho coincidente</h2>
@@ -1590,6 +1615,38 @@ function askEstaca(id, okLabel, kmSugerido){
   });
 }
 
+/* detalhes de uma rodovia (botão ⋯ da lista): estaca e trechos coincidentes, cada um tocável para
+   editar. Os diálogos de edição abrem por cima deste; ao voltar, o conteúdo é redesenhado. */
+function openBaseDetails(id){
+  const b=S.bases.find(x=>x.id===id); if(!b) return;
+  const dlg=document.getElementById('dlg-base');
+  const paint=()=>{
+    document.getElementById('base-name').textContent=b.id;
+    document.getElementById('base-meta').textContent=`KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}`+(b.fonte?' · '+b.fonte:'');
+    const refs=getEstRefs(b.id);
+    document.getElementById('base-est').innerHTML=refs.length
+      ? `<span><b>Zero do lote</b>${refs.map(r=>`<i>km ${fkm(r.km)} = Est. ${r.e}+${String(r.m).replace('.',',')}</i>`).join('')}</span><em>›</em>`
+      : `<span><b>Automática</b><i>Contada desde o km 0 (20 m por estaca)</i></span><em>›</em>`;
+    const list=getOverlaps(), mine=list.map((o,i)=>({o,i})).filter(({o})=>o.a===b.id||o.b===b.id);
+    const box=document.getElementById('base-ovls');
+    box.innerHTML=mine.length ? mine.map(({o,i})=>{
+      const me=o.a===b.id, other=me?o.b:o.a, ki=me?o.aKi:o.bKi, kf=me?o.aKf:o.bKf;
+      const vale=o.keep==='both'?'as duas (a mais próxima)':(o.keep==='a'?o.a:o.b);
+      return `<button class="drow" data-i="${i}"><span><b>Km ${fkm(ki)}–${fkm(kf)}</b><i>coincide com ${_esc(other)}</i><i class="ok">Vale: ${_esc(vale)}</i></span><em>›</em></button>`;
+    }).join('') : '<p class="hint" style="margin-top:0">Nenhum trecho coincidente com outra rodovia instalada.</p>';
+    box.querySelectorAll('.drow').forEach(btn=>btn.onclick=async()=>{
+      const l=getOverlaps(), o=l[+btn.dataset.i]; if(!o) return;
+      o.keep=await askOverlap(o); setOverlaps(l); renderBases(); paint();
+    });
+  };
+  document.getElementById('base-est').onclick=async()=>{
+    const r=await askEstaca(b.id,'Salvar'); if(r===null) return;
+    setEstRefs(b.id, r); renderBases(); paint();
+  };
+  document.getElementById('base-close').onclick=()=>dlg.close();
+  paint(); showDlg(dlg);
+}
+
 /* ================= lista de bases ================= */
 function renderBases(){
   const el=document.getElementById('baselist');
@@ -1598,23 +1655,19 @@ function renderBases(){
   if(!S.bases.length){
     el.innerHTML='<p class="empty">Nenhuma rodovia baixada.<br>Importe o KMZ do SNV/DNIT ou um CSV com o eixo (KM · LAT · LONG).</p>';
   } else {
+    /* lista enxuta: nome, segmento e SNV. Estaca e trechos coincidentes ficam nos detalhes (botão ⋯);
+       o pontinho verde no ⋯ avisa que a rodovia tem estaca manual ou trecho coincidente */
     const ovl=getOverlaps();
     el.innerHTML=S.bases.map(b=>{
-      const refs=getEstRefs(b.id);
-      const est=refs.length ? 'Estaca: zero '+refs.map(r=>`no km ${fkm(r.km)} (${r.e}+${String(r.m).replace('.',',')})`).join(' · ') : 'Estaca automática';
-      const ovs=ovl.map((o,i)=>({o,i})).filter(({o})=>o.a===b.id||o.b===b.id).map(({o,i})=>{
-        const me=o.a===b.id, other=me?o.b:o.a, ki=me?o.aKi:o.bKi, kf=me?o.aKf:o.bKf;
-        const vale=o.keep==='both'?'as duas':(o.keep==='a'?o.a:o.b);
-        return `<button class="blink ovl" data-i="${i}">Km ${fkm(ki)}–${fkm(kf)} coincide com ${_esc(other)} · vale: ${_esc(vale)} ›</button>`;
-      }).join('');
+      const tem=getEstRefs(b.id).length>0 || ovl.some(o=>o.a===b.id||o.b===b.id);
       return `
       <div class="base-item">
         <div class="binfo">
           <div class="bname">${_esc(b.br)}/${_esc(b.uf)}</div>
-          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}${b.fonte?' · '+_esc(b.fonte):''}</div>
-          <button class="blink est" data-id="${_esc(b.id)}">${_esc(est)} ›</button>
-          ${ovs}
+          <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}</div>
+          ${b.fonte?`<div class="bmeta">${_esc(b.fonte)}</div>`:''}
         </div>
+        <button class="bdet${tem?' has':''}" data-id="${_esc(b.id)}" aria-label="Detalhes de ${_esc(b.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
         <button class="del" data-id="${_esc(b.id)}">remover</button>
       </div>`}).join('');
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
@@ -1624,15 +1677,7 @@ function renderBases(){
       setOverlaps(getOverlaps().filter(o=>o.a!==btn.dataset.id && o.b!==btn.dataset.id));
       renderBases();
     });
-    el.querySelectorAll('.blink.est').forEach(btn=>btn.onclick=async()=>{
-      const r=await askEstaca(btn.dataset.id,'Salvar');
-      if(r===null) return;
-      setEstRefs(btn.dataset.id, r); renderBases();
-    });
-    el.querySelectorAll('.blink.ovl').forEach(btn=>btn.onclick=async()=>{
-      const list=getOverlaps(), o=list[+btn.dataset.i]; if(!o) return;
-      o.keep=await askOverlap(o); setOverlaps(list); renderBases();
-    });
+    el.querySelectorAll('.bdet').forEach(btn=>btn.onclick=()=>openBaseDetails(btn.dataset.id));
   }
   for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
   /* bases mudaram: recalcula o KM na hora — parado (iOS quase não manda leitura nova) a tela
