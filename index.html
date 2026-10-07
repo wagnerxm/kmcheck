@@ -552,7 +552,8 @@ html.carmode,html.carmode body{background:#f1f2f3!important}
 #car-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 #car-x:active{transform:scale(.94)}
 /* bloco de cartões centralizado na altura: a mesma margem em cima (abaixo do ×) e embaixo */
-#car-body{position:absolute;left:0;right:0;--cm:calc(max(6px, env(safe-area-inset-top, 0px)) + 46px);
+/* largura limitada a 115 --u: em tablet os cartões não esticam além da proporção do celular */
+#car-body{position:absolute;left:0;right:0;margin:0 auto;width:min(100%, calc(var(--u)*115));--cm:calc(max(6px, env(safe-area-inset-top, 0px)) + 46px);
   top:var(--cm);bottom:max(var(--cm), calc(env(safe-area-inset-bottom, 0px) + 12px));
   z-index:2;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*3)}
 /* material grafite: luz no canto de cima, sombra no canto de baixo, degradê grafite→preto e borda com brilho
@@ -609,7 +610,7 @@ html.carmode,html.carmode body{background:#f1f2f3!important}
 /* deitado no suporte: cartão do KM à esquerda (placa ao lado do KM) e os cartões menores numa grade à direita */
 @media (orientation:landscape){
   #carwrap{--u:min(1vh,.5vw)}
-  #car-body{top:calc(14px + env(safe-area-inset-top, 0px));bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+  #car-body{width:auto;margin:0;top:calc(14px + env(safe-area-inset-top, 0px));bottom:calc(14px + env(safe-area-inset-bottom, 0px));
     left:calc(16px + env(safe-area-inset-left, 0px));right:calc(62px + env(safe-area-inset-right, 0px));
     display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:calc(var(--u)*2.6);align-items:stretch}
   #car-main{width:auto;flex:none;border-radius:calc(var(--u)*7);padding:0 calc(var(--u)*5);
@@ -625,6 +626,12 @@ html.carmode,html.carmode body{background:#f1f2f3!important}
   .ctile{display:flex;flex-direction:column;justify-content:center;padding:calc(var(--u)*2) calc(var(--u)*4.2)}
   .ctile .cl{font-size:calc(var(--u)*2.7)}
   .ctile .cv{font-size:calc(var(--u)*4.8)}
+}
+/* celular pequeno deitado (SE, Androids compactos): a coluna dos cartões menores ganha largura para
+   "Decrescente" e o número do contrato caberem legíveis */
+@media (orientation:landscape) and (max-width:720px){
+  #car-body{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+  .ctile{padding:calc(var(--u)*2) calc(var(--u)*3.2)}
 }
 /* botão que abre o modo carro, no canto do cartão do KM da tela inicial */
 .herocar{position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -2941,12 +2948,12 @@ function openCar(){
   carRefit(); _carKick();
 }
 /* encolhe o conteúdo do cartão do KM (--m) só se a tela for baixa demais para ele; depois ajusta os
-   textos longos (KM com milhar, contrato, coordenadas em graus, "Decrescente") à largura do seu cartão */
+   textos longos (KM com milhar, estaca, contrato, coordenadas em graus, "Decrescente") à largura do seu cartão */
 function carRefit(){
   const main=document.getElementById('car-main'); let m=1;
   carwrap.style.setProperty('--m',m);
   while(main.scrollHeight>main.clientHeight+1 && m>.6){ m-=.04; carwrap.style.setProperty('--m',m.toFixed(2)) }
-  ['car-km','car-ct','car-coord','car-dir'].forEach(id=>{ document.getElementById(id).dataset.fit='' });
+  document.querySelectorAll('#car-km, #car-tiles .cv').forEach(el=>{ el.dataset.fit='' });
   paintCar();
 }
 function _carFit(el){
@@ -2965,7 +2972,13 @@ document.getElementById('car-open').addEventListener('click', e=>{ e.stopPropaga
 document.getElementById('car-x').addEventListener('click', closeCar);
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && _carOn) closeCar() });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _carKick() });
-window.addEventListener('resize', ()=>{ if(_carOn && _carScene){ carLayout(); _carScene.size(); _carScene.draw(_carDist); carRefit() } });
+/* Reajuste quando a tela muda (giro, barra do navegador): ResizeObserver na própria tela do modo carro
+   dispara DEPOIS do novo layout — o evento resize do iOS chega antes de a tela terminar de girar e as
+   medidas saíam velhas (KM e textos ficavam com o tamanho da orientação anterior). */
+let _carRO=0;
+function _carResize(){ if(_carRO) return; _carRO=requestAnimationFrame(()=>{ _carRO=0; if(_carOn && _carScene){ carLayout(); _carScene.size(); _carScene.draw(_carDist); carRefit() } }) }
+window.addEventListener('resize', _carResize);
+if(window.ResizeObserver) new ResizeObserver(_carResize).observe(carwrap);
 function paintCar(){
   const $=id=>document.getElementById(id), f=S.fix, km=$('car-km'), nx=$('car-next');
   if(f){
@@ -3004,7 +3017,7 @@ function paintCar(){
   $('car-ct').textContent=getContract()||'—';
   /* lado = sentido de marcha pelo KM (o LE/LD da legenda da foto não muda) */
   $('car-dir').textContent=f&&_carDir>0?'Crescente':f&&_carDir<0?'Decrescente':'—';
-  _carFit(km); _carFit($('car-ct')); _carFit($('car-coord')); _carFit($('car-dir'));
+  _carFit(km); document.querySelectorAll('#car-tiles .cv').forEach(el=>_carFit(el));
   _carKick();
 }
 
