@@ -342,6 +342,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   padding:4px 14px;border-radius:20px;pointer-events:none;backdrop-filter:blur(6px);
   transition:opacity .3s;white-space:nowrap}
 #camflashfx.on{animation:camflash .18s ease-out}
+/* luz de flash por tela (câmera frontal): branco total no instante da foto */
+#camscreenflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:59;transition:opacity .08s}
+#camscreenflash.on{opacity:1}
 /* máscara de giro: cobre TODA a câmera (inclusive as barras) com preto durante a rotação da
    página, para o rearranjo do layout acontecer por baixo, invisível. Aparece instantânea e some
    com um fade curto quando já assentou. */
@@ -1042,6 +1045,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <img id="camlogo" alt="" style="display:none">
       <div id="liveplate"></div>
     </div>
+    <div id="camscreenflash"></div>
     <div id="camflashfx"></div>
     <div id="camzoom" style="display:none">1.0×</div>
   </div>
@@ -3345,6 +3349,9 @@ document.getElementById('shutter').onclick=async()=>{
     toast(`⚠ GPS impreciso (±${Math.round(S.pos.acc)} m) — aguarde o sinal melhorar.`);
     return;
   }
+  // FLASH ARMADO: dispara só agora, na captura (antes o botão só deixava a lanterna acesa).
+  // Acende e espera ~350ms para o auto-exposição/foco ajustarem à luz, senão a foto sai escura.
+  if(flashOn) await fireFlash();
   // feedback imediato no toque, sincronizado com o disparo: piscada + vibração + som, ANTES do
   // processamento pesado do canvas (senão o retorno chegaria com atraso perceptível)
   const fx=document.getElementById('camflashfx');
@@ -3415,7 +3422,7 @@ document.getElementById('shutter').onclick=async()=>{
     console.error('[KMCheck] captura falhou:', err);
     toast('⚠ Erro ao capturar foto — tente novamente.');
   }
-  }finally{ _capturing=false }
+  }finally{ _capturing=false; endFlash() }
 };
 
 /* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
@@ -3535,15 +3542,40 @@ function initFlashSupport(){
 function paintFlashIcon(){
   document.getElementById('cam-flash').classList.toggle('on', flashOn);
 }
-document.getElementById('cam-flash').onclick=async()=>{
-  if(!flashSupported){ toast('Este aparelho/navegador não permite controlar o flash pelo app.'); return }
-  const want=!flashOn;
-  try{
-    const track=S.stream.getVideoTracks()[0];
-    await track.applyConstraints({advanced:[{torch:want}]});
-    flashOn=want;   // só muda o estado se o aparelho aceitou (antes o ícone ficava invertido após falha)
-    paintFlashIcon();
-  }catch(e){ toast('Não consegui controlar o flash.'); }
+/* O botão agora ARMA o flash (liga/desliga o modo), como na câmera nativa: a luz só dispara no
+   momento da foto. Traseira: torch do hardware (se o navegador expõe). Frontal: o aparelho não tem
+   LED, então usa a tela branca (#camscreenflash) como luz. */
+function flashKind(){
+  if(S.facing==='user') return 'screen';
+  return flashSupported ? 'torch' : null;
+}
+async function fireFlash(){
+  const kind=flashKind();
+  if(kind==='torch'){
+    try{
+      await S.stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:true}]});
+      await new Promise(r=>setTimeout(r,350));
+    }catch(e){}
+  } else if(kind==='screen'){
+    const sf=document.getElementById('camscreenflash');
+    sf.classList.add('on');
+    await new Promise(r=>setTimeout(r,350));
+  }
+}
+function endFlash(){
+  try{ document.getElementById('camscreenflash').classList.remove('on') }catch(e){}
+  if(flashKind()==='torch'){
+    try{ S.stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:false}]}).catch(()=>{}) }catch(e){}
+  }
+}
+document.getElementById('cam-flash').onclick=()=>{
+  if(!flashOn && !flashKind()){
+    toast('Este aparelho/navegador não permite flash na câmera traseira pelo app (iPhone/Safari bloqueia a lanterna). Use a câmera frontal ou o app de câmera.');
+    return;
+  }
+  flashOn=!flashOn;
+  paintFlashIcon();
+  toast(flashOn ? '⚡ Flash ativado — dispara ao tirar a foto' : 'Flash desativado');
 };
 
 /* ---- zoom da câmera (pinch-to-zoom com zoom real do hardware) ----
