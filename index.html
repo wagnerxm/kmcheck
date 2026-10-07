@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>KM Check</title>
-<meta name="description" content="Documentação fotográfica de rodovias com KM interpolado do SNV/DNIT — funciona offline.">
+<meta name="description" content="Documentação fotográfica de rodovias com KM interpolado do SNV/DNIT. Funciona offline.">
 <meta name="theme-color" id="meta-theme" content="#f1f2f3">
 <meta name="color-scheme" content="dark light">
 <link rel="manifest" href="manifest.v143.webmanifest">
@@ -255,6 +255,8 @@ input:focus,textarea:focus,select:focus{border-color:rgba(183,217,45,.5)}
 textarea{min-height:110px;resize:vertical}
 label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin:12px 0 6px}
 .hint{font-size:12px;color:var(--mut);line-height:1.55;margin-top:8px}
+/* uma frase por linha: os textos montados pelo app usam \n entre as frases */
+#dl-status,#dl-snv-hint,#ctkm-hint,#ctlink-for{white-space:pre-line}
 .tag{display:inline-block;font-family:var(--mono);font-size:11px;background:var(--panel2);border-radius:7px;padding:2px 8px;color:var(--gold2)}
 /* ---------- listas ---------- */
 .base-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
@@ -758,7 +760,7 @@ dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
 .checker{background:#2a2e33;background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:#eef1f6;padding:11px 20px;border-radius:999px;font-size:13px;z-index:70;opacity:0;transition:opacity .25s;max-width:88vw;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:#eef1f6;padding:11px 20px;border-radius:22px;font-size:13px;line-height:1.45;white-space:pre-line;z-index:70;opacity:0;transition:opacity .25s;width:max-content;max-width:88vw;text-align:center}
 .toast.on{opacity:1}
 .kmzlist{max-height:260px;overflow:auto;margin:10px 0}
 .kmzlist .switch{padding:9px 0}
@@ -844,7 +846,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <input type="text" id="dl-kmf" inputmode="decimal" placeholder="Km final (auto)" aria-label="Km final">
     </div>
     <button class="btn gold" id="dl-go" style="margin-top:14px">Baixar rodovia</button>
-    <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.</p>
+    <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira.<br>Precisa de internet só agora.<br>Depois funciona offline.</p>
   </div>
   <h2 class="sec">Importe um arquivo</h2>
   <div class="card impcard">
@@ -1048,7 +1050,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <button class="btn small ghost" id="logo-del" style="flex:0 0 auto;display:none">Remover</button>
       </div>
       <input type="file" id="logoin" accept="image/*" style="display:none">
-      <p class="hint">A logo é gravada na foto. O fundo é recortado automaticamente na hora de escolher.</p>
+      <p class="hint">A logo vai gravada na foto.<br>O fundo é recortado sozinho ao escolher.</p>
     </div>
 
     <h2 class="sec">Ajustes</h2>
@@ -1200,7 +1202,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" aria-label="Novo contrato" style="flex:1">
         <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
       </div>
-      <label class="listrow ctautorow" style="display:none" title="Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."></label>
+      <label class="listrow ctautorow" style="display:none" title="Ligada: os contratos vinculados entram sozinhos.&#10;Desligada: nenhum entra sozinho.&#10;Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada: os contratos vinculados entram sozinhos. Desligada: nenhum entra sozinho. Escolher um contrato à mão desliga esta chave."></label>
       <p class="hint">Contratos cadastrados aparecem para escolha rápida na câmera.</p>
     </div>
 
@@ -1235,7 +1237,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <!-- banner de GPS desativado — aparece quando a câmera abre sem localização -->
   <div id="gps-banner">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="1" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="19"/><line x1="1" y1="10" x2="4.5" y2="10"/><line x1="15.5" y1="10" x2="19" y2="10"/></svg>
-    <span>GPS desativado — toque para ativar</span>
+    <span>GPS desligado.<br>Toque para ativar</span>
   </div>
   <div id="camstage">
     <div id="camrot">
@@ -1291,7 +1293,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
-  <label class="listrow ctautorow" style="display:none" title="Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."></label>
+  <label class="listrow ctautorow" style="display:none" title="Ligada: os contratos vinculados entram sozinhos.&#10;Desligada: nenhum entra sozinho.&#10;Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada: os contratos vinculados entram sozinhos. Desligada: nenhum entra sozinho. Escolher um contrato à mão desliga esta chave."></label>
 
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
 </dialog>
@@ -1458,13 +1460,13 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <dialog id="dlg-est" aria-labelledby="dlg-est-title">
   <h2 class="sec" id="dlg-est-title" style="margin-top:0">Estaca</h2>
   <p id="est-road" style="font-weight:800;font-size:16px;margin:-4px 0 6px"></p>
-  <div class="switch"><label for="est-auto">Automática — contada desde o km 0 (20 m por estaca)</label><input type="radio" name="estmode" id="est-auto"></div>
+  <div class="switch"><label for="est-auto">Automática: contada desde o km 0 (20 m por estaca)</label><input type="radio" name="estmode" id="est-auto"></div>
   <div class="switch"><label for="est-man">Definir o zero do lote</label><input type="radio" name="estmode" id="est-man"></div>
   <div id="est-manbox">
     <div class="estrow esthead" aria-hidden="true"><span>KM</span><span></span><span>Estaca</span><span></span><span>Metros</span><span></span></div>
     <div id="est-rows"></div>
     <button class="btn small ghost" id="est-add" style="margin-top:10px">+ Outro lote (outro zero)</button>
-    <p class="hint">Cada zero vale do KM informado em diante, até o próximo zero. Antes do primeiro zero a estaca não aparece.</p>
+    <p class="hint">Cada zero vale a partir do seu KM até o próximo zero.<br>Antes do primeiro zero, a estaca não aparece.</p>
   </div>
   <div class="row" style="margin-top:14px">
     <button class="btn ghost" id="est-cancel">Cancelar</button>
@@ -1476,7 +1478,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <dialog id="dlg-legacy" aria-labelledby="legacy-title">
   <h2 class="sec" id="legacy-title" style="margin-top:0">Fotos antigas</h2>
   <p id="legacy-txt" style="font-size:15px;line-height:1.45;margin:0"></p>
-  <p class="hint">Se você confirma que elas já estão na galeria do seu celular, pode apagá-las do app. As cópias no celular não são afetadas.</p>
+  <p class="hint">Se elas já estão na galeria do celular, pode apagar do app.<br>As cópias do celular não mudam.</p>
   <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
     <button class="btn" id="legacy-del" style="color:#ff8a80">Apagar as antigas</button>
     <button class="btn gold" id="legacy-keep">Manter</button>
@@ -1500,7 +1502,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <h2 class="sec" id="dlg-ovl-title" style="margin-top:0">Trecho coincidente</h2>
   <p class="hint" style="margin-top:0;color:var(--text)">Estas rodovias usam o mesmo traçado neste trecho:</p>
   <div id="ovl-list" class="ovl-list"></div>
-  <p class="hint">Qual o app deve usar aqui para o KM e a legenda?</p>
+  <p class="hint">Qual delas o app deve usar neste trecho?</p>
   <div id="ovl-btns" style="display:flex;flex-direction:column;gap:8px;margin-top:12px"></div>
 </dialog>
 
@@ -1513,7 +1515,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <line x1="33" y1="22" x2="42" y2="22"/>
     </svg>
     <h3 id="dlg-gps-title">Localização Obrigatória</h3>
-    <p id="gps-msg">O KM Check precisa do GPS para gravar as coordenadas em cada foto. Sem localização, não é possível tirar fotos.</p>
+    <p id="gps-msg">O KM Check precisa do GPS para gravar as coordenadas em cada foto.<br>Sem localização, não é possível tirar fotos.</p>
   </div>
   <div class="rl-actions">
     <button id="gps-dismiss">Fechar</button>
@@ -1528,7 +1530,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="switch" style="border-bottom:none;padding:4px 0"><label for="logo-holes">Vazar áreas internas do fundo</label><input type="checkbox" id="logo-holes" checked></div>
   <label class="f" for="logo-tol">Tolerância do recorte</label>
   <input type="range" id="logo-tol" min="5" max="80" value="32">
-  <p class="hint">O fundo detectado vira transparência. "Vazar áreas internas" remove o fundo também dentro de círculos e letras (desligue se a logo tiver detalhes da mesma cor do fundo). Se sumir parte da logo, diminua a tolerância; se sobrar resíduo, aumente.</p>
+  <p class="hint">O fundo detectado fica transparente.<br><b>Vazar áreas internas:</b> tira o fundo também de dentro de letras e círculos.<br>Sumiu parte da logo? Diminua a tolerância.<br>Sobrou fundo? Aumente.</p>
   <div class="row" style="margin-top:12px">
     <button class="btn ghost" id="logo-cancel">Cancelar</button>
     <button class="btn" id="logo-orig">Usar original</button>
@@ -1636,7 +1638,7 @@ function idb(){
       if(!d.objectStoreNames.contains('bases')) d.createObjectStore('bases',{keyPath:'id'});
       if(!d.objectStoreNames.contains('photos')) d.createObjectStore('photos',{keyPath:'id', autoIncrement:true});
     };
-    r.onblocked=()=>rej(new Error('Banco bloqueado — feche outras abas do KM Check'));
+    r.onblocked=()=>rej(new Error('O app está aberto em outra aba.\nFeche as outras abas do KM Check.'));
     r.onsuccess=()=>{ _db=r.result; _db.onclose=()=>{_db=null}; _db.onversionchange=()=>{_db.close();_db=null}; res(_db) };
     r.onerror=()=>rej(r.error); })}
 async function dbAll(){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases').objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
@@ -1903,10 +1905,10 @@ function askOverlap(o){
   return new Promise(resolve=>{
     const dlg=document.getElementById('dlg-ovl');
     document.getElementById('ovl-list').innerHTML=
-      `<div><b>${_esc(o.a)}</b> — km ${fkm(o.aKi)} a ${fkm(o.aKf)}</div><div><b>${_esc(o.b)}</b> — km ${fkm(o.bKi)} a ${fkm(o.bKf)}</div>`;
+      `<div><b>${_esc(o.a)}</b>: km ${fkm(o.aKi)} a ${fkm(o.aKf)}</div><div><b>${_esc(o.b)}</b>: km ${fkm(o.bKi)} a ${fkm(o.bKf)}</div>`;
     const bx=document.getElementById('ovl-btns');
     bx.innerHTML=`<button class="btn gold" data-k="a">Usar ${_esc(o.a)}</button><button class="btn" data-k="b">Usar ${_esc(o.b)}</button>`+
-      `<button class="btn ghost" data-k="both">Manter as duas</button><p class="hint" style="margin-top:0;text-align:center">"Manter as duas": o app usa a que estiver mais perto.</p>`;
+      `<button class="btn ghost" data-k="both">Manter as duas</button><p class="hint" style="margin-top:0;text-align:center">Manter as duas: o app usa a mais próxima do GPS.</p>`;
     let done=false;
     const fin=k=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(k) };
     bx.querySelectorAll('button').forEach(b=>b.onclick=()=>fin(b.dataset.k));
@@ -2020,7 +2022,7 @@ function renderBases(){
   const sel=document.getElementById('k-base');
   sel.innerHTML='';
   if(!S.bases.length){
-    el.innerHTML='<p class="empty">Nenhuma rodovia baixada.<br>Importe o KMZ do SNV/DNIT ou um CSV com o eixo (KM · LAT · LONG).</p>';
+    el.innerHTML='<p class="empty">Nenhuma rodovia baixada.<br>Baixe uma rodovia ou importe um arquivo.</p>';
   } else {
     /* lista enxuta: nome, segmento e SNV. Estaca e trechos coincidentes ficam nos detalhes (botão ⋯);
        o pontinho verde no ⋯ avisa que a rodovia tem estaca manual ou trecho coincidente */
@@ -2119,9 +2121,9 @@ function fmtSnvId(id){ const mi=parseInt(id.slice(4,6),10); return _snvMonths[mi
       const o=document.createElement('option');
       o.value=''; o.textContent=fmtSnvId(_localSnv)+' (local)';
       sel.appendChild(o);
-      hint.textContent='Usando dados locais (servidor indisponível).'; hint.style.display='';
+      hint.textContent='Servidor fora do ar.\nUsando os dados salvos no app.'; hint.style.display='';
     } else {
-      hint.textContent='Servidor indisponível — usando dados locais.'; hint.style.display='';
+      hint.textContent='Servidor fora do ar.\nUsando os dados salvos no app.'; hint.style.display='';
     }
   }
 })();
@@ -2242,7 +2244,7 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
   if(!filtered.length) throw new Error('Nenhum trecho restou após filtro de KM/tipo para BR-'+br+'/'+uf);
   return wfsToBase(filtered, br, uf, snv);
 }
-const DL_DEFAULT_HINT='Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.';
+const DL_DEFAULT_HINT='Deixe em branco para baixar a rodovia inteira.\nPrecisa de internet só agora.\nDepois funciona offline.';
 /* número digitado no padrão brasileiro ou com ponto: "300,5" · "1.300,5" · "309.55" → 300.5 · 1300.5 · 309.55.
    Com vírgula, os pontos são separador de milhar — antes "1.300,000" (BR-116, BR-101, BR-230…)
    virava 1,3 e o KM saía errado. Sem vírgula, o ponto é decimal. */
@@ -2321,21 +2323,21 @@ document.getElementById('filein').onchange=async e=>{
         await importShapefile(mk(find('.shp')), mk(find('.dbf')), find('.shx')?mk(find('.shx')):null, f.name);
       } else if(find('.kml')){
         importKml(new TextDecoder('utf-8').decode(zf[find('.kml')]), f.name);
-      } else throw new Error('ZIP sem .shp+.dbf nem .kml reconhecido.');
+      } else throw new Error('O ZIP não tem .shp + .dbf nem .kml.');
     } else if(name.endsWith('.kmz')||name.endsWith('.kml')){
       let xml;
       if(name.endsWith('.kmz')){
         const buf=new Uint8Array(await f.arrayBuffer());
         const zf=fflate.unzipSync(buf);
         const kmlName=Object.keys(zf).find(k=>k.toLowerCase().endsWith('.kml'));
-        if(!kmlName) throw new Error('KMZ sem arquivo KML interno.');
+        if(!kmlName) throw new Error('O KMZ não tem um arquivo KML dentro.');
         xml=new TextDecoder('utf-8').decode(zf[kmlName]);
       } else xml=await f.text();
       importKml(xml, f.name);
     } else {
       importCsv(await f.text(), f.name);
     }
-  }catch(err){ toast('Falha ao ler o arquivo: '+err.message) }
+  }catch(err){ toast('Falha ao ler o arquivo.\n'+err.message, 4200) }
 };
 
 /* ---- Shapefile oficial do SNV (.shp geometria + .dbf atributos) ----
@@ -2381,7 +2383,7 @@ function parseShpRecord(buf){ // buf = bytes daquele registro (inclui os 8 bytes
 }
 async function importShapefile(shpFile, dbfFile, shxFile, fname){
   const recs=readDbfBuf(await dbfFile.arrayBuffer());
-  if(!recs.length || recs[0].vl_br===undefined) throw new Error('.dbf não tem os campos esperados do SNV (vl_br, sg_uf, vl_km_inic...).');
+  if(!recs.length || recs[0].vl_br===undefined) throw new Error('Este .dbf não é do SNV.\nFaltam os campos de BR, UF e KM.');
   let offsets, full=null;   // full: .shp lido inteiro (só sem .shx) — local, não vaza para a próxima importação
   if(shxFile) offsets=readShxOffsets(await shxFile.arrayBuffer());
   const segsByKey={};
@@ -2422,7 +2424,7 @@ async function importShapefile(shpFile, dbfFile, shxFile, fname){
     try{
       const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
       let n=0; const inst=[];
-      for(const k of sel){ const b=await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile) — '+fname); if(b){ n++; inst.push(b) } }
+      for(const k of sel){ const b=await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile): '+fname); if(b){ n++; inst.push(b) } }
       dlg.close(); renderBases();
       if(!n && sel.length) toast(NO_COORD_MSG, 5000);
       for(const b of inst) await checkOverlaps(b);
@@ -2488,7 +2490,7 @@ function importKml(xml, fname){
       segs.push({br:normBr(br), uf:(uf||'?').toUpperCase().slice(-2), kmi, kmf, pts});
     }
   }
-  if(!segs.length){ toast('Nenhum trecho com km inicial/final encontrado no KML.'); return }
+  if(!segs.length){ toast('Nenhum trecho com km inicial e final no arquivo.'); return }
   // agrupar por BR/UF
   const groups={};
   for(const s of segs){ const k=s.br+'/'+s.uf; (groups[k]=groups[k]||[]).push(s) }
@@ -2521,7 +2523,7 @@ function normBr(v){
   const m=String(v).match(/(\d{3})/);
   return m?('BR-'+m[1]):String(v).toUpperCase();
 }
-const NO_COORD_MSG='Nenhuma rodovia instalada — as coordenadas precisam estar em latitude/longitude (SIRGAS 2000/WGS 84), não em UTM.';
+const NO_COORD_MSG='Nenhuma rodovia instalada.\nAs coordenadas do arquivo precisam estar em latitude e longitude (graus), não em UTM.';
 async function installFromSegs(key, segs, fonte){
   // ordenar por km inicial; dentro de cada trecho, km linear por comprimento de arco
   segs.sort((a,b)=>Math.min(a.kmi,a.kmf)-Math.min(b.kmi,b.kmf));
@@ -2599,7 +2601,7 @@ function parseCoordLines(text){
 function importCsv(text, fname){
   const {rows}=parseCoordLines(text);
   const withKm=rows.filter(r=>r.km!=null);
-  if(withKm.length<2){ toast('CSV precisa de colunas KM, LAT e LONG (mín. 2 linhas válidas).'); return }
+  if(withKm.length<2){ toast('A planilha precisa das colunas KM, LAT e LONG, com pelo menos 2 linhas.'); return }
   const dlg=document.getElementById('dlg-csv');
   document.getElementById('csv-info').textContent=withKm.length.toLocaleString('pt-BR')+' pontos válidos em '+fname;
   // pré-preencher a partir do nome do arquivo
@@ -2695,7 +2697,7 @@ function showGpsDeniedDialog(){
     msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
       '<b>No Android:</b> toque no <b>cadeado 🔒 na barra de endereço</b> do Chrome → <b>Permissões → Localização</b> → Permitir.';
   } else {
-    msg.textContent='O KM Check precisa do GPS para gravar as coordenadas em cada foto. Permita o acesso à localização nas configurações do navegador.';
+    msg.innerHTML='O KM Check precisa do GPS para gravar as coordenadas em cada foto.<br>Permita o acesso à localização nas configurações do navegador.';
   }
   showDlg(dlg);
 }
@@ -3296,7 +3298,7 @@ function openCtLink(c, ask){
 }
 function renderCtLink(){
   const c=_ctLinkFor, ls=getCtLinks()[c]||[];
-  document.getElementById('ctlink-for').textContent='Contrato '+c+' — ao entrar no trecho escolhido, o contrato entra sozinho na legenda.';
+  document.getElementById('ctlink-for').textContent='Contrato '+c+': ao entrar no trecho escolhido, ele entra sozinho na legenda.';
   const cur=document.getElementById('ctlink-cur');
   cur.innerHTML=ls.length ? ls.map((l,i)=>`<div class="lkbr" style="cursor:default"><span>${_esc(linkLabel(l))}</span><button class="x" data-i="${i}" style="background:none;border:none">remover</button></div>`).join('') : '';
   cur.querySelectorAll('.x').forEach(b=>b.onclick=()=>{
@@ -3313,7 +3315,7 @@ function openCtKm(baseId){
   const b=S.bases.find(x=>x.id===baseId); if(!b) return;
   _ctKmBase=baseId;
   document.getElementById('dlg-ctkm-title').textContent=baseId;
-  document.getElementById('ctkm-hint').textContent='Baixada de km '+fkm(b.kmMin)+' a '+fkm(b.kmMax)+' (km com 3 casas decimais). Informe o trecho do contrato ou use o segmento todo.';
+  document.getElementById('ctkm-hint').textContent='Rodovia baixada do km '+fkm(b.kmMin)+' ao '+fkm(b.kmMax)+'.\nInforme o trecho do contrato ou use o segmento todo.';
   document.getElementById('ctkm-i').value=''; document.getElementById('ctkm-f').value='';
   showDlg(document.getElementById('dlg-ctkm'));
 }
@@ -3498,7 +3500,7 @@ function saveLogoFromCanvas(cv){
       c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);
       localStorage.setItem('kc-logo', c2.toDataURL('image/png'));
       c2.width=0; c2.height=0;
-    }catch(e2){ toast('Erro ao salvar logo — libere espaço.'); return }
+    }catch(e2){ toast('Erro ao salvar a logo.\nLibere espaço no celular.'); return }
   }
   localStorage.setItem('kc-logoon','1');   // acabou de escolher a logo: o botão LOGO da câmera volta aceso
   loadLogo();
@@ -4049,13 +4051,13 @@ document.getElementById('shutter').onclick=async()=>{
   const _posAge=S.pos?.t ? Date.now()-S.pos.t : Infinity;
   const _maxAge=(S.pos && S.pos.spd>3) ? 15000 : 120000;
   if(!S.pos || !_validGps(S.pos.lat, S.pos.lon) || _posAge>_maxAge){
-    toast(S.pos && _posAge>_maxAge ? '⚠ GPS desatualizado — aguarde nova leitura.' : '⚠ GPS obrigatório — ative a localização para tirar fotos.');
+    toast(S.pos && _posAge>_maxAge ? '⚠ GPS desatualizado.\nAguarde uma nova leitura.' : '⚠ Ative a localização para tirar fotos.');
     if(S.gpsDenied) showGpsDeniedDialog();
     else restartGps();   // reinicia o watch se ele congelou (startGps sozinho não fazia nada)
     return;
   }
   if(S.pos.acc!=null && S.pos.acc>500){
-    toast(`⚠ GPS impreciso (±${Math.round(S.pos.acc)} m) — aguarde o sinal melhorar.`);
+    toast(`⚠ GPS impreciso (±${Math.round(S.pos.acc)} m).\nAguarde o sinal melhorar.`);
     return;
   }
   // FLASH ARMADO: dispara só agora, na captura (antes o botão só deixava a lanterna acesa).
@@ -4093,7 +4095,7 @@ document.getElementById('shutter').onclick=async()=>{
   if(rot>180) rot-=360;
   const turned=Math.abs(rot)===90;
   const W=turned?sh:sw, H=turned?sw:sh;
-  if(W<=0||H<=0){ toast('⚠ Proporção inválida — ajuste o formato.'); return }
+  if(W<=0||H<=0){ toast('⚠ Formato inválido.\nEscolha 1:1, 4:3 ou 16:9.'); return }
   const c=document.createElement('canvas');
   c.width=W; c.height=H;
   const ctx=c.getContext('2d');
@@ -4129,7 +4131,7 @@ document.getElementById('shutter').onclick=async()=>{
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
   }catch(err){
     console.error('[KMCheck] captura falhou:', err);
-    toast('⚠ Erro ao capturar foto — tente novamente.');
+    toast('⚠ Erro ao tirar a foto.\nTente de novo.');
   }
   }finally{ _capturing=false; endFlash() }
 };
@@ -4252,7 +4254,7 @@ function endFlash(){
 }
 document.getElementById('cam-flash').onclick=()=>{
   if(!flashOn && !flashKind()){
-    toast('Este aparelho/navegador não permite flash na câmera traseira pelo app (iPhone/Safari bloqueia a lanterna). Use a câmera frontal ou o app de câmera.');
+    toast('Este aparelho não libera o flash da câmera traseira para o app.\nUse a câmera frontal ou a câmera do celular.');
     return;
   }
   flashOn=!flashOn;
@@ -4400,7 +4402,7 @@ function galCaption(){
   if(m){
     const n=document.createElement('div'); n.textContent=m.name;
     const s=document.createElement('div'); s.className='galst'+(m.saved?' ok':'');
-    s.textContent=m.saved?'✓ salva no celular':(m.legacy?'foto anterior à atualização — sem registro de salvamento':'só no app');
+    s.textContent=m.saved?'✓ salva no celular':(m.legacy?'Foto antiga: o app não sabe se já está no celular':'só no app');
     cap.append(n, s);
   }
 }
@@ -4411,7 +4413,7 @@ function galCaption(){
 function askLegacyPhotos(n, tambem){
   return new Promise(resolve=>{
     const dlg=document.getElementById('dlg-legacy');
-    document.getElementById('legacy-txt').textContent=`${n} foto(s) são de antes da atualização — o app não tem registro se foram salvas no celular.`;
+    document.getElementById('legacy-txt').textContent=`${n} foto${n>1?'s':''} antiga${n>1?'s':''}: o app não sabe se já ${n>1?'estão':'está'} no celular.`;
     const del=document.getElementById('legacy-del');
     del.textContent=tambem?'Apagar as antigas também':'Apagar as antigas';
     let done=false; const fin=v=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(v) };
@@ -4425,7 +4427,7 @@ document.getElementById('gal-clean').onclick=async()=>{
   if(galBusy) return;
   const salvas=galMetas.filter(m=>m.saved), antigas=galMetas.filter(m=>m.legacy);
   const soApp=galMetas.length-salvas.length-antigas.length;
-  if(!salvas.length && !antigas.length){ toast('Nenhuma foto salva no celular para limpar — as que só existem no app são mantidas.', 4200); return }
+  if(!salvas.length && !antigas.length){ toast('Nenhuma foto para limpar.\nAs que estão só no app foram mantidas.', 4200); return }
   const apagar=[];
   if(salvas.length){
     if(!confirm(`Apagar da galeria do app ${salvas.length} foto(s) que já estão salvas no celular?`+
@@ -4617,7 +4619,7 @@ document.getElementById('gal-share').onclick=async()=>{
 };
 document.getElementById('gal-del').onclick=async()=>{
   const m=galMetas[galIdx]; if(!m || galBusy) return;
-  if(!confirm('Excluir esta foto da galeria do app?\n(Cópias já salvas no aparelho não são afetadas.)')) return;
+  if(!confirm('Excluir esta foto do app?\nA cópia salva no celular continua lá.')) return;
   try{
     await deletePhoto(m.id);
     galMetas.splice(galIdx,1);
@@ -5082,7 +5084,7 @@ function saveAndShare(blob){
     /* iOS: share sheet é o ÚNICO caminho para salvar na galeria de Fotos via web.
        <a download> não funciona em PWA standalone do Safari. Falhou (não foi cancelamento):
        a foto fica SÓ na galeria do app — o botão "Compartilhar / salvar" de lá resolve depois. */
-    const onlyInApp=()=>toast('⚠ A foto não foi para o Fotos — use "Compartilhar / salvar" na galeria do app', 4200);
+    const onlyInApp=()=>toast('⚠ A foto não foi para o Fotos.\nUse "Salvar" na galeria do app.', 4200);
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share({files:[file]}).then(saida).catch(e=>{
         if(e.name==='AbortError') return;   // o próprio usuário cancelou — sem aviso
@@ -5098,7 +5100,7 @@ function saveAndShare(blob){
       const hasSW=navigator.serviceWorker && navigator.serviceWorker.controller;
       if(hasSW){
         _downloadViaSW(blob, name).then(ok=>{
-          if(ok) saida(); else toast('⚠ A foto não foi salva no celular — use "Salvar" na galeria do app', 4200);
+          if(ok) saida(); else toast('⚠ A foto não foi salva no celular.\nUse "Salvar" na galeria do app.', 4200);
         });
       } else if(navigator.canShare && navigator.canShare({files:[file]})){
         /* sem SW: share sheet como fallback (ainda dentro do gesto do obturador) */
