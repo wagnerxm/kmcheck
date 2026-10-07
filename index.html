@@ -295,21 +295,27 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 /* vínculo contrato↔BR: botão "vincular", linhas dos trechos e selo do modo (automático/manual) */
 .ct-item .lnk{background:none;border:1px solid var(--line);color:var(--gold2);border-radius:999px;padding:10px 12px;font-size:12px;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-/* item de CONTRATO em 3 linhas (cabe em ~390px sem quebrar o número): número / trechos / ações.
-   Número e km usam nowrap — quebram só ENTRE os itens, nunca no meio do valor. */
-.ct-item.ctx{display:block;padding:12px 2px}
-.ctx .ct-top{display:flex;align-items:center;gap:12px}
-.ctx .num{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.ctx .ct-links{margin:4px 0 0 30px}
-.ctx .lk{display:flex;flex-wrap:wrap;gap:0 6px;font-size:11.5px;line-height:1.55;color:var(--mut)}
-.ctx .lk b{font-weight:600;color:var(--text);white-space:nowrap}
-.ctx .lk span{white-space:nowrap}
+/* item de CONTRATO compacto, 2 linhas: [radio · número · ações em ícones] + trecho(s) pequeno(s).
+   Ícones de 40x40 (alvo de toque confortável) com glifo de 18px. Trechos em UMA linha com
+   reticências, para a altura do item ser uniforme (lista = 4 itens, depois rola). */
+.ct-item.ctx{display:block;padding:2px 0 5px}
+.ctx .ct-top{display:flex;align-items:center;gap:10px;min-height:40px}
+.ctx .num{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ctx .ct-links{margin:-6px 0 0 28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;line-height:15px;color:var(--mut)}
+.ctx .lk b{font-weight:600;color:var(--text);margin-right:5px}
+.ctx .lk+.lk::before{content:' · ';color:var(--mut)}
 .ctx .lk.bad,.ctx .lk.bad b{color:var(--err)}
-.ctx .ct-act{display:flex;align-items:center;gap:8px;margin:8px 0 0 30px;flex-wrap:wrap}
-.ctx .ct-auto{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);min-height:36px;margin-right:auto;cursor:pointer}
-.ctx .ct-auto input{width:18px;height:18px;accent-color:var(--gold);flex:0 0 auto}
-.ctx .lnk,.ctx .del{min-height:36px;min-width:0;padding:0 12px;font-size:12px}
-#ctlist,#ctlist2{max-height:300px}
+.ctx .ib{flex:0 0 auto;width:40px;height:40px;margin:0 -4px 0 0;padding:0;background:none;border:none;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;color:var(--mut);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ctx .ib svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ctx .ib.lnk.has{color:var(--gold2)}
+.ctx .ib.del{color:var(--err)}
+.ctx .ib.ctc-auto .slash{display:inline}
+.ctx .ib.ctc-auto.on{color:var(--gold)}
+.ctx .ib.ctc-auto.on .slash{display:none}
+.ctx .ib.ctc-auto.on.paused{color:var(--mut)}
+.ctx .ib:active{background:rgba(255,255,255,.08)}
+#ctlist,#ctlist2{max-height:calc(4 * 64px)}
 .ctmode{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);vertical-align:middle}
 .ctmode.auto{color:#0d0f08;background:var(--gold);border-color:transparent}
 .ctautorow small{display:block;color:var(--mut);font-size:11.5px;line-height:1.4;margin-top:3px}
@@ -320,7 +326,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* listas de serviços/contratos: a partir de ~3 itens, rola DENTRO do cartão (igual ao cartão "i"
    da câmera). O input "Adicionar" e a dica continuam fixos abaixo, fora da rolagem. */
 #svclist{max-height:168px;overflow-y:auto}
-#ctlist,#ctlist2{overflow-y:auto}
+#ctlist,#ctlist2{overflow-y:auto;-webkit-overflow-scrolling:touch}
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
@@ -2714,12 +2720,16 @@ document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.onchange=()=>{
   ctRefresh();
 });
 function ctRefresh(){ renderContracts(); renderContracts2(); paintTags(); paintGps() }
+/* ícones (stroke, herdam a cor): raio = automático (cortado quando desligado), corrente = vínculos, × = remover */
+const _IC_BOLT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/><path class="slash" d="M3 3l18 18" style="display:none"/></svg>';
+const _IC_LINK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
+const _IC_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function ctItemHtml(c, act){
-  const ls=getCtLinks()[c]||[], on=ctAutoOn();
-  const links=ls.length ? '<div class="ct-links">'+ls.map(linkHtml).join('')+'</div>' : '';
+  const ls=getCtLinks()[c]||[], on=ctAutoOn(), en=ctAutoFor(c), e=_esc(c);
+  const links=ls.length ? '<div class="ct-links" title="'+_esc(ls.map(linkLabel).join(' | '))+'">'+ls.map(linkHtml).join('')+'</div>' : '';
   /* o "automático" do contrato só aparece quando ele tem vínculo (sem trecho não há o que automatizar) */
-  const auto=ls.length ? `<label class="ct-auto"><input type="checkbox" class="ctc-auto" ${ctAutoFor(c)?'checked':''}>automático${on?'':' (pausado)'}</label>` : '<span style="margin-right:auto"></span>';
-  return `<div class="ct-item ctx ${c===act?'sel':''}" data-ct="${_esc(c)}"><div class="ct-top"><span class="dot"></span><span class="num">${_esc(c)}</span></div>${links}<div class="ct-act">${auto}<button class="lnk">${ls.length?'vínculos':'vincular'}</button><button class="del">remover</button></div></div>`;
+  const auto=ls.length ? `<button class="ib ctc-auto ${en?'on':''} ${on?'':'paused'}" role="switch" aria-checked="${en}" aria-label="Automático do contrato ${e}: ${en?(on?'ligado':'ligado, pausado pela chave geral'):'desligado'}" title="Automático: ${en?'ligado':'desligado'}${en&&!on?' (pausado)':''}">${_IC_BOLT.replace('style="display:none"','')}</button>` : '';
+  return `<div class="ct-item ctx ${c===act?'sel':''}" data-ct="${e}"><div class="ct-top"><span class="dot"></span><span class="num">${e}</span>${auto}<button class="ib lnk ${ls.length?'has':''}" aria-label="${ls.length?'Vínculos':'Vincular BR'} do contrato ${e}" title="${ls.length?'Vínculos':'Vincular BR'}">${_IC_LINK}</button><button class="ib del" aria-label="Remover contrato ${e}" title="Remover">${_IC_X}</button></div>${links}</div>`;
 }
 function wireCtItems(el){
   el.querySelectorAll('.ct-item').forEach(item=>{
@@ -2732,9 +2742,10 @@ function wireCtItems(el){
     };
     item.querySelector('.lnk').onclick=()=>openCtLink(c,false);
     const cb=item.querySelector('.ctc-auto');
-    if(cb) cb.onchange=()=>{
-      setCtAutoFor(c, cb.checked);
-      if(cb.checked){
+    if(cb) cb.onclick=()=>{
+      const want=!ctAutoFor(c);
+      setCtAutoFor(c, want);
+      if(want){
         /* ligar o automático de um contrato religa também a chave geral (é o "voltar ao automático") */
         if(!ctAutoOn()) try{ localStorage.setItem('kc-ct-auto','1') }catch(e){}
         toast('Automático ligado para '+c); autoContract();
