@@ -16,7 +16,7 @@
 /* ═══════════════════════════════════════════════════════════
    Layout 01 — ControlCheck Desktop Panel
    Fundo claro quente · Cards escuros glassmórficos
-   Acento verde-limão · Sidebar premium · Tipografia refinada
+   Acento azul petróleo & ciano · Sidebar premium · Tipografia refinada
    ═══════════════════════════════════════════════════════════ */
 
 /* ── 1. CSS Custom Properties — remapear paleta para Layout 01 ── */
@@ -24,11 +24,11 @@
   /* Sidebar — premium dark */
   --color-sidebar: #121212 !important;
   --color-sidebar-dark: #0a0a0a !important;
-  --color-sidebar-hover: rgba(183,217,45,.08) !important;
-  --color-sidebar-active: rgba(183,217,45,.14) !important;
+  --color-sidebar-hover: rgba(64,196,216,.08) !important;
+  --color-sidebar-active: rgba(64,196,216,.14) !important;
   --color-sidebar-text: rgba(255,255,255,.55) !important;
   --color-sidebar-text-active: #ffffff !important;
-  --color-sidebar-section: #b7d92d !important;
+  --color-sidebar-section: #40c4d8 !important;
   --color-sidebar-border: rgba(255,255,255,.08) !important;
 
   /* Superfícies claras */
@@ -42,12 +42,12 @@
   --color-text-2: #5a5a6e !important;
   --color-text-3: #9a9aaa !important;
 
-  /* Primary/accent — verde-limão */
-  --color-primary: #7ab800 !important;
-  --color-primary-light: #8ecc10 !important;
-  --color-primary-soft: rgba(122,184,0,.10) !important;
-  --color-accent: #7ab800 !important;
-  --color-accent-soft: rgba(122,184,0,.10) !important;
+  /* Primary/accent — azul petróleo & ciano */
+  --color-primary: #2098b0 !important;
+  --color-primary-light: #40c4d8 !important;
+  --color-primary-soft: rgba(64,196,216,.10) !important;
+  --color-accent: #2098b0 !important;
+  --color-accent-soft: rgba(64,196,216,.10) !important;
 
   /* Status */
   --color-success: #4caf50 !important;
@@ -85,7 +85,7 @@ body {
 }
 
 .sidebar-pattern::before {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23b7d92d' stroke-width='0.3'%3E%3Ccircle cx='30' cy='30' r='15'/%3E%3Ccircle cx='30' cy='30' r='8'/%3E%3Cline x1='0' y1='30' x2='60' y2='30'/%3E%3Cline x1='30' y1='0' x2='30' y2='60'/%3E%3Cpath d='M0 0 L30 30 L60 0'/%3E%3Cpath d='M0 60 L30 30 L60 60'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2340c4d8' stroke-width='0.3'%3E%3Ccircle cx='30' cy='30' r='15'/%3E%3Ccircle cx='30' cy='30' r='8'/%3E%3Cline x1='0' y1='30' x2='60' y2='30'/%3E%3Cline x1='30' y1='0' x2='30' y2='60'/%3E%3Cpath d='M0 0 L30 30 L60 0'/%3E%3Cpath d='M0 60 L30 30 L60 60'/%3E%3C/g%3E%3C/svg%3E") !important;
   opacity: .03 !important;
 }
 
@@ -105,9 +105,9 @@ body {
   background-color: rgba(255,255,255,.06) !important;
 }
 
-/* Sidebar section labels — verde-limão */
+/* Sidebar section labels — ciano */
 .text-sidebar-section {
-  color: #b7d92d !important;
+  color: #40c4d8 !important;
   font-weight: 700 !important;
   letter-spacing: .14em !important;
 }
@@ -119,12 +119,12 @@ body {
 
 /* Sidebar nav item hover */
 .hover\:bg-sidebar-hover:hover {
-  background: rgba(183,217,45,.08) !important;
+  background: rgba(64,196,216,.08) !important;
 }
 
-/* Sidebar active item — borda verde-limão */
+/* Sidebar active item — borda ciano */
 .border-l-sidebar-section {
-  border-left-color: #b7d92d !important;
+  border-left-color: #40c4d8 !important;
 }
 
 /* Sidebar buttons */
@@ -169,90 +169,90 @@ body {
   backdrop-filter: blur(20px) saturate(130%) !important;
 }
 
-/* ── 5. Primary buttons — verde-limão premium ── */
+/* ── 5. Primary buttons — ciano premium ── */
 .bg-primary {
-  background: linear-gradient(135deg, #8ecc10 0%, #7ab800 50%, #6aaa00 100%) !important;
-  color: #0d1200 !important;
+  background: linear-gradient(135deg, #40c4d8 0%, #2098b0 50%, #1a7a90 100%) !important;
+  color: #ffffff !important;
 }
 
 .bg-primary.text-white {
-  color: #0d1200 !important;
+  color: #ffffff !important;
   font-weight: 600 !important;
   border-radius: 10px !important;
   box-shadow:
-    0 2px 8px rgba(122,184,0,.30),
+    0 2px 8px rgba(64,196,216,.30),
     inset 0 1px 0 rgba(255,255,255,.25) !important;
   transition: all .2s ease !important;
 }
 
 .bg-primary.text-white:hover,
 .hover\:bg-primary-light:hover {
-  background: linear-gradient(135deg, #9ad820 0%, #8ecc10 100%) !important;
+  background: linear-gradient(135deg, #50d4e8 0%, #40c4d8 100%) !important;
   box-shadow:
-    0 4px 14px rgba(122,184,0,.40),
+    0 4px 14px rgba(64,196,216,.40),
     inset 0 1px 0 rgba(255,255,255,.30) !important;
   transform: translateY(-1px) !important;
 }
 
 /* Sidebar action buttons */
 .bg-sidebar.text-white.shadow-md {
-  background: linear-gradient(135deg, #8ecc10 0%, #7ab800 100%) !important;
-  color: #0d1200 !important;
+  background: linear-gradient(135deg, #40c4d8 0%, #2098b0 100%) !important;
+  color: #ffffff !important;
   font-weight: 600 !important;
   border: 1px solid rgba(255,255,255,.15) !important;
   box-shadow:
-    0 4px 16px rgba(122,184,0,.35),
+    0 4px 16px rgba(64,196,216,.35),
     inset 0 1px 0 rgba(255,255,255,.20) !important;
 }
 
 .bg-sidebar.text-white.shadow-md:hover {
-  background: linear-gradient(135deg, #9ad820 0%, #8ecc10 100%) !important;
+  background: linear-gradient(135deg, #50d4e8 0%, #40c4d8 100%) !important;
   box-shadow:
-    0 6px 20px rgba(122,184,0,.45),
+    0 6px 20px rgba(64,196,216,.45),
     inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
 
 /* ── 6. Badge / pill — acento ── */
 .bg-primary-soft {
-  background: rgba(122,184,0,.10) !important;
+  background: rgba(64,196,216,.10) !important;
 }
 .text-primary {
-  color: #6a9e00 !important;
+  color: #1a8a9e !important;
 }
 .bg-accent-soft {
-  background: rgba(122,184,0,.10) !important;
+  background: rgba(64,196,216,.10) !important;
 }
 .text-accent {
-  color: #6a9e00 !important;
+  color: #1a8a9e !important;
 }
 
 /* Primary soft badges */
 .bg-primary-soft.text-primary {
-  background: rgba(122,184,0,.12) !important;
-  color: #5a8e00 !important;
+  background: rgba(64,196,216,.12) !important;
+  color: #187888 !important;
   font-weight: 600 !important;
 }
 
 /* ── 7. Progress bars ── */
 .bg-primary.h-1\.5 {
-  background: linear-gradient(90deg, #7ab800, #b7d92d) !important;
+  background: linear-gradient(90deg, #2098b0, #40c4d8) !important;
   border-radius: 999px !important;
 }
 
-/* ── 8. Focus rings — verde-limão ── */
+/* ── 8. Focus rings — ciano ── */
 .focus\:ring-primary\/20:focus {
-  --tw-ring-color: rgba(122,184,0,.20) !important;
+  --tw-ring-color: rgba(64,196,216,.20) !important;
 }
 .focus\:ring-primary\/30:focus {
-  --tw-ring-color: rgba(122,184,0,.30) !important;
+  --tw-ring-color: rgba(64,196,216,.30) !important;
 }
 .focus\:border-primary\/40:focus {
-  border-color: rgba(122,184,0,.40) !important;
+  border-color: rgba(64,196,216,.40) !important;
 }
 
-/* ── 9. Tab active — verde-limão ── */
+/* ── 9. Tab active — ciano ── */
 .tab-active {
-  border-bottom: 2px solid #7ab800 !important;
+  border-bottom: 2px solid #2098b0 !important;
   color: #1a1a2e !important;
   font-weight: 600 !important;
 }
@@ -261,21 +261,21 @@ body {
   border-bottom-color: rgba(0,0,0,.08) !important;
 }
 
-/* ── 10. Borders — hover verde-limão ── */
+/* ── 10. Borders — hover ciano ── */
 .hover\:border-primary\/30:hover {
-  border-color: rgba(122,184,0,.30) !important;
+  border-color: rgba(64,196,216,.30) !important;
 }
 .hover\:border-primary\/40:hover {
-  border-color: rgba(122,184,0,.40) !important;
+  border-color: rgba(64,196,216,.40) !important;
 }
 .border-primary {
-  border-color: #7ab800 !important;
+  border-color: #2098b0 !important;
 }
 .border-primary\/20 {
-  border-color: rgba(122,184,0,.20) !important;
+  border-color: rgba(64,196,216,.20) !important;
 }
 .border-primary\/30 {
-  border-color: rgba(122,184,0,.30) !important;
+  border-color: rgba(64,196,216,.30) !important;
 }
 
 /* ── 11. Backgrounds hover — refinar ── */
@@ -283,11 +283,11 @@ body {
 .hover\:bg-primary-soft\/10:hover,
 .hover\:bg-primary-soft\/20:hover,
 .hover\:bg-primary-soft\/30:hover {
-  background: rgba(122,184,0,.08) !important;
+  background: rgba(64,196,216,.08) !important;
 }
 
 .hover\:bg-primary-light:hover {
-  background: #8ecc10 !important;
+  background: #40c4d8 !important;
 }
 
 .hover\:bg-surface:hover {
@@ -417,9 +417,9 @@ body {
 .text-text-2 { color: #5a5a6e !important; }
 .text-text-3 { color: #9a9aaa !important; }
 
-/* Large numbers — verde-limão */
+/* Large numbers — ciano */
 .text-2xl.font-bold.tabnum.text-primary {
-  color: #6a9e00 !important;
+  color: #1a8a9e !important;
   font-weight: 800 !important;
 }
 
@@ -436,13 +436,13 @@ body {
 .bg-surface\/50 { background: rgba(244,244,242,.50) !important; }
 .bg-surface\/60 { background: rgba(244,244,242,.60) !important; }
 
-/* ── 22. Hover text — verde-limão ── */
+/* ── 22. Hover text — ciano ── */
 .hover\:text-primary:hover,
 .hover\:text-primary-light:hover {
-  color: #7ab800 !important;
+  color: #2098b0 !important;
 }
 .group-hover\:text-primary:is(:where(.group):hover *) {
-  color: #7ab800 !important;
+  color: #2098b0 !important;
 }
 
 /* ── 23. Transition suaves globais ── */
@@ -455,8 +455,8 @@ a {
 
 /* ── 24. Sidebar active item — pill com glow ── */
 [class*="border-l-sidebar-section"][class*="bg-sidebar-active"] {
-  background: rgba(183,217,45,.12) !important;
-  border-left-color: #b7d92d !important;
+  background: rgba(64,196,216,.12) !important;
+  border-left-color: #40c4d8 !important;
   border-left-width: 3px !important;
 }
 
@@ -488,14 +488,14 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(122,184,0,.40) !important;
-  box-shadow: 0 0 0 3px rgba(122,184,0,.10) !important;
+  border-color: rgba(64,196,216,.40) !important;
+  box-shadow: 0 0 0 3px rgba(64,196,216,.10) !important;
   outline: none !important;
 }
 
 /* ── 27. Checkbox accent ── */
 .accent-primary {
-  accent-color: #7ab800 !important;
+  accent-color: #2098b0 !important;
 }
 
 /* ── 28. Left border accents on cards ── */
@@ -503,7 +503,7 @@ textarea:focus {
   border-left-color: inherit;
 }
 .border-l-4.border-primary {
-  border-left-color: #7ab800 !important;
+  border-left-color: #2098b0 !important;
 }
 
 /* ── 29. Animated pulse glow ── */
@@ -532,15 +532,15 @@ textarea:focus {
 .bg-red-100 { background: rgba(239,83,80,.10) !important; }
 .border-red-200 { border-color: rgba(239,83,80,.20) !important; }
 
-/* ── 31. Sidebar logo icon — glow verde-limão ── */
+/* ── 31. Sidebar logo icon — glow ciano ── */
 .bg-sidebar.rounded-xl.shadow-lg svg,
 .bg-sidebar.rounded-xl.shadow-lg img {
-  filter: drop-shadow(0 0 6px rgba(183,217,45,.30)) !important;
+  filter: drop-shadow(0 0 6px rgba(64,196,216,.30)) !important;
 }
 
 /* ── 32. Selection ── */
 ::selection {
-  background: rgba(183,217,45,.25) !important;
+  background: rgba(64,196,216,.25) !important;
   color: #1a1a2e !important;
 }
 
