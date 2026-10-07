@@ -423,10 +423,17 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   background:rgba(16,16,16,.78);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
   color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #gal-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* "Limpar galeria": canto superior direito, mesma altura e mesmo vidro do botão voltar */
+#gal-clean{position:absolute;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right, 0px));z-index:2;
+  height:44px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:7px;cursor:pointer;
+  background:rgba(16,16,16,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.18);
+  color:#fff;font-family:var(--sans);font-size:13px;font-weight:600}
+#gal-clean svg{width:17px;height:17px;stroke:#ff8a80;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+[data-android] #gal-clean{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(16,16,16,.92)}
 /* A foto fica no CENTRO DA TELA: o palco ocupa a tela toda e cada slide reserva o MESMO espaço em
    cima (botão voltar) e embaixo (barra) — o maior dos dois —, então a foto nunca fica "mais pra cima"
    nem encosta nos botões, em qualquer aparelho. */
-#gallerywrap{--galpad:max(calc(68px + env(safe-area-inset-top, 0px)), calc(112px + env(safe-area-inset-bottom, 0px)))}
+#gallerywrap{--galpad:max(calc(68px + env(safe-area-inset-top, 0px)), calc(126px + env(safe-area-inset-bottom, 0px)))}
 #gal-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 #gal-track{position:absolute;inset:0;will-change:transform}
 .gal-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:var(--galpad) 0;box-sizing:border-box}
@@ -445,7 +452,10 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #gal-share svg{color:#b7d92d}
 #gal-del{color:#ff8a80!important}
 #gal-count{min-width:76px;text-align:center;color:#fff;font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
-#gal-caption{max-width:100%;color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gal-caption{max-width:100%;text-align:center;color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.03em}
+#gal-caption div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gal-caption .galst{margin-top:2px}
+#gal-caption .galst.ok{color:#b7d92d}
 [data-android] #gal-dock{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(24,26,28,.94)}
 /* deitado: pouca altura — a barra passa a flutuar sobre a foto e o nome some */
 @media (orientation:landscape){ #gallerywrap{--galpad:8px} #gal-caption{display:none} }
@@ -1078,6 +1088,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <!-- galeria de fotos registradas -->
 <div id="gallerywrap">
   <button id="gal-close" aria-label="Fechar galeria"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+  <button id="gal-clean" aria-label="Limpar galeria: apagar do app as fotos já salvas no celular"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.9 12.1A2 2 0 0 0 9.4 21h5.2a2 2 0 0 0 2-1.9L17.5 7"/></svg><span>Limpar galeria</span></button>
   <!-- carrossel: 3 posições (esquerda = foto mais antiga, centro = atual, direita = mais nova) -->
   <div id="gal-stage">
     <div id="gal-track">
@@ -3522,10 +3533,22 @@ function applyZoom(z){
 const shutterBtn=document.getElementById('shutter');
 
 /* ---- galeria de fotos registradas pelo app (IndexedDB + swipe) ---- */
+/* saved: a foto já saiu do app para o aparelho (download / compartilhamento concluído). Só fotos com
+   saved=true podem ser apagadas pelo "Limpar galeria" — as que só existem no app nunca são apagadas
+   por ele. Fotos de versões anteriores não têm a marca e contam como "só no app" (seguro). */
 async function savePhotoToGallery(blob, name){
   const d=await idb();
-  return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now()});
-    t.onsuccess=res; t.onerror=()=>rej(t.error) });
+  return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now(), saved:false});
+    t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) });
+}
+async function markPhotoSaved(id){
+  if(id==null) return;
+  try{
+    const d=await idb();
+    await new Promise((res,rej)=>{ const st=d.transaction('photos','readwrite').objectStore('photos'), g=st.get(id);
+      g.onsuccess=()=>{ const v=g.result; if(!v) return res(); v.saved=true; const p=st.put(v); p.onsuccess=res; p.onerror=()=>rej(p.error) };
+      g.onerror=()=>rej(g.error) });
+  }catch(e){ console.error('[KMCheck] marcar foto salva falhou:', e) }
 }
 /* getAllPhotos carregava TODOS os blobs na RAM de uma vez — OOM após 50-100 fotos.
    Agora: getPhotoMetas() traz só metadados (cursor), getPhotoBlob(id) busca sob demanda. */
@@ -3535,7 +3558,7 @@ async function getPhotoMetas(){
     const metas=[], cur=d.transaction('photos').objectStore('photos').openCursor();
     cur.onsuccess=()=>{
       const c=cur.result;
-      if(c){ const v=c.value; metas.push({id:v.id, name:v.name, ts:v.ts}); c.continue(); }
+      if(c){ const v=c.value; metas.push({id:v.id, name:v.name, ts:v.ts, saved:!!v.saved}); c.continue(); }
       else res(metas.sort((a,b)=>b.ts-a.ts));
     };
     cur.onerror=()=>rej(cur.error);
@@ -3580,9 +3603,34 @@ function galPrune(){
   for(const [id,u] of _galUrls) if(!keep.has(id)){ URL.revokeObjectURL(u); _galUrls.delete(id) }
 }
 function galCaption(){
+  const m=galMetas[galIdx];
   document.getElementById('gal-count').textContent=`${galIdx+1} / ${galMetas.length}`;
-  document.getElementById('gal-caption').textContent=galMetas[galIdx] ? galMetas[galIdx].name : '';
+  const cap=document.getElementById('gal-caption');
+  cap.textContent='';
+  if(m){
+    const n=document.createElement('div'); n.textContent=m.name;
+    const s=document.createElement('div'); s.className='galst'+(m.saved?' ok':''); s.textContent=m.saved?'✓ salva no celular':'só no app';
+    cap.append(n, s);
+  }
 }
+/* "Limpar galeria": apaga da galeria interna SÓ as fotos já salvas no celular (saved=true). As que só
+   existem no app ficam — nunca é apagada a única cópia de uma foto. */
+document.getElementById('gal-clean').onclick=async()=>{
+  if(galBusy) return;
+  const salvas=galMetas.filter(m=>m.saved), soApp=galMetas.length-salvas.length;
+  if(!salvas.length){ toast('Nenhuma foto já salva no celular para limpar — as que só existem no app são mantidas.', 4200); return }
+  if(!confirm(`Apagar da galeria do app ${salvas.length} foto(s) que já estão salvas no celular?`+
+    (soApp?`\n\n${soApp} foto(s) que só existem no app serão mantidas.`:'')+`\n\nAs cópias no celular não são afetadas.`)) return;
+  try{
+    for(const m of salvas){ await deletePhoto(m.id); if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) } }
+    const atual=galMetas[galIdx];
+    galMetas=galMetas.filter(m=>!m.saved);
+    if(!galMetas.length){ document.getElementById('gal-close').click(); return }
+    const k=atual?galMetas.indexOf(atual):-1;
+    galIdx = k>=0 ? k : Math.min(galIdx, galMetas.length-1);
+    await galRender();
+  }catch(e){ toast('⚠ Não consegui limpar a galeria.') }
+};
 async function galRender(){
   zs=1; ztx=0; zty=0;
   galTrack.style.transition='none'; galTrack.style.transform=''; galPlace(); galCaption();
@@ -3743,11 +3791,13 @@ document.getElementById('gal-share').onclick=async()=>{
     const blob=await getPhotoBlob(m.id);
     if(!blob){ toast('Foto não encontrada.'); return }
     const file=new File([blob], m.name, {type:'image/jpeg'});
+    let ok=false;
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file]}).catch(e=>{ if(e.name!=='AbortError') throw e });
+      ok=await navigator.share({files:[file]}).then(()=>true, e=>{ if(e.name!=='AbortError') throw e; return false });
     } else if(_isAndroid && _isPWAStandalone && navigator.serviceWorker && navigator.serviceWorker.controller){
-      if(!(await _downloadViaSW(blob, m.name))) toast('⚠ Não consegui salvar a foto.');
-    } else _downloadDirect(blob, m.name);
+      ok=await _downloadViaSW(blob, m.name); if(!ok) toast('⚠ Não consegui salvar a foto.');
+    } else ok=_downloadDirect(blob, m.name);
+    if(ok && !m.saved){ m.saved=true; await markPhotoSaved(m.id); if(galMetas[galIdx]===m) galCaption() }
   }catch(e){ toast('⚠ Não consegui compartilhar a foto.') }
 };
 document.getElementById('gal-del').onclick=async()=>{
@@ -4183,18 +4233,23 @@ function _downloadDirect(blob, name){
     a.href=url; a.download=safeName; a.style.display='none';
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ try{ document.body.removeChild(a) }catch(e){} URL.revokeObjectURL(url) }, 5000);
+    return true;
   }catch(e){
     console.error('[KMCheck] download direto falhou:', e);
+    return false;
   }
 }
 function saveAndShare(blob){
   const name=photoName(S.lastInfo||{});
   const file=new File([blob], name, {type:'image/jpeg'});
   /* 1) salva na galeria interna do app (IndexedDB) — sempre, independente de CFG.autosave */
-  savePhotoToGallery(blob, name).catch(e=>{
+  const idP=savePhotoToGallery(blob, name).catch(e=>{
     console.error('[KMCheck] IndexedDB falhou:', e);
     toast('⚠ Erro ao salvar foto internamente');
+    return null;
   });
+  /* marca a foto como "já salva no celular" quando o envio para o aparelho deu certo */
+  const saida=()=>{ idP.then(id=>markPhotoSaved(id)) };
   /* 2) salva no dispositivo (apenas quando "Envio automático" está ligado).
      Sem mensagens de confirmação (pedido do usuário: tela limpa — a piscada e o som já confirmam o
      disparo). Só aparece aviso ⚠ quando a foto NÃO chegou ao aparelho por falha. */
@@ -4205,7 +4260,7 @@ function saveAndShare(blob){
        a foto fica SÓ na galeria do app — o botão "Compartilhar / salvar" de lá resolve depois. */
     const onlyInApp=()=>toast('⚠ A foto não foi para o Fotos — use "Compartilhar / salvar" na galeria do app', 4200);
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({files:[file]}).catch(e=>{
+      navigator.share({files:[file]}).then(saida).catch(e=>{
         if(e.name==='AbortError') return;   // o próprio usuário cancelou — sem aviso
         console.error('[KMCheck] share iOS falhou:', e);
         onlyInApp();
@@ -4219,14 +4274,14 @@ function saveAndShare(blob){
       const hasSW=navigator.serviceWorker && navigator.serviceWorker.controller;
       if(hasSW){
         _downloadViaSW(blob, name).then(ok=>{
-          if(!ok) toast('⚠ Falha ao baixar — foto na galeria do app');
+          if(ok) saida(); else toast('⚠ Falha ao baixar — foto na galeria do app');
         });
       } else if(navigator.canShare && navigator.canShare({files:[file]})){
         /* sem SW: share sheet como fallback (ainda dentro do gesto do obturador) */
-        navigator.share({files:[file]}).catch(e=>{ if(e.name!=='AbortError') _downloadDirect(blob, name) });
-      } else _downloadDirect(blob, name);
-    } else _downloadDirect(blob, name);
-  } else _downloadDirect(blob, name);
+        navigator.share({files:[file]}).then(saida).catch(e=>{ if(e.name!=='AbortError' && _downloadDirect(blob, name)) saida() });
+      } else if(_downloadDirect(blob, name)) saida();
+    } else if(_downloadDirect(blob, name)) saida();
+  } else if(_downloadDirect(blob, name)) saida();
 }
 
 /* ================= consulta ================= */
