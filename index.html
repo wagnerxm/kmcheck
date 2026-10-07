@@ -684,6 +684,12 @@ table.res td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .ltext i{font-size:12px;font-style:normal;color:var(--mut);line-height:1.35}
 .lsel{width:auto;flex:0 0 auto;max-width:44%;background:transparent;border:none;color:var(--gold2);font-family:var(--sans);font-size:13px;text-align:right;padding:0;border-radius:0}
 .lsel:focus{border:none;outline:none}
+/* cartão Importe um arquivo: botão curto + lista de formatos aceitos */
+#btn-import svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.impfmt{margin-top:16px}
+.improw{display:flex;align-items:center;gap:13px;padding:13px 0;border-top:1px solid var(--line)}
+.improw:last-child{padding-bottom:2px}
+.imptag{flex:0 0 auto;color:var(--gold2);font-size:12px;font-weight:600;letter-spacing:.04em;white-space:nowrap;text-align:right}
 /* Valor das listas SEMPRE encostado na borda direita. O <select> do iOS ignora text-align: reserva a
    largura da opção mais longa e escreve à esquerda dentro dela — os valores ficavam desalinhados.
    Agora o valor é um texto próprio alinhado à direita (.lselval) e o <select> fica invisível por cima,
@@ -841,11 +847,26 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira. Requer internet só neste momento — depois funciona offline.</p>
   </div>
   <h2 class="sec">Importe um arquivo</h2>
-  <div class="card">
-    <button class="btn" id="btn-import">Importar arquivo (Shapefile, ZIP, KMZ ou CSV)</button>
-    <p class="hint">Shapefile oficial do SNV (.shp + .dbf, ou o .zip do DNIT Cloud) — selecione os dois arquivos juntos, ou o .zip. É a fonte mais confiável, sempre atualizada pelo DNIT.<br>
-    KMZ/KML: baixado do VGeo.<br>
-    CSV/TXT: tabela com colunas KM, LAT e LONG (aceita vírgula decimal e colagem do Excel).</p>
+  <div class="card impcard">
+    <button class="btn" id="btn-import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>Importar arquivo</button>
+    <!-- formatos aceitos: lista informativa (não clicável), extensões alinhadas à direita em verde -->
+    <div class="impfmt" aria-label="Formatos aceitos">
+      <div class="improw">
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></span>
+        <span class="ltext"><b>Shapefile do SNV</b><i>Oficial do DNIT. Envie .shp + .dbf juntos ou o .zip</i></span>
+        <span class="imptag">SHP · ZIP</span>
+      </div>
+      <div class="improw">
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5a13 13 0 0 1 0 17M12 3.5a13 13 0 0 0 0 17"/></svg></span>
+        <span class="ltext"><b>Google Earth</b><i>Arquivo baixado do VGeo</i></span>
+        <span class="imptag">KMZ · KML</span>
+      </div>
+      <div class="improw">
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg></span>
+        <span class="ltext"><b>Planilha</b><i>Colunas KM, latitude e longitude. Pode colar do Excel</i></span>
+        <span class="imptag">CSV · TXT</span>
+      </div>
+    </div>
 
     <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv,.zip,.shp,.dbf,.shx" multiple style="display:none">
   </div>
