@@ -305,24 +305,26 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ctx .lk b{font-weight:600;color:var(--text);margin-right:5px}
 .ctx .lk+.lk::before{content:' · ';color:var(--mut)}
 .ctx .lk.bad,.ctx .lk.bad b{color:var(--err)}
-.ctx .ib{flex:0 0 auto;width:40px;height:40px;margin:0 -4px 0 0;padding:0;background:none;border:none;border-radius:50%;
+.ctx .ib{flex:0 0 auto;width:40px;height:40px;margin:0;padding:0;background:none;border:none;border-radius:0;
   display:inline-flex;align-items:center;justify-content:center;color:var(--mut);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ctx .ib svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ctx .ib.lnk.has{color:var(--gold2)}
-.ctx .ib.del{color:var(--err)}
-.ctx .ib.ctc-auto .slash{display:inline}
-.ctx .ib.ctc-auto.on{color:var(--gold)}
-.ctx .ib.ctc-auto.on .slash{display:none}
-.ctx .ib.ctc-auto.on.paused{color:var(--mut)}
-.ctx .ib:active{background:rgba(255,255,255,.08)}
+.ctx .ib:active .pl,.ctx .ib.lnk:active{opacity:.6}
+/* botões em pílula (AUTO e remover): caixa de toque 52x40, pílula visível 46x26 centrada.
+   AUTO: ligado = preenchido · desligado = contorno cinza · pausado (chave geral off) = contorno tracejado apagado */
+.ctx .ib.pill{width:52px}
+.ctx .ib.ph{pointer-events:none;visibility:hidden}
+.ctx .ib .pl{display:inline-flex;align-items:center;justify-content:center;width:46px;height:26px;border-radius:999px;
+  border:1.5px solid currentColor;box-sizing:border-box;font:700 11px/1 var(--sans);letter-spacing:.06em}
+.ctx .ib .pl svg{width:13px;height:13px;stroke-width:2.4}
+.ctx .ib.del{color:var(--err);margin-right:-3px}
+.ctx .ib.ctc-auto.on .pl{background:var(--gold);border-color:var(--gold);color:#0d0f08}
+.ctx .ib.ctc-auto.on.paused .pl{background:transparent;color:var(--gold);border-style:dashed;opacity:.5}
 #ctlist,#ctlist2{max-height:calc(4 * 64px)}
 .ctmode{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);vertical-align:middle}
 .ctmode.auto{color:#0d0f08;background:var(--gold);border-color:transparent}
 .ctaddrow{margin-top:14px!important;padding-top:14px;border-top:1px solid var(--line)}
-.ctautorow{padding:12px 0 6px;border-bottom:none!important}
-.ctautorow b{font-size:14px}
-.ctautorow small{display:block;color:var(--mut);font-size:11.5px;line-height:1.4;margin-top:2px}
-.ctx .ib.ph{pointer-events:none;visibility:hidden}
+.ctautorow{padding:12px 0 4px;border-bottom:none}
 .lkbr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer;background:none;border-left:none;border-right:none;border-top:none;color:var(--text);width:100%;text-align:left;font-family:var(--sans)}
 .lkbr:last-child{border-bottom:none}
 .lkbr .x{color:var(--err);font-size:12px;padding:10px 6px;min-height:44px;display:inline-flex;align-items:center}
@@ -1037,7 +1039,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" aria-label="Novo contrato" style="flex:1">
         <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
       </div>
-      <label class="switch ctautorow" style="display:none" title="Desligado, pausa o automático em todos os contratos. Ligado, vale o automático de cada contrato. Escolher um contrato à mão desliga esta chave."><span><b>Automático</b><small>Troca o contrato ao entrar no trecho vinculado.</small></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Desligado, pausa o automático em todos os contratos. Ligado, vale o automático de cada contrato. Escolher um contrato à mão desliga esta chave."></label>
+      <label class="listrow ctautorow" style="display:none" title="Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."></label>
       <p class="hint">Contratos cadastrados aparecem para escolha rápida na câmera.</p>
     </div>
 
@@ -1128,7 +1130,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
-  <label class="switch ctautorow" style="display:none" title="Desligado, pausa o automático em todos os contratos. Ligado, vale o automático de cada contrato. Escolher um contrato à mão desliga esta chave."><span><b>Automático</b><small>Troca o contrato ao entrar no trecho vinculado.</small></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Desligado, pausa o automático em todos os contratos. Ligado, vale o automático de cada contrato. Escolher um contrato à mão desliga esta chave."></label>
+  <label class="listrow ctautorow" style="display:none" title="Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada, todos os contratos vinculados ficam no automático (cada um pode ser desligado no seu botão AUTO). Desligada, pausa o automático em todos. Escolher um contrato à mão desliga esta chave."></label>
 
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
 </dialog>
@@ -2724,16 +2726,15 @@ document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.onchange=()=>{
   ctRefresh();
 });
 function ctRefresh(){ renderContracts(); renderContracts2(); paintTags(); paintGps() }
-/* ícones (stroke, herdam a cor): raio = automático (cortado quando desligado), corrente = vínculos, × = remover */
-const _IC_BOLT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/><path class="slash" d="M3 3l18 18" style="display:none"/></svg>';
+/* corrente = vínculos (ícone solto); AUTO e × são botões em pílula (.pl) */
 const _IC_LINK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
 const _IC_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function ctItemHtml(c, act){
   const ls=getCtLinks()[c]||[], on=ctAutoOn(), en=ctAutoFor(c), e=_esc(c);
   const links=ls.length ? '<div class="ct-links" title="'+_esc(ls.map(linkLabel).join(' | '))+'">'+ls.map(linkHtml).join('')+'</div>' : '';
   /* o "automático" do contrato só aparece quando ele tem vínculo (sem trecho não há o que automatizar) */
-  const auto=ls.length ? `<button class="ib ctc-auto ${en?'on':''} ${on?'':'paused'}" role="switch" aria-checked="${en}" aria-label="Automático do contrato ${e}: ${en?(on?'ligado':'ligado, pausado pela chave geral'):'desligado'}" title="Automático: ${en?'ligado':'desligado'}${en&&!on?' (pausado)':''}">${_IC_BOLT.replace('style="display:none"','')}</button>` : '<span class="ib ph" aria-hidden="true"></span>';
-  return `<div class="ct-item ctx ${c===act?'sel':''}" data-ct="${e}"><div class="ct-top"><span class="dot"></span><span class="num">${e}</span>${auto}<button class="ib lnk ${ls.length?'has':''}" aria-label="${ls.length?'Vínculos':'Vincular BR'} do contrato ${e}" title="${ls.length?'Vínculos':'Vincular BR'}">${_IC_LINK}</button><button class="ib del" aria-label="Remover contrato ${e}" title="Remover">${_IC_X}</button></div>${links}</div>`;
+  const auto=ls.length ? `<button class="ib pill ctc-auto ${en?'on':''} ${on?'':'paused'}" role="switch" aria-checked="${en}" aria-label="Automático do contrato ${e}: ${en?(on?'ligado':'ligado, pausado pela chave geral'):'desligado'}" title="Automático: ${en?'ligado':'desligado'}${en&&!on?' (pausado)':''}"><span class="pl">AUTO</span></button>` : '<span class="ib pill ph" aria-hidden="true"></span>';
+  return `<div class="ct-item ctx ${c===act?'sel':''}" data-ct="${e}"><div class="ct-top"><span class="dot"></span><span class="num">${e}</span>${auto}<button class="ib lnk ${ls.length?'has':''}" aria-label="${ls.length?'Vínculos':'Vincular BR'} do contrato ${e}" title="${ls.length?'Vínculos':'Vincular BR'}">${_IC_LINK}</button><button class="ib pill del" aria-label="Remover contrato ${e}" title="Remover"><span class="pl">${_IC_X}</span></button></div>${links}</div>`;
 }
 function wireCtItems(el){
   el.querySelectorAll('.ct-item').forEach(item=>{
