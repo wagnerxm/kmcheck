@@ -10,17 +10,17 @@ dentro da imagem**: rodovia, KM interpolado do SNV/DNIT, OAE, coordenadas GPS e 
 
 ## Arquitetura
 
-O app é um **único arquivo** `index.html` (~2.860 linhas) com **HTML + CSS + JS tudo inline**. Não há
+O app é um **único arquivo** `index.html` (~5.200 linhas) com **HTML + CSS + JS tudo inline**. Não há
 build, bundler, framework nem dependências de runtime no cliente. Editar o app = editar `index.html`.
 
 | Arquivo | Papel |
 |---|---|
 | `index.html` | O app inteiro (HTML, CSS e JS inline). |
-| `sw.js` | Service worker. Cache `kmcheck-vNNN`. **Rede-primeiro** para o documento, **cache-primeiro** para assets. |
-| `manifest.webmanifest` / `manifest.v143.webmanifest` | Manifesto PWA (`display: standalone`, `orientation: portrait`). |
+| `sw.js` | Service worker. Cache `kmcheck-vNNN`. **Rede-primeiro com limite de 4 s** (cai para o cache com sinal fraco) para o documento e `data/rodovias`, **cache-primeiro** para assets. APIs externas (servidor SNV, GeoServer) não passam pelo SW. |
+| `manifest.v143.webmanifest` | Manifesto PWA (`display: standalone`, `orientation: portrait`). |
 | `fflate.js` | Biblioteca de zip (import/export de bases). |
 | `icon-192/512.png`, `apple-touch-icon.png`, `logo-header.png` | Ícones/PWA e logo. |
-| `data/rodovias/*.json` | 364 rodovias (`BR-xxx-UF.json`) + `index.json`. Geometria do SNV para interpolar o KM pelo GPS. **Gerado automaticamente** — não editar à mão. |
+| `data/rodovias/*.json` | 363 rodovias (`BR-xxx-UF.json`) + `index.json`. Geometria do SNV para interpolar o KM pelo GPS. **Gerado automaticamente** — não editar à mão. |
 | `scripts/` | Scripts Node (Node 20+, ESM): `fetch-snv-wfs.mjs` (DNIT→JSON) e `sync-dnit.mjs` (Playwright→Supabase). |
 | `.github/workflows/` | `update-snv.yml` (diário 06:00 UTC) e `sync-dnit.yml` (mensal). |
 | `manual-kmcheck/` | Manual do usuário, mockups, screenshots, PDFs. Documentação, não faz parte do app. |

@@ -298,7 +298,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* item de CONTRATO compacto, 2 linhas: [radio · número · ações em ícones] + trecho(s) pequeno(s).
    Ícones de 40x40 (alvo de toque confortável) com glifo de 18px. Trechos em UMA linha com
    reticências, para a altura do item ser uniforme (lista = 4 itens, depois rola). */
-.ct-item.ctx{display:block;padding:2px 0 5px}
+/* min-height: todos os itens com a altura de um item COM trecho (61px) — com e sem vínculo ficam
+   iguais e a lista mostra exatamente 4 antes de rolar (max-height = 4 × 61px) */
+.ct-item.ctx{display:block;padding:2px 0 5px;min-height:61px}
 .ctx .ct-top{display:flex;align-items:center;gap:10px;min-height:40px}
 .ctx .num{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ctx .ct-links{margin:-6px 0 0 28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;line-height:15px;color:var(--mut)}
@@ -320,7 +322,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ctx .ib.del{color:var(--err);margin-right:-4px}
 .ctx .ib.ctc-auto.on .pl{background:var(--gold);border-color:var(--gold);color:#0d0f08}
 .ctx .ib.ctc-auto.on.paused .pl{background:transparent;color:var(--gold);border-style:dashed;opacity:.5}
-#ctlist,#ctlist2{max-height:calc(4 * 64px)}
+#ctlist,#ctlist2{max-height:calc(4 * 61px)}
+#ctlist2{max-height:calc(4 * 61px + 2px)}   /* a lista do diálogo "i" tem 1px de borda em cima e embaixo */
 .ctmode{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);vertical-align:middle}
 .ctmode.auto{color:#0d0f08;background:var(--gold);border-color:transparent}
 .ctaddrow{margin-top:14px!important;padding-top:14px;border-top:1px solid var(--line)}
@@ -393,7 +396,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* isolation+translateZ: o WebKit não recortava (overflow:hidden) o <video> composto (will-change),
    então o recorte 1:1/16:9 não aparecia no iPhone */
 #camrot{position:absolute;overflow:hidden;background:#000;isolation:isolate;-webkit-transform:translateZ(0)}
-#camrot.mirror{transform:scaleX(-1)}
+/* frontal espelhada: mantém o translateZ(0) — o transform do espelho sobrescrevia o ajuste acima e o
+   recorte 1:1/16:9 podia deixar de valer na câmera frontal do iPhone */
+#camrot.mirror{transform:scaleX(-1) translateZ(0);-webkit-transform:scaleX(-1) translateZ(0)}
 #camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;will-change:transform}
 /* Android: remove backdrop-filter em todas as camadas — GPU fraca trava com blur */
 [data-android] #cambar2{backdrop-filter:none;-webkit-backdrop-filter:none;background:#141414}
@@ -479,6 +484,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .pk-list{max-height:150px;overflow-y:auto;
   border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:0 12px}
 .pk-list .ct-item{padding:12px 0}
+/* contrato no diálogo "i": mesmo tamanho de item das Configurações (o padding acima o deixava mais alto) */
+.pk-list .ct-item.ctx{padding:2px 0 5px}
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
@@ -1428,6 +1435,26 @@ function baseBBox(b){
   }
   return bb;
 }
+/* LIGAÇÕES FANTASMA: a base é uma sequência única de pontos, então o fim de um trecho do SNV é
+   ligado ao início do seguinte. Em 9 rodovias o SNV tem trechos com KM contínuo mas desenho
+   descontínuo (BR-110/RN km 161,9: o próximo trecho começa 47 km ao sul) — virava uma RETA que não
+   existe, e quem estivesse perto dela recebia "KM 161,900" a poucos metros do eixo, sem alerta.
+   Uma ligação é fantasma quando o desenho é muito maior que o KM que ela representa (> 3x e > 1,5 km).
+   Trechos reais desenhados em reta (KM ≈ comprimento) continuam valendo. Calculado 1x por base. */
+const _phantom=new WeakMap();
+function basePhantom(b){
+  let f=_phantom.get(b);
+  if(!f){
+    f=new Uint8Array(Math.max(0,b.lat.length-1));
+    for(let i=0;i<f.length;i++){
+      const c=Math.cos(b.lat[i]*D2R), dx=(b.lon[i+1]-b.lon[i])*c, dy=b.lat[i+1]-b.lat[i];
+      const len=Math.sqrt(dx*dx+dy*dy)*D2R*R, kmLen=Math.abs(b.km[i+1]-b.km[i])*1000;
+      if(len>1500 && len>3*kmLen) f[i]=1;
+    }
+    _phantom.set(b,f);
+  }
+  return f;
+}
 function findKm(lat,lon){
   let best=null;
   const cos=Math.cos(lat*D2R), px=lon, py=lat;
@@ -1438,7 +1465,9 @@ function findKm(lat,lon){
   for(const {b,bi,d2:bd2} of order){
     if(best && bd2>best.d2) break;
     const cedidos=_excl[b.id];   // trechos desta base cedidos a outra BR (trecho coincidente)
+    const fant=basePhantom(b);   // ligações que não existem na estrada (ver basePhantom)
     for(let i=0;i<b.lat.length-1;i++){
+      if(fant[i]) continue;
       if(cedidos){ const mk=(b.km[i]+b.km[i+1])/2; let skip=false;
         for(const r of cedidos) if(mk>=r[0] && mk<=r[1]){ skip=true; break }
         if(skip) continue; }
@@ -1600,8 +1629,9 @@ function detectOverlaps(N, E){
   if(A[0]>B[1]+pad || B[0]>A[1]+pad || A[2]>B[3]+pad || B[2]>A[3]+pad) return [];
   const TOL=30, MIN_LEN=300, GAP_KM=0.3, C=0.01;
   const cosL=Math.cos(((A[0]+A[1])/2)*D2R), tolDeg=TOL/(R*D2R), tol2=tolDeg*tolDeg;
-  const grid=new Map();
+  const grid=new Map(), fantE=basePhantom(E);
   for(let i=0;i<E.lat.length-1;i++){
+    if(fantE[i]) continue;   // reta fantasma não é estrada — não pode virar "trecho coincidente"
     const la0=Math.min(E.lat[i],E.lat[i+1])-tolDeg, la1=Math.max(E.lat[i],E.lat[i+1])+tolDeg;
     const lo0=Math.min(E.lon[i],E.lon[i+1])-tolDeg/cosL, lo1=Math.max(E.lon[i],E.lon[i+1])+tolDeg/cosL;
     for(let gx=Math.floor(lo0/C); gx<=Math.floor(lo1/C); gx++)
@@ -2409,7 +2439,6 @@ function startGps(){
       S.gpsDenied=true;
     }
     /* POSITION_UNAVAILABLE (2) e TIMEOUT (3): watchPosition continua tentando sozinho */
-    const gl=document.getElementById('gpsline'); if(gl) gl.textContent='GPS indisponível: '+err.message;
     paintGps();
     paintGpsBanner();
   }, {enableHighAccuracy:true, maximumAge:1000, timeout:20000});
@@ -2710,8 +2739,7 @@ function autoContract(){
   }
   if(!hits.length || hits.includes(cur)) return;
   localStorage.setItem('kc-contract', hits[0]);
-  ctRefresh();
-  toast('Contrato automático: '+hits[0]);
+  ctRefresh();   // sem mensagem (regra do app: nada de confirmação) — a legenda e o botão "i" já mostram o contrato
 }
 function renderCtMode(){
   const any=Object.values(getCtLinks()).some(a=>a&&a.length), on=ctAutoOn();
@@ -2721,8 +2749,7 @@ function renderCtMode(){
 }
 document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.onchange=()=>{
   try{ localStorage.setItem('kc-ct-auto', cb.checked?'1':'0') }catch(e){}
-  if(cb.checked){ toast('Automático geral ligado — vale o automático de cada contrato'); autoContract() }
-  else toast('Automático pausado em todos os contratos');
+  if(cb.checked) autoContract();
   ctRefresh();
 });
 function ctRefresh(){ renderContracts(); renderContracts2(); paintTags(); paintGps() }
@@ -2753,8 +2780,8 @@ function wireCtItems(el){
       if(want){
         /* ligar o automático de um contrato religa também a chave geral (é o "voltar ao automático") */
         if(!ctAutoOn()) try{ localStorage.setItem('kc-ct-auto','1') }catch(e){}
-        toast('Automático ligado para '+c); autoContract();
-      } else toast('Automático desligado só para '+c);
+        autoContract();
+      }
       ctRefresh();
     };
     item.querySelector('.del').onclick=()=>{
@@ -2831,15 +2858,14 @@ function saveCtLink(link){
   if(getContract()===c){ try{ localStorage.setItem('kc-ct-auto','1') }catch(e){} setCtAutoFor(c,true) }
   document.getElementById('dlg-ctkm').close();
   renderCtLink(); ctRefresh(); autoContract();
-  toast('Vínculo salvo'+(ctAutoOn()&&ctAutoFor(_ctLinkFor)?' — contrato automático ligado':''));
 }
 document.getElementById('ctkm-back').onclick=()=>document.getElementById('dlg-ctkm').close();
 document.getElementById('ctkm-all').onclick=()=>saveCtLink({base:_ctKmBase, tudo:true});
 document.getElementById('ctkm-save').onclick=()=>{
   const b=S.bases.find(x=>x.id===_ctKmBase); if(!b) return;
-  const pn=s=>parseFloat(String(s).trim().replace(',','.'));
-  const i=pn(document.getElementById('ctkm-i').value), f=pn(document.getElementById('ctkm-f').value);
-  if(!isFinite(i)||!isFinite(f)){ toast('Informe o km inicial e o final.'); return }
+  /* parseNum: "1.300,000" = 1300 (antes este campo usava um leitor próprio que dava 1,3) */
+  const i=parseNum(document.getElementById('ctkm-i').value), f=parseNum(document.getElementById('ctkm-f').value);
+  if(i==null||f==null){ toast('Informe o km inicial e o final.'); return }
   const a=Math.min(i,f), z=Math.max(i,f);
   if(a<b.kmMin-0.0005 || z>b.kmMax+0.0005){ toast('Fora do trecho baixado (km '+fkm(b.kmMin)+' a '+fkm(b.kmMax)+').'); return }
   saveCtLink({base:_ctKmBase, kmi:a, kmf:z});
@@ -3312,7 +3338,7 @@ function setFormat(fmt){
   try{ localStorage.setItem('kc-format', fmt) }catch(e){}
   paintRatioSel();
   const sel=document.getElementById('cfg-format');
-  if(sel && sel.value!==fmt){ sel.value=fmt; syncLsel(sel); const t=document.getElementById('lbl-format'); if(t && sel.selectedIndex>=0) t.textContent=sel.options[sel.selectedIndex].textContent; }
+  if(sel && sel.value!==fmt){ sel.value=fmt; syncLsel(sel) }
   refreshLive();   // recorta a área útil na hora; a legenda e a foto seguem o mesmo formato
   /* iOS: o WebKit às vezes não repinta o <video> ao mudar o tamanho do recorte; relayout no
      próximo frame força a camada a refletir o novo tamanho */
@@ -3762,8 +3788,7 @@ document.getElementById('cam-flash').onclick=()=>{
     return;
   }
   flashOn=!flashOn;
-  paintFlashIcon();
-  toast(flashOn ? '⚡ Flash ativado — dispara ao tirar a foto' : 'Flash desativado');
+  paintFlashIcon();   // o botão aceso já mostra que o flash está armado (sem mensagem de confirmação)
 };
 
 /* ---- zoom da câmera (pinch-to-zoom com zoom real do hardware) ----
