@@ -15,6 +15,30 @@
 <meta name="apple-mobile-web-app-title" content="KM Check">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
+/* CONFIGURAÇÃO PADRÃO OBRIGATÓRIA (v3): aplicada UMA vez — na 1ª instalação e, para quem já tinha o
+   app, na 1ª abertura desta versão. Depois disso o que o usuário mudar fica salvo (a marca
+   kc-defaults-v3 impede reaplicar). Roda aqui no <head>, antes de tudo, para o tema e a câmera já
+   abrirem certos. Só preferências: contratos, serviços, logo, rodovias e fotos não são tocados.
+   kc-defaults-v2 também é marcado para o bloco antigo de padrões não sobrescrever estes valores. */
+(function(){
+  try{
+    if(localStorage.getItem('kc-defaults-v3')==='1') return;
+    var P={
+      res:'max', qual:'0.95', format:'3:4', soundalert:'1',          // Câmera › Qualidade
+      autosave:'1',                                                  // envio automático para a galeria
+      theme:'light',                                                 // tema claro
+      logopos:'tr', logoop:'100', logosz:'100',                      // Logo: superior direito, 100%, 100%
+      legpos:'bl', legsz:'150', legcolor:'#ffffff', legbold:'1', legop:'100',   // Legenda
+      legbg:'1', legbgtone:'dark', legbgop:'50',                     // fundo escuro, transparência 50%
+      estaca:'1', snv:'1', oae:'0', coord:'1', coordstyle:'decimal', acc:'0',
+      date:'1', datestyle:'curta',                                   // data sem hora (29/07/2026)
+      maxdist:'300'                                                  // alerta: 300 m do eixo
+    };
+    for(var k in P) localStorage.setItem('kc-'+k, P[k]);
+    localStorage.setItem('kc-defaults-v2','1');
+    localStorage.setItem('kc-defaults-v3','1');
+  }catch(e){}
+})();
 (function(){
   var light=localStorage.getItem('kc-theme')!=='dark';
   var d=document.documentElement;
