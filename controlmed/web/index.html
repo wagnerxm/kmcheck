@@ -112,85 +112,101 @@ body {
   letter-spacing: .10em !important;
   font-size: 10px !important;
   text-transform: uppercase !important;
-  padding: 0 10px !important;
-  margin-top: 6px !important;
+  padding: 0 22px !important;
+  margin-top: 8px !important;
 }
 
-/* Sidebar text — mais legível (SIGO usa ~60% branco) */
+/* Sidebar text — SIGO usa ~78% branco nos inativos */
 .text-sidebar-text {
-  color: rgba(255,255,255,.60) !important;
+  color: rgba(255,255,255,.78) !important;
 }
 
-/* ── 3b. Sidebar nav items — interação estilo SIGO ── */
+/* ── 3b. Sidebar nav items — réplica exata do SIGO ── */
 
-/* Nav items: fonte 14px, pill arredondado com margem lateral */
+/*
+   SIGO: todos os itens mantêm a mesma posição de texto.
+   O "pill" é criado com margin lateral + radius em TODOS,
+   mas fundo transparente nos inativos — só aparece no hover/ativo.
+   Assim o texto nunca pula.
+*/
+
+/* Todos os nav items: mesma posição, pill invisível por padrão */
 .sidebar-pattern [class*="gap-3"][class*="cursor-pointer"],
 [class*="bg-sidebar"] [class*="gap-3"][class*="cursor-pointer"] {
   font-size: 14px !important;
   line-height: 1.5 !important;
-  padding: 10px 16px 10px 14px !important;
-  margin: 2px 10px !important;
+  padding: 12px 12px !important;
+  margin: 1px 10px !important;
   border-radius: 8px !important;
-  border-left: 3px solid transparent !important;
-  transition: all .2s ease !important;
+  border-left: none !important;
+  background: transparent !important;
+  transition: background .2s ease, color .2s ease !important;
 }
 
-/* Hover — fundo bem visível, formato pill (padrão SIGO) */
+/* Anular a borda esquerda do compilado (border-l-[3px]) */
+.sidebar-pattern [class*="gap-3"][class*="border-l-"],
+[class*="bg-sidebar"] [class*="gap-3"][class*="border-l-"] {
+  border-left: none !important;
+}
+.border-l-sidebar-section {
+  border-left-color: transparent !important;
+  border-left-width: 0 !important;
+}
+
+/* Hover — pill aparece com fundo sutil (SIGO) */
 .sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover,
 [class*="bg-sidebar"] [class*="gap-3"][class*="cursor-pointer"]:hover,
 .hover\:bg-sidebar-hover:hover {
-  background: rgba(255,255,255,.10) !important;
-  border-left-color: rgba(255,255,255,.20) !important;
+  background: rgba(255,255,255,.08) !important;
 }
 
-/* Texto fica branco no hover */
+/* Texto fica branco puro no hover */
 .hover\:text-sidebar-text-active:hover,
-.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover .text-sidebar-text,
-.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover {
-  color: rgba(255,255,255,.95) !important;
+.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover,
+.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover * {
+  color: #ffffff !important;
 }
 
-/* Active item — gradiente lateral azul + borda viva (SIGO) */
-.border-l-sidebar-section {
-  border-left-color: #4a90f0 !important;
-}
-
+/* Item ativo — pill com fundo sólido, SEM borda, SEM gradiente (SIGO) */
 .bg-sidebar-active {
-  background: linear-gradient(90deg, rgba(74,144,240,.22) 0%, rgba(74,144,240,.06) 100%) !important;
-  border-radius: 8px !important;
+  background: rgba(255,255,255,.08) !important;
 }
 
-/* Combinação ativa: gradiente + borda + radius */
 [class*="border-l-sidebar-section"][class*="bg-sidebar-active"],
-.sidebar-pattern [class*="bg-sidebar-active"] {
-  background: linear-gradient(90deg, rgba(74,144,240,.22) 0%, rgba(74,144,240,.06) 100%) !important;
-  border-left: 3px solid #4a90f0 !important;
-  border-radius: 8px !important;
-  margin: 2px 10px !important;
+.sidebar-pattern [class*="bg-sidebar-active"],
+[class*="bg-sidebar"] [class*="bg-sidebar-active"] {
+  background: rgba(255,255,255,.08) !important;
+  border-left: none !important;
 }
 
-/* Ícones dentro do item ativo ficam azul claro */
+/* Texto e ícone do item ativo: branco puro */
+[class*="bg-sidebar-active"],
+[class*="bg-sidebar-active"] span,
+[class*="bg-sidebar-active"] p {
+  color: #ffffff !important;
+}
 [class*="bg-sidebar-active"] svg {
-  color: #6db0ff !important;
+  color: #ffffff !important;
   opacity: 1 !important;
 }
 
-/* Sub-itens sidebar (gap-2) — pill arredondado menor */
+/* Sub-itens sidebar (gap-2) — mesma lógica pill */
 .sidebar-pattern [class*="gap-2"][class*="cursor-pointer"],
 [class*="bg-sidebar"] [class*="gap-2"][class*="cursor-pointer"] {
   font-size: 13px !important;
   line-height: 1.4 !important;
-  padding: 7px 14px 7px 12px !important;
-  margin: 1px 10px 1px 18px !important;
+  padding: 8px 12px 8px 12px !important;
+  margin: 1px 10px 1px 20px !important;
   border-radius: 6px !important;
-  transition: all .2s ease !important;
+  background: transparent !important;
+  transition: background .2s ease, color .2s ease !important;
 }
 
 /* Sub-item hover */
 .sidebar-pattern [class*="gap-2"][class*="cursor-pointer"]:hover,
 [class*="bg-sidebar"] [class*="gap-2"][class*="cursor-pointer"]:hover {
-  background: rgba(255,255,255,.08) !important;
-  color: rgba(255,255,255,.95) !important;
+  background: rgba(255,255,255,.06) !important;
+  color: #ffffff !important;
 }
 
 /* Sidebar buttons */
