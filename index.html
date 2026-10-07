@@ -547,27 +547,28 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   background:radial-gradient(circle at 50% 30%,#2a2c2f,#101112);border:1.5px solid #45484c;box-shadow:0 10px 22px -8px rgba(0,0,0,.6)}
 #car-x svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 #car-x:active{transform:scale(.94)}
-#car-body{position:absolute;left:0;right:0;top:calc(72px + env(safe-area-inset-top, 0px));z-index:2;display:flex;flex-direction:column;align-items:center}
+#car-body{position:absolute;left:0;right:0;top:calc(72px + env(safe-area-inset-top, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:2;display:flex;flex-direction:column;align-items:center}
 .cdk{position:relative;overflow:hidden;box-sizing:border-box;background:linear-gradient(180deg,#232528 0%,#151618 48%,#0f1011 100%);
   border:1px solid rgba(255,255,255,.17);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 24px 40px -14px rgba(20,24,30,.45),0 6px 14px rgba(20,24,30,.15)}
 .cdk .cwv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .cdk>*:not(.cwv){position:relative}
-#car-main{width:84.3%;border-radius:calc(var(--u)*8);padding:calc(var(--u)*5) calc(var(--u)*5.9) calc(var(--u)*6.4);
-  display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;grid-template-areas:"plate" "br" "km" "lbl" "track" "next"}
-#car-plate{grid-area:plate;width:calc(var(--u)*24.6);height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.55))}
-#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*5.9);margin-top:calc(var(--u)*2.6);white-space:nowrap}
-#car-km{grid-area:km;color:#fff;font-weight:800;font-size:calc(var(--u)*17);letter-spacing:-.03em;line-height:1;margin-top:calc(var(--u)*1);
+/* cartão do KM cresce até ocupar toda a altura que sobra acima dos cartões menores (pedido do usuário: quanto maior, melhor) */
+#car-main{width:90%;flex:1 1 auto;min-height:0;border-radius:calc(var(--u)*8);padding:calc(var(--u)*6) calc(var(--u)*5);
+  display:grid;grid-template-columns:minmax(0,1fr);justify-items:center;align-content:center;grid-template-areas:"plate" "br" "km" "lbl" "track" "next"}
+#car-plate{grid-area:plate;width:calc(var(--u)*36);height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*8);margin-top:calc(var(--u)*4);white-space:nowrap}
+#car-km{grid-area:km;color:#fff;font-weight:800;font-size:calc(var(--u)*20);letter-spacing:-.03em;line-height:1;margin-top:calc(var(--u)*1.5);
   white-space:nowrap;max-width:100%;font-variant-numeric:tabular-nums}
 #car-km.errc{color:#e05c5c}
-#car-lbl{grid-area:lbl;text-transform:uppercase;color:#d4d6da;font-weight:500;font-size:calc(var(--u)*3.46);letter-spacing:.42em;
-  padding-left:.42em;margin-top:calc(var(--u)*3)}
-#car-track{grid-area:track;justify-self:stretch;position:relative;height:calc(var(--u)*2);border-radius:999px;background:#2c2e31;margin-top:calc(var(--u)*5.1)}
+#car-lbl{grid-area:lbl;text-transform:uppercase;color:#d4d6da;font-weight:500;font-size:calc(var(--u)*4.4);letter-spacing:.42em;
+  padding-left:.42em;margin-top:calc(var(--u)*3.5)}
+#car-track{grid-area:track;justify-self:stretch;position:relative;height:calc(var(--u)*2.8);border-radius:999px;background:#2c2e31;margin-top:calc(var(--u)*9)}
 #car-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#a9cc2c,#c3e346)}
-#car-knob{position:absolute;top:50%;left:0;width:calc(var(--u)*4.1);height:calc(var(--u)*4.1);margin:calc(var(--u)*-2.05) 0 0 calc(var(--u)*-2.05);
+#car-knob{position:absolute;top:50%;left:0;width:calc(var(--u)*5.4);height:calc(var(--u)*5.4);margin:calc(var(--u)*-2.7) 0 0 calc(var(--u)*-2.7);
   border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.6)}
-#car-next{grid-area:next;margin-top:calc(var(--u)*2.8);font-size:calc(var(--u)*4.36);color:#e2e4e8;white-space:nowrap;font-variant-numeric:tabular-nums}
+#car-next{grid-area:next;margin-top:calc(var(--u)*4.5);font-size:calc(var(--u)*6);color:#e2e4e8;white-space:nowrap;font-variant-numeric:tabular-nums}
 #car-next b{color:var(--lime);font-weight:800}
-#car-tiles{width:87%;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*2.8);margin-top:calc(var(--u)*3)}
+#car-tiles{width:90%;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*2.8);margin-top:calc(var(--u)*3)}
 .ctile{border-radius:calc(var(--u)*4.4);padding:calc(var(--u)*3.2) calc(var(--u)*4.6);min-width:0}
 .ctile .cl{text-transform:uppercase;color:#d4d6da;font-weight:500;font-size:calc(var(--u)*3.1);letter-spacing:.26em;white-space:nowrap}
 .ctile .cv{color:#fff;font-weight:800;font-size:calc(var(--u)*5.4);margin-top:calc(var(--u)*1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
@@ -576,27 +577,28 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   vertical-align:.2em;background:#e05c5c}
 #car-gdot.ok{background:#b7d92d;box-shadow:0 0 8px rgba(183,217,45,.85)}
 #car-gdot.weak{background:#d9a22b}
-#car-ctt{width:87%;margin-top:calc(var(--u)*3)}
+#car-ctt{width:90%;margin-top:calc(var(--u)*3)}
 /* deitado no suporte: cartão grande à esquerda (placa ao lado do KM) e os 3 cartões empilhados à direita */
 @media (orientation:landscape){
   #carwrap{--u:min(1vh,.5vw)}
   #car-body{top:calc(14px + env(safe-area-inset-top, 0px));bottom:calc(14px + env(safe-area-inset-bottom, 0px));
     left:calc(16px + env(safe-area-inset-left, 0px));right:calc(72px + env(safe-area-inset-right, 0px));
-    display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:calc(var(--u)*2.6);align-items:stretch}
-  #car-main{width:auto;grid-column:1;grid-row:1/4;align-self:stretch;border-radius:calc(var(--u)*7);padding:calc(var(--u)*4) calc(var(--u)*5);
+    display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:calc(var(--u)*2.6);align-items:stretch}
+  #car-main{width:auto;flex:none;grid-column:1;grid-row:1/4;align-self:stretch;border-radius:calc(var(--u)*7);padding:calc(var(--u)*4) calc(var(--u)*5);
     grid-template-columns:auto minmax(0,1fr);column-gap:calc(var(--u)*4.5);justify-items:start;align-content:center;
     grid-template-areas:"plate br" "plate km" "plate lbl" "track track" "next next"}
-  #car-plate{width:calc(var(--u)*24);align-self:center}
-  #car-br{font-size:calc(var(--u)*5.6);margin-top:0;align-self:end}
-  #car-km{font-size:calc(var(--u)*15)}
-  #car-lbl{font-size:calc(var(--u)*3);padding-left:0;margin-top:calc(var(--u)*2.4);align-self:start}
-  #car-track{margin-top:calc(var(--u)*5.5)}
-  #car-next{justify-self:center;font-size:calc(var(--u)*4.2)}
+  #car-plate{width:calc(var(--u)*26);align-self:center}
+  #car-br{font-size:calc(var(--u)*6.4);margin-top:0;align-self:end}
+  #car-km{font-size:calc(var(--u)*18)}
+  #car-lbl{font-size:calc(var(--u)*3.3);padding-left:0;margin-top:calc(var(--u)*2.4);align-self:start}
+  #car-track{margin-top:calc(var(--u)*6)}
+  #car-next{justify-self:center;font-size:calc(var(--u)*4.8)}
   #car-tiles{display:contents}
   #car-ctt{width:auto;margin:0}
   .ctile{display:flex;flex-direction:column;justify-content:center;padding:calc(var(--u)*2) calc(var(--u)*4.2)}
   .ctile .cl{font-size:calc(var(--u)*2.7)}
   .ctile .cv{font-size:calc(var(--u)*4.8)}
+  #car-ct{font-size:calc(var(--u)*4.2)}
 }
 /* botão que abre o modo carro, no canto do cartão do KM da tela inicial */
 .herocar{position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
