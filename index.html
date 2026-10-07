@@ -293,6 +293,17 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item .num{font-family:var(--mono);font-size:15px;flex:1;color:var(--text)}
 .ct-item.sel .num{color:var(--gold2);font-weight:700}
 .ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+/* vínculo contrato↔BR: botão "vincular", linhas dos trechos e selo do modo (automático/manual) */
+.ct-item .lnk{background:none;border:1px solid var(--line);color:var(--gold2);border-radius:999px;padding:10px 12px;font-size:12px;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.ct-item .num .ctsub{display:block;font-family:var(--sans);font-size:11px;font-weight:400;line-height:1.45;color:var(--mut);margin-top:2px}
+.ct-item .num .ctsub.bad{color:var(--err)}
+.ctmode{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);vertical-align:middle}
+.ctmode.auto{color:#0d0f08;background:var(--gold);border-color:transparent}
+.ctautorow small{display:block;color:var(--mut);font-size:11.5px;line-height:1.4;margin-top:3px}
+.lkbr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer;background:none;border-left:none;border-right:none;border-top:none;color:var(--text);width:100%;text-align:left;font-family:var(--sans)}
+.lkbr:last-child{border-bottom:none}
+.lkbr .x{color:var(--err);font-size:12px;padding:10px 6px;min-height:44px;display:inline-flex;align-items:center}
+.lkbr small{color:var(--mut);font-family:var(--mono);font-size:11.5px}
 /* listas de serviços/contratos: a partir de ~3 itens, rola DENTRO do cartão (igual ao cartão "i"
    da câmera). O input "Adicionar" e a dica continuam fixos abaixo, fora da rolagem. */
 #svclist,#ctlist{max-height:168px;overflow-y:auto}
@@ -1002,6 +1013,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" aria-label="Novo contrato" style="flex:1">
         <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
       </div>
+      <label class="switch ctautorow" style="display:none"><span><b>Contrato automático</b> <span class="ctmode">MANUAL</span><small>Troca o contrato sozinho ao entrar no trecho vinculado (BR + km). Escolher um contrato à mão pausa o automático.</small></span><input type="checkbox" class="ctauto-cb"></label>
       <p class="hint">Contratos cadastrados aparecem para escolha rápida na câmera.</p>
     </div>
 
@@ -1092,8 +1104,31 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
+  <label class="switch ctautorow" style="display:none"><span><b>Contrato automático</b> <span class="ctmode">MANUAL</span><small>Troca o contrato sozinho ao entrar no trecho vinculado. Escolher um contrato à mão pausa; marque aqui para voltar.</small></span><input type="checkbox" class="ctauto-cb"></label>
 
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
+</dialog>
+
+<!-- diálogo: vincular contrato a BR(s) baixadas -->
+<dialog id="dlg-ctlink" aria-labelledby="dlg-ctlink-title">
+  <h2 class="sec" id="dlg-ctlink-title" style="margin-top:0">Vincular BR?</h2>
+  <p class="hint" id="ctlink-for" style="margin-top:0"></p>
+  <div id="ctlink-cur"></div>
+  <h2 class="sec" style="margin-top:16px">Escolha a BR</h2>
+  <div class="pk-list" id="ctlink-bases"></div>
+  <button class="btn gold" id="ctlink-done" style="margin-top:16px">Concluir</button>
+</dialog>
+<!-- diálogo: km inicial/final do vínculo -->
+<dialog id="dlg-ctkm" aria-labelledby="dlg-ctkm-title">
+  <h2 class="sec" id="dlg-ctkm-title" style="margin-top:0">Trecho</h2>
+  <p class="hint" id="ctkm-hint" style="margin-top:0"></p>
+  <div class="row" style="gap:8px">
+    <input type="text" id="ctkm-i" inputmode="decimal" placeholder="km inicial" aria-label="Km inicial" style="flex:1;min-width:0">
+    <input type="text" id="ctkm-f" inputmode="decimal" placeholder="km final" aria-label="Km final" style="flex:1;min-width:0">
+  </div>
+  <button class="btn gold" id="ctkm-save" style="margin-top:12px">Salvar trecho</button>
+  <button class="btn" id="ctkm-all" style="margin-top:8px">Segmento todo</button>
+  <button class="btn ghost" id="ctkm-back" style="margin-top:8px">Voltar</button>
 </dialog>
 
 <!-- dica: aparece só quando detectamos que a página GIROU (prova de que o bloqueio de orientação
@@ -1734,7 +1769,7 @@ function renderBases(){
   for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
   /* bases mudaram: recalcula o KM na hora — parado (iOS quase não manda leitura nova) a tela
      continuava mostrando "—" após baixar, ou o KM de uma rodovia já removida */
-  if(S.pos && typeof paintGps==='function'){ S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null; paintGps(); }
+  if(S.pos && typeof paintGps==='function'){ S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null; autoContract(); paintGps(); }
 }
 
 /* ================= download direto do DNIT (API SGPLAN, ponto a ponto) =================
@@ -2334,6 +2369,7 @@ function startGps(){
            spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
     try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
+    autoContract();   // dentro de um trecho vinculado, puxa o contrato sozinho
     paintGps();
     paintGpsBanner();
   }, err=>{
@@ -2599,44 +2635,155 @@ function legendLines(info){
 /* ================= contratos ================= */
 function getContracts(){ try{ return JSON.parse(localStorage.getItem('kc-contracts')||'[]') }catch(e){ return [] } }
 function getContract(){ return localStorage.getItem('kc-contract')||'' }
+/* Vínculo contrato↔BR: kc-ct-links = { "14 00546/2025": [ {base:'BR-101/SC', kmi, kmf} | {base, tudo:true} ] }.
+   tudo:true acompanha o intervalo da base (kmMin..kmMax) mesmo se ela for baixada de novo.
+   O vínculo NÃO restringe o cálculo do KM: só escolhe o contrato ativo pela posição. */
+function getCtLinks(){ try{ return JSON.parse(localStorage.getItem('kc-ct-links')||'{}')||{} }catch(e){ return {} } }
+function setCtLinks(o){ try{ localStorage.setItem('kc-ct-links', JSON.stringify(o)) }catch(e){} }
+/* modo automático: ligado por padrão; '0' = pausado (o usuário escolheu/digitou um contrato à mão) */
+function ctAutoOn(){ return localStorage.getItem('kc-ct-auto')!=='0' }
+function ctManual(){ try{ localStorage.setItem('kc-ct-auto','0') }catch(e){} }
+function linkRange(l){
+  const b=S.bases.find(x=>x.id===l.base); if(!b) return null;
+  return l.tudo ? {b, a:b.kmMin, z:b.kmMax} : {b, a:Math.min(l.kmi,l.kmf), z:Math.max(l.kmi,l.kmf)};
+}
+function linkLabel(l){
+  const r=linkRange(l);
+  if(!r) return l.base+' · BR não instalada';
+  return l.base+' · '+(l.tudo?'segmento todo':'km '+fkm(r.a)+' – '+fkm(r.z));
+}
+/* seleção automática: dentro de um trecho vinculado (BR + km atuais) puxa o contrato. Fora de
+   qualquer trecho NÃO troca nada (mantém o atual) e nunca bloqueia foto. Posição fora da rodovia
+   (> distância máx.) é ignorada. Se o contrato atual já cobre o trecho, não troca (sem brigar). */
+function autoContract(){
+  if(!ctAutoOn()) return;
+  const f=S.fix; if(!f || f.dist>CFG.maxdist) return;
+  const links=getCtLinks(), cur=getContract(), hits=[];
+  for(const c of getContracts()){
+    for(const l of (links[c]||[])){
+      if(l.base!==f.id) continue;
+      const r=linkRange(l);
+      if(r && f.km>=r.a && f.km<=r.z){ hits.push(c); break }
+    }
+  }
+  if(!hits.length || hits.includes(cur)) return;
+  localStorage.setItem('kc-contract', hits[0]);
+  ctRefresh();
+  toast('Contrato automático: '+hits[0]);
+}
+function renderCtMode(){
+  const any=Object.values(getCtLinks()).some(a=>a&&a.length), on=ctAutoOn();
+  document.querySelectorAll('.ctautorow').forEach(r=>r.style.display=any?'':'none');
+  document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.checked=on);
+  document.querySelectorAll('.ctmode').forEach(m=>{ m.textContent=on?'AUTOMÁTICO':'MANUAL'; m.classList.toggle('auto',on) });
+}
+document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.onchange=()=>{
+  try{ localStorage.setItem('kc-ct-auto', cb.checked?'1':'0') }catch(e){}
+  if(cb.checked){ toast('Automático ligado — o contrato troca ao entrar num trecho vinculado'); autoContract() }
+  else toast('Modo manual — o contrato fica como você escolher');
+  ctRefresh();
+});
+function ctRefresh(){ renderContracts(); renderContracts2(); paintTags(); paintGps() }
+function ctItemHtml(c, act){
+  const ls=getCtLinks()[c]||[];
+  const sub=ls.length ? '<small class="ctsub'+(ls.some(l=>!linkRange(l))?' bad':'')+'">'+ls.map(l=>_esc(linkLabel(l))).join('<br>')+'</small>' : '';
+  return `<div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}"><span class="dot"></span><span class="num">${_esc(c)}${sub}</span><button class="lnk">${ls.length?'vínculos':'vincular'}</button><button class="del">remover</button></div>`;
+}
+function wireCtItems(el){
+  el.querySelectorAll('.ct-item').forEach(item=>{
+    const c=item.dataset.ct;
+    item.onclick=e=>{
+      if(e.target.closest('button')) return;
+      localStorage.setItem('kc-contract', c===getContract()?'':c);
+      ctManual();   // escolha à mão: pausa o automático (não briga a cada leitura do GPS)
+      ctRefresh();
+    };
+    item.querySelector('.lnk').onclick=()=>openCtLink(c,false);
+    item.querySelector('.del').onclick=()=>{
+      if(!confirm('Remover o contrato '+c+'?')) return;
+      localStorage.setItem('kc-contracts', JSON.stringify(getContracts().filter(x=>x!==c)));
+      if(getContract()===c) localStorage.removeItem('kc-contract');
+      const lk=getCtLinks(); delete lk[c]; setCtLinks(lk);
+      ctRefresh();
+    };
+  });
+}
 function renderContracts(){
   const list=getContracts(), act=getContract();
   const el=document.getElementById('ctlist');
   if(!list.length){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
   } else {
-    el.innerHTML=list.map(c=>`
-      <div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}">
-        <span class="dot"></span><span class="num">${_esc(c)}</span>
-        <button class="del">remover</button>
-      </div>`).join('');
-    el.querySelectorAll('.ct-item').forEach(item=>{
-      item.onclick=e=>{
-        if(e.target.classList.contains('del')) return;
-        const c=item.dataset.ct;
-        localStorage.setItem('kc-contract', c===getContract()?'':c);
-        renderContracts(); paintGps();
-      };
-      item.querySelector('.del').onclick=()=>{
-        const c=item.dataset.ct;
-        if(!confirm('Remover o contrato '+c+'?')) return;
-        localStorage.setItem('kc-contracts', JSON.stringify(getContracts().filter(x=>x!==c)));
-        if(getContract()===c) localStorage.removeItem('kc-contract');
-        renderContracts(); paintGps();
-      };
-    });
+    el.innerHTML=list.map(c=>ctItemHtml(c,act)).join('');
+    wireCtItems(el);
   }
+  renderCtMode();
 }
-document.getElementById('ct-add').onclick=()=>{
-  const inp=document.getElementById('ct-new');
+function addContract(inp){
   const c=inp.value.trim();
   if(!c){ toast('Digite o número do contrato.'); return }
   const list=getContracts();
   if(!list.includes(c)) list.push(c);
   localStorage.setItem('kc-contracts', JSON.stringify(list));
   localStorage.setItem('kc-contract', c);
+  ctManual();   // digitou à mão: o automático só volta quando ele vincular uma BR ou religar
   inp.value='';
-  renderContracts(); paintGps();
+  ctRefresh();
+  openCtLink(c,true);
+}
+document.getElementById('ct-add').onclick=()=>addContract(document.getElementById('ct-new'));
+
+/* ---- janelas de vínculo: 1) escolher a BR  2) km inicial/final (ou segmento todo) ---- */
+let _ctLinkFor='', _ctKmBase='';
+function openCtLink(c, ask){
+  /* ask = logo após criar o contrato: só pergunta se ainda não há vínculo e há BR baixada */
+  if(ask && ((getCtLinks()[c]||[]).length || !S.bases.length)) return;
+  _ctLinkFor=c; renderCtLink(); showDlg(document.getElementById('dlg-ctlink'));
+}
+function renderCtLink(){
+  const c=_ctLinkFor, ls=getCtLinks()[c]||[];
+  document.getElementById('ctlink-for').textContent='Contrato '+c+' — ao entrar no trecho escolhido, o contrato entra sozinho na legenda.';
+  const cur=document.getElementById('ctlink-cur');
+  cur.innerHTML=ls.length ? ls.map((l,i)=>`<div class="lkbr" style="cursor:default"><span>${_esc(linkLabel(l))}</span><button class="x" data-i="${i}" style="background:none;border:none">remover</button></div>`).join('') : '';
+  cur.querySelectorAll('.x').forEach(b=>b.onclick=()=>{
+    const lk=getCtLinks(); lk[c]=(lk[c]||[]).filter((_,i)=>i!==+b.dataset.i); if(!lk[c].length) delete lk[c];
+    setCtLinks(lk); renderCtLink(); ctRefresh();
+  });
+  const bl=document.getElementById('ctlink-bases');
+  bl.innerHTML=S.bases.length ? S.bases.map(b=>`<button class="lkbr" data-id="${_esc(b.id)}"><span>${_esc(b.id)}</span><small>km ${fkm(b.kmMin)}–${fkm(b.kmMax)}</small></button>`).join('')
+    : '<p class="empty">Nenhuma rodovia baixada.<br>Baixe uma BR na tela inicial para vincular.</p>';
+  bl.querySelectorAll('.lkbr').forEach(b=>b.onclick=()=>openCtKm(b.dataset.id));
+}
+document.getElementById('ctlink-done').onclick=()=>{ document.getElementById('dlg-ctlink').close(); ctRefresh() };
+function openCtKm(baseId){
+  const b=S.bases.find(x=>x.id===baseId); if(!b) return;
+  _ctKmBase=baseId;
+  document.getElementById('dlg-ctkm-title').textContent=baseId;
+  document.getElementById('ctkm-hint').textContent='Baixada de km '+fkm(b.kmMin)+' a '+fkm(b.kmMax)+'. Informe o trecho do contrato ou use o segmento todo.';
+  document.getElementById('ctkm-i').value=''; document.getElementById('ctkm-f').value='';
+  showDlg(document.getElementById('dlg-ctkm'));
+}
+function saveCtLink(link){
+  const c=_ctLinkFor, lk=getCtLinks(), arr=lk[c]||[];
+  const dup=arr.some(l=>l.base===link.base && !!l.tudo===!!link.tudo && (link.tudo || (l.kmi===link.kmi && l.kmf===link.kmf)));
+  if(!dup) arr.push(link);
+  lk[c]=arr; setCtLinks(lk);
+  /* vinculou o contrato que está em uso: religa o automático (foi o que ele pediu ao vincular) */
+  if(getContract()===c){ try{ localStorage.setItem('kc-ct-auto','1') }catch(e){} }
+  document.getElementById('dlg-ctkm').close();
+  renderCtLink(); ctRefresh(); autoContract();
+  toast('Vínculo salvo'+(ctAutoOn()?' — contrato automático ligado':''));
+}
+document.getElementById('ctkm-back').onclick=()=>document.getElementById('dlg-ctkm').close();
+document.getElementById('ctkm-all').onclick=()=>saveCtLink({base:_ctKmBase, tudo:true});
+document.getElementById('ctkm-save').onclick=()=>{
+  const b=S.bases.find(x=>x.id===_ctKmBase); if(!b) return;
+  const pn=s=>parseFloat(String(s).trim().replace(',','.'));
+  const i=pn(document.getElementById('ctkm-i').value), f=pn(document.getElementById('ctkm-f').value);
+  if(!isFinite(i)||!isFinite(f)){ toast('Informe o km inicial e o final.'); return }
+  const a=Math.min(i,f), z=Math.max(i,f);
+  if(a<b.kmMin-0.0005 || z>b.kmMax+0.0005){ toast('Fora do trecho baixado (km '+fkm(b.kmMin)+' a '+fkm(b.kmMax)+').'); return }
+  saveCtLink({base:_ctKmBase, kmi:a, kmf:z});
 };
 
 /* ================= logo da empresa ================= */
@@ -3500,39 +3647,12 @@ function renderContracts2(){
   if(!list.length){
     el.innerHTML='<p class="empty">Nenhum contrato cadastrado.<br>Adicione abaixo o número do contrato.</p>';
   } else {
-    el.innerHTML=list.map(c=>`
-      <div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}">
-        <span class="dot"></span><span class="num">${_esc(c)}</span>
-        <button class="del">remover</button>
-      </div>`).join('');
-    el.querySelectorAll('.ct-item').forEach(item=>{
-      item.onclick=e=>{
-        if(e.target.classList.contains('del')) return;
-        const c=item.dataset.ct;
-        localStorage.setItem('kc-contract', c===getContract()?'':c);
-        renderContracts2(); renderContracts(); paintTags(); paintGps();
-      };
-      item.querySelector('.del').onclick=()=>{
-        const c=item.dataset.ct;
-        if(!confirm('Remover o contrato '+c+'?')) return;
-        localStorage.setItem('kc-contracts', JSON.stringify(getContracts().filter(x=>x!==c)));
-        if(getContract()===c) localStorage.removeItem('kc-contract');
-        renderContracts2(); renderContracts(); paintTags(); paintGps();
-      };
-    });
+    el.innerHTML=list.map(c=>ctItemHtml(c,act)).join('');
+    wireCtItems(el);
   }
+  renderCtMode();
 }
-document.getElementById('ct-add2').onclick=()=>{
-  const inp=document.getElementById('ct-new2');
-  const c=inp.value.trim();
-  if(!c){ toast('Digite o número do contrato.'); return }
-  const list=getContracts();
-  if(!list.includes(c)) list.push(c);
-  localStorage.setItem('kc-contracts', JSON.stringify(list));
-  localStorage.setItem('kc-contract', c);
-  inp.value='';
-  renderContracts2(); renderContracts(); paintTags(); paintGps();
-};
+document.getElementById('ct-add2').onclick=()=>addContract(document.getElementById('ct-new2'));
 
 /* ---- atalho de Configurações direto da câmera ---- */
 document.getElementById('cam-settings').onclick=()=>{ closeCam(); goToScreen('scr-settings'); settingsFromCam=true; };
