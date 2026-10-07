@@ -1150,6 +1150,17 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 </dialog>
 
+<!-- diálogo: fotos antigas (antes da v259) sem registro de salvamento — apagar só com confirmação -->
+<dialog id="dlg-legacy" aria-labelledby="legacy-title">
+  <h2 class="sec" id="legacy-title" style="margin-top:0">Fotos antigas</h2>
+  <p id="legacy-txt" style="font-size:15px;line-height:1.45;margin:0"></p>
+  <p class="hint">Se você confirma que elas já estão na galeria do seu celular, pode apagá-las do app. As cópias no celular não são afetadas.</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+    <button class="btn" id="legacy-del" style="color:#ff8a80">Apagar as antigas</button>
+    <button class="btn gold" id="legacy-keep">Manter</button>
+  </div>
+</dialog>
+
 <!-- diálogo: detalhes de uma rodovia baixada (botão ⋯ da lista) -->
 <dialog id="dlg-base" aria-labelledby="base-name">
   <h2 class="sec" style="margin-top:0">Detalhes da rodovia</h2>
@@ -3599,7 +3610,8 @@ async function getPhotoMetas(){
     const metas=[], cur=d.transaction('photos').objectStore('photos').openCursor();
     cur.onsuccess=()=>{
       const c=cur.result;
-      if(c){ const v=c.value; metas.push({id:v.id, name:v.name, ts:v.ts, saved:!!v.saved}); c.continue(); }
+      /* legacy: foto de antes da v259 — não tem o campo "saved" (o app não sabe se foi salva no celular) */
+      if(c){ const v=c.value; metas.push({id:v.id, name:v.name, ts:v.ts, saved:!!v.saved, legacy:v.saved===undefined}); c.continue(); }
       else res(metas.sort((a,b)=>b.ts-a.ts));
     };
     cur.onerror=()=>rej(cur.error);
@@ -3650,22 +3662,45 @@ function galCaption(){
   cap.textContent='';
   if(m){
     const n=document.createElement('div'); n.textContent=m.name;
-    const s=document.createElement('div'); s.className='galst'+(m.saved?' ok':''); s.textContent=m.saved?'✓ salva no celular':'só no app';
+    const s=document.createElement('div'); s.className='galst'+(m.saved?' ok':'');
+    s.textContent=m.saved?'✓ salva no celular':(m.legacy?'foto anterior à atualização — sem registro de salvamento':'só no app');
     cap.append(n, s);
   }
 }
 /* "Limpar galeria": apaga da galeria interna SÓ as fotos já salvas no celular (saved=true). As que só
    existem no app ficam — nunca é apagada a única cópia de uma foto. */
+/* fotos de antes da v259 não têm registro de salvamento (o app web não consegue ler a galeria do
+   celular para conferir). Elas só saem se o PRÓPRIO usuário confirmar que já estão no celular. */
+function askLegacyPhotos(n, tambem){
+  return new Promise(resolve=>{
+    const dlg=document.getElementById('dlg-legacy');
+    document.getElementById('legacy-txt').textContent=`${n} foto(s) são de antes da atualização — o app não tem registro se foram salvas no celular.`;
+    const del=document.getElementById('legacy-del');
+    del.textContent=tambem?'Apagar as antigas também':'Apagar as antigas';
+    let done=false; const fin=v=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(v) };
+    del.onclick=()=>fin(true);
+    document.getElementById('legacy-keep').onclick=()=>fin(false);
+    dlg.oncancel=e=>{ e.preventDefault(); fin(false) };
+    showDlg(dlg);
+  });
+}
 document.getElementById('gal-clean').onclick=async()=>{
   if(galBusy) return;
-  const salvas=galMetas.filter(m=>m.saved), soApp=galMetas.length-salvas.length;
-  if(!salvas.length){ toast('Nenhuma foto já salva no celular para limpar — as que só existem no app são mantidas.', 4200); return }
-  if(!confirm(`Apagar da galeria do app ${salvas.length} foto(s) que já estão salvas no celular?`+
-    (soApp?`\n\n${soApp} foto(s) que só existem no app serão mantidas.`:'')+`\n\nAs cópias no celular não são afetadas.`)) return;
+  const salvas=galMetas.filter(m=>m.saved), antigas=galMetas.filter(m=>m.legacy);
+  const soApp=galMetas.length-salvas.length-antigas.length;
+  if(!salvas.length && !antigas.length){ toast('Nenhuma foto salva no celular para limpar — as que só existem no app são mantidas.', 4200); return }
+  const apagar=[];
+  if(salvas.length){
+    if(!confirm(`Apagar da galeria do app ${salvas.length} foto(s) que já estão salvas no celular?`+
+      (soApp?`\n\n${soApp} foto(s) que só existem no app serão mantidas.`:'')+`\n\nAs cópias no celular não são afetadas.`)) return;
+    apagar.push(...salvas);
+  }
+  if(antigas.length && await askLegacyPhotos(antigas.length, salvas.length>0)) apagar.push(...antigas);
+  if(!apagar.length) return;
   try{
-    for(const m of salvas){ await deletePhoto(m.id); if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) } }
+    for(const m of apagar){ await deletePhoto(m.id); if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) } }
     const atual=galMetas[galIdx];
-    galMetas=galMetas.filter(m=>!m.saved);
+    galMetas=galMetas.filter(m=>!apagar.includes(m));
     if(!galMetas.length){ document.getElementById('gal-close').click(); return }
     const k=atual?galMetas.indexOf(atual):-1;
     galIdx = k>=0 ? k : Math.min(galIdx, galMetas.length-1);
@@ -3840,7 +3875,7 @@ document.getElementById('gal-share').onclick=async()=>{
     } else if(_isAndroid && _isPWAStandalone && navigator.serviceWorker && navigator.serviceWorker.controller){
       ok=await _downloadViaSW(blob, m.name); if(!ok) toast('⚠ Não consegui salvar a foto.');
     } else ok=_downloadDirect(blob, m.name);
-    if(ok && !m.saved){ m.saved=true; await markPhotoSaved(m.id); if(galMetas[galIdx]===m) galCaption() }
+    if(ok && !m.saved){ m.saved=true; m.legacy=false; await markPhotoSaved(m.id); if(galMetas[galIdx]===m) galCaption() }
   }catch(e){ toast('⚠ Não consegui compartilhar a foto.') }
 };
 document.getElementById('gal-del').onclick=async()=>{
