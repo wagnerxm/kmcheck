@@ -105,27 +105,65 @@ body {
   background-color: rgba(255,255,255,.06) !important;
 }
 
-/* Sidebar section labels — discreto (SIGO) */
+/* Sidebar section labels — discreto com tom azulado (SIGO) */
 .text-sidebar-section {
-  color: rgba(255,255,255,.35) !important;
+  color: rgba(140,170,210,.45) !important;
   font-weight: 600 !important;
   letter-spacing: .12em !important;
   font-size: 11px !important;
+  text-transform: uppercase !important;
 }
 
-/* Sidebar text */
+/* Sidebar text — mais legível (SIGO usa ~60% branco) */
 .text-sidebar-text {
-  color: rgba(255,255,255,.50) !important;
+  color: rgba(255,255,255,.60) !important;
 }
 
-/* Sidebar nav item hover */
+/* ── 3b. Sidebar nav items — interação SIGO ── */
+
+/* Nav items: fonte 14px, padding generoso (compilado usa 12px/py-2.5) */
+.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"],
+[class*="bg-sidebar"] [class*="gap-3"][class*="cursor-pointer"] {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  transition: background .15s ease, color .15s ease !important;
+}
+
+/* Hover — destaque visível (SIGO mostra fundo mais claro ao passar o mouse) */
 .hover\:bg-sidebar-hover:hover {
-  background: rgba(255,255,255,.04) !important;
+  background: rgba(255,255,255,.07) !important;
 }
 
-/* Sidebar active item — borda azul (SIGO) */
+/* Texto fica mais branco no hover */
+.hover\:text-sidebar-text-active:hover {
+  color: rgba(255,255,255,.90) !important;
+}
+
+/* Active item — fundo destacado + borda azul (SIGO) */
 .border-l-sidebar-section {
   border-left-color: #4a90f0 !important;
+}
+
+.bg-sidebar-active {
+  background: rgba(74,144,240,.12) !important;
+}
+
+/* Active text fica branco total */
+[class*="border-l-sidebar-section"][class*="bg-sidebar-active"] {
+  background: rgba(74,144,240,.12) !important;
+  border-left-color: #4a90f0 !important;
+  border-left-width: 3px !important;
+}
+
+/* Sub-itens sidebar (gap-2, text-[11px]) — proporcional ao SIGO */
+.sidebar-pattern [class*="gap-2"][class*="cursor-pointer"],
+[class*="bg-sidebar"] [class*="gap-2"][class*="cursor-pointer"] {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 /* Sidebar buttons */
