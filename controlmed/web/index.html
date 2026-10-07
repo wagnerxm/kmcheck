@@ -105,13 +105,15 @@ body {
   background-color: rgba(255,255,255,.06) !important;
 }
 
-/* Sidebar section labels — discreto com tom azulado (SIGO) */
+/* Sidebar section labels — uppercase discreto (SIGO) */
 .text-sidebar-section {
-  color: rgba(140,170,210,.45) !important;
-  font-weight: 600 !important;
-  letter-spacing: .12em !important;
-  font-size: 11px !important;
+  color: rgba(140,170,210,.40) !important;
+  font-weight: 700 !important;
+  letter-spacing: .10em !important;
+  font-size: 10px !important;
   text-transform: uppercase !important;
+  padding: 0 10px !important;
+  margin-top: 6px !important;
 }
 
 /* Sidebar text — mais legível (SIGO usa ~60% branco) */
@@ -119,51 +121,76 @@ body {
   color: rgba(255,255,255,.60) !important;
 }
 
-/* ── 3b. Sidebar nav items — interação SIGO ── */
+/* ── 3b. Sidebar nav items — interação estilo SIGO ── */
 
-/* Nav items: fonte 14px, padding generoso (compilado usa 12px/py-2.5) */
+/* Nav items: fonte 14px, pill arredondado com margem lateral */
 .sidebar-pattern [class*="gap-3"][class*="cursor-pointer"],
 [class*="bg-sidebar"] [class*="gap-3"][class*="cursor-pointer"] {
   font-size: 14px !important;
   line-height: 1.5 !important;
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
-  transition: background .15s ease, color .15s ease !important;
+  padding: 10px 16px 10px 14px !important;
+  margin: 2px 10px !important;
+  border-radius: 8px !important;
+  border-left: 3px solid transparent !important;
+  transition: all .2s ease !important;
 }
 
-/* Hover — destaque visível (SIGO mostra fundo mais claro ao passar o mouse) */
+/* Hover — fundo bem visível, formato pill (padrão SIGO) */
+.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover,
+[class*="bg-sidebar"] [class*="gap-3"][class*="cursor-pointer"]:hover,
 .hover\:bg-sidebar-hover:hover {
-  background: rgba(255,255,255,.07) !important;
+  background: rgba(255,255,255,.10) !important;
+  border-left-color: rgba(255,255,255,.20) !important;
 }
 
-/* Texto fica mais branco no hover */
-.hover\:text-sidebar-text-active:hover {
-  color: rgba(255,255,255,.90) !important;
+/* Texto fica branco no hover */
+.hover\:text-sidebar-text-active:hover,
+.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover .text-sidebar-text,
+.sidebar-pattern [class*="gap-3"][class*="cursor-pointer"]:hover {
+  color: rgba(255,255,255,.95) !important;
 }
 
-/* Active item — fundo destacado + borda azul (SIGO) */
+/* Active item — gradiente lateral azul + borda viva (SIGO) */
 .border-l-sidebar-section {
   border-left-color: #4a90f0 !important;
 }
 
 .bg-sidebar-active {
-  background: rgba(74,144,240,.12) !important;
+  background: linear-gradient(90deg, rgba(74,144,240,.22) 0%, rgba(74,144,240,.06) 100%) !important;
+  border-radius: 8px !important;
 }
 
-/* Active text fica branco total */
-[class*="border-l-sidebar-section"][class*="bg-sidebar-active"] {
-  background: rgba(74,144,240,.12) !important;
-  border-left-color: #4a90f0 !important;
-  border-left-width: 3px !important;
+/* Combinação ativa: gradiente + borda + radius */
+[class*="border-l-sidebar-section"][class*="bg-sidebar-active"],
+.sidebar-pattern [class*="bg-sidebar-active"] {
+  background: linear-gradient(90deg, rgba(74,144,240,.22) 0%, rgba(74,144,240,.06) 100%) !important;
+  border-left: 3px solid #4a90f0 !important;
+  border-radius: 8px !important;
+  margin: 2px 10px !important;
 }
 
-/* Sub-itens sidebar (gap-2, text-[11px]) — proporcional ao SIGO */
+/* Ícones dentro do item ativo ficam azul claro */
+[class*="bg-sidebar-active"] svg {
+  color: #6db0ff !important;
+  opacity: 1 !important;
+}
+
+/* Sub-itens sidebar (gap-2) — pill arredondado menor */
 .sidebar-pattern [class*="gap-2"][class*="cursor-pointer"],
 [class*="bg-sidebar"] [class*="gap-2"][class*="cursor-pointer"] {
   font-size: 13px !important;
   line-height: 1.4 !important;
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
+  padding: 7px 14px 7px 12px !important;
+  margin: 1px 10px 1px 18px !important;
+  border-radius: 6px !important;
+  transition: all .2s ease !important;
+}
+
+/* Sub-item hover */
+.sidebar-pattern [class*="gap-2"][class*="cursor-pointer"]:hover,
+[class*="bg-sidebar"] [class*="gap-2"][class*="cursor-pointer"]:hover {
+  background: rgba(255,255,255,.08) !important;
+  color: rgba(255,255,255,.95) !important;
 }
 
 /* Sidebar buttons */
