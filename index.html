@@ -1007,7 +1007,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </label>
       <label class="listrow">
         <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
-        <span class="ltext"><b>Modo carro à noite</b><i>Escurece depois do pôr do sol</i></span>
+        <span class="ltext"><b>Modo carro à noite</b><i>Escurece 1 h depois do pôr do sol</i></span>
         <select id="cfg-carnight" class="lsel">
           <option value="auto">Automático (pelo sol)</option>
           <option value="day">Sempre claro</option>
@@ -3037,7 +3037,8 @@ const carwrap=document.getElementById('carwrap');
 /* ---- modo carro à noite ----
    kc-carnight: 'auto' (padrão, pelo sol), 'day' (sempre claro) ou 'night' (sempre escuro).
    No automático o nascer/pôr do sol sai da posição do GPS e da data (equação do nascer do sol,
-   precisão de ~1 min, funciona offline). Sem GPS: noite das 18h às 6h. */
+   precisão de ~1 min, funciona offline). Escurece 1 h após o pôr do sol e clareia no nascer.
+   Sem GPS: noite das 19h às 6h. */
 function sunTimes(lat, lon, now){
   const r=Math.PI/180, jd=now/86400000+2440587.5, n=Math.round(jd-2451545.0009+lon/360), J=n-lon/360;   // dia solar cujo meio-dia está mais perto de agora
   const M=(357.5291+.98560028*J)%360, C=1.9148*Math.sin(M*r)+.02*Math.sin(2*M*r)+.0003*Math.sin(3*M*r);
@@ -3055,9 +3056,9 @@ function carIsNight(){
   if(p && isFinite(p.lat) && isFinite(p.lon)){
     const t=sunTimes(p.lat, p.lon, now);
     if(t==='night') return true; if(t==='day') return false;
-    return now<t[0] || now>t[1];
+    return now<t[0] || now>t[1]+3600000;   // escurece 1 h DEPOIS do pôr do sol (pedido do usuário); clareia no nascer
   }
-  const h=new Date().getHours(); return h<6 || h>=18;
+  const h=new Date().getHours(); return h<6 || h>=19;
 }
 let _carNight=null, _carNightT=0, _carMetaPrev=null;
 /* aplica o modo; fade=true troca suave (fundo some e volta em 0,5 s) — usado quando o sol se põe com
