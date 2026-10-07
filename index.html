@@ -295,8 +295,21 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .ct-item .del{background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 /* vínculo contrato↔BR: botão "vincular", linhas dos trechos e selo do modo (automático/manual) */
 .ct-item .lnk{background:none;border:1px solid var(--line);color:var(--gold2);border-radius:999px;padding:10px 12px;font-size:12px;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-.ct-item .num .ctsub{display:block;font-family:var(--sans);font-size:11px;font-weight:400;line-height:1.45;color:var(--mut);margin-top:2px}
-.ct-item .num .ctsub.bad{color:var(--err)}
+/* item de CONTRATO em 3 linhas (cabe em ~390px sem quebrar o número): número / trechos / ações.
+   Número e km usam nowrap — quebram só ENTRE os itens, nunca no meio do valor. */
+.ct-item.ctx{display:block;padding:12px 2px}
+.ctx .ct-top{display:flex;align-items:center;gap:12px}
+.ctx .num{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ctx .ct-links{margin:4px 0 0 30px}
+.ctx .lk{display:flex;flex-wrap:wrap;gap:0 6px;font-size:11.5px;line-height:1.55;color:var(--mut)}
+.ctx .lk b{font-weight:600;color:var(--text);white-space:nowrap}
+.ctx .lk span{white-space:nowrap}
+.ctx .lk.bad,.ctx .lk.bad b{color:var(--err)}
+.ctx .ct-act{display:flex;align-items:center;gap:8px;margin:8px 0 0 30px;flex-wrap:wrap}
+.ctx .ct-auto{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);min-height:36px;margin-right:auto;cursor:pointer}
+.ctx .ct-auto input{width:18px;height:18px;accent-color:var(--gold);flex:0 0 auto}
+.ctx .lnk,.ctx .del{min-height:36px;min-width:0;padding:0 12px;font-size:12px}
+#ctlist,#ctlist2{max-height:300px}
 .ctmode{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);vertical-align:middle}
 .ctmode.auto{color:#0d0f08;background:var(--gold);border-color:transparent}
 .ctautorow small{display:block;color:var(--mut);font-size:11.5px;line-height:1.4;margin-top:3px}
@@ -306,7 +319,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .lkbr small{color:var(--mut);font-family:var(--mono);font-size:11.5px}
 /* listas de serviços/contratos: a partir de ~3 itens, rola DENTRO do cartão (igual ao cartão "i"
    da câmera). O input "Adicionar" e a dica continuam fixos abaixo, fora da rolagem. */
-#svclist,#ctlist{max-height:168px;overflow-y:auto}
+#svclist{max-height:168px;overflow-y:auto}
+#ctlist,#ctlist2{overflow-y:auto}
 .empty{color:var(--mut);font-size:13px;line-height:1.6;text-align:center;padding:18px 8px}
 /* ---------- câmera ---------- */
 #scr-cam{position:relative}
@@ -1013,7 +1027,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="text" id="ct-new" placeholder="ex.: 14 00546/2025" aria-label="Novo contrato" style="flex:1">
         <button class="btn small gold" id="ct-add" style="flex:0 0 auto">Adicionar</button>
       </div>
-      <label class="switch ctautorow" style="display:none"><span><b>Contrato automático</b> <span class="ctmode">MANUAL</span><small>Troca o contrato sozinho ao entrar no trecho vinculado (BR + km). Escolher um contrato à mão pausa o automático.</small></span><input type="checkbox" class="ctauto-cb"></label>
+      <label class="switch ctautorow" style="display:none"><span><b>Automático (chave geral)</b> <span class="ctmode">MANUAL</span><small>Desligada, pausa o automático em TODOS os contratos. Ligada, vale o "automático" de cada contrato. Escolher um contrato à mão desliga esta chave.</small></span><input type="checkbox" class="ctauto-cb"></label>
       <p class="hint">Contratos cadastrados aparecem para escolha rápida na câmera.</p>
     </div>
 
@@ -1104,7 +1118,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
-  <label class="switch ctautorow" style="display:none"><span><b>Contrato automático</b> <span class="ctmode">MANUAL</span><small>Troca o contrato sozinho ao entrar no trecho vinculado. Escolher um contrato à mão pausa; marque aqui para voltar.</small></span><input type="checkbox" class="ctauto-cb"></label>
+  <label class="switch ctautorow" style="display:none"><span><b>Automático (chave geral)</b> <span class="ctmode">MANUAL</span><small>Desligada, pausa o automático em TODOS os contratos. Ligada, vale o "automático" de cada contrato. Escolher um contrato à mão desliga esta chave.</small></span><input type="checkbox" class="ctauto-cb"></label>
 
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
 </dialog>
@@ -2647,10 +2661,25 @@ function linkRange(l){
   const b=S.bases.find(x=>x.id===l.base); if(!b) return null;
   return l.tudo ? {b, a:b.kmMin, z:b.kmMax} : {b, a:Math.min(l.kmi,l.kmf), z:Math.max(l.kmi,l.kmf)};
 }
+/* km com 3 casas decimais (metros) no padrão do app: "km 290,000 a 421,100" — o "a" evita ler a
+   vírgula/ponto como separador de milhar ou o traço como número negativo */
 function linkLabel(l){
   const r=linkRange(l);
   if(!r) return l.base+' · BR não instalada';
-  return l.base+' · '+(l.tudo?'segmento todo':'km '+fkm(r.a)+' – '+fkm(r.z));
+  return l.base+' · '+(l.tudo?'segmento todo':'km '+fkm(r.a)+' a '+fkm(r.z));
+}
+function linkHtml(l){
+  const r=linkRange(l);
+  const t=!r ? 'BR não instalada' : (l.tudo ? 'segmento todo' : 'km '+fkm(r.a)+' a '+fkm(r.z));
+  return '<span class="lk'+(r?'':' bad')+'"><b>'+_esc(l.base)+'</b><span>'+_esc(t)+'</span></span>';
+}
+/* automático POR CONTRATO: guarda só os que foram DESLIGADOS (kc-ct-noauto) — assim contratos que
+   já existiam continuam automáticos sem migração. A chave geral (kc-ct-auto) pausa todos de uma vez. */
+function ctNoAuto(){ try{ return JSON.parse(localStorage.getItem('kc-ct-noauto')||'[]')||[] }catch(e){ return [] } }
+function ctAutoFor(c){ return !ctNoAuto().includes(c) }
+function setCtAutoFor(c,on){
+  const a=ctNoAuto().filter(x=>x!==c); if(!on) a.push(c);
+  try{ localStorage.setItem('kc-ct-noauto', JSON.stringify(a)) }catch(e){}
 }
 /* seleção automática: dentro de um trecho vinculado (BR + km atuais) puxa o contrato. Fora de
    qualquer trecho NÃO troca nada (mantém o atual) e nunca bloqueia foto. Posição fora da rodovia
@@ -2660,6 +2689,7 @@ function autoContract(){
   const f=S.fix; if(!f || f.dist>CFG.maxdist) return;
   const links=getCtLinks(), cur=getContract(), hits=[];
   for(const c of getContracts()){
+    if(!ctAutoFor(c)) continue;   // este contrato está com o automático desligado
     for(const l of (links[c]||[])){
       if(l.base!==f.id) continue;
       const r=linkRange(l);
@@ -2679,31 +2709,44 @@ function renderCtMode(){
 }
 document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.onchange=()=>{
   try{ localStorage.setItem('kc-ct-auto', cb.checked?'1':'0') }catch(e){}
-  if(cb.checked){ toast('Automático ligado — o contrato troca ao entrar num trecho vinculado'); autoContract() }
-  else toast('Modo manual — o contrato fica como você escolher');
+  if(cb.checked){ toast('Automático geral ligado — vale o automático de cada contrato'); autoContract() }
+  else toast('Automático pausado em todos os contratos');
   ctRefresh();
 });
 function ctRefresh(){ renderContracts(); renderContracts2(); paintTags(); paintGps() }
 function ctItemHtml(c, act){
-  const ls=getCtLinks()[c]||[];
-  const sub=ls.length ? '<small class="ctsub'+(ls.some(l=>!linkRange(l))?' bad':'')+'">'+ls.map(l=>_esc(linkLabel(l))).join('<br>')+'</small>' : '';
-  return `<div class="ct-item ${c===act?'sel':''}" data-ct="${_esc(c)}"><span class="dot"></span><span class="num">${_esc(c)}${sub}</span><button class="lnk">${ls.length?'vínculos':'vincular'}</button><button class="del">remover</button></div>`;
+  const ls=getCtLinks()[c]||[], on=ctAutoOn();
+  const links=ls.length ? '<div class="ct-links">'+ls.map(linkHtml).join('')+'</div>' : '';
+  /* o "automático" do contrato só aparece quando ele tem vínculo (sem trecho não há o que automatizar) */
+  const auto=ls.length ? `<label class="ct-auto"><input type="checkbox" class="ctc-auto" ${ctAutoFor(c)?'checked':''}>automático${on?'':' (pausado)'}</label>` : '<span style="margin-right:auto"></span>';
+  return `<div class="ct-item ctx ${c===act?'sel':''}" data-ct="${_esc(c)}"><div class="ct-top"><span class="dot"></span><span class="num">${_esc(c)}</span></div>${links}<div class="ct-act">${auto}<button class="lnk">${ls.length?'vínculos':'vincular'}</button><button class="del">remover</button></div></div>`;
 }
 function wireCtItems(el){
   el.querySelectorAll('.ct-item').forEach(item=>{
     const c=item.dataset.ct;
     item.onclick=e=>{
-      if(e.target.closest('button')) return;
+      if(e.target.closest('button,label,input')) return;
       localStorage.setItem('kc-contract', c===getContract()?'':c);
       ctManual();   // escolha à mão: pausa o automático (não briga a cada leitura do GPS)
       ctRefresh();
     };
     item.querySelector('.lnk').onclick=()=>openCtLink(c,false);
+    const cb=item.querySelector('.ctc-auto');
+    if(cb) cb.onchange=()=>{
+      setCtAutoFor(c, cb.checked);
+      if(cb.checked){
+        /* ligar o automático de um contrato religa também a chave geral (é o "voltar ao automático") */
+        if(!ctAutoOn()) try{ localStorage.setItem('kc-ct-auto','1') }catch(e){}
+        toast('Automático ligado para '+c); autoContract();
+      } else toast('Automático desligado só para '+c);
+      ctRefresh();
+    };
     item.querySelector('.del').onclick=()=>{
       if(!confirm('Remover o contrato '+c+'?')) return;
       localStorage.setItem('kc-contracts', JSON.stringify(getContracts().filter(x=>x!==c)));
       if(getContract()===c) localStorage.removeItem('kc-contract');
       const lk=getCtLinks(); delete lk[c]; setCtLinks(lk);
+      setCtAutoFor(c,true);   // limpa o flag deste contrato (se ele for recriado, começa automático)
       ctRefresh();
     };
   });
@@ -2750,7 +2793,7 @@ function renderCtLink(){
     setCtLinks(lk); renderCtLink(); ctRefresh();
   });
   const bl=document.getElementById('ctlink-bases');
-  bl.innerHTML=S.bases.length ? S.bases.map(b=>`<button class="lkbr" data-id="${_esc(b.id)}"><span>${_esc(b.id)}</span><small>km ${fkm(b.kmMin)}–${fkm(b.kmMax)}</small></button>`).join('')
+  bl.innerHTML=S.bases.length ? S.bases.map(b=>`<button class="lkbr" data-id="${_esc(b.id)}"><span>${_esc(b.id)}</span><small>km ${fkm(b.kmMin)} a ${fkm(b.kmMax)}</small></button>`).join('')
     : '<p class="empty">Nenhuma rodovia baixada.<br>Baixe uma BR na tela inicial para vincular.</p>';
   bl.querySelectorAll('.lkbr').forEach(b=>b.onclick=()=>openCtKm(b.dataset.id));
 }
@@ -2759,7 +2802,7 @@ function openCtKm(baseId){
   const b=S.bases.find(x=>x.id===baseId); if(!b) return;
   _ctKmBase=baseId;
   document.getElementById('dlg-ctkm-title').textContent=baseId;
-  document.getElementById('ctkm-hint').textContent='Baixada de km '+fkm(b.kmMin)+' a '+fkm(b.kmMax)+'. Informe o trecho do contrato ou use o segmento todo.';
+  document.getElementById('ctkm-hint').textContent='Baixada de km '+fkm(b.kmMin)+' a '+fkm(b.kmMax)+' (km com 3 casas decimais). Informe o trecho do contrato ou use o segmento todo.';
   document.getElementById('ctkm-i').value=''; document.getElementById('ctkm-f').value='';
   showDlg(document.getElementById('dlg-ctkm'));
 }
@@ -2769,10 +2812,10 @@ function saveCtLink(link){
   if(!dup) arr.push(link);
   lk[c]=arr; setCtLinks(lk);
   /* vinculou o contrato que está em uso: religa o automático (foi o que ele pediu ao vincular) */
-  if(getContract()===c){ try{ localStorage.setItem('kc-ct-auto','1') }catch(e){} }
+  if(getContract()===c){ try{ localStorage.setItem('kc-ct-auto','1') }catch(e){} setCtAutoFor(c,true) }
   document.getElementById('dlg-ctkm').close();
   renderCtLink(); ctRefresh(); autoContract();
-  toast('Vínculo salvo'+(ctAutoOn()?' — contrato automático ligado':''));
+  toast('Vínculo salvo'+(ctAutoOn()&&ctAutoFor(_ctLinkFor)?' — contrato automático ligado':''));
 }
 document.getElementById('ctkm-back').onclick=()=>document.getElementById('dlg-ctkm').close();
 document.getElementById('ctkm-all').onclick=()=>saveCtLink({base:_ctKmBase, tudo:true});
