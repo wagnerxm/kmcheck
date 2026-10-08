@@ -3217,8 +3217,14 @@ function renderCtMode(){
   document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.checked=on);
   document.querySelectorAll('.ctmode').forEach(m=>{ m.textContent=on?'AUTOMÁTICO':'MANUAL'; m.classList.toggle('auto',on) });
 }
+/* chave geral: LIGAR põe TODOS os contratos vinculados no automático — inclusive os que tinham o AUTO
+   desligado um a um (antes eles continuavam desligados e o contrato do trecho não entrava, contrariando
+   o "Deixa todos os contratos vinculados no automático"). DESLIGAR pausa todos e guarda os AUTO. */
 document.querySelectorAll('.ctauto-cb').forEach(cb=>cb.onchange=()=>{
-  try{ localStorage.setItem('kc-ct-auto', cb.checked?'1':'0') }catch(e){}
+  try{
+    localStorage.setItem('kc-ct-auto', cb.checked?'1':'0');
+    if(cb.checked) localStorage.setItem('kc-ct-noauto','[]');
+  }catch(e){}
   if(cb.checked) autoContract();
   ctRefresh();
 });
