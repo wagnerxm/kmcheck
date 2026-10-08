@@ -597,7 +597,7 @@ html.carmode.carnight,html.carmode.carnight body{background:#07090c!important}
 /* altura EXPLÍCITA (proporção 150×178): no iPhone um SVG com height:auto dentro do grid ganhava altura
    errada e a placa invadia a linha do nome da BR */
 #car-plate{grid-area:plate;width:calc(var(--u)*var(--m)*32);height:calc(var(--u)*var(--m)*32*178/150);filter:drop-shadow(0 10px 18px rgba(0,0,0,.6)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-#car-br{grid-area:br;color:var(--lime);font-weight:800;font-size:calc(var(--u)*var(--m)*8);white-space:nowrap;
+#car-br{grid-area:br;max-width:100%;overflow:hidden;color:var(--lime);font-weight:800;font-size:calc(var(--u)*var(--m)*8);white-space:nowrap;
   text-shadow:0 0 18px rgba(196,226,74,.18)}
 /* KM com leve degradê prata (texto recortado no fundo) */
 #car-km{grid-area:km;font-weight:800;font-size:calc(var(--u)*var(--m)*20);letter-spacing:-.03em;line-height:1;margin-top:calc(var(--u)*var(--m)*1.5);
@@ -762,8 +762,35 @@ dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
 input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:rgba(20,23,25,.92);backdrop-filter:blur(12px);border:1px solid rgba(183,217,45,.55);color:#eef1f6;padding:11px 20px;border-radius:22px;font-size:13px;line-height:1.45;white-space:pre-line;z-index:70;opacity:0;transition:opacity .25s;width:max-content;max-width:88vw;text-align:center}
 .toast.on{opacity:1}
-.kmzlist{max-height:260px;overflow:auto;margin:10px 0}
-.kmzlist .switch{padding:9px 0}
+/* importação: janela "Configurar trecho" */
+#dlg-imp .imp-t1{font-size:18px;font-weight:700;margin:0;color:var(--text)}
+.imp-sub{font-size:12px;color:var(--mut);margin:4px 0 4px;white-space:pre-line;line-height:1.45;overflow-wrap:anywhere}
+.impcard{border:1px solid var(--line);border-radius:16px;padding:2px 12px 12px;margin-top:10px;background:rgba(255,255,255,.03)}
+.imphead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 0}
+.impchk{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;cursor:pointer;min-width:0}
+.impchk input{width:20px;height:20px;flex:0 0 auto}
+.imp-ttl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imp-tog{background:none;border:none;color:var(--mut);width:40px;height:40px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.imp-tog svg,.impmore svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.impcard.shut .impbody{display:none}
+.impcard.shut .imp-tog svg{transform:rotate(-90deg)}
+.impr1{display:grid;grid-template-columns:minmax(0,1fr) 86px;gap:8px}
+.impr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.impr3{display:grid;grid-template-columns:1.3fr 1fr .8fr;gap:8px;margin-top:8px}
+.impinfo{background:rgba(201,228,99,.08);border:1px solid rgba(201,228,99,.35);border-radius:12px;padding:8px 10px;font-size:12px;color:var(--text);line-height:1.45;margin-top:12px}
+.impseg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.impseg button{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:12px;padding:11px 6px;font-size:13px;font-family:var(--sans);cursor:pointer}
+.impseg button.on{background:#c9e463;color:#10140a;border-color:transparent;font-weight:700}
+.impsvg{width:100%;height:auto;display:block;margin-top:12px}
+.impsum{font-size:12px;color:var(--mut);line-height:1.5;margin-top:6px}
+.impwarn{font-size:12px;color:#e8b94a;line-height:1.45;margin-top:6px}
+.impwarn:empty{display:none}
+.impmore{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;border-top:1px solid var(--line);color:var(--gold2);font-size:13px;font-family:var(--sans);padding:12px 2px 2px;margin-top:12px;cursor:pointer}
+.impopts{display:none}
+.impcard.more .impopts{display:block}
+.impcard.more .impmore svg{transform:rotate(180deg)}
+.imp-err{color:var(--err);font-size:12.5px;margin-top:10px;white-space:pre-line}
+.imp-err:empty{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 /* ── prompt de instalação ── */
 .install-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:900;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .3s;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -855,22 +882,22 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <div class="impfmt" aria-label="Formatos aceitos">
       <div class="improw">
         <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></span>
-        <span class="ltext"><b>Shapefile do SNV</b><i>Oficial do DNIT. Envie .shp + .dbf juntos ou o .zip</i></span>
+        <span class="ltext"><b>Shapefile</b><i>DNIT, DER, prefeitura ou outro órgão.<br>Envie .shp + .dbf juntos ou o .zip</i></span>
         <span class="imptag">SHP · ZIP</span>
       </div>
       <div class="improw">
         <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5a13 13 0 0 1 0 17M12 3.5a13 13 0 0 0 0 17"/></svg></span>
-        <span class="ltext"><b>Google Earth</b><i>Arquivo baixado do VGeo</i></span>
-        <span class="imptag">KMZ · KML</span>
+        <span class="ltext"><b>Google Earth e GPS</b><i>Linha da estrada ou marcos de km</i></span>
+        <span class="imptag">KMZ · GPX</span>
       </div>
       <div class="improw">
         <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg></span>
-        <span class="ltext"><b>Planilha</b><i>Colunas KM, latitude e longitude. Pode colar do Excel</i></span>
-        <span class="imptag">CSV · TXT</span>
+        <span class="ltext"><b>Planilha</b><i>Colunas KM, latitude e longitude.<br>Também aceita UTM</i></span>
+        <span class="imptag">XLSX · CSV</span>
       </div>
     </div>
 
-    <input type="file" id="filein" accept=".kmz,.kml,.csv,.txt,.tsv,.zip,.shp,.dbf,.shx" multiple style="display:none">
+    <input type="file" id="filein" accept=".kmz,.kml,.gpx,.geojson,.json,.csv,.txt,.tsv,.xlsx,.zip,.shp,.dbf,.shx,.prj" multiple style="display:none">
   </div>
 
 </section>
@@ -1432,27 +1459,15 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </div>
 
 
-<!-- diálogo de importação KMZ: escolher BRs -->
-<dialog id="dlg-kmz" aria-labelledby="dlg-kmz-title">
-  <h2 class="sec" id="dlg-kmz-title" style="margin-top:0">Rodovias encontradas no arquivo</h2>
-  <div class="kmzlist" id="kmz-list"></div>
-  <div class="row">
-    <button class="btn ghost" id="kmz-cancel">Cancelar</button>
-    <button class="btn gold" id="kmz-ok">Instalar selecionadas</button>
-  </div>
-</dialog>
-
-<!-- diálogo de importação CSV: identificar rodovia -->
-<dialog id="dlg-csv" aria-labelledby="dlg-csv-title">
-  <h2 class="sec" id="dlg-csv-title" style="margin-top:0">Identificar a rodovia do CSV</h2>
-  <label class="f" for="csv-br">BR (ex.: BR-226)</label>
-  <input type="text" id="csv-br" placeholder="BR-226">
-  <label class="f" for="csv-uf">UF</label>
-  <input type="text" id="csv-uf" placeholder="RN" maxlength="2">
-  <p class="hint" id="csv-info"></p>
-  <div class="row" style="margin-top:12px">
-    <button class="btn ghost" id="csv-cancel">Cancelar</button>
-    <button class="btn gold" id="csv-ok">Instalar</button>
+<!-- importação: "Configurar trecho" (uma ficha por rodovia encontrada no arquivo) -->
+<dialog id="dlg-imp" aria-labelledby="imp-title">
+  <h2 class="imp-t1" id="imp-title">Configurar trecho</h2>
+  <p class="imp-sub" id="imp-sub"></p>
+  <div id="imp-list"></div>
+  <p class="imp-err" id="imp-err" role="alert"></p>
+  <div class="row" style="margin-top:14px">
+    <button class="btn ghost" id="imp-cancel">Cancelar</button>
+    <button class="btn gold" id="imp-ok">Instalar</button>
   </div>
 </dialog>
 
@@ -2034,6 +2049,7 @@ function renderBases(){
         <div class="binfo">
           <div class="bname">${_esc(b.br)}/${_esc(b.uf)}</div>
           <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}</div>
+          ${b.nome?`<div class="bmeta">${_esc(b.nome)}</div>`:''}
           ${b.fonte?`<div class="bmeta">${_esc(b.fonte)}</div>`:''}
         </div>
         <button class="bdet${tem?' has':''}" data-id="${_esc(b.id)}" aria-label="Detalhes de ${_esc(b.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
@@ -2301,48 +2317,94 @@ document.getElementById('dl-go').onclick=async()=>{
   btn.disabled=false; btn.textContent='Baixar rodovia';
 };
 
-/* ================= importação ================= */
+/* ================= importação de arquivo: lê → "Configurar trecho" → instala =================
+   Qualquer rodovia (federal, estadual, municipal): o nome é livre e o usuário confere/corrige na
+   janela antes de instalar. Formatos: shapefile (.shp+.dbf[+.shx+.prj] ou .zip), KML/KMZ, GPX,
+   GeoJSON, CSV/TXT e Excel (.xlsx). Cada arquivo vira uma lista de "candidatos" (um por rodovia):
+     segs   → trechos com km inicial/final (ex.: SNV do DNIT)
+     kmPts  → pontos com KM (marcos quilométricos, planilha KM/LAT/LONG)
+     line   → só o traçado, sem KM: o usuário diz o km do início e em qual ponta ele fica
+   Coordenadas em UTM (metros) são convertidas para lat/lon: o fuso vem do .prj ou é perguntado. */
 document.getElementById('btn-import').onclick=()=>document.getElementById('filein').click();
 document.getElementById('filein').onchange=async e=>{
   const files=[...e.target.files]; e.target.value='';
   if(!files.length) return;
-  const byExt=ext=>files.find(f=>f.name.toLowerCase().endsWith(ext));
   try{
-    if(byExt('.shp') && byExt('.dbf')){
-      await importShapefile(byExt('.shp'), byExt('.dbf'), byExt('.shx'), byExt('.shp').name);
-      return;
-    }
-    const f=files[0], name=f.name.toLowerCase();
-    if(name.endsWith('.zip')){
-      const buf=new Uint8Array(await f.arrayBuffer());
-      const zf=fflate.unzipSync(buf);
-      const names=Object.keys(zf);
-      const find=ext=>names.find(n=>n.toLowerCase().endsWith(ext));
-      if(find('.shp') && find('.dbf')){
-        const mk=n=>new File([zf[n]], n);
-        await importShapefile(mk(find('.shp')), mk(find('.dbf')), find('.shx')?mk(find('.shx')):null, f.name);
-      } else if(find('.kml')){
-        importKml(new TextDecoder('utf-8').decode(zf[find('.kml')]), f.name);
-      } else throw new Error('O ZIP não tem .shp + .dbf nem .kml.');
-    } else if(name.endsWith('.kmz')||name.endsWith('.kml')){
-      let xml;
-      if(name.endsWith('.kmz')){
-        const buf=new Uint8Array(await f.arrayBuffer());
-        const zf=fflate.unzipSync(buf);
-        const kmlName=Object.keys(zf).find(k=>k.toLowerCase().endsWith('.kml'));
-        if(!kmlName) throw new Error('O KMZ não tem um arquivo KML dentro.');
-        xml=new TextDecoder('utf-8').decode(zf[kmlName]);
-      } else xml=await f.text();
-      importKml(xml, f.name);
-    } else {
-      importCsv(await f.text(), f.name);
-    }
+    const res=await readImportFiles(files);
+    if(!res.cands.length) throw new Error('Não encontrei nenhuma linha ou ponto de rodovia no arquivo.');
+    openImportDialog(res);
   }catch(err){ toast('Falha ao ler o arquivo.\n'+err.message, 4200) }
 };
+const _ext=n=>(n.toLowerCase().match(/\.([a-z0-9]+)$/)||[])[1]||'';
+async function readImportFiles(files){
+  const by=x=>files.find(f=>_ext(f.name)===x);
+  const first=files[0], fname=first.name;
+  if(by('shp')){
+    if(!by('dbf')) throw new Error('Envie o .shp e o .dbf juntos.\nOu envie o .zip com os dois.');
+    return readShapefile(by('shp'), by('dbf'), by('shx'), by('prj')?await by('prj').text():'', by('shp').name);
+  }
+  const x=_ext(fname);
+  if(x==='zip'||x==='kmz'){
+    const zf=fflate.unzipSync(new Uint8Array(await first.arrayBuffer())), names=Object.keys(zf);
+    const find=e=>names.find(n=>_ext(n)===e);
+    if(find('shp') && find('dbf')){
+      const mk=n=>new File([zf[n]], n);
+      const prj=find('prj')?new TextDecoder('utf-8').decode(zf[find('prj')]):'';
+      return readShapefile(mk(find('shp')), mk(find('dbf')), find('shx')?mk(find('shx')):null, prj, fname);
+    }
+    if(find('kml')) return readKml(new TextDecoder('utf-8').decode(zf[find('kml')]), fname);
+    throw new Error(x==='kmz'?'O KMZ não tem um arquivo KML dentro.':'O ZIP não tem .shp + .dbf nem .kml.');
+  }
+  if(x==='kml') return readKml(await first.text(), fname);
+  if(x==='gpx') return readGpx(await first.text(), fname);
+  if(x==='geojson'||x==='json') return readGeoJson(await first.text(), fname);
+  if(x==='xlsx') return readTable(await xlsxToText(await first.arrayBuffer()), fname);
+  if(x==='dbf') throw new Error('Envie o .shp junto com o .dbf.');
+  return readTable(await first.text(), fname);
+}
 
-/* ---- Shapefile oficial do SNV (.shp geometria + .dbf atributos) ----
-   Leitura por fatias (File.slice), sem carregar o .shp inteiro na memória —
-   importante porque o arquivo nacional passa de 90 MB. */
+/* ---- nomes ---- */
+/* "br 110" → "BR-110", "rn118" → "RN-118", "110" → "BR-110"; nome livre fica como digitado.
+   A barra vira hífen porque o id da rodovia é "nome/UF". */
+function normRoad(v){
+  let s=String(v==null?'':v).trim().replace(/\s+/g,' ').replace(/\//g,'-');
+  if(/^\d{1,3}$/.test(s)) return 'BR-'+s.padStart(3,'0');
+  const m=s.match(/^([A-Za-z]{2,3})\s*-?\s*(\d{1,3})([A-Za-z]?)$/);
+  if(m) return m[1].toUpperCase()+'-'+m[2].padStart(3,'0')+m[3].toUpperCase();
+  return s;
+}
+function guessUf(s){ const m=String(s||'').toUpperCase().match(/(?:^|[^A-Z])([A-Z]{2})(?=[^A-Z]|$)/g)||[];
+  for(const t of m){ const u=t.replace(/[^A-Z]/g,''); if(UFS.includes(u)) return u } return '' }
+function guessRoad(fname){
+  const b=fname.replace(/\.[^.]+$/,'');
+  const m=b.match(/(?:^|[^A-Za-z0-9])(BR|[A-Za-z]{2,3})[\s_-]?(\d{2,3})(?!\d)/i);   // br226_rn, RN-118, eixo br 110
+  return m ? normRoad(m[1]+'-'+m[2]) : '';
+}
+
+/* ---- UTM → lat/lon (SIRGAS 2000 ≈ WGS 84, diferença de centímetros) ---- */
+function utmToGeo(E, N, zone, south){
+  const a=6378137, f=1/298.257222101, k0=.9996, e2=f*(2-f), ep2=e2/(1-e2);
+  const e1=(1-Math.sqrt(1-e2))/(1+Math.sqrt(1-e2)), x=E-500000, y=south?N-10000000:N;
+  const mu=y/k0/(a*(1-e2/4-3*e2*e2/64-5*e2*e2*e2/256));
+  const p=mu+(3*e1/2-27*e1**3/32)*Math.sin(2*mu)+(21*e1*e1/16-55*e1**4/32)*Math.sin(4*mu)+(151*e1**3/96)*Math.sin(6*mu)+(1097*e1**4/512)*Math.sin(8*mu);
+  const sp=Math.sin(p), cp=Math.cos(p), tp=Math.tan(p);
+  const N1=a/Math.sqrt(1-e2*sp*sp), T=tp*tp, C=ep2*cp*cp, R1=a*(1-e2)/Math.pow(1-e2*sp*sp,1.5), D=x/(N1*k0);
+  const lat=p-(N1*tp/R1)*(D*D/2-(5+3*T+10*C-4*C*C-9*ep2)*D**4/24+(61+90*T+298*C+45*T*T-252*ep2-3*C*C)*D**6/720);
+  const lon=(zone*6-183)*D2R+(D-(1+2*T+C)*D**3/6+(5-2*C+28*T-3*C*C+8*ep2+24*T*T)*D**5/120)/cp;
+  return [lon/D2R, lat/D2R];
+}
+/* fuso do .prj: "UTM zone 24S" no nome ou meridiano central + falso norte */
+function prjZone(txt){
+  if(!txt) return null;
+  let m=txt.match(/UTM[ _]?zone[ _]?(\d{1,2})\s*([NS])/i) || txt.match(/zone[ _]?(\d{1,2})([NS])\b/i);
+  if(m) return {zone:+m[1], south:m[2].toUpperCase()==='S'};
+  const cm=txt.match(/central_meridian"\s*,\s*(-?[\d.]+)/i), fn=txt.match(/false_northing"\s*,\s*([\d.]+)/i);
+  if(cm && /transverse_mercator/i.test(txt)) return {zone:Math.round((+cm[1]+183)/6), south:fn?+fn[1]>=1e6:true};
+  return null;
+}
+const _isGeo=(x,y)=>Math.abs(x)<=180 && Math.abs(y)<=90;
+
+/* ---- shapefile ---- */
 function readDbfBuf(buf){
   const v=new DataView(buf);
   const numRecords=v.getInt32(4,true);
@@ -2356,11 +2418,12 @@ function readDbfBuf(buf){
   }
   const dec=new TextDecoder('latin1'); const records=[]; let ro=headerLen;
   for(let r=0;r<numRecords;r++){
+    if(ro+recordLen>buf.byteLength) break;
     if(v.getUint8(ro)===0x2A){ ro+=recordLen; continue }
     let fo=ro+1; const rec={};
     for(const f of fields){
       const raw=dec.decode(new Uint8Array(buf, fo, f.len)).trim();
-      rec[f.name]= f.type==='N' ? (raw===''?null:parseFloat(raw)) : raw;
+      rec[f.name]= (f.type==='N'||f.type==='F') ? (raw===''?null:parseFloat(raw)) : raw;
       fo+=f.len;
     }
     records.push(rec); ro+=recordLen;
@@ -2372,188 +2435,451 @@ function readShxOffsets(buf){
   for(let i=0;i<n;i++) out.push([v.getInt32(100+i*8,false)*2, v.getInt32(100+i*8+4,false)*2]);
   return out;
 }
-function parseShpRecord(buf){ // buf = bytes daquele registro (inclui os 8 bytes de cabeçalho: recNum+contentLen)
-  const v=new DataView(buf);
-  const type=v.getInt32(8,true);
-  if(type!==3 && type!==5) return null; // só PolyLine/Polygon
-  const numParts=v.getInt32(8+36,true), numPoints=v.getInt32(8+40,true);
-  const ptsOff=8+44+numParts*4, points=[];
-  for(let i=0;i<numPoints;i++) points.push([v.getFloat64(ptsOff+i*16,true), v.getFloat64(ptsOff+i*16+8,true)]);
-  return points;
+/* um registro do .shp (a partir do tipo): linha/polígono (3,5,13,15,23,25) ou ponto (1,11,21).
+   As versões Z/M guardam X/Y no mesmo lugar — o resto (Z, M) é ignorado. */
+function _shpGeom(v, o){
+  const type=v.getInt32(o,true);
+  if(type===1||type===11||type===21) return {pt:[v.getFloat64(o+4,true), v.getFloat64(o+12,true)]};
+  if(![3,5,13,15,23,25].includes(type)) return null;
+  const numParts=v.getInt32(o+36,true), numPoints=v.getInt32(o+40,true), ptsOff=o+44+numParts*4, pts=[];
+  for(let i=0;i<numPoints;i++) pts.push([v.getFloat64(ptsOff+i*16,true), v.getFloat64(ptsOff+i*16+8,true)]);
+  return {pts};
 }
-async function importShapefile(shpFile, dbfFile, shxFile, fname){
-  const recs=readDbfBuf(await dbfFile.arrayBuffer());
-  if(!recs.length || recs[0].vl_br===undefined) throw new Error('Este .dbf não é do SNV.\nFaltam os campos de BR, UF e KM.');
-  let offsets, full=null;   // full: .shp lido inteiro (só sem .shx) — local, não vaza para a próxima importação
-  if(shxFile) offsets=readShxOffsets(await shxFile.arrayBuffer());
-  const segsByKey={};
-  for(let i=0;i<recs.length;i++){
-    const r=recs[i];
-    if(r.sg_tipo_tr!=='B') continue; // só eixo principal — trechos acessórios têm km próprio
-    const kmi=r.vl_km_inic, kmf=r.vl_km_fina;
-    if(kmi==null||kmf==null) continue;
-    let points;
-    if(offsets){
-      const [off,len]=offsets[i];
-      const chunk=await shpFile.slice(off, off+8+len).arrayBuffer();
-      points=parseShpRecord(chunk);
-    } else {
-      // sem .shx: precisa varrer o .shp sequencialmente (mais lento, mas funciona)
-      if(!full) full=readShpSequential(await shpFile.arrayBuffer());
-      points=full[i];
-    }
-    if(!points||points.length<2) continue;
-    const key='BR-'+String(r.vl_br).padStart(3,'0')+'/'+r.sg_uf;
-    (segsByKey[key]=segsByKey[key]||[]).push({kmi, kmf, pts:points});
-  }
-  const keys=Object.keys(segsByKey);
-  if(!keys.length) throw new Error('Nenhum trecho de eixo principal (tipo B) encontrado no arquivo.');
-  const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
-  list.innerHTML=keys.sort().map(k=>{
-    const g=segsByKey[k]; let kmMin=Infinity, kmMax=-Infinity;
-    for(const s of g){ if(s.kmi<kmMin) kmMin=s.kmi; if(s.kmf<kmMin) kmMin=s.kmf; if(s.kmi>kmMax) kmMax=s.kmi; if(s.kmf>kmMax) kmMax=s.kmf }
-    return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
-  }).join('');
-  full=null;
-  showDlg(dlg);
-  document.getElementById('kmz-cancel').onclick=()=>dlg.close();
-  const ok=document.getElementById('kmz-ok');
-  ok.disabled=false;
-  ok.onclick=async()=>{
-    if(ok.disabled) return; ok.disabled=true;   // toque duplo instalava tudo duas vezes
-    try{
-      const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
-      let n=0; const inst=[];
-      for(const k of sel){ const b=await installFromSegs(k, segsByKey[k], 'SNV oficial (shapefile): '+fname); if(b){ n++; inst.push(b) } }
-      dlg.close(); renderBases();
-      if(!n && sel.length) toast(NO_COORD_MSG, 5000);
-      for(const b of inst) await checkOverlaps(b);
-      if(inst.length) renderBases();
-    }catch(e){ toast('Erro ao salvar: '+e.message) }
-    finally{ ok.disabled=false }
-  };
-}
+function parseShpRecord(buf){ return _shpGeom(new DataView(buf), 8) }
 function readShpSequential(buf){
   const v=new DataView(buf), feats=[]; let off=100;
-  while(off<buf.byteLength){
+  while(off+8<=buf.byteLength){
     const contentLen=v.getInt32(off+4,false);
     if(contentLen<=0) break;
-    const recStart=off+8;
-    const type=v.getInt32(recStart,true);
-    if(type===3||type===5){
-      const numParts=v.getInt32(recStart+36,true), numPoints=v.getInt32(recStart+40,true);
-      const ptsOff=recStart+44+numParts*4, points=[];
-      for(let i=0;i<numPoints;i++) points.push([v.getFloat64(ptsOff+i*16,true), v.getFloat64(ptsOff+i*16+8,true)]);
-      feats.push(points);
-    } else feats.push(null);
-    off=recStart+contentLen*2;
+    feats.push(_shpGeom(v, off+8));
+    off=off+8+contentLen*2;
   }
   return feats;
 }
-
-/* ---- KML/KMZ do SNV ---- */
-function num(v){ return parseNum(v) }
-function importKml(xml, fname){
-  const doc=new DOMParser().parseFromString(xml,'text/xml');
-  const pms=[...doc.getElementsByTagName('Placemark')];
-  const segs=[];
-  for(const pm of pms){
-    const lines=[...pm.getElementsByTagName('LineString')];
-    if(!lines.length) continue;
-    // atributos: ExtendedData (SimpleData/Data) + description
-    const attrs={};
-    [...pm.getElementsByTagName('SimpleData')].forEach(sd=>{const n=sd.getAttribute('name'); if(n) attrs[n.toLowerCase()]=sd.textContent.trim()});
-    [...pm.getElementsByTagName('Data')].forEach(d=>{
-      const n=d.getAttribute('name'); if(!n) return;
-      const v=d.getElementsByTagName('value')[0];
-      if(v) attrs[n.toLowerCase()]=v.textContent.trim();
-    });
-    let desc=''; const de=pm.getElementsByTagName('description')[0]; if(de) desc=de.textContent.replace(/<[^>]+>/g,' ');
-    const get=(res)=>{ for(const k in attrs){ if(res.some(r=>r.test(k))) return attrs[k]; }
-      for(const r of res){ const m=desc.match(new RegExp(r.source.replace(/[\^$]/g,'')+String.raw`\w*[\s:="']+([\-\d.,]+)`,'i')); if(m) return m[1]; }
-      return null };
-    const getS=(res)=>{ for(const k in attrs){ if(res.some(r=>r.test(k))) return attrs[k]; }
-      for(const r of res){ const m=desc.match(new RegExp(r.source.replace(/[\^$]/g,'')+String.raw`\w*[\s:="']+([\w\-]+)`,'i')); if(m) return m[1]; }
-      return null };
-    const kmi=num(get([/km[_ ]?ini/, /vl_km_?ini/i]));
-    const kmf=num(get([/km[_ ]?fina/, /km[_ ]?fim/, /vl_km_?fin/i]));
-    let br=getS([/^(?:vl_)?br$/, /rodovia/]);
-    let uf=getS([/^(?:sg_)?uf$/]);
-    const cod=getS([/codigo/, /^ds_cod/, /cod_?trecho/]);
-    if((!br||!uf) && cod && /^(\d{3})([A-Z]{3})(\d{4})/.test(cod)){ const m=cod.match(/^(\d{3})([A-Z]{3})/); br=br||m[1]; uf=uf||m[2].slice(1); }
-    if(kmi==null||kmf==null) continue;
-    for(const ln of lines){
-      const ce=ln.getElementsByTagName('coordinates')[0];
-      if(!ce) continue;
-      const pts=ce.textContent.trim().split(/\s+/).map(s=>s.split(',').map(Number)).filter(p=>p.length>=2&&!isNaN(p[0])&&!isNaN(p[1]));
-      if(pts.length<2) continue;
-      segs.push({br:normBr(br), uf:(uf||'?').toUpperCase().slice(-2), kmi, kmf, pts});
+/* acha um campo pelo nome (minúsculas), na ordem de preferência */
+function _field(keys, res){ for(const r of res){ const k=keys.find(k=>r.test(k)); if(k) return k } return null }
+const _F_ROAD=[/^vl_br$/,/^br$/,/^rodovia$/,/^rod$/,/^cod_?rod/,/^sigla/,/^codigo$/,/^nome$/,/^name$/,/rodovia/,/^denom/];
+const _F_UF=[/^sg_uf$/,/^uf$/,/^estado$/];
+const _F_KMI=[/^vl_km_inic/,/^km_?ini/,/^kmi$/,/^km_?inic/,/^ini/];
+const _F_KMF=[/^vl_km_fin/,/^km_?fi[mn]/,/^kmf$/,/^km_?final/,/^fim$/];
+const _F_KM=[/^km$/,/^vl_km$/,/^marco/,/^km_?ponto/];
+async function readShapefile(shpFile, dbfFile, shxFile, prj, fname){
+  const recs=readDbfBuf(await dbfFile.arrayBuffer());
+  const keys=recs.length?Object.keys(recs[0]):[], low=Object.fromEntries(keys.map(k=>[k.toLowerCase(),k]));
+  const lk=Object.keys(low), F=r=>{ const k=_field(lk,r); return k?low[k]:null };
+  const fRoad=F(_F_ROAD), fUf=F(_F_UF), fKi=F(_F_KMI), fKf=F(_F_KMF), fKm=F(_F_KM), snv=keys.includes('vl_br');
+  const offsets=shxFile?readShxOffsets(await shxFile.arrayBuffer()):null;
+  let full=null;
+  const geomAt=async i=>{
+    if(offsets){ const [off,len]=offsets[i]; return parseShpRecord(await shpFile.slice(off, off+8+len).arrayBuffer()) }
+    if(!full) full=readShpSequential(await shpFile.arrayBuffer());   // sem .shx: varre o .shp inteiro
+    return full[i];
+  };
+  const groups=new Map();   // chave nome/UF → candidato
+  const cand=(name,uf)=>{ const k=name+'/'+uf; let c=groups.get(k); if(!c) groups.set(k, c={name, uf, segs:[], kmPts:[], lines:[]}); return c };
+  const defName=guessRoad(fname), defUf=guessUf(fname);
+  for(let i=0;i<recs.length;i++){
+    const r=recs[i];
+    if(snv && r.sg_tipo_tr && r.sg_tipo_tr!=='B') continue;   // SNV: só eixo principal (acessos têm km próprio)
+    const g=await geomAt(i); if(!g) continue;
+    const name=normRoad(fRoad && r[fRoad]!=null && r[fRoad]!=='' ? r[fRoad] : defName);
+    const uf=String(fUf && r[fUf] ? r[fUf] : defUf).toUpperCase().slice(0,2);
+    const c=cand(name, uf);
+    const kmi=fKi?parseNum(r[fKi]):null, kmf=fKf?parseNum(r[fKf]):null;
+    if(g.pts && g.pts.length>=2){
+      if(kmi!=null && kmf!=null) c.segs.push({kmi, kmf, pts:g.pts}); else c.lines.push(g.pts);
+    } else if(g.pt){
+      const k=fKm?parseNum(r[fKm]):(kmi!=null?kmi:null);
+      if(k!=null) c.kmPts.push({km:k, x:g.pt[0], y:g.pt[1]});
     }
   }
-  if(!segs.length){ toast('Nenhum trecho com km inicial e final no arquivo.'); return }
-  // agrupar por BR/UF
-  const groups={};
-  for(const s of segs){ const k=s.br+'/'+s.uf; (groups[k]=groups[k]||[]).push(s) }
-  const dlg=document.getElementById('dlg-kmz'), list=document.getElementById('kmz-list');
-  list.innerHTML=Object.keys(groups).sort().map(k=>{
-    const g=groups[k]; let kmMin=Infinity, kmMax=-Infinity;
-    for(const s of g){ if(s.kmi<kmMin) kmMin=s.kmi; if(s.kmf<kmMin) kmMin=s.kmf; if(s.kmi>kmMax) kmMax=s.kmi; if(s.kmf>kmMax) kmMax=s.kmf }
-    return `<div class="switch"><span><b>${_esc(k)}</b> <span class="tag">km ${fkm(kmMin)}–${fkm(kmMax)} · ${g.length} trechos</span></span><input type="checkbox" data-k="${_esc(k)}" checked></div>`;
+  full=null;
+  return finishCands([...groups.values()], prjZone(prj), (snv?'SNV oficial (shapefile): ':'Shapefile: ')+fname, fname);
+}
+
+/* ---- KML/KMZ ---- */
+function _kmlAttrs(pm){
+  const attrs={};
+  [...pm.getElementsByTagName('SimpleData')].forEach(sd=>{ const n=sd.getAttribute('name'); if(n) attrs[n.toLowerCase()]=sd.textContent.trim() });
+  [...pm.getElementsByTagName('Data')].forEach(d=>{ const n=d.getAttribute('name'); const v=d.getElementsByTagName('value')[0]; if(n&&v) attrs[n.toLowerCase()]=v.textContent.trim() });
+  return attrs;
+}
+function _coords(txt){ return txt.trim().split(/\s+/).map(s=>s.split(',').map(Number)).filter(p=>p.length>=2&&isFinite(p[0])&&isFinite(p[1])).map(p=>[p[0],p[1]]) }
+/* número de km no nome de um marco: "KM 120", "km 120,5", "120+500" (estaca de km+m) */
+function kmFromLabel(s){
+  if(!s) return null; s=String(s);
+  let m=s.match(/km\s*([\d.,]+)(?:\s*\+\s*(\d{1,3}))?/i);
+  if(!m) m=s.match(/^\s*([\d.,]+)(?:\s*\+\s*(\d{1,3}))?\s*$/);
+  if(!m) return null;
+  const k=parseNum(m[1]); if(k==null) return null;
+  return m[2]!=null ? Math.floor(k)+(+m[2])/1000 : k;
+}
+function readKml(xml, fname){
+  const doc=new DOMParser().parseFromString(xml,'text/xml');
+  const groups=new Map(), defName=guessRoad(fname), defUf=guessUf(fname);
+  const cand=(name,uf)=>{ const k=name+'/'+uf; let c=groups.get(k); if(!c) groups.set(k, c={name, uf, segs:[], kmPts:[], lines:[]}); return c };
+  const D0=doc.getElementsByTagName('Document')[0], docName=(D0?[...D0.children].find(e=>e.tagName==='name')?.textContent||'':'').trim();   // só o nome do Documento (não o do 1º marco)
+  for(const pm of doc.getElementsByTagName('Placemark')){
+    const attrs=_kmlAttrs(pm), ak=Object.keys(attrs);
+    let desc=''; const de=pm.getElementsByTagName('description')[0]; if(de) desc=de.textContent.replace(/<[^>]+>/g,' ');
+    const get=res=>{ const k=_field(ak,res); if(k) return attrs[k];
+      for(const r of res){ const mm=desc.match(new RegExp(r.source.replace(/[\^$]/g,'')+String.raw`\w*[\s:="']+([\w\-.,]+)`,'i')); if(mm) return mm[1] } return null };
+    const pmName=(pm.getElementsByTagName('name')[0]?.textContent||'').trim();
+    let road=get(_F_ROAD), uf=get(_F_UF);
+    const cod=get([/codigo/,/^ds_cod/,/cod_?trecho/]);
+    if((!road||!uf) && cod && /^(\d{3})([A-Z]{3})(\d{4})/.test(cod)){ const mm=cod.match(/^(\d{3})([A-Z]{3})/); road=road||mm[1]; uf=uf||mm[2].slice(1) }
+    const kmi=parseNum(get(_F_KMI)), kmf=parseNum(get(_F_KMF));
+    const lines=[...pm.getElementsByTagName('LineString')].map(l=>_coords(l.getElementsByTagName('coordinates')[0]?.textContent||'')).filter(p=>p.length>=2);
+    const pts=[...pm.getElementsByTagName('Point')].map(p=>_coords(p.getElementsByTagName('coordinates')[0]?.textContent||'')[0]).filter(Boolean);
+    if(lines.length){
+      const hasKm=kmi!=null && kmf!=null;
+      /* linha sem atributos de rodovia: cada Placemark é um candidato com o nome dele */
+      const name=normRoad(road || (hasKm?defName:'') || pmName || defName || docName);
+      const c=cand(name, String(uf||defUf).toUpperCase().slice(-2));
+      for(const ln of lines){ if(hasKm) c.segs.push({kmi, kmf, pts:ln}); else c.lines.push(ln) }
+    } else if(pts.length){
+      const k=kmFromLabel(get(_F_KM)) ?? kmFromLabel(pmName);
+      if(k==null) continue;
+      const c=cand(normRoad(road||defName||docName), String(uf||defUf).toUpperCase().slice(-2));
+      c.kmPts.push({km:k, x:pts[0][0], y:pts[0][1]});
+    }
+  }
+  return finishCands([...groups.values()], null, 'KML: '+fname, fname);
+}
+
+/* ---- GPX (trilha do GPS) ---- */
+function readGpx(xml, fname){
+  const doc=new DOMParser().parseFromString(xml,'text/xml'), cands=[], defUf=guessUf(fname);
+  const pt=e=>[+e.getAttribute('lon'), +e.getAttribute('lat')];
+  for(const t of [...doc.getElementsByTagName('trk'), ...doc.getElementsByTagName('rte')]){
+    const pts=[...t.getElementsByTagName('trkpt'), ...t.getElementsByTagName('rtept')].map(pt).filter(p=>isFinite(p[0])&&isFinite(p[1]));
+    if(pts.length<2) continue;
+    const nm=(t.getElementsByTagName('name')[0]?.textContent||'').trim();
+    cands.push({name:normRoad(guessRoad(fname)||nm), uf:defUf, segs:[], kmPts:[], lines:[pts]});
+  }
+  const marks=[...doc.getElementsByTagName('wpt')].map(w=>({km:kmFromLabel(w.getElementsByTagName('name')[0]?.textContent), x:+w.getAttribute('lon'), y:+w.getAttribute('lat')})).filter(m=>m.km!=null);
+  if(marks.length>=2) cands.push({name:guessRoad(fname), uf:defUf, segs:[], kmPts:marks, lines:[]});
+  return finishCands(cands, null, 'GPX: '+fname, fname);
+}
+
+/* ---- GeoJSON ---- */
+function readGeoJson(txt, fname){
+  const gj=JSON.parse(txt), feats=gj.type==='FeatureCollection'?gj.features:(gj.type==='Feature'?[gj]:[{properties:{},geometry:gj}]);
+  const groups=new Map(), defName=guessRoad(fname), defUf=guessUf(fname);
+  const cand=(name,uf)=>{ const k=name+'/'+uf; let c=groups.get(k); if(!c) groups.set(k, c={name, uf, segs:[], kmPts:[], lines:[]}); return c };
+  for(const f of feats||[]){
+    const g=f&&f.geometry; if(!g) continue;
+    const p=f.properties||{}, low=Object.fromEntries(Object.keys(p).map(k=>[k.toLowerCase(),p[k]])), lk=Object.keys(low);
+    const G=r=>{ const k=_field(lk,r); return k?low[k]:null };
+    const c=cand(normRoad(G(_F_ROAD)||defName), String(G(_F_UF)||defUf).toUpperCase().slice(0,2));
+    const kmi=parseNum(G(_F_KMI)), kmf=parseNum(G(_F_KMF));
+    const lines=g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:[];
+    for(const ln of lines){ const pts=ln.map(q=>[q[0],q[1]]); if(pts.length<2) continue; if(kmi!=null&&kmf!=null) c.segs.push({kmi,kmf,pts}); else c.lines.push(pts) }
+    if(g.type==='Point'){ const k=parseNum(G(_F_KM)); if(k!=null) c.kmPts.push({km:k, x:g.coordinates[0], y:g.coordinates[1]}) }
+  }
+  return finishCands([...groups.values()], null, 'GeoJSON: '+fname, fname);
+}
+
+/* ---- planilha (CSV/TXT/colado do Excel/XLSX) ----
+   Cada linha: KM + LAT + LONG (em graus) ou KM + E + N (UTM, em metros). Sem coluna de KM, a
+   sequência de pontos vira o traçado e o usuário informa o km do início. */
+function _lineNums(line){
+  let cells=line.split(/\t|;/); if(cells.length===1) cells=line.split(/\s{1,}|,(?=\s)/);
+  const out=[];
+  for(let c of cells){
+    c=c.trim(); if(!c) continue;
+    if(!/^[-+]?[\d.,]+$/.test(c)){ const m=c.match(/[-+]?\d+(?:[.,]\d+)?\s*$/); if(!m) continue; c=m[0].trim() }
+    const n=parseFloat(c.includes(',')?c.replace(/\./g,'').replace(',','.'):c);
+    if(!isNaN(n)) out.push(n);
+  }
+  return out;
+}
+function readTable(text, fname){
+  const geo=parseCoordLines(text).rows;
+  let rows=geo.map(r=>({km:r.km, x:r.lon, y:r.lat})), utm=false;
+  if(rows.length<2){
+    rows=[];
+    for(const raw of text.split(/\r?\n/)){
+      const ns=_lineNums(raw.trim()); if(ns.length<2) continue;
+      const ei=ns.findIndex(n=>n>=100000&&n<=999999.999); if(ei<0) continue;
+      const E=ns.splice(ei,1)[0], ni=ns.findIndex(n=>n>=1000000&&n<=10000000); if(ni<0) continue;
+      const Nn=ns.splice(ni,1)[0], k=ns.find(n=>n>=0&&n<100000);
+      rows.push({km:k==null?null:k, x:E, y:Nn});
+    }
+    utm=true;
+  }
+  if(rows.length<2) throw new Error('A planilha precisa das colunas KM, LAT e LONG, com pelo menos 2 linhas.');
+  const withKm=rows.filter(r=>r.km!=null);
+  const c={name:guessRoad(fname), uf:guessUf(fname), segs:[], kmPts:[], lines:[]};
+  if(withKm.length>=2) c.kmPts=withKm; else c.lines=[rows.map(r=>[r.x,r.y])];
+  return finishCands([c], utm?null:undefined, 'Planilha: '+fname, fname);
+}
+/* .xlsx = zip de XML: lê a 1ª planilha e devolve o texto separado por tabulação */
+async function xlsxToText(buf){
+  const zf=fflate.unzipSync(new Uint8Array(buf)), dec=new TextDecoder('utf-8');
+  const ss=zf['xl/sharedStrings.xml']?[...new DOMParser().parseFromString(dec.decode(zf['xl/sharedStrings.xml']),'text/xml').getElementsByTagName('si')].map(si=>[...si.getElementsByTagName('t')].map(t=>t.textContent).join('')):[];
+  const sheet=Object.keys(zf).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)))[0];
+  if(!sheet) throw new Error('O Excel não tem planilha.');
+  const doc=new DOMParser().parseFromString(dec.decode(zf[sheet]),'text/xml'), lines=[];
+  const col=r=>{ let n=0; for(const ch of r.replace(/\d+/g,'')) n=n*26+ch.charCodeAt(0)-64; return n-1 };
+  for(const row of doc.getElementsByTagName('row')){
+    const cells=[];
+    for(const c of row.getElementsByTagName('c')){
+      const t=c.getAttribute('t'), v=c.getElementsByTagName('v')[0]?.textContent;
+      let val= t==='s' ? (ss[+v]||'') : t==='inlineStr' ? (c.getElementsByTagName('t')[0]?.textContent||'') : (v||'');
+      if(t!=='s' && t!=='inlineStr' && t!=='str' && val!=='' && isFinite(+val)) val=String(+val).replace('.',',');   // número → vírgula decimal (o leitor entende)
+      cells[col(c.getAttribute('r')||'A')]=val;
+    }
+    lines.push(Array.from(cells,x=>x==null?'':x).join('\t'));
+  }
+  return lines.join('\n');
+}
+
+/* ---- candidatos prontos para a janela ----
+   utmZone: objeto do .prj, null = descobrir pelos números, undefined = já está em graus */
+function finishCands(list, utmZone, fonte, fname){
+  const cands=[];
+  for(const c of list){
+    if(!c.segs.length && !c.kmPts.length && !c.lines.length) continue;
+    const any=c.segs[0]?.pts[0] || (c.kmPts[0]&&[c.kmPts[0].x,c.kmPts[0].y]) || c.lines[0][0];
+    c.utm = utmZone!==undefined && !_isGeo(any[0], any[1]);
+    c.zone = c.utm ? utmZone : null;
+    c.hasKm = c.segs.length>0 || c.kmPts.length>=2;
+    if(!c.hasKm) c.line=chainLines(c.lines);
+    if(c.kmPts.length) c.kmPts.sort((a,b)=>a.km-b.km);
+    let lo=Infinity, hi=-Infinity;
+    for(const s of c.segs){ lo=Math.min(lo,s.kmi,s.kmf); hi=Math.max(hi,s.kmi,s.kmf) }
+    for(const p of c.kmPts){ lo=Math.min(lo,p.km); hi=Math.max(hi,p.km) }
+    c.kmLo=lo; c.kmHi=hi; c.fonte=fonte;
+    cands.push(c);
+  }
+  cands.sort((a,b)=>(a.name+a.uf).localeCompare(b.name+b.uf,'pt',{numeric:true}));
+  return {cands, fname};
+}
+/* várias partes de linha sem KM → um traçado só, emendando sempre a parte cuja ponta está mais perto */
+function chainLines(lines){
+  const rest=lines.map(l=>l.slice()); if(!rest.length) return [];
+  rest.sort((a,b)=>b.length-a.length);
+  let path=rest.shift();
+  const d2=(p,q)=>(p[0]-q[0])**2+(p[1]-q[1])**2;
+  while(rest.length){
+    let best=null, bd=Infinity;
+    rest.forEach((l,i)=>{
+      const s=path[0], e=path[path.length-1], a=l[0], z=l[l.length-1];
+      [[d2(e,a),i,'ea'],[d2(e,z),i,'ez'],[d2(s,z),i,'sz'],[d2(s,a),i,'sa']].forEach(o=>{ if(o[0]<bd){ bd=o[0]; best=o } });
+    });
+    const l=rest.splice(best[1],1)[0];
+    if(best[2]==='ea') path=path.concat(l); else if(best[2]==='ez') path=path.concat(l.reverse());
+    else if(best[2]==='sz') path=l.concat(path); else path=l.reverse().concat(path);
+  }
+  return path;
+}
+
+/* ---- janela "Configurar trecho" ---- */
+var _impBusy=false;   // var: o appBusy() lê antes desta linha rodar
+const _ZONES=[...[18,19,20,21,22,23,24,25].map(z=>z+'S'), ...[19,20,21,22].map(z=>z+'N')];
+function _zoneLabel(z){ return z.replace(/([NS])$/,m=>m==='S'?' Sul':' Norte') }
+/* converte as coordenadas do candidato para graus (com o fuso escolhido) */
+function _toGeo(c, zone){
+  if(!c.utm) return p=>p;
+  const z=parseInt(zone), s=/S$/.test(zone);
+  return p=>utmToGeo(p[0], p[1], z, s);
+}
+function _lenM(pts){ let L=0; for(let i=1;i<pts.length;i++){ const c=Math.cos(pts[i][1]*D2R), dx=(pts[i][0]-pts[i-1][0])*c, dy=pts[i][1]-pts[i-1][1]; L+=Math.sqrt(dx*dx+dy*dy)*D2R*R } return L }
+/* desenho pequeno do traçado (em metros aproximados: funciona em graus e em UTM) */
+function _impSvg(c, pontaB){
+  const parts=c.segs.length?c.segs.map(s=>s.pts):c.kmPts.length?[c.kmPts.map(p=>[p.x,p.y])]:[c.line];
+  const all=parts.flat(); if(!all.length) return '';
+  const geo=!c.utm, k=geo?Math.cos(all[0][1]*D2R):1;
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const p of all){ const x=p[0]*k; if(x<x0)x0=x; if(x>x1)x1=x; if(p[1]<y0)y0=p[1]; if(p[1]>y1)y1=p[1] }
+  const W=260,H=78,pad=12, s=Math.min((W-2*pad)/((x1-x0)||1),(H-2*pad)/((y1-y0)||1));
+  const ox=(W-(x1-x0)*s)/2, oy=(H-(y1-y0)*s)/2;
+  const P=p=>[(ox+(p[0]*k-x0)*s).toFixed(1),(H-oy-(p[1]-y0)*s).toFixed(1)];
+  const path=parts.map(pts=>{ const st=Math.max(1,Math.floor(pts.length/150)); const q=pts.filter((_,i)=>i%st===0||i===pts.length-1).map(P); return 'M'+q.map(a=>a.join(',')).join('L') }).join('');
+  let marks='';
+  if(c.hasKm){
+    const first=c.segs.length?c.segs.reduce((a,b)=>Math.min(a.kmi,a.kmf)<=Math.min(b.kmi,b.kmf)?a:b):null;
+    const last=c.segs.length?c.segs.reduce((a,b)=>Math.max(a.kmi,a.kmf)>=Math.max(b.kmi,b.kmf)?a:b):null;
+    const pA=first?(first.kmi<=first.kmf?first.pts[0]:first.pts[first.pts.length-1]):[c.kmPts[0].x,c.kmPts[0].y];
+    const pZ=last?(last.kmf>=last.kmi?last.pts[last.pts.length-1]:last.pts[0]):[c.kmPts[c.kmPts.length-1].x,c.kmPts[c.kmPts.length-1].y];
+    const [ax,ay]=P(pA),[zx,zy]=P(pZ);
+    marks=`<circle cx="${ax}" cy="${ay}" r="4.5" fill="#fff"/><circle cx="${zx}" cy="${zy}" r="4.5" fill="#fff"/>`;
+  } else {
+    const [ax,ay]=P(c.line[0]),[zx,zy]=P(c.line[c.line.length-1]);
+    const dot=(x,y,t,on)=>`<circle cx="${x}" cy="${y}" r="8.5" fill="${on?'#c9e463':'#fff'}"/><text x="${x}" y="${(+y+3.8).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#10140a">${t}</text>`;
+    marks=dot(ax,ay,'A',!pontaB)+dot(zx,zy,'B',pontaB);
+  }
+  return `<svg class="impsvg" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${path}" fill="none" stroke="#c9e463" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>${marks}</svg>`;
+}
+function openImportDialog({cands, fname}){
+  const dlg=document.getElementById('dlg-imp'), box=document.getElementById('imp-list');
+  document.getElementById('imp-sub').textContent=fname+'\n'+(cands.length>1?cands.length+' rodovias encontradas':cands[0].hasKm?'1 rodovia encontrada':'1 linha encontrada');
+  const ufOpts=v=>'<option value="">UF</option>'+UFS.map(u=>`<option${u===v?' selected':''}>${u}</option>`).join('');
+  const zoneOpts=z=>'<option value="">Escolha o fuso</option>'+_ZONES.map(x=>`<option value="${x}"${x===z?' selected':''}>${_zoneLabel(x)}</option>`).join('');
+  const ctOpts='<option value="">Nenhum</option>'+getContracts().map(c=>`<option>${_esc(c)}</option>`).join('');
+  const multi=cands.length>1;
+  box.innerHTML=cands.map((c,i)=>{
+    const z=c.zone?(c.zone.zone+(c.zone.south?'S':'N')):'';
+    return `<div class="impcard${multi&&i>0?' shut':''}" data-i="${i}">
+      ${multi?`<div class="imphead"><label class="impchk"><input type="checkbox" class="imp-on" checked><span class="imp-ttl"></span></label><button class="imp-tog" aria-label="Abrir ou fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>`:''}
+      <div class="impbody">
+        <label class="f">Rodovia e UF</label>
+        <div class="impr1"><input type="text" class="imp-name" value="${_esc(c.name)}" placeholder="BR-110, RN-118 ou nome da estrada" aria-label="Rodovia"><select class="imp-uf" aria-label="UF">${ufOpts(c.uf)}</select></div>
+        ${c.utm?`<div class="impinfo">${c.zone?'Coordenadas em UTM.<br>Fuso '+_zoneLabel(z)+', lido do arquivo.':'Coordenadas em UTM (metros).<br>Escolha o fuso da região.'}</div>
+        <label class="f">Fuso UTM</label><select class="imp-zone" aria-label="Fuso UTM">${zoneOpts(z)}</select>`:''}
+        ${c.hasKm?`<label class="f">Trecho a importar</label>
+        <div class="impr2"><input type="text" class="imp-ki" inputmode="decimal" value="${fkm(c.kmLo)}" aria-label="Km inicial"><input type="text" class="imp-kf" inputmode="decimal" value="${fkm(c.kmHi)}" aria-label="Km final"></div>`
+        :`<div class="impinfo">Esta linha não tem KM no arquivo.<br>Informe onde ela começa.</div>
+        <label class="f">Km no início</label><input type="text" class="imp-k0" inputmode="decimal" value="0,000" aria-label="Km no início">
+        <label class="f">O km 0 fica na ponta</label>
+        <div class="impseg imp-ponta"><button data-v="A" class="on">A</button><button data-v="B">B</button></div>`}
+        <div class="imp-draw"></div>
+        <div class="impsum"></div>
+        <div class="impwarn"></div>
+        <button class="impmore">Mais opções<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="impopts">
+          <label class="f">Nome do trecho</label><input type="text" class="imp-nome" placeholder="Lote 2 Pavimentação" aria-label="Nome do trecho">
+          <label class="f">Estaca</label>
+          <div class="impseg imp-est"><button data-v="auto" class="on">Automática</button><button data-v="zero">Definir zero</button></div>
+          <div class="imp-estz" hidden><div class="impr3"><input type="text" class="imp-ezkm" inputmode="decimal" placeholder="Km do zero" aria-label="Km do zero"><input type="text" class="imp-eze" inputmode="numeric" placeholder="Estaca" aria-label="Estaca"><input type="text" class="imp-ezm" inputmode="numeric" placeholder="+ m" aria-label="Metros"></div></div>
+          <label class="f">Contrato</label><select class="imp-ct" aria-label="Contrato">${ctOpts}</select>
+        </div>
+      </div></div>`;
   }).join('');
-  showDlg(dlg);
-  document.getElementById('kmz-cancel').onclick=()=>dlg.close();
-  const ok=document.getElementById('kmz-ok');
+  const cards=[...box.querySelectorAll('.impcard')];
+  const val=(el,s)=>el.querySelector(s);
+  const refresh=card=>{
+    const c=cands[+card.dataset.i], name=normRoad(val(card,'.imp-name').value), uf=val(card,'.imp-uf').value;
+    if(val(card,'.imp-ttl')) val(card,'.imp-ttl').textContent=(name||'Sem nome')+(uf?'/'+uf:'');
+    const pontaB=!c.hasKm && val(card,'.imp-ponta .on').dataset.v==='B';
+    /* ficha fechada não desenha: o arquivo nacional do SNV tem centenas de rodovias */
+    val(card,'.imp-draw').innerHTML=card.classList.contains('shut')?'':_impSvg(c, pontaB);
+    const zone=c.utm?(val(card,'.imp-zone').value):'';
+    const sum=[], warn=[];
+    const npts=c.segs.reduce((a,s)=>a+s.pts.length,0)+c.kmPts.length+(c.line?c.line.length:0);
+    sum.push(npts.toLocaleString('pt-BR')+' pontos');
+    if(c.hasKm){
+      sum.push('Do km '+fkm(c.kmLo)+' ao '+fkm(c.kmHi));
+      /* buracos: trechos do arquivo que não se encostam (mais de 500 m sem dados) */
+      const iv=c.segs.length?c.segs.map(s=>[Math.min(s.kmi,s.kmf),Math.max(s.kmi,s.kmf)]).sort((a,b)=>a[0]-b[0]):[];
+      let end=iv.length?iv[0][1]:0; const gaps=[];
+      for(const [a,b] of iv.slice(1)){ if(a-end>.5) gaps.push([end,a]); end=Math.max(end,b) }
+      if(c.kmPts.length>1) for(let i=1;i<c.kmPts.length;i++) if(c.kmPts[i].km-c.kmPts[i-1].km>2) gaps.push([c.kmPts[i-1].km,c.kmPts[i].km]);
+      gaps.slice(0,2).forEach(g=>warn.push('⚠ Sem dados entre o km '+fkm(g[0])+' e o '+fkm(g[1])+'.'));
+      if(gaps.length>2) warn.push('⚠ E mais '+(gaps.length-2)+' trechos sem dados.');
+    } else if(!c.utm || zone){
+      const L=_lenM(c.line.map(_toGeo(c,zone)))/1000, k0=parseNum(val(card,'.imp-k0').value)||0;
+      sum.push('Extensão medida: '+fkm(L)+' km','Fica do km '+fkm(k0)+' ao '+fkm(k0+L));
+    }
+    const ex=S.bases.find(b=>b.id===name+'/'+uf);
+    if(ex) warn.push('⚠ Já instalada: km '+fkm(ex.kmMin)+' a '+fkm(ex.kmMax)+'.<br>Ela será substituída.<br>Estacas e contratos ficam.');
+    val(card,'.impsum').innerHTML=sum.join('<br>');
+    val(card,'.impwarn').innerHTML=warn.join('<br>');
+    /* estaca: rodovia que já tem zero definido mostra "Manter a atual" no lugar de "Automática" */
+    const eb=val(card,'.imp-est [data-v="auto"]'); eb.textContent=getEstRefs(name+'/'+uf).length?'Manter a atual':'Automática';
+  };
+  cards.forEach(card=>{
+    card.querySelectorAll('input,select').forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>refresh(card)));
+    card.querySelectorAll('.impseg').forEach(seg=>seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      if(seg.classList.contains('imp-est')) val(card,'.imp-estz').hidden=b.dataset.v!=='zero';
+      refresh(card);
+    }));
+    val(card,'.impmore').onclick=()=>card.classList.toggle('more');
+    const tog=val(card,'.imp-tog'); if(tog) tog.onclick=()=>{ card.classList.toggle('shut'); refresh(card) };
+    refresh(card);
+  });
+  const ok=document.getElementById('imp-ok'), n=()=>cards.filter(cd=>!val(cd,'.imp-on')||val(cd,'.imp-on').checked).length;
+  const setOk=()=>{ const k=n(); ok.textContent=k>1?'Instalar '+k:'Instalar' };
+  box.querySelectorAll('.imp-on').forEach(cb=>cb.onchange=setOk); setOk();
+  document.getElementById('imp-err').textContent='';
+  document.getElementById('imp-cancel').onclick=()=>dlg.close();
   ok.disabled=false;
   ok.onclick=async()=>{
-    if(ok.disabled) return; ok.disabled=true;
-    try{
-      const sel=[...list.querySelectorAll('input:checked')].map(i=>i.dataset.k);
-      let n=0; const inst=[];
-      for(const k of sel){ const b=await installFromSegs(k, groups[k], 'SNV/DNIT ('+fname+')'); if(b){ n++; inst.push(b) } }
-      dlg.close(); renderBases();
-      if(!n && sel.length) toast(NO_COORD_MSG, 5000);
-      for(const b of inst) await checkOverlaps(b);
-      if(inst.length) renderBases();
-    }catch(e){ toast('Erro ao salvar: '+e.message) }
-    finally{ ok.disabled=false }
-  };
-}
-function normBr(v){
-  if(!v) return 'BR-???';
-  const m=String(v).match(/(\d{3})/);
-  return m?('BR-'+m[1]):String(v).toUpperCase();
-}
-const NO_COORD_MSG='Nenhuma rodovia instalada.\nAs coordenadas do arquivo precisam estar em latitude e longitude (graus), não em UTM.';
-async function installFromSegs(key, segs, fonte){
-  // ordenar por km inicial; dentro de cada trecho, km linear por comprimento de arco
-  segs.sort((a,b)=>Math.min(a.kmi,a.kmf)-Math.min(b.kmi,b.kmf));
-  const lat=[], lon=[], km=[];
-  for(const s of segs){
-    const pts=s.pts;
-    // comprimento acumulado
-    const acc=[0];
-    for(let i=1;i<pts.length;i++){
-      const cos=Math.cos(pts[i][1]*D2R);
-      const dx=(pts[i][0]-pts[i-1][0])*cos, dy=pts[i][1]-pts[i-1][1];
-      acc.push(acc[i-1]+Math.sqrt(dx*dx+dy*dy));
+    if(ok.disabled) return;
+    const err=document.getElementById('imp-err'); err.textContent='';
+    /* confere tudo antes de instalar qualquer coisa */
+    const jobs=[];
+    for(const card of cards){
+      if(val(card,'.imp-on') && !val(card,'.imp-on').checked) continue;
+      const c=cands[+card.dataset.i], name=normRoad(val(card,'.imp-name').value), uf=val(card,'.imp-uf').value;
+      const bad=m=>{ card.classList.remove('shut'); err.textContent=(name||'Rodovia')+': '+m; return null };
+      if(!name){ bad('informe o nome da rodovia.'); return }
+      if(!uf){ bad('escolha a UF.'); return }
+      const zone=c.utm?val(card,'.imp-zone').value:'';
+      if(c.utm && !zone){ bad('escolha o fuso UTM.'); return }
+      const job={c, name, uf, zone, nome:val(card,'.imp-nome').value.trim(), ct:val(card,'.imp-ct').value};
+      if(c.hasKm){
+        const ki=parseNum(val(card,'.imp-ki').value), kf=parseNum(val(card,'.imp-kf').value);
+        if(ki==null||kf==null||ki>=kf){ bad('confira o km inicial e o final.'); return }
+        job.ki=ki; job.kf=kf;
+      } else {
+        const k0=parseNum(val(card,'.imp-k0').value); if(k0==null){ bad('informe o km do início.'); return }
+        job.k0=k0; job.pontaB=val(card,'.imp-ponta .on').dataset.v==='B';
+      }
+      if(val(card,'.imp-est .on').dataset.v==='zero'){
+        const km=parseNum(val(card,'.imp-ezkm').value), e=parseInt(val(card,'.imp-eze').value,10), m=parseInt(val(card,'.imp-ezm').value||'0',10);
+        if(km==null||!(e>=0)||!(m>=0&&m<20)){ bad('confira o zero da estaca.\nKm, estaca e metros de 0 a 19.'); return }
+        job.est={km, e, m};
+      }
+      jobs.push(job);
     }
+    if(!jobs.length){ err.textContent='Marque pelo menos uma rodovia.'; return }
+    ok.disabled=true; _impBusy=true;
+    try{
+      const inst=[];
+      for(const j of jobs){ const b=await installImported(j); if(b) inst.push(b) }
+      dlg.close(); renderBases();
+      if(!inst.length) toast('Nenhuma rodovia instalada.\nConfira as coordenadas do arquivo.', 5000);
+      for(const b of inst) await checkOverlaps(b);
+      if(inst.length){ renderBases(); ctRefresh() }
+    }catch(e){ toast('Erro ao salvar.\n'+e.message, 4200) }
+    finally{ ok.disabled=false; _impBusy=false }
+  };
+  showDlg(dlg);
+}
+/* monta o eixo (lat, lon, km) e grava. KM por arco dentro de cada trecho; pontos de KM viram trechos
+   de dois em dois; linha sem KM ganha km = início + distância percorrida a partir da ponta escolhida. */
+async function installImported(j){
+  const c=j.c, G=_toGeo(c, j.zone);
+  let segs;
+  if(c.segs.length) segs=c.segs.map(s=>({kmi:s.kmi, kmf:s.kmf, pts:s.pts.map(G)}));
+  else if(c.kmPts.length){ const p=c.kmPts.map(q=>({km:q.km, g:G([q.x,q.y])})); segs=[]; for(let i=1;i<p.length;i++) if(p[i].km>p[i-1].km) segs.push({kmi:p[i-1].km, kmf:p[i].km, pts:[p[i-1].g,p[i].g]}) }
+  else { let pts=c.line.map(G); if(j.pontaB) pts=pts.slice().reverse(); const L=_lenM(pts)/1000; segs=[{kmi:j.k0, kmf:j.k0+L, pts}] }
+  segs.sort((a,b)=>Math.min(a.kmi,a.kmf)-Math.min(b.kmi,b.kmf));
+  const lat=[], lon=[], km=[], lo=j.ki??-Infinity, hi=j.kf??Infinity;
+  for(const s of segs){
+    const pts=s.pts, acc=[0];
+    for(let i=1;i<pts.length;i++){ const cs=Math.cos(pts[i][1]*D2R), dx=(pts[i][0]-pts[i-1][0])*cs, dy=pts[i][1]-pts[i-1][1]; acc.push(acc[i-1]+Math.sqrt(dx*dx+dy*dy)) }
     const total=acc[acc.length-1]||1;
+    let pk=null, pla=0, plo=0;
     for(let i=0;i<pts.length;i++){
-      const lo=pts[i][0], la=pts[i][1];
-      /* shapefile/KML fora de lat/lon em graus (ex.: projetado em UTM, valores em metros) ou com
-         ponto corrompido: descarta o ponto em vez de instalar um eixo absurdo */
-      if(!isFinite(lo)||!isFinite(la)||la<-90||la>90||lo<-180||lo>180) continue;
-      lat.push(la); lon.push(lo);
-      km.push(s.kmi + (s.kmf-s.kmi)*(acc[i]/total));
+      const lo_=pts[i][0], la=pts[i][1];
+      if(!isFinite(lo_)||!isFinite(la)||la<-90||la>90||lo_<-180||lo_>180) continue;   // ponto corrompido ou fora de graus
+      const k=s.kmi+(s.kmf-s.kmi)*(acc[i]/total);
+      /* recorte exato: onde a linha cruza o km inicial/final escolhido entra um ponto interpolado */
+      if(pk!=null) for(const bd of (k>pk?[lo,hi]:[hi,lo])) if(isFinite(bd) && ((pk<bd&&k>bd)||(pk>bd&&k<bd))){
+        const t=(bd-pk)/(k-pk); lat.push(pla+(la-pla)*t); lon.push(plo+(lo_-plo)*t); km.push(bd) }
+      pk=k; pla=la; plo=lo_;
+      if(k<lo-1e-9||k>hi+1e-9) continue;   // fora do trecho escolhido
+      lat.push(la); lon.push(lo_); km.push(k);
     }
   }
-  if(lat.length<2) return false;
-  const [br,uf]=key.split('/');
+  if(lat.length<2) return null;
   let kmMin=Infinity, kmMax=-Infinity;
-  for(let i=0;i<km.length;i++){ if(km[i]<kmMin) kmMin=km[i]; if(km[i]>kmMax) kmMax=km[i] }
-  const b={id:key, br, uf, fonte, kmMin, kmMax, lat, lon, km};
+  for(const k of km){ if(k<kmMin) kmMin=k; if(k>kmMax) kmMax=k }
+  const id=j.name+'/'+j.uf;
+  const b={id, br:j.name, uf:j.uf, fonte:c.fonte, kmMin, kmMax, lat, lon, km};
+  if(j.nome) b.nome=j.nome;
   await dbPut(b);
-  S.bases=S.bases.filter(x=>x.id!==key); S.bases.push(b);
+  S.bases=S.bases.filter(x=>x.id!==id); S.bases.push(b);
+  if(j.est) setEstRefs(id, [j.est]);
+  if(j.ct){
+    const lk=getCtLinks(), arr=lk[j.ct]||[];
+    if(!arr.some(l=>l.base===id && l.tudo)) arr.push({base:id, tudo:true});
+    lk[j.ct]=arr; setCtLinks(lk);
+  }
   return b;
 }
 
@@ -2598,36 +2924,6 @@ function parseCoordLines(text){
   }
   return {rows,skipped};
 }
-function importCsv(text, fname){
-  const {rows}=parseCoordLines(text);
-  const withKm=rows.filter(r=>r.km!=null);
-  if(withKm.length<2){ toast('A planilha precisa das colunas KM, LAT e LONG, com pelo menos 2 linhas.'); return }
-  const dlg=document.getElementById('dlg-csv');
-  document.getElementById('csv-info').textContent=withKm.length.toLocaleString('pt-BR')+' pontos válidos em '+fname;
-  // pré-preencher a partir do nome do arquivo
-  const mbr=fname.match(/(\d{3})/); document.getElementById('csv-br').value=mbr?('BR-'+mbr[1]):'';
-  const muf=fname.toUpperCase().match(/[_\- ]([A-Z]{2})[_\-. ]/); document.getElementById('csv-uf').value=muf?muf[1]:'';
-  showDlg(dlg);
-  document.getElementById('csv-cancel').onclick=()=>dlg.close();
-  const okBtn=document.getElementById('csv-ok');
-  okBtn.disabled=false;
-  okBtn.onclick=async()=>{
-    if(okBtn.disabled) return; okBtn.disabled=true;   // toque duplo instalava duas vezes
-    try{
-      const br=normBr(document.getElementById('csv-br').value), uf=(document.getElementById('csv-uf').value||'?').toUpperCase();
-      withKm.sort((a,b)=>a.km-b.km);
-      const b={id:br+'/'+uf, br, uf, fonte:'CSV ('+fname+')',
-        kmMin:withKm[0].km, kmMax:withKm[withKm.length-1].km,
-        lat:withKm.map(r=>r.lat), lon:withKm.map(r=>r.lon), km:withKm.map(r=>r.km)};
-      await dbPut(b);
-      S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
-      dlg.close(); renderBases();
-      await checkOverlaps(b); renderBases();
-    }catch(e){ toast('Erro ao salvar: '+e.message) }
-    finally{ okBtn.disabled=false }
-  };
-}
-
 /* ================= GPS ================= */
 /* GPS é OBRIGATÓRIO — todas as fotos devem conter coordenadas.
    startGps() inicia o watchPosition; se a permissão for negada, registra o estado
@@ -2778,6 +3074,14 @@ function paintCamGps(){
     else{ dot.classList.add('weak'); dot.setAttribute('aria-label','GPS: sinal fraco') }
   } else { dot.setAttribute('aria-label','GPS: sem sinal') }
 }
+/* texto da rodovia na placa azul: até 6 letras ("BR-110") no tamanho normal; nomes maiores
+   ("Estrada do Sal") diminuem proporcionalmente para caber na largura da placa */
+function setPlateRoad(el, t){
+  if(!el) return;
+  if(!el.dataset.fs) el.dataset.fs=el.getAttribute('font-size')||'30';
+  const base=+el.dataset.fs, n=String(t).length;
+  el.textContent=t; el.setAttribute('font-size', n>6 ? Math.max(10, base*6.2/n).toFixed(1) : base);
+}
 function paintGps(){
   paintCamGps();
   if(_carOn) paintCar();
@@ -2789,13 +3093,13 @@ function paintGps(){
       kb.textContent=fkm(S.fix.km);
       kb.className='herokm'+(off?' errc':'');
       herobr.textContent=`${S.fix.br}/${S.fix.uf}`;
-      signBr.textContent=S.fix.br;
+      setPlateRoad(signBr, S.fix.br);
       signKm.textContent=String(Math.floor(S.fix.km)).padStart(3,'0');
       hest.textContent=estacaDe(S.fix.km, S.fix.id);
     } else {
       kb.textContent='—'; kb.className='herokm';
       herobr.textContent='—';
-      signBr.textContent='—'; signKm.textContent='—';
+      setPlateRoad(signBr, '—'); signKm.textContent='—';
       hest.textContent='';
     }
   }
@@ -3040,7 +3344,7 @@ function carRefit(){
   const main=document.getElementById('car-main'); let m=1;
   carwrap.style.setProperty('--m',m);
   while(main.scrollHeight>main.clientHeight+1 && m>.6){ m-=.04; carwrap.style.setProperty('--m',m.toFixed(2)) }
-  document.querySelectorAll('#car-km, #car-tiles .cv').forEach(el=>{ el.dataset.fit='' });
+  document.querySelectorAll('#car-km, #car-br, #car-tiles .cv').forEach(el=>{ el.dataset.fit='' });
   paintCar();
 }
 function _carFit(el){
@@ -3127,7 +3431,7 @@ function paintCar(){
     if(_carDir>=0){ next=base+1; rest=(1-frac)*1000; prog=frac }
     else if(frac<1e-6){ next=base-1; rest=1000; prog=0 }
     else { next=base; rest=frac*1000; prog=1-frac }
-    $('car-sbr').textContent=f.br;
+    setPlateRoad($('car-sbr'), f.br);
     $('car-skm').textContent=String(base).padStart(3,'0');
     $('car-br').textContent=`${f.br}/${f.uf}`;
     km.textContent=fkm(k); km.classList.toggle('errc', off);
@@ -3136,7 +3440,7 @@ function paintCar(){
     const e=estacaDe(k, f.id).replace(/^Est\.\s*/,'');
     $('car-est').textContent=e||'—';
   } else {
-    $('car-sbr').textContent='—'; $('car-skm').textContent='—'; $('car-br').textContent='—';
+    setPlateRoad($('car-sbr'), '—'); $('car-skm').textContent='—'; $('car-br').textContent='—';
     km.textContent='—'; km.classList.remove('errc');
     $('car-fill').style.width='0'; $('car-knob').style.left='0';
     nx.textContent=S.pos?'Nenhuma rodovia baixada por perto':'Aguardando o GPS…';
@@ -3153,7 +3457,7 @@ function paintCar(){
   $('car-ct').textContent=getContract()||'—';
   /* lado = sentido de marcha pelo KM (o LE/LD da legenda da foto não muda) */
   $('car-dir').textContent=f&&_carDir>0?'Crescente':f&&_carDir<0?'Decrescente':'—';
-  _carFit(km); document.querySelectorAll('#car-tiles .cv').forEach(el=>_carFit(el));
+  _carFit(km); _carFit($('car-br')); document.querySelectorAll('#car-tiles .cv').forEach(el=>_carFit(el));
   _carKick();
 }
 
@@ -3991,11 +4295,11 @@ function closeCam(instant){
 /* app no meio de algo que um recarregamento perderia: câmera, galeria, diálogo aberto ou download */
 function appBusy(){
   return camwrap.classList.contains('on') || document.getElementById('gallerywrap').classList.contains('on') ||
-    !!document.querySelector('dialog[open]') || document.getElementById('dl-go').disabled || document.getElementById('kmz-ok').disabled;
+    !!document.querySelector('dialog[open]') || document.getElementById('dl-go').disabled || _impBusy;
 }
 /* atualização pendente: aplica quando o app vai para o segundo plano (invisível para o usuário) */
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden && _pendingReload && !document.getElementById('dl-go').disabled && !document.getElementById('kmz-ok').disabled) location.reload();
+  if(document.hidden && _pendingReload && !document.getElementById('dl-go').disabled && !_impBusy) location.reload();
 });
 let _pendingReload=false;
 document.getElementById('camback').onclick=()=>closeCam();
@@ -4779,7 +5083,7 @@ function photoName(info){
   if(info.km!=null && info.br){
     let k=Math.floor(info.km), m=Math.round((info.km-k)*1000);
     if(m>=1000){ k++; m=0 }
-    parts.push(`${info.br}-${info.uf}`.replace(/[^\w\-]/g,''), `KM${k}+${String(m).padStart(3,'0')}`);
+    parts.push(`${info.br}-${info.uf}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^\w\-]/g,''), `KM${k}+${String(m).padStart(3,'0')}`);
     const side=getSide(); if(side) parts.push(side);
   } else parts.push('FOTO');
   parts.push(quando);
