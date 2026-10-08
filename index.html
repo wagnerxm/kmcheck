@@ -2672,7 +2672,7 @@ function finishCands(list, utmZone, fonte, fname, estLabels){
     const big=loose[0].lenM, keep=loose.filter((c,i)=>i<6 && c.lenM>=big*.05);
     extra=loose.length-keep.length;
     const best=keep.find(c=>c.est0) || keep.find(c=>/eixo/i.test(c.label||'')) || keep.find(c=>!/block|bloco|hatch|hachura|circle|text/i.test(c.label||'')) || keep[0];
-    keep.forEach(c=>c.on=c===best);
+    keep.forEach(c=>{ c.on=c===best; c.best=c===best });
     const withKm=cands.filter(c=>c.hasKm);
     return {cands:[...withKm, best, ...keep.filter(c=>c!==best)], fname, extra};
   }
@@ -2788,8 +2788,10 @@ function openImportDialog({cands, fname, extra}){
   const val=(el,s)=>el.querySelector(s);
   const refresh=card=>{
     const c=cands[+card.dataset.i], name=normRoad(val(card,'.imp-name').value), uf=val(card,'.imp-uf').value;
-    /* linha sem KM (vinda de desenho): o título mostra o tamanho e a camada, para escolher o eixo */
-    if(val(card,'.imp-ttl')) val(card,'.imp-ttl').textContent=c.hasKm||c.lenM==null ? (name||'Sem nome')+(uf?'/'+uf:'') : fkm(c.lenM/1000)+' km'+(c.label?' · '+c.label.replace(/:\d+$/,''):'');
+    /* linha sem KM (vinda de desenho): título em português pelo tipo, sem os códigos do CAD. A escolhida
+       pelo app é o "Eixo provável"; bloco do AutoCAD é "Elemento do desenho"; as demais, "Traçado" */
+    if(val(card,'.imp-ttl')) val(card,'.imp-ttl').textContent=c.hasKm||c.lenM==null ? (name||'Sem nome')+(uf?'/'+uf:'')
+      : (c.best?'Eixo provável':/block|bloco|hatch|hachura|circle|text/i.test(c.label||'')?'Elemento do desenho':'Traçado')+' · '+fkm(c.lenM/1000)+' km';
     const pontaB=!c.hasKm && val(card,'.imp-ponta .on').dataset.v==='B';
     /* ficha fechada não desenha: o arquivo nacional do SNV tem centenas de rodovias */
     val(card,'.imp-draw').innerHTML=card.classList.contains('shut')?'':_impSvg(c, pontaB);
