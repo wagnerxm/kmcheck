@@ -2506,10 +2506,11 @@ function _kmlAttrs(pm){
 }
 function _coords(txt){ return txt.trim().split(/\s+/).map(s=>s.split(',').map(Number)).filter(p=>p.length>=2&&isFinite(p[0])&&isFinite(p[1])).map(p=>[p[0],p[1]]) }
 /* número de km no nome de um marco: "KM 120", "km 120,5", "120+500" (estaca de km+m) */
+/* número de km no nome de um marco: "KM 120", "km 120,5", "KM 120+500". Só vale com "km": número solto
+   ("207.302", "045") costuma ser cota ou número de estaca do desenho (arquivo exportado do AutoCAD). */
 function kmFromLabel(s){
   if(!s) return null; s=String(s);
-  let m=s.match(/km\s*([\d.,]+)(?:\s*\+\s*(\d{1,3}))?/i);
-  if(!m) m=s.match(/^\s*([\d.,]+)(?:\s*\+\s*(\d{1,3}))?\s*$/);
+  const m=s.match(/km\s*([\d.,]+)(?:\s*\+\s*(\d{1,3}))?/i);
   if(!m) return null;
   const k=parseNum(m[1]); if(k==null) return null;
   return m[2]!=null ? Math.floor(k)+(+m[2])/1000 : k;
@@ -2518,6 +2519,7 @@ function readKml(xml, fname){
   const doc=new DOMParser().parseFromString(xml,'text/xml');
   const groups=new Map(), defName=guessRoad(fname), defUf=guessUf(fname);
   const cand=(name,uf)=>{ const k=name+'/'+uf; let c=groups.get(k); if(!c) groups.set(k, c={name, uf, segs:[], kmPts:[], lines:[]}); return c };
+  const estLabels=[];
   const D0=doc.getElementsByTagName('Document')[0], docName=(D0?[...D0.children].find(e=>e.tagName==='name')?.textContent||'':'').trim();   // só o nome do Documento (não o do 1º marco)
   for(const pm of doc.getElementsByTagName('Placemark')){
     const attrs=_kmlAttrs(pm), ak=Object.keys(attrs);
@@ -2533,18 +2535,23 @@ function readKml(xml, fname){
     const pts=[...pm.getElementsByTagName('Point')].map(p=>_coords(p.getElementsByTagName('coordinates')[0]?.textContent||'')[0]).filter(Boolean);
     if(lines.length){
       const hasKm=kmi!=null && kmf!=null;
-      /* linha sem atributos de rodovia: cada Placemark é um candidato com o nome dele */
-      const name=normRoad(road || (hasKm?defName:'') || pmName || defName || docName);
-      const c=cand(name, String(uf||defUf).toUpperCase().slice(-2));
+      /* linha sem KM: cada Placemark é um candidato separado (num desenho do CAD só um deles é o eixo);
+         o nome da rodovia vem dos atributos ou do nome do arquivo, e o do Placemark vira rótulo */
+      const name=normRoad(road || defName || (hasKm?'':docName) || pmName);
+      const u=String(uf||defUf).toUpperCase().slice(-2);
+      const c=hasKm ? cand(name, u) : cand(name, u+'#'+pmName);
+      if(!hasKm){ c.uf=u; c.label=pmName }
       for(const ln of lines){ if(hasKm) c.segs.push({kmi, kmf, pts:ln}); else c.lines.push(ln) }
     } else if(pts.length){
+      /* texto só com número inteiro (desenho do CAD): pode ser número de estaca do eixo */
+      if(/^\d{1,5}$/.test(pmName)) estLabels.push({n:+pmName, x:pts[0][0], y:pts[0][1]});
       const k=kmFromLabel(get(_F_KM)) ?? kmFromLabel(pmName);
       if(k==null) continue;
       const c=cand(normRoad(road||defName||docName), String(uf||defUf).toUpperCase().slice(-2));
       c.kmPts.push({km:k, x:pts[0][0], y:pts[0][1]});
     }
   }
-  return finishCands([...groups.values()], null, 'KML: '+fname, fname);
+  return finishCands([...groups.values()], null, 'KML: '+fname, fname, estLabels);
 }
 
 /* ---- GPX (trilha do GPS) ---- */
@@ -2637,7 +2644,7 @@ async function xlsxToText(buf){
 
 /* ---- candidatos prontos para a janela ----
    utmZone: objeto do .prj, null = descobrir pelos números, undefined = já está em graus */
-function finishCands(list, utmZone, fonte, fname){
+function finishCands(list, utmZone, fonte, fname, estLabels){
   const cands=[];
   for(const c of list){
     if(!c.segs.length && !c.kmPts.length && !c.lines.length) continue;
@@ -2650,11 +2657,39 @@ function finishCands(list, utmZone, fonte, fname){
     let lo=Infinity, hi=-Infinity;
     for(const s of c.segs){ lo=Math.min(lo,s.kmi,s.kmf); hi=Math.max(hi,s.kmi,s.kmf) }
     for(const p of c.kmPts){ lo=Math.min(lo,p.km); hi=Math.max(hi,p.km) }
-    c.kmLo=lo; c.kmHi=hi; c.fonte=fonte;
+    c.kmLo=lo; c.kmHi=hi; c.fonte=fonte; c.on=true;
+    if(!c.hasKm) c.lenM=c.utm ? c.line.reduce((a,p,i)=>i?a+Math.hypot(p[0]-c.line[i-1][0],p[1]-c.line[i-1][1]):0,0) : _lenM(c.line);
     cands.push(c);
   }
   cands.sort((a,b)=>(a.name+a.uf).localeCompare(b.name+b.uf,'pt',{numeric:true}));
-  return {cands, fname};
+  /* muitas linhas sem KM (desenho exportado do AutoCAD: eixo + bordas + blocos + hachuras): mostra só as
+     maiores e marca uma só, a mais provável de ser o eixo (a maior que não é bloco/hachura) */
+  const loose=cands.filter(c=>!c.hasKm);
+  if(estLabels && estLabels.length) for(const c of loose) if(!c.utm && c.lenM>=200) c.est0=estZeroEnd(c.line, estLabels);
+  let extra=0;
+  if(loose.length>1){
+    loose.sort((a,b)=>b.lenM-a.lenM);
+    const big=loose[0].lenM, keep=loose.filter((c,i)=>i<6 && c.lenM>=big*.05);
+    extra=loose.length-keep.length;
+    const best=keep.find(c=>c.est0) || keep.find(c=>/eixo/i.test(c.label||'')) || keep.find(c=>!/block|bloco|hatch|hachura|circle|text/i.test(c.label||'')) || keep[0];
+    keep.forEach(c=>c.on=c===best);
+    const withKm=cands.filter(c=>c.hasKm);
+    return {cands:[...withKm, best, ...keep.filter(c=>c!==best)], fname, extra};
+  }
+  return {cands, fname, extra};
+}
+/* os números de estaca do desenho ficam colados ao eixo: se o "0" está a menos de 15 m de uma ponta e o
+   maior número perto da outra, essa ponta é o início ('A' = 1º ponto da linha, 'B' = último) */
+function estZeroEnd(line, labels){
+  if(!line || line.length<2) return null;
+  const A=line[0], B=line[line.length-1], d=(p,l)=>_lenM([p,[l.x,l.y]]);
+  const zeros=labels.filter(l=>l.n===0); if(!zeros.length) return null;
+  const top=labels.reduce((a,l)=>l.n>a.n?l:a, labels[0]);
+  for(const z of zeros){
+    if(d(A,z)<15 && d(B,top)<60) return 'A';
+    if(d(B,z)<15 && d(A,top)<60) return 'B';
+  }
+  return null;
 }
 /* várias partes de linha sem KM → um traçado só, emendando sempre a parte cuja ponta está mais perto */
 function chainLines(lines){
@@ -2712,9 +2747,11 @@ function _impSvg(c, pontaB){
   }
   return `<svg class="impsvg" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${path}" fill="none" stroke="#c9e463" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>${marks}</svg>`;
 }
-function openImportDialog({cands, fname}){
+function openImportDialog({cands, fname, extra}){
   const dlg=document.getElementById('dlg-imp'), box=document.getElementById('imp-list');
-  document.getElementById('imp-sub').textContent=fname+'\n'+(cands.length>1?cands.length+' rodovias encontradas':cands[0].hasKm?'1 rodovia encontrada':'1 linha encontrada');
+  const nLoose=cands.filter(c=>!c.hasKm).length;
+  document.getElementById('imp-sub').textContent=fname+'\n'+(nLoose>1 ? (nLoose+(extra||0))+' linhas encontradas.\nA mais provável de ser o eixo já vem marcada.'+(extra?'\nAs '+extra+' linhas menores ficaram de fora.':'')
+    : cands.length>1?cands.length+' rodovias encontradas':cands[0].hasKm?'1 rodovia encontrada':'1 linha encontrada');
   const ufOpts=v=>'<option value="">UF</option>'+UFS.map(u=>`<option${u===v?' selected':''}>${u}</option>`).join('');
   const zoneOpts=z=>'<option value="">Escolha o fuso</option>'+_ZONES.map(x=>`<option value="${x}"${x===z?' selected':''}>${_zoneLabel(x)}</option>`).join('');
   const ctOpts='<option value="">Nenhum</option>'+getContracts().map(c=>`<option>${_esc(c)}</option>`).join('');
@@ -2722,7 +2759,7 @@ function openImportDialog({cands, fname}){
   box.innerHTML=cands.map((c,i)=>{
     const z=c.zone?(c.zone.zone+(c.zone.south?'S':'N')):'';
     return `<div class="impcard${multi&&i>0?' shut':''}" data-i="${i}">
-      ${multi?`<div class="imphead"><label class="impchk"><input type="checkbox" class="imp-on" checked><span class="imp-ttl"></span></label><button class="imp-tog" aria-label="Abrir ou fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>`:''}
+      ${multi?`<div class="imphead"><label class="impchk"><input type="checkbox" class="imp-on"${c.on?' checked':''}><span class="imp-ttl"></span></label><button class="imp-tog" aria-label="Abrir ou fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>`:''}
       <div class="impbody">
         <label class="f">Rodovia e UF</label>
         <div class="impr1"><input type="text" class="imp-name" value="${_esc(c.name)}" placeholder="BR-110, RN-118 ou nome da estrada" aria-label="Rodovia"><select class="imp-uf" aria-label="UF">${ufOpts(c.uf)}</select></div>
@@ -2730,10 +2767,10 @@ function openImportDialog({cands, fname}){
         <label class="f">Fuso UTM</label><select class="imp-zone" aria-label="Fuso UTM">${zoneOpts(z)}</select>`:''}
         ${c.hasKm?`<label class="f">Trecho a importar</label>
         <div class="impr2"><input type="text" class="imp-ki" inputmode="decimal" value="${fkm(c.kmLo)}" aria-label="Km inicial"><input type="text" class="imp-kf" inputmode="decimal" value="${fkm(c.kmHi)}" aria-label="Km final"></div>`
-        :`<div class="impinfo">Esta linha não tem KM no arquivo.<br>Informe onde ela começa.</div>
+        :`<div class="impinfo">Esta linha não tem KM no arquivo.<br>Informe onde ela começa.${c.est0?'<br>A estaca 0 do desenho fica na ponta '+c.est0+'.':''}</div>
         <label class="f">Km no início</label><input type="text" class="imp-k0" inputmode="decimal" value="0,000" aria-label="Km no início">
         <label class="f">O km 0 fica na ponta</label>
-        <div class="impseg imp-ponta"><button data-v="A" class="on">A</button><button data-v="B">B</button></div>`}
+        <div class="impseg imp-ponta"><button data-v="A"${c.est0!=='B'?' class="on"':''}>A</button><button data-v="B"${c.est0==='B'?' class="on"':''}>B</button></div>`}
         <div class="imp-draw"></div>
         <div class="impsum"></div>
         <div class="impwarn"></div>
@@ -2751,7 +2788,8 @@ function openImportDialog({cands, fname}){
   const val=(el,s)=>el.querySelector(s);
   const refresh=card=>{
     const c=cands[+card.dataset.i], name=normRoad(val(card,'.imp-name').value), uf=val(card,'.imp-uf').value;
-    if(val(card,'.imp-ttl')) val(card,'.imp-ttl').textContent=(name||'Sem nome')+(uf?'/'+uf:'');
+    /* linha sem KM (vinda de desenho): o título mostra o tamanho e a camada, para escolher o eixo */
+    if(val(card,'.imp-ttl')) val(card,'.imp-ttl').textContent=c.hasKm||c.lenM==null ? (name||'Sem nome')+(uf?'/'+uf:'') : fkm(c.lenM/1000)+' km'+(c.label?' · '+c.label.replace(/:\d+$/,''):'');
     const pontaB=!c.hasKm && val(card,'.imp-ponta .on').dataset.v==='B';
     /* ficha fechada não desenha: o arquivo nacional do SNV tem centenas de rodovias */
     val(card,'.imp-draw').innerHTML=card.classList.contains('shut')?'':_impSvg(c, pontaB);
@@ -2826,6 +2864,8 @@ function openImportDialog({cands, fname}){
       jobs.push(job);
     }
     if(!jobs.length){ err.textContent='Marque pelo menos uma rodovia.'; return }
+    const ids=jobs.map(j=>j.name+'/'+j.uf), dup=ids.find((x,i)=>ids.indexOf(x)!==i);
+    if(dup){ err.textContent='Duas linhas marcadas com o mesmo nome ('+dup+').\nDesmarque uma ou mude o nome.'; return }
     ok.disabled=true; _impBusy=true;
     try{
       const inst=[];
