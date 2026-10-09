@@ -129,7 +129,7 @@ function story(ps, { revela = [] } = {}) {
   const fone = retrato.length ? `<div class="fone"><div class="h-moldura"><div class="h-tela">${retrato.map((t, i) => tl(t, i === 0, revela.includes(t) ? ' data-revela' : '')).join('')}${sb}<span class="foco livre"></span></div></div></div>` : '';
   const foneD = deitado.length ? `<div class="fone-d"><div class="h-moldura"><div class="h-tela">${deitado.map((t, i) => tl(t, i === 0)).join('')}</div></div></div>` : '';
   let k = 0;
-  return `<div class="story"><div class="story-fig" aria-hidden="true">${fone}${foneD}</div>
+  return `<div class="story"><div class="story-fig" aria-hidden="true">${fone}${foneD}<div class="leg-passo"></div></div>
     <ol class="passos">${ps.map(p => `<li class="passo" data-tela="${p.tela}"${p.box ? ` data-box="${p.box}"` : ''}${p.or ? ' data-or="deitado"' : ''}><div class="passo-in"><span class="n">${p.num || '·'}</span><div><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></div></div></li>`).join('')}</ol></div>`;
 }
 const dica = d => d ? `<div class="dica cdk" data-sobe>${onda('tile')}<b>Dica</b><p>${esc(d)}</p></div>` : '';
@@ -147,7 +147,7 @@ const LEGENDA_PASSOS = [
   { titulo: 'Nome do arquivo', texto: 'BR-226-RN_KM326+040_LD_2026-09-15_11-27-05.jpg. Rodovia, KM, lado, data e hora no nome, e a localização também nos dados da foto. Este é um modelo de exemplo: você escolhe o que aparece, a posição, a cor e o fundo.' },
 ];
 function blocoLegenda() {
-  return `<div class="story"><div class="story-fig foto" aria-hidden="true"><div class="quadro"><div class="quadro-in"><img src="${FOTO_CHEIA}" alt=""><span class="foco livre"></span></div></div></div>
+  return `<div class="story"><div class="story-fig foto" aria-hidden="true"><div class="quadro"><div class="quadro-in"><img src="${FOTO_CHEIA}" alt=""><span class="foco livre"></span></div></div><div class="leg-passo"></div></div>
     <ol class="passos">${LEGENDA_PASSOS.map(p => `<li class="passo" data-tela=""${p.box ? ` data-box="${p.box}"` : ''}><div class="passo-in"><span class="n">${p.num || '·'}</span><div><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></div></div></li>`).join('')}</ol></div>`;
 }
 function blocoInstalacao() {

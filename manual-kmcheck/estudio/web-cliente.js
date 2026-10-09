@@ -40,6 +40,7 @@
   const manif = $('.manifesto'), mWords = manif ? $$('.w', manif) : [];
 
   /* ---------- rolagem guiada (celular parado + holofote) ---------- */
+  const estreitas = [];
   $$('.story').forEach(st => {
     const fig = $('.story-fig', st), fone = $('.fone', fig), foco = $('.foco', fig), passos = $$('.passo', st);
     const ativa = p => {
@@ -53,6 +54,8 @@
         fone.classList.toggle('esc', telaEscura(atual));
       }
       if (fig.classList.contains('foto')) fig.classList.toggle('zoom', !!p.dataset.box);
+      const leg = $('.leg-passo', fig);
+      if (leg && getComputedStyle(leg).display !== 'none') { leg.innerHTML = $('.passo-in', p).innerHTML; leg.classList.remove('troca'); void leg.offsetWidth; leg.classList.add('troca'); }
       if (foco) {
         if (p.dataset.box) {
           const [l, t2, w, h] = p.dataset.box.split(',').map(Number);
@@ -61,8 +64,9 @@
         } else foco.classList.add('livre');
       }
     };
-    const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && ativa(e.target)), { rootMargin: '-46% 0px -46% 0px' });
-    passos.forEach(p => io.observe(p));
+    /* celular: vale o último passo que chegou logo abaixo do aparelho (calculado na rolagem) */
+    if (matchMedia('(max-width: 900px)').matches) estreitas.push({ fig, passos, ativa, atual: null });
+    else { const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && ativa(e.target)), { rootMargin: '-46% 0px -46% 0px' }); passos.forEach(p => io.observe(p)); }
     if (passos[0]) ativa(passos[0]);
   });
 
@@ -84,13 +88,13 @@
     };
     requestAnimationFrame(passo);
   };
-  const ioCap = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    const c = e.target; if (c === capAtual) return; capAtual = c;
+  const marcaCap = vh => {
+    let c = caps[0];
+    for (const x of caps) if (x.getBoundingClientRect().top <= vh * .42) c = x;
+    if (c === capAtual) return; capAtual = c;
     odo(c.dataset.km); embaralha(c.dataset.titulo); hudOlho.textContent = 'KM ' + c.dataset.km;
     $$('a', hudMenu).forEach(a => a.classList.toggle('atual', a.getAttribute('href') === '#' + c.id));
-  }), { rootMargin: '-40% 0px -55% 0px' });
-  caps.forEach(c => ioCap.observe(c));
+  };
   const ioPassou = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting || e.boundingClientRect.top < 0) e.target.classList.add('passou'); }), { rootMargin: '0px 0px -45% 0px' });
   caps.forEach(c => ioPassou.observe(c));
   const abreMenu = abrir => { hudMenu.hidden = !abrir; hud.toggleAttribute('data-aberto', abrir); hudBar.setAttribute('aria-expanded', abrir); };
@@ -132,6 +136,13 @@
     if (hb >= 40 && !hudMenu.hidden) abreMenu(false);
     /* leve paralaxe na foto do palco enquanto o topo sai */
     if (palcoFoto && !reduz) palcoFoto.style.setProperty('--paralaxe', Math.min(1, Math.max(0, -hero.getBoundingClientRect().top / vh)).toFixed(3));
+    marcaCap(vh);
+    for (const s of estreitas) {
+      const fr = s.fig.getBoundingClientRect(); if (fr.bottom < -vh || fr.top > vh * 2) continue;
+      const linha = fr.top + fr.height * .5; let a = s.passos[0];
+      for (const p of s.passos) if (p.getBoundingClientRect().top <= linha) a = p;
+      if (a !== s.atual) { s.atual = a; s.ativa(a); }
+    }
     /* progresso da viagem (eixo lateral e barra do painel) */
     const r = viagem.getBoundingClientRect();
     const p = Math.min(1, Math.max(0, (vh * .5 - r.top) / r.height));
