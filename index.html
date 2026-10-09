@@ -1900,6 +1900,8 @@ const modoTeste=()=>document.documentElement.classList.contains('kc-teste');
     const liga=!modoTeste();
     document.documentElement.classList.toggle('kc-teste', liga);
     try{ liga ? localStorage.setItem('kc-teste','1') : localStorage.removeItem('kc-teste') }catch(e){}
+    /* ao ligar o teste, o cartão de boas-vindas volta (senão, quem já abriu o manual nunca mais o veria para testar) */
+    if(liga) try{ localStorage.removeItem('kc-manual-visto') }catch(e){}
     mostraBoasVindas();
   });
 })();
