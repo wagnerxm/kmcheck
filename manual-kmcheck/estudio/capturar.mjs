@@ -170,9 +170,10 @@ const cenas = {
   },
   async galeria() {
     const p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);
-    const fotos = ['foto-campo-tapaburaco.webp', 'foto-campo-rodovia.webp'].map(n => 'data:image/webp;base64,' + fs.readFileSync(path.resolve('manual-kmcheck/estudio/' + n)).toString('base64'));
-    await p.evaluate(async (fotos) => {
-      const nomes = ['BR-405-RN_KM138+799_LD_2026-10-07_10-48-12.jpg', 'BR-226-RN_KM326+040_LD_2026-09-15_11-27-05.jpg'];
+    /* a foto aberta na galeria é a mesma da legenda do manual (gerada pelo app em fotolegenda) */
+    const fotos = ['foto-campo-tapaburaco.webp', 'foto-campo-nova-legenda.webp'].map(n => 'data:image/webp;base64,' + fs.readFileSync(path.resolve('manual-kmcheck/estudio/' + n)).toString('base64'));
+    await p.evaluate(async (fotos, NOME_LEG) => {
+      const nomes = ['BR-405-RN_KM138+799_LD_2026-10-07_10-48-12.jpg', NOME_LEG];
       for (let i = 0; i < fotos.length; i++) {
         const bin = atob(fotos[i].split(',')[1]), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k); const blob = new Blob([u8], { type: 'image/webp' });
         const img = await createImageBitmap(blob), c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0);
@@ -180,7 +181,7 @@ const cenas = {
         const id = await savePhotoToGallery(jpg, nomes[i]); await markPhotoSaved(id);
       }
       await openGallery();
-    }, fotos);
+    }, fotos, JSON.parse(fs.readFileSync(path.resolve('manual-kmcheck/estudio/legenda.json'), 'utf8')).nome);
     await print(p, '13-galeria', { marcas: [[1,"#gal-close"],[2,"#gal-clean"],[3,"#gal-share"],[4,"#gal-count"],[5,"#gal-del"],[6,"#gal-caption"]], espera: 1500 }); await p.close();
   },
 
