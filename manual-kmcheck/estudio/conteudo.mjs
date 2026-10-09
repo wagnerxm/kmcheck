@@ -2,7 +2,9 @@
  * uma ideia por frase. Cada "tela" aponta um print de manual-kmcheck/prints e, quando tem
  * marcadores, a lista "itens" segue a mesma numeração gravada em prints/marcas.json. */
 
-export const VERSAO = '293';
+import fs from 'node:fs';
+/* versão do manual = versão do app (número do cache no sw.js), para nunca ficar desatualizada */
+export const VERSAO = (fs.readFileSync(new URL('../../sw.js', import.meta.url), 'utf8').match(/kmcheck-v(\d+)/) || [, '?'])[1];
 export const DATA = 'outubro de 2026';
 
 export const passosRapidos = [
