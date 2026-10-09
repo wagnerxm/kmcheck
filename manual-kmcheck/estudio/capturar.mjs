@@ -99,6 +99,18 @@ async function printSecao(page, nome, titulo) {
   }, titulo);
   await print(page, nome);
 }
+/* gira um print já salvo (em graus) — usado para mostrar o celular deitado */
+async function girarPrint(page, nome, graus) {
+  const arq = path.join(DIR, nome + '.png');
+  const src = 'data:image/png;base64,' + fs.readFileSync(arq).toString('base64');
+  const out = await page.evaluate(async (src, graus) => {
+    const im = new Image(); im.src = src; await im.decode();
+    const c = document.createElement('canvas'); c.width = im.height; c.height = im.width; const g = c.getContext('2d');
+    g.translate(c.width / 2, c.height / 2); g.rotate(graus * Math.PI / 180); g.drawImage(im, -im.width / 2, -im.height / 2);
+    return c.toDataURL('image/png');
+  }, src, graus);
+  fs.writeFileSync(arq, Buffer.from(out.split(',')[1], 'base64'));
+}
 /* ── cenas ── */
 const cenas = {
   /* a foto da rodovia (sem legenda) vira o vídeo da câmera; o app desenha a legenda ao vivo por cima */
@@ -147,9 +159,14 @@ const cenas = {
     await print(p, '10-camera', { marcas: [[1,"#camback"],[2,"#camgpsdot"],[3,"#camflip"],[4,"#liveplate"],[5,"#camfmts"],[6,"#cam-logo"],[7,"#cam-ld"],[8,"#cam-svc"],[9,"#shutter"],[10,"#cam-settings"],[11,"#cam-flash"],[12,"#cam-gallery"]], espera: 3500 });
     await p.evaluate(() => document.getElementById('cam-svc').click()); await print(p, '11-camera-servico-contrato', { espera: 900 });
     await p.close();
-    p = await abrir({ largura: 844, altura: 390 }); await posicionar(p, 'BR-226/RN', 326.04);
+    /* celular deitado, como no app de verdade: a página fica EM PÉ (travada em retrato) e só os botões e a
+       legenda giram pelo sensor (S.sensorTilt). O print em pé é girado depois para mostrar o aparelho deitado. */
+    p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);
     await p.evaluate(() => { localStorage.setItem('kc-svcsel', 'Aplicação de CBUQ'); openCam() });
-    await print(p, '12-camera-deitada', { espera: 3500 }); await p.close();
+    await espera(3000);
+    await p.evaluate(() => { S.sensorTilt = 90; refreshTilt() });
+    await print(p, '12-camera-deitada', { espera: 1200 });
+    await girarPrint(p, '12-camera-deitada', -90); await p.close();
   },
   async galeria() {
     const p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);
