@@ -178,7 +178,9 @@ a{color:inherit}
 .cap.passou .marco{transform:scale(1);filter:none}
 
 /* ===== capítulo ===== */
-.cap{position:relative;padding:120px 0 40px;scroll-margin-top:calc(var(--topo) + var(--hud))}
+/* título do capítulo logo abaixo do painel fixo (o espaço entre capítulos vem do fim do anterior) */
+.cap{position:relative;padding:20px 0 40px;scroll-margin-top:calc(var(--topo) + var(--hud))}
+.cap+.cap{margin-top:60px}
 .cap-h{max-width:600px}
 .cap-h .olho{color:#7d9a12;margin-bottom:12px}
 .cap-h h2{font:900 clamp(38px,5.6vw,72px)/.96 Inter,sans-serif;letter-spacing:-.05em}
