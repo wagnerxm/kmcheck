@@ -215,6 +215,12 @@
 
   /* ---------- topo interativo ---------- */
   const cena = $('.cena');
+  /* Esc fecha a janela das dicas e o sumário (vale com ou sem o topo interativo) */
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (janela) { fechaJanela(); e.stopImmediatePropagation(); }
+    else if (!hudMenu.hidden) { abreMenu(false); e.stopImmediatePropagation(); }
+  });
   if (!cena) return;   // manual sem o topo interativo
   const status = $('.h-status'), area = $('.dock-area');
   const pontos = $$('.ponto', cena);
@@ -295,9 +301,7 @@
   });
   addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (janela) fechaJanela();
-    else if (!hudMenu.hidden) abreMenu(false);
-    else if (modo === 'detalhe') volta();
+    if (modo === 'detalhe') volta();
     else if (menu) fechaMenuCena();
   });
   window.__manual = { entra, volta, abreMenuCena, fechaMenuCena };
