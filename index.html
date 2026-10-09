@@ -227,18 +227,22 @@ html.kc-teste #help-toggle+#search-toggle{margin-left:8px}
 .bv-c[data-modo="meio"] .so-inicio,.bv-c[data-modo="meio"] .so-fim{display:none}
 .bv-c[data-modo="fim"] .so-inicio,.bv-c[data-modo="fim"] .so-meio{display:none}
 /* pedido de autorização dos dados de uso (1ª abertura) — mesmo cartão claro das boas-vindas */
-#uso{position:fixed;inset:0;z-index:260;display:grid;place-items:end center;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:rgba(8,10,12,.46);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+/* aviso de dados de uso: cartão claro e compacto no centro, com o selo do KM Check (não imita o sistema) */
+#uso{position:fixed;inset:0;z-index:260;display:grid;place-items:center;padding:16px;background:rgba(8,10,12,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #uso[hidden]{display:none}
-.uso-c{width:min(420px,100%);border-radius:26px;padding:22px 22px 14px;color:#1c2333;background:linear-gradient(180deg,#fff,#f4f6f5);box-shadow:0 30px 70px -20px rgba(0,0,0,.6);animation:usoSobe .45s cubic-bezier(.2,.9,.25,1)}
-@keyframes usoSobe{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
-.uso-ic{width:42px;height:42px;border-radius:50%;background:#1c2333;display:grid;place-items:center;margin-bottom:12px}
-.uso-ic svg{width:21px;height:21px;stroke:#c9e463;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.uso-c h2{font:800 21px/1.15 var(--sans);letter-spacing:-.02em}
-.uso-c p{font-size:14px;line-height:1.5;color:#3b4559;margin-top:8px}
-.uso-c a{color:#5c7690;font-weight:600}
-.uso-b{display:grid;gap:4px;margin-top:16px}
-.uso-sim{height:50px;border-radius:999px;border:0;cursor:pointer;background:linear-gradient(180deg,#22262b,#121416);color:#c9e463;font:700 15px var(--sans)}
-.uso-nao{height:40px;border:0;background:none;cursor:pointer;color:#66748a;font:600 13.5px var(--sans)}
+.uso-c{width:min(340px,100%);border-radius:24px;padding:18px 16px 12px;color:#1c2333;background:linear-gradient(180deg,#fff,#f4f6f5);box-shadow:0 24px 50px -16px rgba(0,0,0,.55);animation:usoSobe .4s cubic-bezier(.2,.9,.25,1)}
+@keyframes usoSobe{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.uso-k{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.uso-ic{width:26px;height:26px;border-radius:50%;background:#1c2333;display:grid;place-items:center;flex:0 0 auto}
+.uso-ic svg{width:14px;height:14px;stroke:#c9e463;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.uso-k b{font:700 10.5px var(--sans);letter-spacing:.2em;color:#6f8a0e}
+.uso-c h2{font:800 18px/1.2 var(--sans);letter-spacing:-.02em;white-space:nowrap}
+.uso-c p{font-size:13.5px;line-height:1.45;color:#3b4559;margin-top:6px}
+.uso-b{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.uso-b button{height:44px;border-radius:999px;cursor:pointer;font:600 14.5px var(--sans)}
+.uso-nao{background:#fff;border:1px solid #dfe3e6;color:#3b4559}
+.uso-sim{border:0;background:linear-gradient(180deg,#22262b,#121416);color:#c9e463;font-weight:700!important}
+.uso-pol{display:block;text-align:center;margin-top:9px;font-size:11.5px;color:#8a95a5;text-decoration:none}
 @media (prefers-reduced-motion:reduce){.uso-c{animation:none}}
 @media (prefers-reduced-motion:reduce){#bv,.bv-c,.bv-p,.bv-arte img,.bv-saud,.bv-fone,.bv-foco,.bv-ok,.bv-trilho i{transition:none!important;transform:none!important}}
 /* telas baixas (iPhone SE e afins): tudo um pouco mais compacto para o cartão caber sem rolar */
@@ -1409,11 +1413,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <div class="dev-credit">Desenvolvido por Wagner Machado</div>
 <div id="uso" role="dialog" aria-modal="true" aria-labelledby="uso-tit" hidden>
   <div class="uso-c">
-    <span class="uso-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
-    <h2 id="uso-tit">Ajude a melhorar o KM Check</h2>
-    <p>Com a sua permissão, o app envia dados técnicos de uso para o nosso servidor.<br>Modelo do celular, versão do app, rodovias baixadas e a região aproximada.<br>Nunca envia fotos, legendas, contratos ou o seu nome.</p>
-    <p>Você pode mudar isso a qualquer hora em Configurações. <a href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener">Política de privacidade</a></p>
-    <div class="uso-b"><button class="uso-sim" id="uso-sim">Permitir</button><button class="uso-nao" id="uso-nao">Agora não</button></div>
+    <div class="uso-k"><span class="uso-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span><b>KM CHECK</b></div>
+    <h2 id="uso-tit">Ajude a melhorar o app</h2>
+    <p>Dados técnicos ajudam a identificar falhas e melhorar o aplicativo.<br>Suas fotos nunca são enviadas.</p>
+    <div class="uso-b"><button class="uso-nao" id="uso-nao">Agora não</button><button class="uso-sim" id="uso-sim">Permitir</button></div>
+    <a class="uso-pol" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener">Política de privacidade</a>
   </div>
 </div>
 <div id="bv" class="so-teste" role="dialog" aria-modal="true" aria-labelledby="bv-tit" hidden>
@@ -2182,7 +2186,21 @@ document.getElementById('uso-sim').onclick=()=>decideUso(true);
 document.getElementById('uso-nao').onclick=()=>decideUso(false);
 document.getElementById('cfg-uso').checked=usoAutorizado();
 document.getElementById('cfg-uso').addEventListener('change', e=>{ try{ localStorage.setItem('kc-uso', e.target.checked?'sim':'nao') }catch(_){} });
-setTimeout(()=>{ if(!usoDecidido()) document.getElementById('uso').hidden=false; else mostraBoasVindas() }, 900);
+/* aparece ao abrir o app, mas só DEPOIS da pergunta de localização do celular (as duas juntas se atropelam):
+   espera a permissão do GPS deixar de estar "a perguntar" (ou a 1ª posição chegar), no máximo ~20 s */
+(function perguntaUso(){
+  if(usoDecidido()){ setTimeout(mostraBoasVindas, 700); return }
+  const t0=Date.now();
+  const pronto=async()=>{
+    if(S.pos && isFinite(S.pos.lat)) return true;
+    try{ const st=await navigator.permissions.query({name:'geolocation'}); return st.state!=='prompt' }catch(e){ return true }
+  };
+  const tenta=async()=>{
+    if(await pronto() || Date.now()-t0>20000) setTimeout(()=>{ if(!usoDecidido()) document.getElementById('uso').hidden=false }, 600);
+    else setTimeout(tenta, 800);
+  };
+  setTimeout(tenta, 900);
+})();
 document.getElementById('nav-cam').onclick=openCam;
 let _toastT=0;
 function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
