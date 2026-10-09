@@ -245,18 +245,15 @@ a{color:inherit}
 .inst li b{color:#fff}
 .nota{margin-top:18px;font-size:15px;color:var(--tinta2)}
 
-/* configurações: galeria que anda de lado com a rolagem */
-.galeria{position:relative;margin-top:40px;width:100vw;margin-left:calc(-1 * (var(--gutter) + var(--eixo)) - max(0px,(100vw - 1180px) / 2))}
-.galeria-in{position:sticky;top:var(--topo);height:calc(100vh - var(--topo));height:calc(100svh - var(--topo));display:flex;align-items:center;overflow:hidden}
-.trilha{display:flex;gap:24px;padding:0 6vw 0 calc(var(--gutter) + var(--eixo) + max(0px,(100vw - 1180px) / 2));will-change:transform}
-.aj{flex:0 0 min(400px,78vw);display:grid;grid-template-columns:150px minmax(0,1fr);gap:20px;padding:22px;border-radius:26px}
-.aj-tela{aspect-ratio:390/844;border-radius:20px;overflow:hidden;box-shadow:0 0 0 5px #0b0c0d,0 0 0 6px rgba(255,255,255,.14)}
+/* configurações: grade de cartões inteiros (nada corta nas bordas, em nenhuma largura) */
+.ajustes{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:20px;margin-top:40px}
+.aj{display:grid;grid-template-columns:clamp(96px,28%,150px) minmax(0,1fr);gap:clamp(14px,3vw,22px);align-items:start;padding:clamp(16px,3vw,22px);border-radius:26px;min-width:0}
+.aj-tela{aspect-ratio:390/844;border-radius:16px;overflow:hidden;box-shadow:0 0 0 4px #0b0c0d,0 0 0 5px rgba(255,255,255,.14)}
 .aj-tela img{display:block;width:100%;height:100%;object-fit:cover}
-.aj h3{font:900 20px/1.1 Inter,sans-serif;letter-spacing:-.03em;margin-bottom:10px}
+.aj>div:last-child{min-width:0}
+.aj h3{font:900 20px/1.1 Inter,sans-serif;letter-spacing:-.03em;margin-bottom:10px;overflow-wrap:anywhere}
 .aj dt{font:700 13.5px Inter,sans-serif;margin-top:8px}
-.aj dd{font-size:12.5px;line-height:1.45;color:#aeb5be}
-.galeria.nativo .galeria-in{position:static;height:auto;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 0 24px;-webkit-overflow-scrolling:touch}
-.galeria.nativo .aj{scroll-snap-align:start}
+.aj dd{font-size:12.5px;line-height:1.45;color:#aeb5be;overflow-wrap:anywhere}
 
 /* dicas: o cartão abre uma janela que nasce dele */
 .faq{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:44px}
@@ -306,8 +303,6 @@ a{color:inherit}
   .eixo{left:8px;width:3px}
   .marco{display:none}
   .viagem{padding-left:calc(var(--gutter) + 6px)}
-  .galeria{margin-left:calc(-1 * (var(--gutter) + 6px))}
-  .trilha{padding-left:calc(var(--gutter) + 6px)}
   .story{grid-template-columns:1fr;gap:0;margin-top:28px}
   .story-fig{top:calc(var(--topo) + 72px);height:calc(100vh - var(--topo) - 88px);height:calc(100svh - var(--topo) - 88px);z-index:2}
   .fone{height:94%}
@@ -324,7 +319,6 @@ a{color:inherit}
   .cartao-passo{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:min(520px,72vh);top:calc(var(--topo) + 74px + var(--i) * 12px)}
   .cp-tela img{width:48%;top:6%}
   .inst{grid-template-columns:1fr}
-  .aj{grid-template-columns:110px minmax(0,1fr);padding:18px}
   .fim-c{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){

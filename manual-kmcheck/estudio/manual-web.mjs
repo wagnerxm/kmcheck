@@ -96,7 +96,7 @@ function blocoLegenda() {
     <ol class="passos">${LEGENDA_PASSOS.map(p => `<li class="passo" data-tela=""${p.box ? ` data-box="${p.box}"` : ''}><div class="passo-in"><span class="n">${p.num || '·'}</span><div><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></div></div></li>`).join('')}</ol></div>`;
 }
 function blocoConfig(c) {
-  return `<div class="galeria"><div class="galeria-in"><div class="trilha">${c.ajustes.map(a => `<article class="aj cdk">${onda('main')}<div class="aj-tela"><img src="${SCR[a.img]}" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">${esc(a.titulo)}</h3><dl>${a.linhas.map(l => `<dt>${esc(l[0])}</dt><dd>${esc(l[1])}</dd>`).join('')}</dl></div></article>`).join('')}</div></div></div>`;
+  return `<div class="ajustes">${c.ajustes.map(a => `<article class="aj cdk">${onda('main')}<div class="aj-tela"><img src="${SCR[a.img]}" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">${esc(a.titulo)}</h3><dl>${a.linhas.map(l => `<dt>${esc(l[0])}</dt><dd>${esc(l[1])}</dd>`).join('')}</dl></div></article>`).join('')}</div>`;
 }
 function blocoFaq(c) {
   const img = c.telas && c.telas[0] ? SCR[c.telas[0].img] : '';
