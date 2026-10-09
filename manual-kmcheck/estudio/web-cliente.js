@@ -114,11 +114,18 @@
   };
 
   /* ---------- laço de rolagem ---------- */
+  const capaImg = $('.capa-img'), capaWeb = $('.capa-web'), capaTxt = $('.capa-txt');
   const viagem = $('.viagem'), eixo = $('.eixo i'), trilhoHud = $('.trilho i', hud), palcoFoto = $('.palco-foto');
   let pedido = false;
   const quadro = () => {
     pedido = false;
     const vh = innerHeight, y = scrollY;
+    /* capa: a arte dos celulares se dissolve no fundo, e o texto sobe e some */
+    if (capaWeb) {
+      const c = capaWeb.getBoundingClientRect(), k = Math.min(1, Math.max(0, -c.top / (c.height * .5)));
+      capaImg.style.opacity = (1 - k).toFixed(3); capaImg.style.visibility = k >= 1 ? 'hidden' : '';
+      capaTxt.style.opacity = (1 - k * 1.3).toFixed(3); if (!reduz) capaTxt.style.transform = 'translateY(' + (-k * 60).toFixed(1) + 'px)';
+    }
     /* painel fixo aparece depois do topo */
     const hb = hero.getBoundingClientRect().bottom;
     hud.classList.toggle('on', hb < 40 && viagem.getBoundingClientRect().top < vh * .35);

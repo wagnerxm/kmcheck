@@ -30,9 +30,10 @@ const sb = '<div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span
 const tl = (n, on, extra = '') => `<img class="tl${on ? ' on' : ''}" data-t="${n}" data-esc="${ESCURAS.has(n) ? 1 : 0}" src="${SCR[n]}" alt="" decoding="async"${extra}>`;
 
 /* fundo claro abstrato (cetim claro do app + um fio verde-limão), fixo atrás de toda a página */
-const CETIM = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='none'><defs><filter id='b' x='-10%' y='-50%' width='120%' height='200%'><feGaussianBlur stdDeviation='28'/></filter><linearGradient id='h' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fff' stop-opacity='.95'/><stop offset='1' stop-color='#fff' stop-opacity='0'/></linearGradient><linearGradient id='s' x1='0' y1='1' x2='0' y2='0'><stop offset='0' stop-color='#9aa6b2' stop-opacity='.38'/><stop offset='1' stop-color='#9aa6b2' stop-opacity='0'/></linearGradient><linearGradient id='l' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#b7d92d' stop-opacity='0'/><stop offset='.3' stop-color='#b7d92d' stop-opacity='.75'/><stop offset='.55' stop-color='#b7d92d' stop-opacity='.15'/><stop offset='.85' stop-color='#c9e463' stop-opacity='.85'/><stop offset='1' stop-color='#b7d92d' stop-opacity='0'/></linearGradient></defs><path d='M0,330 C260,250 520,280 800,350 C1080,420 1340,400 1600,300 L1600,210 C1340,300 1080,320 800,250 C520,180 260,150 0,240 Z' fill='url(#s)' filter='url(#b)'/><path d='M0,330 C260,250 520,280 800,350 C1080,420 1340,400 1600,300 L1600,440 C1340,540 1080,560 800,490 C520,420 260,390 0,470 Z' fill='url(#h)' filter='url(#b)'/><path d='M0,640 C300,560 640,620 940,660 C1200,694 1420,650 1600,600 L1600,520 C1420,570 1200,614 940,580 C640,540 300,480 0,560 Z' fill='url(#s)' filter='url(#b)'/><path d='M0,640 C300,560 640,620 940,660 C1200,694 1420,650 1600,600 L1600,740 C1420,790 1200,834 940,800 C640,760 300,700 0,780 Z' fill='url(#h)' filter='url(#b)' opacity='.85'/><path d='M0,900 C380,840 820,900 1600,860 L1600,1000 L0,1000 Z' fill='url(#s)' filter='url(#b)' opacity='.7'/><path d='M0,332 C260,252 520,282 800,352 C1080,422 1340,402 1600,302' fill='none' stroke='url(#l)' stroke-width='1.6'/><path d='M0,642 C300,562 640,622 940,662 C1200,696 1420,652 1600,602' fill='none' stroke='#fff' stroke-opacity='.9' stroke-width='1.2'/></svg>`)}")`;
-const GRAO = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1 0 0 0 0 .12 0 0 0 0 .16 .05 0 0 0 0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`)}")`;
-const FUNDO = `${GRAO},${CETIM} center/100% 100% no-repeat,radial-gradient(1200px 800px at 18% 0%,#ffffff 0%,#f1f2f1 45%,#e4e7ea 100%)`;
+/* fundo e capa: as artes aprovadas (mesmo enquadramento 1672×941), embutidas como estão, sem recomprimir */
+const b64 = a => 'data:image/webp;base64,' + fs.readFileSync(path.join(EST, a)).toString('base64');
+const FUNDO_IMG = b64('fundo-manual.webp'), CAPA_IMG = b64('capa-manual.webp');
+const FUNDO = 'var(--fundo-img) var(--fundo-pos,center)/cover no-repeat,#eef0f1';
 
 /* ---------- topo interativo ---------- */
 const DET = {
@@ -55,8 +56,7 @@ const MENUS = { noite: { titulo: 'Modo Carro', ops: [['dia', 'Dia'], ['noite', '
 const seta = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>';
 const hero = `
 <section class="hero" id="topo" aria-label="Conheça o KM Check">
-  <header class="h-top"><img class="h-logo" src="${LOGO}" alt="KM Check"><span class="h-meio">Manual do usuário</span><span>Versão ${VERSAO} · ${DATA[0].toUpperCase() + DATA.slice(1)}</span></header>
-  <div class="h-tit"><h1 data-rev>O KM certo,<br>em cada foto.</h1><p>Explore o app por dentro.<br>Toque num ponto para começar.</p></div>
+  <div class="h-tit"><h2 data-rev>O KM certo,<br>em cada foto.</h2><p>Explore o app por dentro.<br>Toque num ponto para começar.</p></div>
   <div class="cena" data-modo="geral">
     <div class="palco">
       <img class="palco-foto" src="${FOTO_PALCO}" alt="">
@@ -188,12 +188,21 @@ const fim = `<footer class="fim"><div class="fim-c cdk" data-sobe>${onda('main')
 const CSS = fs.readFileSync(path.join(EST, 'web.css'), 'utf8').replaceAll('/*FUNDO*/', FUNDO);
 const JS = fs.readFileSync(path.join(EST, 'web-cliente.js'), 'utf8');
 const FONTES = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">';
+const capa = `<img class="capa-img" src="${CAPA_IMG}" alt="" aria-hidden="true">
+<section class="capa-web" aria-label="Capa"><div class="capa-txt">
+  <span class="olho">Manual do usuário · Versão ${VERSAO}</span>
+  <h1 data-rev>Manual do<br>usuário</h1>
+  <p>Registro fotográfico de rodovias com KM, estaca e coordenadas gravados na própria foto. Direto do campo, sem depender de internet.</p>
+  <div class="capa-chips"><span>Versão ${VERSAO}</span><span>${DATA[0].toUpperCase() + DATA.slice(1)}</span><span>iPhone e Android</span></div>
+</div>
+<div class="capa-pe"><span>Desenvolvido por <b>Wagner Machado</b></span><a class="rolar" href="#topo">Role para começar<i aria-hidden="true"></i></a></div></section>`;
 const corpo = `<title>Manual do KM Check</title>
 ${FONTES}
-<style>${CSS}</style>
+<style>:root{--fundo-img:url("${FUNDO_IMG}")}${CSS}</style>
 ${DEFS}
 ${hud}
-<main>${hero}
+<main>${capa}
+${hero}
 ${manifesto}
 <div class="viagem"><span class="eixo" aria-hidden="true"><i></i></span>
 ${rapido}
@@ -217,10 +226,10 @@ if (process.argv.includes('--capturas')) {
   for (const [w, h, tag] of [[1440, 900, 'pc'], [390, 844, 'cel']]) {
     await p.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
     await p.setContent(doc, { waitUntil: 'load', timeout: 120000 }); await espera(1500);
-    const alvos = ['#topo', '#manifesto', '#rapido', '#inicio', '#camera', '#legenda', '#carro', '#config', '#problemas', '.fim'];
+    const alvos = ['.capa-web', '.capa-img', '#topo', '#manifesto', '#rapido', '#inicio', '#camera', '#legenda', '#carro', '#config', '#problemas', '.fim'];
     for (const [i, a] of alvos.entries()) {
-      const extra = { '#manifesto': h * .7, '#rapido': h * 1.6, '#inicio': h * 1.8, '#camera': h * 1.2, '#legenda': h * 1.5, '#carro': h * 5.5, '#config': h * 1.2 }[a] || 0;
-      await p.evaluate((a, extra) => { const el = document.querySelector(a); scrollTo({ top: el.getBoundingClientRect().top + scrollY + extra, behavior: 'instant' }); }, a, extra);
+      const extra = { '.capa-img': h * .4, '#manifesto': h * .7, '#rapido': h * 1.6, '#inicio': h * 1.8, '#camera': h * 1.2, '#legenda': h * 1.5, '#carro': h * 5.5, '#config': h * 1.2 }[a] || 0;
+      await p.evaluate((a, extra) => { const el = document.querySelector(a); scrollTo({ top: (a === '.capa-img' ? 0 : el.getBoundingClientRect().top + scrollY) + extra, behavior: 'instant' }); }, a, extra);
       await espera(1300);
       await p.screenshot({ path: path.join(DIR, `${tag}-${String(i).padStart(2, '0')}-${a.replace(/[#.]/g, '')}.jpg`), type: 'jpeg', quality: 72 });
     }

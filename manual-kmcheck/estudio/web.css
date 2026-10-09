@@ -6,14 +6,14 @@
   --tinta:#1c2333;--tinta2:#3b4559;--tinta3:#66748a;--linha:rgba(28,35,51,.12);
   --lima:#b7d92d;--lima2:#c9e463;--lima-esc:#1d2606;--placa:#13305c;
   --ease:cubic-bezier(.5,0,.2,1);--ease-sai:cubic-bezier(.2,.8,.2,1);
-  --gutter:clamp(20px,4vw,40px);--eixo:88px;
+  --gutter:clamp(20px,4vw,40px);--eixo:88px;--fundo-pos:100% 0%;
   color-scheme:light;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 html,body{margin:0}
 body{font-family:Inter,-apple-system,'SF Pro Text',Helvetica,Arial,sans-serif;color:var(--tinta);background:#eceeef;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;z-index:-1;background:/*FUNDO*/;pointer-events:none}
+body::before{content:'';position:fixed;inset:0;z-index:-2;background:/*FUNDO*/;pointer-events:none}
 h1,h2,h3,p,ol,ul,dl,dd,figure{margin:0}
 ol,ul{padding:0;list-style:none}
 img{max-width:100%}
@@ -55,12 +55,24 @@ a{color:inherit}
 .fone-d .h-tela{border-radius:6.2%/13.5%}
 
 /* ===== TOPO INTERATIVO ===== */
-.hero{max-width:1180px;margin:0 auto;padding:22px var(--gutter) 30px}
+/* ===== capa: a arte da capa fica fixa sobre o fundo (mesmo enquadramento) e se dissolve com a
+   rolagem; os celulares somem e a rodovia do fundo continua exatamente no lugar ===== */
+.capa-img{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:100% 0%;z-index:-1;pointer-events:none;will-change:opacity}
+.capa-web{position:relative;height:100vh;height:100svh;min-height:520px;max-width:1600px;margin:0 auto;padding:0 clamp(24px,6vw,96px);display:flex;flex-direction:column;justify-content:center}
+.capa-txt{max-width:min(560px,44vw);will-change:transform,opacity}
+.capa-txt .olho{color:#6f8a0e;margin-bottom:18px}
+.capa-txt h1{font:900 clamp(52px,7vw,108px)/.9 Inter,sans-serif;letter-spacing:-.055em;color:var(--tinta)}
+.capa-txt p{font-size:clamp(16px,1.5vw,19px);line-height:1.55;color:var(--tinta2);margin-top:24px;max-width:28em}
+.capa-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px}
+.capa-chips span{font:600 11px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta);background:rgba(255,255,255,.62);border:1px solid rgba(28,35,51,.12);padding:8px 13px;border-radius:999px;backdrop-filter:blur(6px)}
+.capa-pe{position:absolute;left:clamp(24px,6vw,96px);right:clamp(24px,6vw,96px);bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12.5px;color:var(--tinta2)}
+.capa-pe .rolar{margin:0}
+.hero{max-width:1180px;margin:0 auto;padding:40px var(--gutter) 30px}
 .h-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--linha);font-size:13px;color:var(--tinta2)}
 .h-top>span:last-child{text-align:right}
 .h-logo{height:34px;width:auto;display:block}
 .h-tit{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:26px 0 18px}
-.h-tit h1{font:800 clamp(36px,5.4vw,66px)/.98 Inter,sans-serif;letter-spacing:-.045em}
+.h-tit h2{font:800 clamp(36px,5.4vw,66px)/.98 Inter,sans-serif;letter-spacing:-.045em}
 .h-tit p{text-align:right;font-size:14px;line-height:1.55;color:var(--tinta2)}
 .cena{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#cfd8de;isolation:isolate}
 .moldura-branca{position:absolute;inset:0;border:3px solid #fff;border-radius:16px;pointer-events:none;z-index:9;box-shadow:0 30px 60px -36px rgba(28,35,51,.55)}
@@ -120,7 +132,7 @@ a{color:inherit}
 .h-notas p{font-size:13.5px;line-height:1.5;color:var(--tinta2);margin-top:6px}
 .dock-area.menu .h-notas{opacity:0;visibility:hidden;position:absolute;inset:0}
 .h-base{display:flex;justify-content:space-between;gap:16px;margin-top:18px;padding-top:14px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--tinta2)}
-.rolar{display:flex;flex-direction:column;align-items:center;gap:8px;margin:34px auto 0;font:600 10.5px Inter,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--tinta3);text-decoration:none;width:max-content}
+.rolar{white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:8px;margin:34px auto 0;font:600 10.5px Inter,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--tinta3);text-decoration:none;width:max-content}
 .rolar i{width:2px;height:38px;border-radius:2px;background:linear-gradient(var(--lima) 0 40%,transparent 40%);background-size:2px 14px;animation:faixa 1.2s linear infinite}
 @keyframes faixa{to{background-position:0 14px}}
 
@@ -149,8 +161,8 @@ a{color:inherit}
 
 /* ===== manifesto: o texto se preenche com a rolagem ===== */
 .manifesto{height:220vh;position:relative}
-.manifesto-in{position:sticky;top:0;height:100vh;display:grid;place-items:center;padding:0 var(--gutter)}
-.manifesto p{max-width:980px;font:800 clamp(28px,4.4vw,56px)/1.12 Inter,sans-serif;letter-spacing:-.035em;color:var(--tinta)}
+.manifesto-in{position:sticky;top:0;height:100vh;display:grid;place-items:start start;padding-top:16vh!important;padding:0 var(--gutter);max-width:1180px;margin:0 auto}
+.manifesto p{max-width:min(600px,40vw);font:800 clamp(28px,3.4vw,50px)/1.12 Inter,sans-serif;letter-spacing:-.035em;color:var(--tinta)}
 .manifesto .w{opacity:.14;transition:opacity .35s ease}
 .manifesto .w.on{opacity:1}
 .manifesto .w.lima{color:#7d9a12}
@@ -167,7 +179,7 @@ a{color:inherit}
 
 /* ===== capítulo ===== */
 .cap{position:relative;padding:120px 0 40px;scroll-margin-top:70px}
-.cap-h{max-width:760px}
+.cap-h{max-width:600px}
 .cap-h .olho{color:#7d9a12;margin-bottom:12px}
 .cap-h h2{font:900 clamp(38px,5.6vw,72px)/.96 Inter,sans-serif;letter-spacing:-.05em}
 .cap-h .intro{font-size:clamp(16px,1.6vw,19px);line-height:1.55;color:var(--tinta2);margin-top:18px;max-width:40em}
@@ -180,7 +192,8 @@ a{color:inherit}
 
 /* rolagem guiada: o celular fica parado e um "holofote" anda pelos itens da tela */
 .story{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);margin-top:56px}
-.story-fig{position:sticky;top:84px;height:calc(100vh - 110px);height:calc(100svh - 110px);display:grid;grid-template-columns:minmax(0,1fr);place-items:center}
+/* texto na faixa clara da esquerda, celular sobre a rodovia da direita (como na capa) */
+.story-fig{order:2;position:sticky;top:84px;height:calc(100vh - 110px);height:calc(100svh - 110px);display:grid;grid-template-columns:minmax(0,1fr);place-items:center}
 .fone{position:relative;height:min(100%,640px);aspect-ratio:390/844;transition:transform .7s var(--ease),opacity .45s}
 .fone-d{position:absolute;width:min(100%,620px);aspect-ratio:844/390;opacity:0;transform:rotate(90deg) scale(.6);transition:transform .7s var(--ease),opacity .45s;pointer-events:none}
 .story-fig.deitado .fone{transform:rotate(-90deg) scale(.85);opacity:0}
@@ -264,10 +277,15 @@ a{color:inherit}
 .fim-c h2{font:900 clamp(36px,5vw,64px)/.95 Inter,sans-serif;letter-spacing:-.05em}
 .fim-c p{font-size:17px;color:#c4c9d0;margin-top:14px}
 .fim-c .trilho{margin-top:22px;height:8px;max-width:420px}
-.creditos{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:22px;font-size:12.5px;color:var(--tinta2)}
+.creditos{display:flex;justify-content:flex-start;column-gap:32px;gap:16px;flex-wrap:wrap;margin-top:22px;font-size:12.5px;color:var(--tinta2)}
 
 @media (max-width:900px){
-  :root{--eixo:0px}
+  :root{--eixo:0px;--fundo-pos:18% 50%}
+  .capa-img{position:absolute;inset:0 0 auto;height:auto;aspect-ratio:1672/941}
+  .capa-web{justify-content:flex-start;padding-top:calc(56.3vw + 28px);padding-bottom:110px;height:auto;min-height:100svh}
+  .capa-txt{position:relative;max-width:none}
+  .manifesto p{max-width:none}
+  .story-fig{order:0}
   .h-meio{display:none}
   .h-top{grid-template-columns:1fr auto}
   .h-tit{flex-direction:column;align-items:flex-start;gap:10px}
