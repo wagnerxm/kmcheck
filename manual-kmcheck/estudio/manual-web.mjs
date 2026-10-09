@@ -127,6 +127,7 @@ const capa = `<img class="capa-img" src="${CAPA_IMG}" alt="" aria-hidden="true">
 </div>
 <div class="capa-pe"><span>Desenvolvido por <b>Wagner Machado</b></span><a class="rolar" href="#rapido">Role para começar<i aria-hidden="true"></i></a></div></section>`;
 const corpo = `<title>Manual do KM Check</title>
+<script>try{ if(window.self!==window.top) document.documentElement.classList.add('embutido') }catch(e){ document.documentElement.classList.add('embutido') }</script>
 ${FONTES}
 <style>:root{--fundo-img:url("${FUNDO_IMG}")}${CSS}</style>
 ${DEFS}
@@ -142,7 +143,9 @@ const SAIDA = path.join(RAIZ, 'manual-km-check.html');
 fs.writeFileSync(SAIDA, corpo);
 console.log('manual-km-check.html', (Buffer.byteLength(corpo) / 1048576).toFixed(2) + ' MB');
 
-/* versão que mora dentro do app (kmcheck/manual/): as imagens viram arquivos com nome pelo conteúdo
+/* versão que mora dentro do app (kmcheck/manual/): abre DENTRO do cartão flutuante, então sem viewport-fit=cover
+   (senão o iPhone desconta a barra de status também ali dentro e a barra do KM desce ~50 px).
+   As imagens viram arquivos com nome pelo conteúdo as imagens viram arquivos com nome pelo conteúdo
    (o HTML fica leve, o celular baixa as imagens conforme a rolagem e o cache do app guarda cada uma) */
 const APP = path.resolve('manual'), IMGD = path.join(APP, 'img');
 fs.mkdirSync(IMGD, { recursive: true });
@@ -160,7 +163,7 @@ const grava = (nome, url) => fs.writeFileSync(path.join(TOUR, nome + '.webp'), B
 for (const n of ['01-inicio', '10-camera', '20-carro-dia', '30-gestao-eixo', '31-importar']) grava(n, SCR[n]);
 grava('foto', FOTO_CHEIA);
 fs.copyFileSync(path.join(EST, 'fundo-manual.webp'), path.join(TOUR, 'fundo.webp'));
-fs.writeFileSync(path.join(APP, 'index.html'), '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"></head><body>' + app + '</body></html>');
+fs.writeFileSync(path.join(APP, 'index.html'), '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"></head><body>' + app + '</body></html>');
 console.log('manual/index.html', (Buffer.byteLength(app) / 1024).toFixed(0) + ' KB +', usados.size, 'imagens');
 
 /* conferência automática: sem erros, sem rolagem lateral, e capturas de alguns pontos da viagem */
