@@ -6035,7 +6035,7 @@ window.addEventListener('beforeinstallprompt', e=>{
 });
 function showInstallPrompt(){
   /* já instalado ou já mostrou — sai */
-  if(_isPWAStandalone) return;
+  if(_isPWAStandalone || NATIVO) return;   // instalado ou baixado da loja: não há o que instalar
   if(localStorage.getItem('kc-install-shown')) return;
   localStorage.setItem('kc-install-shown','1');
 
