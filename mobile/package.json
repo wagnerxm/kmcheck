@@ -1,0 +1,17 @@
+{
+  "name": "kmcheck-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "KM Check para Android (Google Play). O app é o mesmo index.html do site; o Capacitor só embala e liga as partes nativas.",
+  "scripts": {
+    "copiar": "node copiar-app.mjs",
+    "sync": "node copiar-app.mjs && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

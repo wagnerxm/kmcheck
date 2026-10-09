@@ -1,0 +1,17 @@
+{
+  "appId": "br.com.kmcheck.app",
+  "appName": "KM Check",
+  "webDir": "www",
+  "backgroundColor": "#0a0c0e",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}
