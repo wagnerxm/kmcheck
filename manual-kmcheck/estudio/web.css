@@ -6,7 +6,7 @@
   --tinta:#1c2333;--tinta2:#3b4559;--tinta3:#66748a;--linha:rgba(28,35,51,.12);
   --lima:#b7d92d;--lima2:#c9e463;--lima-esc:#1d2606;--placa:#13305c;
   --ease:cubic-bezier(.5,0,.2,1);--ease-sai:cubic-bezier(.2,.8,.2,1);
-  --gutter:clamp(20px,4vw,40px);--eixo:88px;--fundo-pos:100% 0%;--topo:env(safe-area-inset-top,0px);--hud:76px;
+  --gutter:clamp(20px,4vw,40px);--eixo:88px;--fundo-pos:100% 0%;--topo:env(safe-area-inset-top,0px);--hud:66px;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -137,7 +137,7 @@ a{color:inherit}
 @keyframes faixa{to{background-position:0 14px}}
 
 /* ===== painel fixo de leitura (Modo Carro em miniatura): KM do capítulo + barra de progresso ===== */
-.hud{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));z-index:50;transform:translate(-50%,-140%);opacity:0;transition:transform .55s var(--ease),opacity .4s;width:min(560px,calc(100% - 24px))}
+.hud{position:fixed;left:50%;top:calc(4px + env(safe-area-inset-top,0px));z-index:50;transform:translate(-50%,-140%);opacity:0;transition:transform .55s var(--ease),opacity .4s;width:min(560px,calc(100% - 24px))}
 .hud.on{transform:translate(-50%,0);opacity:1}
 .hud-bar{display:flex;align-items:center;gap:14px;padding:8px 10px 8px 8px;border-radius:18px;cursor:pointer;width:100%;text-align:left;font:inherit;color:#fff}
 .hud-placa{display:flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:46px;border-radius:7px;background:var(--placa);box-shadow:0 0 0 2.5px #fff;flex:0 0 auto;font:800 9px/1 Inter,sans-serif;color:#fff}
@@ -194,7 +194,7 @@ a{color:inherit}
 /* o aparelho girado (deitado) não pode alargar a página: corta só na horizontal, sem quebrar o "grudar" */
 .story{overflow-x:clip;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);margin-top:56px}
 /* texto na faixa clara da esquerda, celular sobre a rodovia da direita (como na capa) */
-.story-fig{order:2;position:sticky;top:calc(var(--topo) + 84px);height:calc(100vh - 110px - var(--topo));height:calc(100svh - 110px - var(--topo));display:grid;grid-template-columns:minmax(0,1fr);place-items:center}
+.story-fig{order:2;position:sticky;top:calc(var(--topo) + 74px);height:calc(100vh - 96px - var(--topo));height:calc(100svh - 96px - var(--topo));display:grid;grid-template-columns:minmax(0,1fr);place-items:center}
 .fone{position:relative;height:min(100%,640px);aspect-ratio:390/844;transition:transform .7s var(--ease),opacity .45s}
 .fone-d{position:absolute;width:min(100%,620px);aspect-ratio:844/390;opacity:0;transform:rotate(90deg) scale(.6);transition:transform .7s var(--ease),opacity .45s;pointer-events:none}
 .story-fig.deitado .fone{transform:rotate(-90deg) scale(.85);opacity:0}
@@ -227,7 +227,7 @@ a{color:inherit}
 
 /* guia rápido: cartões que empilham */
 .pilha-passos{margin-top:56px;padding-bottom:12vh}
-.cartao-passo{position:sticky;top:calc(var(--topo) + 96px + var(--i) * 16px);height:min(380px,62vh);margin-bottom:22vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);border-radius:30px;transform-origin:50% 0;will-change:transform}
+.cartao-passo{position:sticky;top:calc(var(--topo) + 82px + var(--i) * 16px);height:min(380px,62vh);margin-bottom:22vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);border-radius:30px;transform-origin:50% 0;will-change:transform}
 .cartao-passo:last-child{margin-bottom:0}
 .cp-txt{padding:clamp(24px,4vw,46px);display:flex;flex-direction:column;justify-content:center}
 .cp-num{font:900 clamp(64px,8vw,104px)/.85 Inter,sans-serif;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1.5px rgba(201,228,99,.85)}
@@ -309,7 +309,7 @@ a{color:inherit}
   .galeria{margin-left:calc(-1 * (var(--gutter) + 6px))}
   .trilha{padding-left:calc(var(--gutter) + 6px)}
   .story{grid-template-columns:1fr;gap:0;margin-top:28px}
-  .story-fig{top:calc(var(--topo) + 84px);height:calc(100vh - var(--topo) - 104px);height:calc(100svh - var(--topo) - 104px);z-index:2}
+  .story-fig{top:calc(var(--topo) + 72px);height:calc(100vh - var(--topo) - 88px);height:calc(100svh - var(--topo) - 88px);z-index:2}
   .fone{height:94%}
   .passos{padding:4vh 0 20vh}
   /* celular: aparelho e texto do passo atual formam um bloco fixo (texto sempre abaixo do aparelho);
@@ -321,7 +321,7 @@ a{color:inherit}
   .passo{min-height:46vh;min-height:46svh}
   .passo-in{visibility:hidden}
   .passos{padding:2vh 0 34vh}
-  .cartao-passo{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:min(520px,72vh);top:calc(var(--topo) + 86px + var(--i) * 12px)}
+  .cartao-passo{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:min(520px,72vh);top:calc(var(--topo) + 74px + var(--i) * 12px)}
   .cp-tela img{width:48%;top:6%}
   .inst{grid-template-columns:1fr}
   .aj{grid-template-columns:110px minmax(0,1fr);padding:18px}

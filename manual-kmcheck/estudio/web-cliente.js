@@ -72,7 +72,7 @@
 
   /* ---------- painel fixo: KM do capítulo (odômetro) + progresso + sumário ---------- */
   const hud = $('.hud'), hudTit = $('.hud-txt b', hud), hudOlho = $('.hud-txt .cl', hud), reels = $$('.reel', hud), hudMenu = $('.hud-menu', hud), hudBar = $('.hud-bar', hud);
-  const caps = $$('.cap'), hero = $('.hero');
+  const caps = $$('.cap');
   let capAtual = null;
   const odo = num => { String(num).padStart(2, '0').split('').forEach((d, i) => { reels[i].style.transform = 'translateY(' + (-(+d)) + 'em)'; }); };
   /* embaralhar letras: o nome do capítulo troca como placa de aeroporto */
@@ -131,11 +131,10 @@
       capaTxt.style.opacity = (1 - k * 1.3).toFixed(3); if (!reduz) capaTxt.style.transform = 'translateY(' + (-k * 60).toFixed(1) + 'px)';
     }
     /* painel fixo aparece depois do topo */
-    const hb = hero.getBoundingClientRect().bottom;
+    const hb = capaWeb ? capaWeb.getBoundingClientRect().bottom : 0;
     hud.classList.toggle('on', hb < 40 && viagem.getBoundingClientRect().top < vh * .35);
     if (hb >= 40 && !hudMenu.hidden) abreMenu(false);
     /* leve paralaxe na foto do palco enquanto o topo sai */
-    if (palcoFoto && !reduz) palcoFoto.style.setProperty('--paralaxe', Math.min(1, Math.max(0, -hero.getBoundingClientRect().top / vh)).toFixed(3));
     marcaCap(vh);
     for (const s of estreitas) {
       const fr = s.fig.getBoundingClientRect(); if (fr.bottom < -vh || fr.top > vh * 2) continue;
@@ -215,7 +214,9 @@
   }));
 
   /* ---------- topo interativo ---------- */
-  const cena = $('.cena'), status = $('.h-status'), area = $('.dock-area');
+  const cena = $('.cena');
+  if (!cena) return;   // manual sem o topo interativo
+  const status = $('.h-status'), area = $('.dock-area');
   const pontos = $$('.ponto', cena);
   const T = reduz ? 0 : 620;
   const HOVER = { camera: '10-camera', carro: '20-carro-dia' };

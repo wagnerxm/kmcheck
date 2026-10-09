@@ -101,20 +101,45 @@ async function printSecao(page, nome, titulo) {
 }
 /* ── cenas ── */
 const cenas = {
-  /* converte as fotos reais do campo: a da rodovia sem a faixa da legenda vira o vídeo da câmera
-     (o app desenha a legenda dele por cima); as duas inteiras vão para a galeria */
+  /* a foto da rodovia (sem legenda) vira o vídeo da câmera; o app desenha a legenda ao vivo por cima */
   async preparar() {
     const page = await browser.newPage();
     const b64 = n => 'data:image/webp;base64,' + fs.readFileSync(path.resolve('manual-kmcheck/estudio/' + n)).toString('base64');
     const out = await page.evaluate(async (rod) => {
       const img = new Image(); img.src = rod; await img.decode();
       const c = document.createElement('canvas'); c.width = 1280; c.height = 960;
-      const sh = img.height * .79, sw = sh * 4 / 3, sx = (img.width - sw) / 2;
+      const sh = img.height, sw = sh * 4 / 3, sx = (img.width - sw) / 2;
       c.getContext('2d').drawImage(img, sx, 0, sw, sh, 0, 0, 1280, 960);
       return c.toDataURL('image/jpeg', .9);
-    }, b64('foto-campo-rodovia.webp'));
+    }, b64('foto-campo-nova.webp'));
     fs.writeFileSync(FOTO, Buffer.from(out.split(',')[1], 'base64'));
     console.log('  ✓ foto da câmera'); await page.close();
+  },
+  /* a mesma foto com a legenda queimada pelo PRÓPRIO app (burnLegend), como sai de verdade, e a posição
+     de cada linha da legenda (para o holofote do manual): estudio/foto-campo-nova-legenda.webp + legenda.json */
+  async fotolegenda() {
+    const p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);
+    const src = 'data:image/webp;base64,' + fs.readFileSync(path.resolve('manual-kmcheck/estudio/foto-campo-nova.webp')).toString('base64');
+    const r = await p.evaluate(async src => {
+      localStorage.setItem('kc-svcsel', 'Aplicação de CBUQ');
+      const img = new Image(); img.src = src; await img.decode();
+      const W = 2400, H = Math.round(W * img.height / img.width);
+      const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, W, H);
+      const info = buildInfo(); burnLegend(ctx, W, H, info, 0);
+      /* caixas das linhas, com a mesma geometria do burnLegend (canto inferior esquerdo) */
+      const { L, snvTag } = legendLines(info);
+      const u = Math.max(W, H) / 1000, pad = 20 * u, size = 17 * u * CFG.legsz, lh = size * 1.22;
+      ctx.font = `${CFG.legbold ? 700 : 400} ${size}px Arial, Helvetica, sans-serif`;
+      const larg = L.map((l, i) => ctx.measureText(l).width + (i === L.length - 1 && snvTag ? size * 1.5 + ctx.measureText(snvTag).width : 0));
+      const maxW = Math.max(...larg), P = (v, t) => +(v / t * 100).toFixed(2);
+      const caixas = L.map((l, i) => { const y = H - pad - (L.length - 1 - i) * lh;
+        return { texto: l + (i === L.length - 1 && snvTag ? ' · ' + snvTag : ''), box: [P(pad - size * .4, W), P(y - size * 1.02, H), P(maxW + size * .8, W), P(lh, H)] }; });
+      return { url: c.toDataURL('image/webp', .9), caixas, nome: photoName(info) };
+    }, src);
+    fs.writeFileSync(path.resolve('manual-kmcheck/estudio/foto-campo-nova-legenda.webp'), Buffer.from(r.url.split(',')[1], 'base64'));
+    fs.writeFileSync(path.resolve('manual-kmcheck/estudio/legenda.json'), JSON.stringify({ caixas: r.caixas, nome: r.nome }, null, 1));
+    console.log('  ✓ foto com legenda', r.caixas.length, 'linhas'); await p.close();
   },
   async camera() {
     let p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);

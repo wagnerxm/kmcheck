@@ -15,12 +15,7 @@ export const passosRapidos = [
   { t: 'Pronto', d: 'A foto vai para a galeria do celular e fica guardada também na galeria do app.' },
 ];
 
-export const capitulos = [
-  {
-    id: 'instalacao', km: '01', titulo: 'Instalação',
-    intro: 'O KM Check funciona direto do navegador, mas o ideal é instalá-lo na tela inicial. Instalado, ele abre em tela cheia, funciona sem internet e mantém suas configurações.',
-    instalacao: true,
-  },
+const TODOS = [
   {
     id: 'inicio', km: '02', titulo: 'Tela inicial',
     intro: 'É o painel de campo. Assim que o GPS encontra sua posição, o app procura a rodovia mais próxima entre as que você baixou e mostra o KM exato.',
@@ -231,3 +226,7 @@ export const capitulos = [
     telas: [{ img: '64-gps-desligado', titulo: 'Aviso de localização', texto: 'Aparece quando a localização está bloqueada. O botão Tentar novamente pede a permissão outra vez.' }],
   },
 ];
+
+/* ordem dos capítulos no manual; o número do KM de cada um sai daqui (KM 00 é o Guia rápido) */
+const ORDEM = ['inicio', 'eixo', 'config', 'contratos', 'camera', 'legenda', 'galeria', 'consulta', 'carro', 'problemas'];
+export const capitulos = ORDEM.map((id, i) => ({ ...TODOS.find(c => c.id === id), km: String(i + 1).padStart(2, '0') }));

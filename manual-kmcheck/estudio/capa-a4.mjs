@@ -19,9 +19,9 @@ p{font-size:16.5px;line-height:1.55;color:#3b4559;margin:22px 0 0;max-width:400p
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:26px}
 .chips span{font:600 10.5px Inter;letter-spacing:.14em;text-transform:uppercase;background:rgba(255,255,255,.7);border:1px solid rgba(28,35,51,.12);padding:8px 12px;border-radius:999px}
 .pe{position:absolute;left:64px;bottom:34px;font-size:12px;color:#3b4559}</style></head><body>
-<section class="folha"><img src="${CAPA}" alt=""><div class="txt"><div class="olho">Manual do usuário · Versão ${VERSAO}</div><h1>Manual do<br>usuário</h1>
+<section class="folha"><img src="${CAPA}" alt=""><div class="txt"><div class="olho">KM Check</div><h1>Manual do<br>usuário</h1>
 <p>Registro fotográfico de rodovias com KM, estaca e coordenadas gravados na própria foto. Direto do campo, sem depender de internet.</p>
-<div class="chips"><span>Versão ${VERSAO}</span><span>${DATA[0].toUpperCase() + DATA.slice(1)}</span><span>iPhone e Android</span></div></div>
+<div class="chips"><span>Versão ${VERSAO}</span></div></div>
 <div class="pe">Desenvolvido por <b>Wagner Machado</b></div></section></body></html>`;
 const b = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 const p = await b.newPage(); await p.setViewport({ width: 1123, height: 794, deviceScaleFactor: 2 });

@@ -1,5 +1,5 @@
 /* Manual web do KM Check: uma página única, contínua, no idioma visual do app.
- * Topo interativo (pontos sobre o celular) → manifesto → guia rápido em cartões que empilham →
+ * Capa → guia rápido em cartões que empilham →
  * 11 capítulos ao longo de um eixo de rodovia que se desenha com a rolagem → fim do trecho.
  * Estilo em web.css e comportamento em web-cliente.js (ficam embutidos no HTML final).
  * Gera manual-kmcheck/manual-km-check.html. Uso: node manual-kmcheck/estudio/manual-web.mjs [--capturas] */
@@ -15,9 +15,10 @@ const browser = await puppeteer.launch({ executablePath: 'C:/Program Files/Googl
 const conv = await browser.newPage(), webp = conversor(conv);
 const SCR = {};
 for (const f of fs.readdirSync(PR).filter(f => /^\d.*\.png$/.test(f))) SCR[f.replace('.png', '')] = await webp(path.join(PR, f), f.includes('deitad') ? 1100 : 600);
-const FOTO_ARQ = path.join(EST, 'foto-campo-rodovia.webp');
-const FOTO_PALCO = await webp(FOTO_ARQ, 1600, [0, 0, 1, .78]);
-const FOTO_CHEIA = await webp(FOTO_ARQ, 1100);
+/* foto da legenda: a rodovia com a legenda desenhada pelo próprio app (capturar.mjs fotolegenda) */
+const FOTO_ARQ = path.join(EST, 'foto-campo-nova-legenda.webp');
+const FOTO_CHEIA = await webp(FOTO_ARQ, 1400);
+const LEG = JSON.parse(fs.readFileSync(path.join(EST, 'legenda.json'), 'utf8'));
 const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.resolve('logo-header.png')).toString('base64');
 await conv.close();
 
@@ -36,61 +37,6 @@ const b64 = a => 'data:image/webp;base64,' + fs.readFileSync(path.join(EST, a)).
 const FUNDO_IMG = b64('fundo-manual.webp'), CAPA_IMG = b64('capa-manual.webp');
 const FUNDO = 'var(--fundo-img) var(--fundo-pos,center)/cover no-repeat,#eef0f1';
 
-/* ---------- topo interativo ---------- */
-const DET = {
-  camera: { tela: '10-camera', km: '03', titulo: 'Registrar evidência', texto: 'A câmera mostra a legenda ao vivo, exatamente como ela vai gravada na foto.', pontos: [
-    [37.2, 70.6, 'Legenda ao vivo', 'Rodovia, KM, lado, estaca, contrato e coordenadas, do jeito que saem na foto.'],
-    [7.9, 89.6, 'Lado da pista', 'LD ou LE. Toque de novo no mesmo botão para tirar o lado da legenda.'],
-    [50, 89.6, 'Obturador', 'Tira a foto. Sem um GPS confiável, o app avisa e não deixa registrar.']] },
-  carro: { tela: '20-carro-dia', km: '06', titulo: 'Modo Carro', texto: 'Um painel grande para acompanhar a rodovia dirigindo, com o celular no suporte.', pontos: [
-    [50, 41.4, 'KM ao vivo', 'Quilômetro exato, atualizado pelo GPS enquanto você dirige.'],
-    [50, 51.1, 'Próximo km', 'A barra e os metros que faltam para o próximo quilômetro.'],
-    [73.2, 75.4, 'Lado', 'Crescente ou Decrescente, pelo sentido em que o KM está mudando.']] },
-};
-const PONTOS = [
-  { id: 'camera', x: 50, y: 88.9, rot: 'Registrar evidência' },
-  { id: 'carro', x: 86.7, y: 20, rot: 'Modo Carro' },
-  { id: 'noite', x: 50, y: 42.9, rot: 'Dia e noite' },
-  { id: 'girar', x: 50, y: 60.5, rot: 'Em pé ou deitado' },
-];
-const MENUS = { noite: { titulo: 'Modo Carro', ops: [['dia', 'Dia'], ['noite', 'Noite']] }, girar: { titulo: 'Celular', ops: [['pe', 'Em pé'], ['deitado', 'Deitado']] } };
-const seta = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>';
-const hero = `
-<section class="hero" id="topo" aria-label="Conheça o KM Check">
-  <div class="h-tit"><h2 data-rev>O KM certo,<br>em cada foto.</h2><p>Explore o app por dentro.<br>Toque num ponto para começar.</p></div>
-  <div class="cena" data-modo="geral">
-    <div class="palco">
-      <img class="palco-foto" src="${FOTO_PALCO}" alt="">
-      <div class="h-cel"><div class="h-moldura"><div class="h-tela">${tl('01-inicio', true)}${tl('10-camera')}${tl('20-carro-dia')}${tl('21-carro-noite')}${sb}</div></div>
-        ${PONTOS.map(p => `<button class="ponto" data-p="${p.id}" style="left:${p.x}%;top:${p.y}%" aria-label="${p.rot}"><span class="disco" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="rotulo">${p.rot}</span></button>`).join('')}
-      </div>
-      <div class="h-deitado" aria-hidden="true"><div class="h-moldura"><div class="h-tela">${tl('22-carro-deitado', true)}</div></div></div>
-    </div>
-    ${Object.entries(DET).map(([id, d]) => `<div class="det" data-det="${id}" hidden>
-      <div class="det-cel"><div class="h-moldura"><div class="h-tela">${tl(d.tela, true)}</div></div>
-        ${d.pontos.map((p, i) => `<button class="dp" data-i="${i}" style="left:${p[0]}%;top:${p[1]}%" aria-label="${p[2]}">${i + 1}</button>`).join('')}</div>
-      <div class="det-txt cdk">${onda('main')}<div>
-        <button class="voltar" type="button">${seta}Voltar</button>
-        <span class="olho2">KM ${d.km}</span><h2 class="prata">${d.titulo}</h2><p class="det-p">${d.texto}</p>
-        <ol class="det-lista">${d.pontos.map((p, i) => `<li><button class="dl" data-i="${i}" aria-expanded="false"><span class="n">${i + 1}</span><b>${p[2]}</b></button><p>${p[3]}</p></li>`).join('')}</ol>
-        <a class="ir" href="#${id}">Ler o capítulo <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"/></svg></a>
-      </div></div>
-    </div>`).join('')}
-    <div class="moldura-branca" aria-hidden="true"></div>
-  </div>
-  <div class="dock-area">
-    ${Object.entries(MENUS).map(([id, m]) => `<div class="dock cdk" data-menu="${id}" role="group" aria-label="${m.titulo}" hidden>${onda('tile')}<span class="cl">${m.titulo}</span><div class="ops">${m.ops.map(([v, r], i) => `<button class="op${i === 0 ? ' sel' : ''}" data-v="${v}" aria-pressed="${i === 0}">${r}</button>`).join('')}</div><button class="fechar" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button></div>`).join('')}
-    <div class="h-notas">
-      <div><b>Registrar evidência</b><p>Veja a câmera por dentro. A legenda aparece ao vivo, como vai na foto.</p></div>
-      <div><b>Modo Carro</b><p>O KM grande, para acompanhar a rodovia dirigindo.</p></div>
-      <div><b>Dia e noite</b><p>O painel escurece sozinho 1 hora após o pôr do sol.</p></div>
-      <div><b>Em pé ou deitado</b><p>Gire o celular e a tela se reorganiza.</p></div>
-    </div>
-  </div>
-  <div class="h-base"><span>KM Check · Manual do usuário</span><span class="h-status" role="status">Toque num ponto para começar.</span></div>
-  <a class="rolar" href="#manifesto">Comece a viagem<i aria-hidden="true"></i></a>
-</section>`;
-
 /* ---------- painel fixo ---------- */
 const sumario = [{ id: 'rapido', km: '00', titulo: 'Guia rápido' }, ...capitulos];
 const reel = `<span class="reel">${[...'0123456789'].map(d => `<span>${d}</span>`).join('')}</span>`;
@@ -99,11 +45,6 @@ const hud = `<nav class="hud" aria-label="Capítulos">
     <span class="hud-txt"><span class="cl">KM 00</span><b>Guia rápido</b><span class="trilho"><i></i></span></span><span class="hud-seta"><svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5"/></svg></span></button>
   <div class="hud-menu cdk" hidden>${onda('main')}${sumario.map(c => `<a href="#${c.id}"><span>KM ${c.km}</span>${esc(c.titulo)}</a>`).join('')}</div>
 </nav>`;
-
-/* ---------- manifesto ---------- */
-const MANIF = 'Cada foto sai com a rodovia, o KM, a estaca e as coordenadas gravadas na imagem. Sem anotar nada. Sem depender de internet. Direto do campo.';
-const DESTAQUE = new Set(['rodovia,', 'KM,', 'estaca', 'coordenadas']);
-const manifesto = `<section class="manifesto" id="manifesto" aria-label="O que o KM Check faz"><div class="manifesto-in"><p>${MANIF.split(' ').map(w => `<span class="w${DESTAQUE.has(w) ? ' lima' : ''}">${w}</span>`).join(' ')}</p></div></section>`;
 
 /* ---------- blocos dos capítulos ---------- */
 const marco = km => `<span class="marco" aria-hidden="true"><span>KM<i></i><b>${km}</b></span></span>`;
@@ -139,31 +80,20 @@ const TELA_PASSO = ['30-gestao-eixo', '01-inicio', '11-camera-servico-contrato',
 const rapido = `<section class="cap" id="rapido" data-km="00" data-titulo="Guia rápido">${cabeca({ km: '00', titulo: 'Guia rápido', intro: 'Do primeiro uso à primeira foto, em cinco passos.' }, 'Para começar')}
   <ol class="pilha-passos">${passosRapidos.map((p, i) => `<li class="cartao-passo cdk" style="--i:${i}">${onda('main')}<div class="cp-txt"><span class="cp-num">0${i + 1}</span><h3>${esc(p.t)}</h3><p>${esc(p.d)}</p></div><div class="cp-tela"><img src="${SCR[TELA_PASSO[i]]}" alt="" loading="lazy" decoding="async"></div></li>`).join('')}</ol></section>`;
 
+const EXPL = [
+  'Rodovia e UF, KM com metros, lado da pista e estaca. Longe do eixo, aparece ⚠ no fim.',
+  'Contrato e serviço. Sobre uma ponte ou viaduto, mostra também o nome da OAE.',
+  'Coordenadas no formato escolhido, com a precisão do GPS se você quiser.',
+  'Data da foto e a versão do SNV usada no cálculo do KM. A hora também pode aparecer.',
+];
 const LEGENDA_PASSOS = [
-  { titulo: 'A foto registrada', texto: 'BR-226/RN, setembro de 2026. A legenda vai gravada na própria imagem, no canto que você escolher.' },
-  { titulo: 'BR-226/RN - KM 326,040  LD · Est. 16302+0', texto: 'Rodovia e UF, KM com metros, lado da pista e estaca. Longe do eixo, aparece ⚠ no fim.', box: '0.5,81.4,55,4.4', num: 1 },
-  { titulo: '515/2024 - Aplicação de CBUQ', texto: 'Contrato e serviço. Sobre uma ponte ou viaduto, mostra também o nome da OAE.', box: '0.5,85.8,55,4.4', num: 2 },
-  { titulo: '-6,077494, -37,537469', texto: 'Coordenadas no formato escolhido, com a precisão do GPS se você quiser.', box: '0.5,90.2,55,4.4', num: 3 },
-  { titulo: '15/09/2026, 11:27 · SNV Jul/26', texto: 'Data e hora da foto e a versão do SNV usada no cálculo do KM.', box: '0.5,94.6,55,4.6', num: 4 },
-  { titulo: 'Nome do arquivo', texto: 'BR-226-RN_KM326+040_LD_2026-09-15_11-27-05.jpg. Rodovia, KM, lado, data e hora no nome, e a localização também nos dados da foto. Este é um modelo de exemplo: você escolhe o que aparece, a posição, a cor e o fundo.' },
+  { titulo: 'A foto registrada', texto: 'A legenda vai gravada na própria imagem, no canto que você escolher.' },
+  ...LEG.caixas.map((c, i) => ({ titulo: c.texto, texto: EXPL[i] || '', box: c.box.join(','), num: i + 1 })),
+  { titulo: 'Nome do arquivo', texto: LEG.nome + '. Rodovia, KM, lado, data e hora no nome, e a localização também nos dados da foto. Este é um modelo de exemplo: você escolhe o que aparece, a posição, a cor e o fundo.' },
 ];
 function blocoLegenda() {
   return `<div class="story"><div class="story-fig foto" aria-hidden="true"><div class="quadro"><div class="quadro-in"><img src="${FOTO_CHEIA}" alt=""><span class="foco livre"></span></div></div><div class="leg-passo"></div></div>
     <ol class="passos">${LEGENDA_PASSOS.map(p => `<li class="passo" data-tela=""${p.box ? ` data-box="${p.box}"` : ''}><div class="passo-in"><span class="n">${p.num || '·'}</span><div><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></div></div></li>`).join('')}</ol></div>`;
-}
-function blocoInstalacao() {
-  return `<div class="inst">
-    <div class="cdk" data-sobe>${onda('main')}<div><h3 class="prata">iPhone</h3><ol>
-      <li><span class="n">1</span><span>Abra <b>wagnerxm.github.io/kmcheck</b> no <b>Safari</b>.</span></li>
-      <li><span class="n">2</span><span>Toque no botão <b>Compartilhar</b> na barra do Safari.</span></li>
-      <li><span class="n">3</span><span>Role e toque em <b>Adicionar à Tela de Início</b>.</span></li>
-      <li><span class="n">4</span><span>Toque em <b>Adicionar</b>. O ícone do KM Check aparece na tela inicial.</span></li></ol></div></div>
-    <div class="cdk" data-sobe style="--d:120ms">${onda('main')}<div><h3 class="prata">Android</h3><ol>
-      <li><span class="n">1</span><span>Abra <b>wagnerxm.github.io/kmcheck</b> no <b>Chrome</b>.</span></li>
-      <li><span class="n">2</span><span>Toque em <b>Instalar</b> quando o app oferecer, ou no menu ⋮ do Chrome.</span></li>
-      <li><span class="n">3</span><span>Escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</span></li>
-      <li><span class="n">4</span><span>Confirme. O KM Check abre em tela cheia, como os outros apps.</span></li></ol></div></div>
-  </div><p class="nota" data-sobe>Na primeira abertura, permita a localização e a câmera. Sem elas o app não consegue gravar o KM nem tirar a foto.</p>`;
 }
 function blocoConfig(c) {
   return `<div class="galeria"><div class="galeria-in"><div class="trilha">${c.ajustes.map(a => `<article class="aj cdk">${onda('main')}<div class="aj-tela"><img src="${SCR[a.img]}" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">${esc(a.titulo)}</h3><dl>${a.linhas.map(l => `<dt>${esc(l[0])}</dt><dd>${esc(l[1])}</dd>`).join('')}</dl></div></article>`).join('')}</div></div></div>`;
@@ -175,36 +105,33 @@ function blocoFaq(c) {
 
 const corpoCaps = capitulos.map(c => {
   let miolo = '';
-  if (c.instalacao) miolo = blocoInstalacao();
-  else if (c.legenda) miolo = blocoLegenda();
+  if (c.legenda) miolo = blocoLegenda();
   else if (c.ajustes) miolo = blocoConfig(c);
   else if (c.faq) miolo = blocoFaq(c);
   else if (c.telas) miolo = story(passosDe(c.telas), { revela: c.id === 'carro' ? ['21-carro-noite'] : [] });
   return `<section class="cap" id="${c.id}" data-km="${c.km}" data-titulo="${esc(c.titulo)}">${cabeca(c)}${miolo}${dica(c.dica)}</section>`;
 }).join('\n');
 
-const fim = `<footer class="fim"><div class="fim-c cdk" data-sobe>${onda('main')}${placaSvg('FIM', 'KM', '11', 'placa-g')}<div><span class="olho" style="color:#b7d92d">Fim do trecho</span><h2 class="prata">Boas fotos e boa viagem.</h2><p>O KM Check se atualiza sozinho quando há internet. Este manual acompanha a versão ${VERSAO}.</p><div class="trilho"><i style="--p:1"></i></div></div></div>
-  <div class="creditos"><span>Desenvolvido por <b>Wagner Machado</b></span><span>KM Check · versão ${VERSAO} · ${DATA}</span></div></footer>`;
+const fim = `<footer class="fim"><div class="fim-c cdk" data-sobe>${onda('main')}${placaSvg('FIM', 'KM', capitulos[capitulos.length - 1].km, 'placa-g')}<div><span class="olho" style="color:#b7d92d">Fim do trecho</span><h2 class="prata">Boas fotos e boa viagem.</h2><p>O KM Check se atualiza sozinho quando há internet. Este manual acompanha a versão ${VERSAO}.</p><div class="trilho"><i style="--p:1"></i></div></div></div>
+  <div class="creditos"><span>Desenvolvido por <b>Wagner Machado</b></span><span>KM Check · versão ${VERSAO}</span></div></footer>`;
 
 const CSS = fs.readFileSync(path.join(EST, 'web.css'), 'utf8').replaceAll('/*FUNDO*/', FUNDO);
 const JS = fs.readFileSync(path.join(EST, 'web-cliente.js'), 'utf8');
 const FONTES = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">';
 const capa = `<img class="capa-img" src="${CAPA_IMG}" alt="" aria-hidden="true">
 <section class="capa-web" aria-label="Capa"><div class="capa-txt">
-  <span class="olho">Manual do usuário · Versão ${VERSAO}</span>
+  <span class="olho">KM Check</span>
   <h1 data-rev>Manual do<br>usuário</h1>
   <p>Registro fotográfico de rodovias com KM, estaca e coordenadas gravados na própria foto. Direto do campo, sem depender de internet.</p>
-  <div class="capa-chips"><span>Versão ${VERSAO}</span><span>${DATA[0].toUpperCase() + DATA.slice(1)}</span><span>iPhone e Android</span></div>
+  <div class="capa-chips"><span>Versão ${VERSAO}</span></div>
 </div>
-<div class="capa-pe"><span>Desenvolvido por <b>Wagner Machado</b></span><a class="rolar" href="#topo">Role para começar<i aria-hidden="true"></i></a></div></section>`;
+<div class="capa-pe"><span>Desenvolvido por <b>Wagner Machado</b></span><a class="rolar" href="#rapido">Role para começar<i aria-hidden="true"></i></a></div></section>`;
 const corpo = `<title>Manual do KM Check</title>
 ${FONTES}
 <style>:root{--fundo-img:url("${FUNDO_IMG}")}${CSS}</style>
 ${DEFS}
 ${hud}
 <main>${capa}
-${hero}
-${manifesto}
 <div class="viagem"><span class="eixo" aria-hidden="true"><i></i></span>
 ${rapido}
 ${corpoCaps}
@@ -248,7 +175,7 @@ if (process.argv.includes('--capturas')) {
   for (const [w, h, tag] of [[1440, 900, 'pc'], [390, 844, 'cel']]) {
     await p.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
     await p.setContent(doc, { waitUntil: 'load', timeout: 120000 }); await espera(1500);
-    const alvos = ['.capa-web', '.capa-img', '#topo', '#manifesto', '#rapido', '#inicio', '#camera', '#legenda', '#carro', '#config', '#problemas', '.fim'];
+    const alvos = ['.capa-web', '.capa-img', '#rapido', '#inicio', '#camera', '#legenda', '#carro', '#config', '#problemas', '.fim'];
     for (const [i, a] of alvos.entries()) {
       const extra = { '.capa-img': h * .4, '#manifesto': h * .7, '#rapido': h * 1.6, '#inicio': h * 1.8, '#camera': h * 1.2, '#legenda': h * 1.5, '#carro': h * 5.5, '#config': h * 1.2 }[a] || 0;
       await p.evaluate((a, extra) => { const el = document.querySelector(a); scrollTo({ top: (a === '.capa-img' ? 0 : el.getBoundingClientRect().top + scrollY) + extra, behavior: 'instant' }); }, a, extra);
