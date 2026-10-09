@@ -8,3 +8,7 @@ betedge/
 
 # segredos do servidor do KM Check
 server/.env
+
+# estudos e prévias do manual (gerados, não versionar)
+manual-kmcheck/opcoes/
+manual-kmcheck/previa-*

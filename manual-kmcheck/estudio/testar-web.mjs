@@ -1,0 +1,25 @@
+// teste de interação: topo (passar, clicar, voltar, menus), sumário do painel e janela das dicas
+import puppeteer from 'puppeteer';
+import fs from 'node:fs';
+const corpo = fs.readFileSync('manual-kmcheck/manual-km-check.html', 'utf8');
+const doc = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' + corpo + '</body></html>';
+const b = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+const p = await b.newPage(); await p.setViewport({ width: 1280, height: 720 }); await p.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+const erros = []; p.on('pageerror', e => erros.push(e.message));
+await p.setContent(doc, { waitUntil: 'load' }); const w = ms => new Promise(r => setTimeout(r, ms));
+const st = () => p.evaluate(() => ({ modo: document.querySelector('.cena').dataset.modo, tela: document.querySelector('.h-cel .tl.on').dataset.t, menu: document.querySelector('.cena').dataset.menu || '-', girado: 'girado' in document.querySelector('.cena').dataset }));
+await p.hover('[data-p="carro"]'); await w(500); console.log('hover carro', await st());
+await p.mouse.move(2, 2); await w(500); console.log('saiu', await st());
+await p.click('[data-p="carro"]'); await w(900); console.log('detalhe', await st());
+await p.click('.det[data-det="carro"] .ir'); await w(2200); console.log('ler capítulo → scroll', await p.evaluate(() => Math.round(document.querySelector('#carro').getBoundingClientRect().top)), await st());
+await p.evaluate(() => scrollTo(0, 0)); await w(600);
+await p.click('[data-p="girar"]'); await w(300); await p.click('[data-menu="girar"] .op[data-v="deitado"]'); await w(800); console.log('girado', await st());
+await p.click('[data-p="noite"]').catch(() => console.log('noite bloqueado com menu aberto (ok)'));
+await p.keyboard.press('Escape'); await w(500); console.log('esc', await st());
+await p.evaluate(() => document.querySelector('#problemas').scrollIntoView()); await w(1200);
+await p.click('.faq-c'); await w(700); console.log('janela aberta', await p.evaluate(() => !!document.querySelector('.janela.on')));
+await p.keyboard.press('Escape'); await w(600); console.log('janela fechada', await p.evaluate(() => !document.querySelector('.janela')));
+await p.click('.hud-bar'); await w(400); console.log('sumário aberto', await p.evaluate(() => !document.querySelector('.hud-menu').hidden));
+await p.click('.hud-menu a[href="#legenda"]'); await w(2000); console.log('foi para legenda', await p.evaluate(() => Math.round(document.querySelector('#legenda').getBoundingClientRect().top)), 'odômetro', await p.evaluate(() => document.querySelector('.hud-txt .cl').textContent));
+console.log('erros', erros.length ? erros : 'nenhum');
+await b.close();
