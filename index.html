@@ -226,6 +226,20 @@ html.kc-teste #help-toggle+#search-toggle{margin-left:8px}
 .bv-c[data-modo="inicio"] .so-meio,.bv-c[data-modo="inicio"] .so-fim{display:none}
 .bv-c[data-modo="meio"] .so-inicio,.bv-c[data-modo="meio"] .so-fim{display:none}
 .bv-c[data-modo="fim"] .so-inicio,.bv-c[data-modo="fim"] .so-meio{display:none}
+/* pedido de autorização dos dados de uso (1ª abertura) — mesmo cartão claro das boas-vindas */
+#uso{position:fixed;inset:0;z-index:260;display:grid;place-items:end center;padding:16px 16px calc(16px + env(safe-area-inset-bottom));background:rgba(8,10,12,.46);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#uso[hidden]{display:none}
+.uso-c{width:min(420px,100%);border-radius:26px;padding:22px 22px 14px;color:#1c2333;background:linear-gradient(180deg,#fff,#f4f6f5);box-shadow:0 30px 70px -20px rgba(0,0,0,.6);animation:usoSobe .45s cubic-bezier(.2,.9,.25,1)}
+@keyframes usoSobe{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.uso-ic{width:42px;height:42px;border-radius:50%;background:#1c2333;display:grid;place-items:center;margin-bottom:12px}
+.uso-ic svg{width:21px;height:21px;stroke:#c9e463;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.uso-c h2{font:800 21px/1.15 var(--sans);letter-spacing:-.02em}
+.uso-c p{font-size:14px;line-height:1.5;color:#3b4559;margin-top:8px}
+.uso-c a{color:#5c7690;font-weight:600}
+.uso-b{display:grid;gap:4px;margin-top:16px}
+.uso-sim{height:50px;border-radius:999px;border:0;cursor:pointer;background:linear-gradient(180deg,#22262b,#121416);color:#c9e463;font:700 15px var(--sans)}
+.uso-nao{height:40px;border:0;background:none;cursor:pointer;color:#66748a;font:600 13.5px var(--sans)}
+@media (prefers-reduced-motion:reduce){.uso-c{animation:none}}
 @media (prefers-reduced-motion:reduce){#bv,.bv-c,.bv-p,.bv-arte img,.bv-saud,.bv-fone,.bv-foco,.bv-ok,.bv-trilho i{transition:none!important;transform:none!important}}
 /* telas baixas (iPhone SE e afins): tudo um pouco mais compacto para o cartão caber sem rolar */
 @media (max-height:740px){
@@ -1362,6 +1376,19 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     </div>
   </div>
 
+  <h2 class="sec">Privacidade</h2>
+  <div class="card listcard">
+    <label class="listrow">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
+      <span class="ltext"><b>Enviar dados de uso</b><i>Modelo, versão, rodovias e região aproximada</i></span>
+      <input type="checkbox" id="cfg-uso">
+    </label>
+    <a class="listrow" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;border-bottom:0">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/></svg></span>
+      <span class="ltext"><b>Política de privacidade</b><i>O que o app coleta e por quê</i></span>
+    </a>
+  </div>
+
   <div class="so-teste">
     <h2 class="sec">Ajuda</h2>
     <div class="card"><button class="listrow" id="cfg-manual" style="width:100%;background:none;border:0;color:inherit;font:inherit;text-align:left;border-bottom:0">
@@ -1380,6 +1407,15 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 </nav>
 <div class="dev-credit">Desenvolvido por Wagner Machado</div>
+<div id="uso" role="dialog" aria-modal="true" aria-labelledby="uso-tit" hidden>
+  <div class="uso-c">
+    <span class="uso-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
+    <h2 id="uso-tit">Ajude a melhorar o KM Check</h2>
+    <p>Com a sua permissão, o app envia dados técnicos de uso para o nosso servidor.<br>Modelo do celular, versão do app, rodovias baixadas e a região aproximada.<br>Nunca envia fotos, legendas, contratos ou o seu nome.</p>
+    <p>Você pode mudar isso a qualquer hora em Configurações. <a href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener">Política de privacidade</a></p>
+    <div class="uso-b"><button class="uso-sim" id="uso-sim">Permitir</button><button class="uso-nao" id="uso-nao">Agora não</button></div>
+  </div>
+</div>
 <div id="bv" class="so-teste" role="dialog" aria-modal="true" aria-labelledby="bv-tit" hidden>
   <div class="bv-c" data-modo="inicio">
     <button class="bv-x" id="bv-x" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
@@ -1792,6 +1828,17 @@ function showDlg(dlg){ if(typeof dlg.showModal==='function') dlg.showModal(); el
 const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
+/* ================= app nativo (Google Play) =================
+   Dentro do app Android (Capacitor) a página é a mesma; só o que o navegador fazia com truques passa
+   para a peça nativa KMCheckNativo: gravar foto na galeria, compartilhar e manter a tela acesa.
+   Fora do app (site/PWA) NATIVO fica null e nada muda. */
+const NATIVO=(()=>{ try{ const C=window.Capacitor;
+  if(C && C.isNativePlatform && C.isNativePlatform() && C.nativePromise) return { chama:(m,o)=>C.nativePromise('KMCheckNativo', m, o||{}) };
+}catch(e){} return null })();
+/* as 363 rodovias (~137 MB) não vão dentro do app da loja: vêm do servidor próprio */
+const DADOS = NATIVO ? 'https://kmcheck.com.br/' : '';
+function blobB64(blob){ return new Promise((ok,erro)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=()=>erro(r.error); r.readAsDataURL(blob) }) }
+
 const S = {
   bases: [],           // {id, br, uf, fonte, kmMin, kmMax, n, lat[], lon[], km[]}
   pos: _cachedPos,     // {lat, lon, acc, t} — restaurado do cache, atualizado pelo watchPosition
@@ -2092,7 +2139,7 @@ BV_TRILHA.addEventListener('scroll', ()=>{ cancelAnimationFrame(_bvR); _bvR=requ
 function mostraBoasVindas(){
   let visto=false; try{ visto=localStorage.getItem('kc-manual-visto')==='1' }catch(e){}
   const naInicial=document.getElementById('scr-cam').classList.contains('on');
-  if(modoTeste() && !visto && naInicial && document.getElementById('manual-ov').hidden && BV.hidden) abreTour(0);
+  if(modoTeste() && !visto && naInicial && usoDecidido() && document.getElementById('manual-ov').hidden && BV.hidden) abreTour(0);
   else if(!modoTeste() && !BV.hidden) fechaBoasVindas(false);
 }
 function fechaBoasVindas(marcaVisto){
@@ -2121,7 +2168,21 @@ addEventListener('keydown', e=>{
 addEventListener('resize', ()=>{ if(!BV.hidden) BV_TRILHA.scrollLeft=bvPag*BV_TRILHA.clientWidth });
 document.getElementById('manual-x').onclick=()=>{ if(history.state&&history.state.manual) history.back(); else fechaManual() };
 addEventListener('popstate', ()=>{ if(!document.getElementById('manual-ov').hidden) fechaManual() });
-setTimeout(mostraBoasVindas, 700); // dá tempo da tela inicial assentar antes da mensagem subir
+/* ================= dados de uso: autorização (LGPD / Google Play) =================
+   O aviso de uso para o painel (modelo, versão, rodovias baixadas, região) só sai com autorização.
+   Pergunta uma vez, na 1ª abertura; a escolha fica em kc-uso ('sim'/'nao') e muda nas Configurações. */
+function usoAutorizado(){ try{ return localStorage.getItem('kc-uso')==='sim' }catch(e){ return false } }
+function usoDecidido(){ try{ return localStorage.getItem('kc-uso')!==null }catch(e){ return true } }
+function decideUso(sim){
+  try{ localStorage.setItem('kc-uso', sim?'sim':'nao') }catch(e){}
+  document.getElementById('uso').hidden=true; document.getElementById('cfg-uso').checked=sim;
+  mostraBoasVindas();   // as boas-vindas esperam essa pergunta ser respondida
+}
+document.getElementById('uso-sim').onclick=()=>decideUso(true);
+document.getElementById('uso-nao').onclick=()=>decideUso(false);
+document.getElementById('cfg-uso').checked=usoAutorizado();
+document.getElementById('cfg-uso').addEventListener('change', e=>{ try{ localStorage.setItem('kc-uso', e.target.checked?'sim':'nao') }catch(_){} });
+setTimeout(()=>{ if(!usoDecidido()) document.getElementById('uso').hidden=false; else mostraBoasVindas() }, 900);
 document.getElementById('nav-cam').onclick=openCam;
 let _toastT=0;
 function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
@@ -2380,7 +2441,7 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
   s.onchange=()=>{ localStorage.setItem('kc-dluf', s.value); renderBrOptions() };
   /* busca index.json (cache do SW) para popular o seletor com todas as BRs disponíveis */
   try{
-    const r=await fetch('data/rodovias/index.json',{signal:AbortSignal.timeout(5000)});
+    const r=await fetch(DADOS+'data/rodovias/index.json',{signal:AbortSignal.timeout(5000)});
     if(r.ok){
       const idx=await r.json();
       _localSnv=idx.snv||null;
@@ -2520,7 +2581,7 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
   const file=`BR-${br}-${uf}.json`;
   try{
     if(onStatus) onStatus('Buscando dados pré-processados…');
-    const r=await fetch('./data/rodovias/'+file);
+    const r=await fetch((DADOS||'./')+'data/rodovias/'+file);
     if(r.ok){
       const data=await r.json();
       if(data.segments&&data.segments.length){
@@ -5259,7 +5320,12 @@ document.getElementById('gal-share').onclick=async()=>{
     if(!blob){ toast('Foto não encontrada.'); return }
     const file=new File([blob], m.name, {type:'image/jpeg'});
     let ok=false;
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+    if(NATIVO){
+      /* app da loja: se a foto ainda não está no celular, grava na galeria; se já está, abre o Compartilhar */
+      const b64=await blobB64(blob);
+      if(!m.saved){ await NATIVO.chama('salvarImagem',{nome:m.name, mime:'image/jpeg', base64:b64}); ok=true }
+      else { await NATIVO.chama('compartilhar',{nome:m.name, mime:'image/jpeg', base64:b64, titulo:'Compartilhar foto'}); ok=true }
+    } else if(navigator.canShare && navigator.canShare({files:[file]})){
       ok=await navigator.share({files:[file]}).then(()=>true, e=>{ if(e.name!=='AbortError') throw e; return false });
     } else if(_isAndroid && _isPWAStandalone && navigator.serviceWorker && navigator.serviceWorker.controller){
       ok=await _downloadViaSW(blob, m.name); if(!ok) toast('⚠ Não consegui salvar a foto.');
@@ -5730,6 +5796,12 @@ function saveAndShare(blob){
      Sem mensagens de confirmação (pedido do usuário: tela limpa — a piscada e o som já confirmam o
      disparo). Só aparece aviso ⚠ quando a foto NÃO chegou ao aparelho por falha. */
   if(!CFG.autosave) return;
+  if(NATIVO){
+    /* app da loja: grava direto na galeria (pasta KM Check), sem service worker nem download */
+    blobB64(blob).then(b64=>NATIVO.chama('salvarImagem',{nome:name, mime:'image/jpeg', base64:b64}))
+      .then(saida).catch(()=>toast('⚠ A foto não foi salva no celular.\nUse "Salvar" na galeria do app.', 4200));
+    return;
+  }
   if(_isIOS){
     /* iOS: share sheet é o ÚNICO caminho para salvar na galeria de Fotos via web.
        <a download> não funciona em PWA standalone do Safari. Falhou (não foi cancelamento):
@@ -6015,7 +6087,7 @@ function showInstallPrompt(){
      do app (rodovias baixadas, fotos da galeria, configurações) sem aviso. App instalado costuma
      receber a permissão automaticamente; se negar, segue como antes. */
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p=>{ if(!p) navigator.storage.persist() }).catch(()=>{}) }catch(e){}
-  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  if('serviceWorker' in navigator && location.protocol.startsWith('http') && !NATIVO){   // no app da loja os arquivos já vêm dentro do APK
     navigator.serviceWorker.register('sw.js').then(reg=>{
       /* Força atualização imediata: checa o sw.js no servidor agora, e se houver
          nova versão o skipWaiting + clients.claim já ativam — o controllerchange
@@ -6039,7 +6111,7 @@ function showInstallPrompt(){
   fetch('sw.js').then(r=>r.text()).then(t=>{
     const m=t.match(/kmcheck-v(\d+)/); if(m) document.getElementById('app-ver').textContent='VERSÃO '+m[1];
     /* ── Ping aprimorado para o painel admin — coleta dados do dispositivo, GPS e bases ── */
-    if(m && SNV_API){
+    if(m && SNV_API && usoAutorizado()){   // só envia com a autorização da pessoa (pedida na 1ª abertura)
       /* O fingerprint de hardware (benchmark de CPU num worker + 2 contextos WebGL + medição de fps)
          não muda entre aberturas — antes rodava em TODA abertura, gastando CPU/bateria no campo.
          Agora roda 1x por versão do app e fica guardado; o ping em si continua a cada abertura. */
@@ -6063,7 +6135,7 @@ function showInstallPrompt(){
         let did=localStorage.getItem('kc-device-id');
         if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
         const ua=navigator.userAgent||'';
-        const plat=(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
+        const plat=NATIVO?'Android (app)':(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
         /* Marca do dispositivo */
         let brand='';
         if(/iPhone|iPad|Macintosh/.test(ua)) brand='Apple';
@@ -6319,7 +6391,7 @@ function showInstallPrompt(){
         }
         /* GPS — usa a posição já fixada pelo watchPosition */
         let loc=null;
-        if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(4),lon:+S.pos.lon.toFixed(4),acc:Math.round(S.pos.acc||0)};
+        if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(2),lon:+S.pos.lon.toFixed(2)};   // só a região (~1 km), nunca o ponto exato
         /* Bases baixadas no IndexedDB */
         let bases=[];
         try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.lat?.length||0}))}catch(e){}
@@ -6338,7 +6410,10 @@ function showInstallPrompt(){
   // o celular apagar). iOS 16.4+ e Android suportam. O bloqueio é liberado quando o app sai de
   // foco; reativamos ao voltar, a cada toque e por uma rede de segurança periódica.
   let _wakeLock=null, _wakeAcquiring=false;
+  let _telaNativa=false;
   async function acquireWake(){
+    /* app da loja: o próprio Android mantém a tela acesa enquanto o app está na frente */
+    if(NATIVO){ if(!_telaNativa){ _telaNativa=true; NATIVO.chama('telaAcesa',{ligar:true}).catch(()=>{ _telaNativa=false }) } return }
     if(_wakeLock||_wakeAcquiring) return;
     try{
       if('wakeLock' in navigator && document.visibilityState==='visible'){
