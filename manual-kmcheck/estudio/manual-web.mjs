@@ -226,6 +226,7 @@ let app = corpo.replace(/data:image\/(webp|png);base64,([A-Za-z0-9+/=]+)/g, (m, 
   return 'img/' + nome;
 }).replace(/<img (?![^>]*loading=)/g, '<img loading="lazy" ');
 for (const x of fs.readdirSync(IMGD)) if (!usados.has(x)) fs.unlinkSync(path.join(IMGD, x));
+fs.copyFileSync(path.join(EST, 'capa-manual.webp'), path.join(APP, 'capa.webp')); // arte da mensagem de boas-vindas do app
 fs.writeFileSync(path.join(APP, 'index.html'), '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"></head><body>' + app + '</body></html>');
 console.log('manual/index.html', (Buffer.byteLength(app) / 1024).toFixed(0) + ' KB +', usados.size, 'imagens');
 

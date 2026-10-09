@@ -146,15 +146,43 @@ html.kc-teste #app-ver::after{content:' · TESTE';color:#c4e24a;font-weight:700}
 html.kc-teste #help-toggle+#search-toggle{margin-left:8px}
 #help-toggle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 :root[data-theme="light"] #help-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
-.gcard.manual-novo{display:flex;flex-direction:row;align-items:center;gap:14px;min-height:0;width:100%;margin-top:12px;padding:14px 12px 14px 16px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans)}
-.manual-novo[hidden]{display:none}
-.manual-novo .gbadge{width:40px;height:40px;background:rgba(196,226,74,.14);border-color:rgba(196,226,74,.35)}
-.manual-novo .gbadge svg{width:19px;height:19px;stroke:#c4e24a;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.manual-novo b{display:block;font-size:15px}
-.manual-novo small{display:block;font-size:12px;color:var(--mut);margin-top:2px}
-.manual-novo .mn-txt{flex:1;min-width:0}
-.manual-novo .mn-x{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;color:var(--mut)}
-.manual-novo .mn-x svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+/* boas-vindas: mensagem clara no meio da tela inicial, com a arte da capa do manual no topo e os 3 passos
+   que explicam o app. Só aparece no modo de testes e até ser vista uma vez. */
+#bv{position:fixed;inset:0;z-index:250;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  background:rgba(8,10,12,.46);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .35s ease}
+#bv[hidden]{display:none}
+#bv.on{opacity:1}
+.bv-c{position:relative;width:min(420px,100%);max-height:100%;overflow:auto;border-radius:30px;color:#1c2333;
+  background:linear-gradient(180deg,#ffffff 0%,#f4f6f5 100%);box-shadow:0 40px 80px -24px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.7);
+  transform:translateY(26px) scale(.94);transition:transform .6s cubic-bezier(.2,.9,.25,1.04)}
+#bv.on .bv-c{transform:none}
+.bv-arte{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:30px 30px 0 0;background:linear-gradient(135deg,#eef1f2,#dfe4e7)}
+.bv-arte img{display:block;width:100%;height:100%;object-fit:cover;object-position:100% 30%;transform:scale(1.1);transition:transform 7s cubic-bezier(.2,.6,.2,1)}
+#bv.on .bv-arte img{transform:scale(1)}
+.bv-arte::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 52%,#fff 100%);pointer-events:none}
+.bv-x{position:absolute;top:12px;left:12px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;
+  background:rgba(255,255,255,.88);color:#1c2333;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.bv-x svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+.bv-corpo{position:relative;margin-top:-22px;padding:0 22px 20px}
+.bv-olho{display:block;font:700 10.5px var(--sans);letter-spacing:.28em;text-transform:uppercase;color:#6f8a0e}
+.bv-corpo h2{font:800 30px/1.02 var(--sans);letter-spacing:-.035em;margin-top:8px;color:#1c2333}
+.bv-corpo>p{font-size:14.5px;line-height:1.5;color:#3b4559;margin-top:10px}
+.bv-passos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.bv-p{background:#fff;border:1px solid #e3e7ea;border-radius:16px;padding:12px 10px 11px;box-shadow:0 8px 16px -10px rgba(28,35,51,.35);
+  opacity:0;transform:translateY(12px);transition:opacity .45s ease,transform .6s cubic-bezier(.2,.9,.25,1)}
+#bv.on .bv-p{opacity:1;transform:none}
+#bv.on .bv-p:nth-child(1){transition-delay:.22s}#bv.on .bv-p:nth-child(2){transition-delay:.34s}#bv.on .bv-p:nth-child(3){transition-delay:.46s}
+.bv-ic{position:relative;width:34px;height:34px;border-radius:50%;background:#1c2333;display:grid;place-items:center;margin-bottom:9px}
+.bv-ic svg{width:17px;height:17px;stroke:#c9e463;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.bv-ic i{position:absolute;right:-5px;top:-5px;width:17px;height:17px;border-radius:50%;background:#c9e463;color:#1d2606;font:800 10px/17px var(--sans);text-align:center;font-style:normal}
+.bv-p b{display:block;font-size:13px;line-height:1.2;color:#1c2333}
+.bv-p small{display:block;font-size:11px;line-height:1.3;color:#66748a;margin-top:3px}
+.bv-acoes{display:grid;gap:4px;margin-top:18px}
+.bv-sim{height:52px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(180deg,#22262b,#121416);color:#c9e463;font:700 15.5px var(--sans);box-shadow:0 12px 22px -10px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
+.bv-sim svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bv-nao{height:42px;border:0;background:none;cursor:pointer;color:#66748a;font:600 13.5px var(--sans)}
+@media (prefers-reduced-motion:reduce){#bv,.bv-c,.bv-p,.bv-arte img{transition:none!important;transform:none!important}}
 #cfg-manual .gbadge svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 #manual-ov{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:#f1f2f3;animation:manSobe .28s cubic-bezier(.2,.8,.2,1)}
 #manual-ov[hidden]{display:none}
@@ -1011,11 +1039,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <svg class="garrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
     </button>
   </div>
-  <div class="gcard manual-novo so-teste" id="manual-novo" role="button" tabindex="0" hidden>
-    <span class="gbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.1 5.3 7.7 4.7 4.4 4.9v13c3.3-.2 5.7.4 7.6 1.7 1.9-1.3 4.3-1.9 7.6-1.7v-13c-3.3-.2-5.7.4-7.6 1.7z"/><path d="M12 6.6v13"/></svg></span>
-    <span class="mn-txt"><b>Novo por aqui?</b><small>Veja como usar o KM Check em 2 minutos.</small></span>
-    <span class="mn-x" id="manual-novo-x" role="button" tabindex="0" aria-label="Dispensar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></span>
-  </div>
 
 </section>
 </div>
@@ -1297,6 +1320,26 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 </nav>
 <div class="dev-credit">Desenvolvido por Wagner Machado</div>
+<div id="bv" class="so-teste" role="dialog" aria-modal="true" aria-labelledby="bv-tit" hidden>
+  <div class="bv-c">
+    <div class="bv-arte"><img alt="" data-src="manual/capa.webp"></div>
+    <button class="bv-x" id="bv-x" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
+    <div class="bv-corpo">
+      <span class="bv-olho">Bem-vindo ao KM Check</span>
+      <h2 id="bv-tit">O KM certo,<br>em cada foto.</h2>
+      <p>Foto com rodovia, KM, estaca e coordenadas gravados na imagem. Direto do campo, até sem internet.</p>
+      <div class="bv-passos">
+        <div class="bv-p"><span class="bv-ic"><i>1</i><svg viewBox="0 0 24 24"><path d="M8 21 10.5 3M16 21 13.5 3"/><path d="M12 9v6M9.5 12.5 12 15l2.5-2.5"/></svg></span><b>Baixe a rodovia</b><small>Em Gestão de Eixo</small></div>
+        <div class="bv-p"><span class="bv-ic"><i>2</i><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><b>Confira o KM</b><small>Pelo GPS, na hora</small></div>
+        <div class="bv-p"><span class="bv-ic"><i>3</i><svg viewBox="0 0 24 24"><path d="M8.5 5.5 9.6 3.9a1 1 0 0 1 .83-.44h3.14a1 1 0 0 1 .83.44l1.1 1.6H17A2.5 2.5 0 0 1 19.5 8v8.5A2.5 2.5 0 0 1 17 19H7a2.5 2.5 0 0 1-2.5-2.5V8A2.5 2.5 0 0 1 7 5.5z"/><circle cx="12" cy="12.4" r="3.2"/></svg></span><b>Tire a foto</b><small>A legenda vai junto</small></div>
+      </div>
+      <div class="bv-acoes">
+        <button class="bv-sim" id="bv-sim">Ver como funciona<svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+        <button class="bv-nao" id="bv-nao">Agora não</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="manual-ov" role="dialog" aria-label="Manual do KM Check" hidden>
   <div class="mo-top"><button id="manual-x" aria-label="Fechar manual"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button><span>Manual do KM Check</span></div>
   <iframe id="manual-if" title="Manual do KM Check"></iframe>
@@ -1922,22 +1965,34 @@ function abreManual(cap){
   try{ if(!(history.state&&history.state.manual)) history.pushState({manual:1},'') }catch(e){}
 }
 function fechaManual(){ document.getElementById('manual-ov').hidden=true }
+/* boas-vindas: aparece por cima da tela inicial no modo de testes até ser vista uma vez */
 function mostraBoasVindas(){
   let visto=false; try{ visto=localStorage.getItem('kc-manual-visto')==='1' }catch(e){}
-  document.getElementById('manual-novo').hidden = !modoTeste() || visto;
+  const bv=document.getElementById('bv'), naInicial=document.getElementById('scr-cam').classList.contains('on');
+  const deve=modoTeste() && !visto && naInicial && document.getElementById('manual-ov').hidden;
+  if(deve && bv.hidden){
+    const im=bv.querySelector('img[data-src]'); if(im && !im.getAttribute('src')) im.setAttribute('src', im.dataset.src); // só baixa a arte quando for mostrar
+    bv.hidden=false; requestAnimationFrame(()=>requestAnimationFrame(()=>bv.classList.add('on')));
+    setTimeout(()=>document.getElementById('bv-sim').focus({preventScroll:true}), 350);
+  } else if(!deve && !bv.hidden) fechaBoasVindas(false);
+}
+function fechaBoasVindas(marcaVisto){
+  const bv=document.getElementById('bv');
+  if(marcaVisto) try{ localStorage.setItem('kc-manual-visto','1') }catch(e){}
+  bv.classList.remove('on'); setTimeout(()=>{ if(!bv.classList.contains('on')) bv.hidden=true }, 360);
 }
 document.getElementById('help-toggle').onclick=()=>{
   const on=document.querySelector('.screen.on'); abreManual(on && CAP_DA_TELA[on.id] || '');
 };
 document.getElementById('cfg-manual').onclick=()=>abreManual('');
-document.getElementById('manual-novo').addEventListener('click', e=>{
-  if(e.target.closest('#manual-novo-x')){ try{ localStorage.setItem('kc-manual-visto','1') }catch(_){} mostraBoasVindas(); return }
-  abreManual('');
-});
-document.getElementById('manual-novo').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); e.target.click() } });
+document.getElementById('bv-sim').onclick=()=>{ fechaBoasVindas(true); abreManual('rapido') };
+document.getElementById('bv-nao').onclick=()=>fechaBoasVindas(true);
+document.getElementById('bv-x').onclick=()=>fechaBoasVindas(true);
+document.getElementById('bv').addEventListener('click', e=>{ if(e.target.id==='bv') fechaBoasVindas(true) });
+addEventListener('keydown', e=>{ if(e.key==='Escape' && !document.getElementById('bv').hidden) fechaBoasVindas(true) });
 document.getElementById('manual-x').onclick=()=>{ if(history.state&&history.state.manual) history.back(); else fechaManual() };
 addEventListener('popstate', ()=>{ if(!document.getElementById('manual-ov').hidden) fechaManual() });
-mostraBoasVindas();
+setTimeout(mostraBoasVindas, 700); // dá tempo da tela inicial assentar antes da mensagem subir
 document.getElementById('nav-cam').onclick=openCam;
 let _toastT=0;
 function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
