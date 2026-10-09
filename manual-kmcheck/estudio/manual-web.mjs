@@ -19,7 +19,7 @@ for (const f of fs.readdirSync(PR).filter(f => /^\d.*\.png$/.test(f))) SCR[f.rep
 const FOTO_ARQ = path.join(EST, 'foto-campo-nova-legenda.webp');
 const FOTO_CHEIA = await webp(FOTO_ARQ, 1400);
 const LEG = JSON.parse(fs.readFileSync(path.join(EST, 'legenda.json'), 'utf8'));
-const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.resolve('logo-header.png')).toString('base64');
+const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.resolve('logo-kmcheck.png')).toString('base64');
 await conv.close();
 
 const ESCURAS = new Set(['10-camera', '11-camera-servico-contrato', '12-camera-deitada', '13-galeria', '21-carro-noite', '33-importar-configurar', '60-vincular-contrato', '61-vincular-trecho', '62-detalhes-rodovia', '63-estaca', '64-gps-desligado']);

@@ -1,6 +1,6 @@
 /* Gera os ícones e a tela de abertura do app Android a partir das artes do site.
  * ícone: icon-512.png (fundo grafite com o logotipo no centro, já dentro da área segura do Android)
- * abertura: fundo #0a0c0e com o logotipo (logo-header.png) no centro
+ * abertura: fundo #0a0c0e com o logotipo (logo-kmcheck.png) no centro
  * Uso: node gerar-icones.mjs (a partir de mobile/) */
 import puppeteer from 'puppeteer';
 import fs from 'node:fs';
@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const RES = path.resolve('android/app/src/main/res');
 const ICONE = 'data:image/png;base64,' + fs.readFileSync(path.resolve('../icon-512.png')).toString('base64');
-const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.resolve('../logo-header.png')).toString('base64');
+const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.resolve('../logo-kmcheck.png')).toString('base64');
 const b = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 const p = await b.newPage();
 async function desenha(arquivo, larg, alt, modo) {

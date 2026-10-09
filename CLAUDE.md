@@ -19,7 +19,7 @@ build, bundler, framework nem dependências de runtime no cliente. Editar o app 
 | `sw.js` | Service worker. Cache `kmcheck-vNNN`. **Rede-primeiro com limite de 4 s** (cai para o cache com sinal fraco) para o documento e `data/rodovias`, **cache-primeiro** para assets. APIs externas (servidor SNV, GeoServer) não passam pelo SW. |
 | `manifest.v143.webmanifest` | Manifesto PWA (`display: standalone`, `orientation: portrait`). |
 | `fflate.js` | Biblioteca de zip (import/export de bases). |
-| `icon-192/512.png`, `apple-touch-icon.png`, `logo-header.png` | Ícones/PWA e logo. |
+| `icon-192/512.png`, `apple-touch-icon.png`, `logo-kmcheck.png` | Ícones/PWA e logo do cabeçalho (`logo-kmcheck.png`, alta resolução; `logo-header.png` é a antiga, mantida só para aparelhos com cache velho). |
 | `data/rodovias/*.json` | 363 rodovias (`BR-xxx-UF.json`) + `index.json`. Geometria do SNV para interpolar o KM pelo GPS. **Gerado automaticamente** — não editar à mão. |
 | `scripts/` | Scripts Node (Node 20+, ESM): `fetch-snv-wfs.mjs` (DNIT→JSON) e `sync-dnit.mjs` (Playwright→Supabase). |
 | `.github/workflows/` | `update-snv.yml` (diário 06:00 UTC) e `sync-dnit.yml` (mensal). |

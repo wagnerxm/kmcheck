@@ -123,7 +123,8 @@ header.top{padding:calc(14px + env(safe-area-inset-top)) 20px 12px;display:flex;
   background:linear-gradient(135deg, rgba(255,255,255,.1) 0%, rgba(255,255,255,.02) 60%), var(--glassbg2);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
   box-shadow:inset 0 -1.5px 0 var(--glassrimbot);position:sticky;top:0;z-index:30}
-header.top img{height:30px;display:block;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5))}
+/* logo em alta resolução com fundo transparente (a sombra borrada que havia aqui deixava a logo embaçada) */
+header.top img{height:36px;width:auto;display:block}
 header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.24em;text-transform:uppercase}
 #header-back{display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--gold);
   font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0;animation:scrIn .15s ease-out}
@@ -976,7 +977,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <div id="app">
 <header class="top">
   <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
-  <img id="logo-home" src="logo-header.png" alt="KM Check" style="cursor:pointer"><span class="sub" id="app-ver">VERSÃO …</span>
+  <img id="logo-home" src="logo-kmcheck.png" alt="KM Check" style="cursor:pointer"><span class="sub" id="app-ver">VERSÃO …</span>
   <button id="help-toggle" class="so-teste" aria-label="Manual do usuário"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.1 5.3 7.7 4.7 4.4 4.9v13c3.3-.2 5.7.4 7.6 1.7 1.9-1.3 4.3-1.9 7.6-1.7v-13c-3.3-.2-5.7.4-7.6 1.7z"/><path d="M12 6.6v13"/></svg></button>
   <button id="search-toggle" aria-label="Consulta">
     <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
