@@ -38,6 +38,8 @@ async function novaPagina({ largura = 390, altura = 844, noite = false, instalad
       localStorage.setItem('kc-services', JSON.stringify(['Roçada manual', 'Limpeza de drenagem', 'Tapa-buraco']));
       localStorage.setItem('kc-carnight', noite === 'auto' ? 'auto' : noite ? 'night' : 'day');
       localStorage.setItem('kc-install-shown', '1');
+      localStorage.setItem('kc-uso', 'nao');          // sem o aviso de dados de uso por cima das telas
+      localStorage.setItem('kc-manual-visto', '1');   // nem as boas-vindas
     } catch (e) {}
   }, noite);
   page.on('pageerror', e => console.log('  ⚠ erro na página:', e.message));

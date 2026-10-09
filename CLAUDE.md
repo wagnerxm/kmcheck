@@ -55,6 +55,7 @@ serviços, tema, boot.
 
 ## Deploy e versionamento — **IMPORTANTE**
 
+- **Versão para o usuário e lojas:** `VERSAO_APP` no topo do `sw.js` (ex.: `1.0.0`). Aparece na tela, no manual e é o versionName do Android. Só muda quando sai versão nova nas lojas, e só com o OK do Wagner.
 - **Toda** alteração no app exige **subir o número do cache** em `sw.js` (`const CACHE = 'kmcheck-vNNN'`),
   senão os aparelhos continuam servindo a versão antiga do cache. Incremente sempre (v158 → v159 → …).
 - Depois do push, o GitHub Pages leva alguns minutos. Para confirmar que publicou, cheque a 1ª linha de

@@ -3,8 +3,8 @@
  * marcadores, a lista "itens" segue a mesma numeração gravada em prints/marcas.json. */
 
 import fs from 'node:fs';
-/* versão do manual = versão do app (número do cache no sw.js), para nunca ficar desatualizada */
-export const VERSAO = (fs.readFileSync(new URL('../../sw.js', import.meta.url), 'utf8').match(/kmcheck-v(\d+)/) || [, '?'])[1];
+/* versão do manual = versão do app nas lojas (VERSAO_APP do sw.js), para nunca ficar desatualizada */
+export const VERSAO = (fs.readFileSync(new URL('../../sw.js', import.meta.url), 'utf8').match(/VERSAO_APP = '([^']+)'/) || [, '1.0.0'])[1];
 export const DATA = 'outubro de 2026';
 
 export const passosRapidos = [

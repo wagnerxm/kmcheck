@@ -1,4 +1,8 @@
-const CACHE = 'kmcheck-v301';
+// VERSAO_APP: a versão que o usuário vê (tela do app, manual, Google Play e App Store).
+// Só muda quando sai uma versão nova nas lojas (1.0.0 → 1.0.1 → 1.1.0…).
+// CACHE: número interno, sobe a CADA alteração (é o que faz os aparelhos baixarem a versão nova).
+const VERSAO_APP = '1.0.0';
+const CACHE = 'kmcheck-v302';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

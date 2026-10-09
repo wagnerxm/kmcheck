@@ -1,12 +1,18 @@
 apply plugin: 'com.android.application'
 
-/* Versão do app Android = versão do app web (o número do cache do sw.js, ex.: kmcheck-v298 → 298).
-   Assim a loja e a tela do app mostram o mesmo número e o versionCode sempre sobe. */
+/* versionCode (interno, tem que sempre subir) = número do cache do sw.js (kmcheck-v302 → 302).
+   versionName (o que aparece na loja) = VERSAO_APP do sw.js (ex.: 1.0.0), igual ao da tela do app. */
 def versaoWeb = { ->
     def sw = rootProject.file('../www/sw.js')
     if (!sw.exists()) return 1
     def m = (sw.text =~ /kmcheck-v(\d+)/)
     return m.find() ? (m.group(1) as Integer) : 1
+}
+def versaoLoja = { ->
+    def sw = rootProject.file('../www/sw.js')
+    if (!sw.exists()) return '1.0.0'
+    def m = (sw.text =~ /VERSAO_APP = '([^']+)'/)
+    return m.find() ? m.group(1) : '1.0.0'
 }
 /* Assinatura da loja: lida de keystore.properties (fora do Git; a chave fica em D:\KMCheck-chaves) */
 def chave = new Properties()
@@ -21,7 +27,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode versaoWeb()
-        versionName versaoWeb().toString()
+        versionName versaoLoja()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
