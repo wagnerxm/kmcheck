@@ -5501,7 +5501,7 @@ document.getElementById('q-gps').onclick=()=>{
 document.getElementById('k-run').onclick=()=>{
   const base=S.bases.find(b=>b.id===document.getElementById('k-base').value);
   if(!base){ toast('Instale uma rodovia primeiro.'); return }
-  const km=num(document.getElementById('k-km').value);
+  const km=parseNum(document.getElementById('k-km').value);   // parseNum: aceita 1.300,000
   const out=document.getElementById('k-out');
   if(km==null){ out.textContent='KM inválido.'; return }
   const c=kmToCoord(base,km);
