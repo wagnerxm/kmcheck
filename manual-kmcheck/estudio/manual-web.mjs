@@ -6,6 +6,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { RAIZ, PR, marcas, esc, conversor } from './comum.mjs';
 import { VERSAO, DATA, passosRapidos, capitulos } from './conteudo.mjs';
 
@@ -213,6 +214,20 @@ ${fim}</main>
 const SAIDA = path.join(RAIZ, 'manual-km-check.html');
 fs.writeFileSync(SAIDA, corpo);
 console.log('manual-km-check.html', (Buffer.byteLength(corpo) / 1048576).toFixed(2) + ' MB');
+
+/* versão que mora dentro do app (kmcheck/manual/): as imagens viram arquivos com nome pelo conteúdo
+   (o HTML fica leve, o celular baixa as imagens conforme a rolagem e o cache do app guarda cada uma) */
+const APP = path.resolve('manual'), IMGD = path.join(APP, 'img');
+fs.mkdirSync(IMGD, { recursive: true });
+const usados = new Set();
+let app = corpo.replace(/data:image\/(webp|png);base64,([A-Za-z0-9+/=]+)/g, (m, ext, dados) => {
+  const buf = Buffer.from(dados, 'base64'), nome = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 12) + '.' + ext;
+  if (!usados.has(nome)) { fs.writeFileSync(path.join(IMGD, nome), buf); usados.add(nome); }
+  return 'img/' + nome;
+}).replace(/<img (?![^>]*loading=)/g, '<img loading="lazy" ');
+for (const x of fs.readdirSync(IMGD)) if (!usados.has(x)) fs.unlinkSync(path.join(IMGD, x));
+fs.writeFileSync(path.join(APP, 'index.html'), '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"></head><body>' + app + '</body></html>');
+console.log('manual/index.html', (Buffer.byteLength(app) / 1024).toFixed(0) + ' KB +', usados.size, 'imagens');
 
 /* conferência automática: sem erros, sem rolagem lateral, e capturas de alguns pontos da viagem */
 if (process.argv.includes('--capturas')) {

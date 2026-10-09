@@ -23,7 +23,8 @@ build, bundler, framework nem dependências de runtime no cliente. Editar o app 
 | `data/rodovias/*.json` | 363 rodovias (`BR-xxx-UF.json`) + `index.json`. Geometria do SNV para interpolar o KM pelo GPS. **Gerado automaticamente** — não editar à mão. |
 | `scripts/` | Scripts Node (Node 20+, ESM): `fetch-snv-wfs.mjs` (DNIT→JSON) e `sync-dnit.mjs` (Playwright→Supabase). |
 | `.github/workflows/` | `update-snv.yml` (diário 06:00 UTC) e `sync-dnit.yml` (mensal). |
-| `manual-kmcheck/` | Manual do usuário, mockups, screenshots, PDFs. Documentação, não faz parte do app. |
+| `manual/` | Manual do usuário **dentro do app** (`index.html` + `img/`). **Gerado** por `manual-kmcheck/estudio/manual-web.mjs` — não editar à mão. O SW guarda num cache próprio (`kmcheck-manual`), baixado só na 1ª abertura. |
+| `manual-kmcheck/` | Estúdio do manual (prints, textos, geradores, prévias) e a versão web publicada. |
 | `.claude/launch.json` | Config de preview (`npx serve` na porta 3456). |
 
 ## Telas (`#scr-*`)
@@ -40,6 +41,7 @@ IndexedDB (bases), geometria (interpolação de KM, haversine), formatação, na
 importação, GPS (`watchPosition`), contratos, logo, **câmera**, consulta, ajustes, descrição de
 serviços, tema, boot.
 
+- **Modo de testes:** recursos novos entram com a classe `.so-teste` (escondidos). 7 toques seguidos na versão do cabeçalho ligam/desligam só naquele aparelho (`kc-teste` no localStorage; aparece "· TESTE" na versão). Para liberar a todos, tirar a classe.
 - **Estado:** `S` (runtime) e `CFG` (config, muitos campos são *getters* que leem do `localStorage`, chaves `kc-*`).
 - **Armazenamento:** bases/rodovias no **IndexedDB**; preferências no **localStorage** (`kc-*`).
 

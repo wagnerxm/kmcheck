@@ -1,0 +1,781 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"></head><body><title>Manual do KM Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>:root{--fundo-img:url("img/47100d78a938.webp")}/* Manual web do KM Check: uma viagem contínua pela rodovia.
+   Identidade do app: grafite em cetim, verde-limão, placa azul de km, fundo claro.
+   O fundo claro abstrato fica fixo atrás de tudo (continuidade); as seções são transparentes.
+   Toda animação usa só transform/opacity/clip-path e respeita "reduzir movimento". */
+:root{
+  --tinta:#1c2333;--tinta2:#3b4559;--tinta3:#66748a;--linha:rgba(28,35,51,.12);
+  --lima:#b7d92d;--lima2:#c9e463;--lima-esc:#1d2606;--placa:#13305c;
+  --ease:cubic-bezier(.5,0,.2,1);--ease-sai:cubic-bezier(.2,.8,.2,1);
+  --gutter:clamp(20px,4vw,40px);--eixo:88px;--fundo-pos:100% 0%;--topo:env(safe-area-inset-top,0px);--hud:76px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{font-family:Inter,-apple-system,'SF Pro Text',Helvetica,Arial,sans-serif;color:var(--tinta);background:#eceeef;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:-2;background:var(--fundo-img) var(--fundo-pos,center)/cover no-repeat,#eef0f1;pointer-events:none}
+h1,h2,h3,p,ol,ul,dl,dd,figure{margin:0}
+ol,ul{padding:0;list-style:none}
+img{max-width:100%}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--lima);outline-offset:3px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cl{text-transform:uppercase;color:#cfd2d7;font-weight:500;font-size:10px;letter-spacing:.26em}
+.olho{display:block;font:700 11px Inter,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#5c7690}
+
+/* ===== cartões do app (cetim grafite) ===== */
+.cdk{position:relative;overflow:hidden;border:1px solid transparent;border-radius:26px;color:#fff;
+  background:radial-gradient(120% 60% at 12% -8%,rgba(255,255,255,.10),rgba(255,255,255,0) 55%) padding-box,radial-gradient(90% 70% at 105% 110%,rgba(0,0,0,.55),rgba(0,0,0,0) 60%) padding-box,linear-gradient(168deg,#2a2c30 0%,#1d1f22 30%,#141517 62%,#0b0c0d 100%) padding-box,linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06) 30%,rgba(255,255,255,.03) 70%,rgba(255,255,255,.10)) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 1px 1px rgba(0,0,0,.10),0 10px 18px -6px rgba(15,20,30,.22),0 34px 54px -22px rgba(15,20,30,.55)}
+.cdk .cwv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cdk>*:not(.cwv){position:relative}
+/* luz que segue o ponteiro: um brilho verde-limão discreto no cetim (só mouse) */
+.cdk::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s;
+  background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(201,228,99,.11),transparent 62%)}
+@media (hover:hover){.cdk:hover::after{opacity:1}}
+.prata{background:linear-gradient(180deg,#fff 0%,#fff 55%,#dfe3e8 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--lima);color:var(--lima-esc);font:800 11px/1 Inter,sans-serif;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.placa{display:block;flex:0 0 auto;filter:drop-shadow(0 10px 16px rgba(20,26,36,.28))}
+
+/* ===== celular (moldura, telas, barra de status) ===== */
+.h-moldura{position:relative;width:100%;height:100%;padding:3.4%;border-radius:16.5%/7.6%;background:linear-gradient(140deg,#4d525a 0%,#141517 18%,#0b0c0d 60%,#2d3136 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 0 0 1px #000,0 46px 70px -26px rgba(20,26,36,.7),0 14px 26px -12px rgba(20,26,36,.5)}
+.h-tela{position:relative;width:100%;height:100%;border-radius:13.5%/6.2%;overflow:hidden;background:#0b0c0d;isolation:isolate}
+.h-tela::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.04) 26%,transparent 40%);pointer-events:none;z-index:4}
+.tl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease}
+.tl.on{opacity:1;z-index:1}
+/* a noite chega como uma máscara circular que cresce (revela em vez de trocar) */
+.tl[data-revela]{opacity:1;clip-path:circle(0% at 86% 10%);transition:clip-path .95s var(--ease)}
+.tl[data-revela].on{clip-path:circle(150% at 86% 10%);z-index:2}
+.h-sb{position:absolute;left:0;right:0;top:0;height:5.6%;display:flex;align-items:center;justify-content:space-between;padding:0 8% 0 10%;font:600 11px -apple-system,Inter,sans-serif;color:#121315;z-index:3;transition:color .4s}
+.esc .h-sb{color:#fff}
+.h-ilha{position:absolute;left:50%;top:22%;width:30%;height:60%;transform:translateX(-50%);background:#000;border-radius:999px}
+.h-bat{width:20px;height:9px;border-radius:3px;border:1.3px solid currentColor;opacity:.8;position:relative}
+.h-bat::after{content:'';position:absolute;inset:1.4px 3px 1.4px 1.4px;background:currentColor;border-radius:1px}
+.fone-d .h-moldura{border-radius:7.6%/16.5%;padding:1.6%}
+.fone-d .h-tela{border-radius:6.2%/13.5%}
+
+/* ===== TOPO INTERATIVO ===== */
+/* ===== capa: a arte da capa fica fixa sobre o fundo (mesmo enquadramento) e se dissolve com a
+   rolagem; os celulares somem e a rodovia do fundo continua exatamente no lugar ===== */
+.capa-img{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:100% 0%;z-index:-1;pointer-events:none;will-change:opacity}
+.capa-web{position:relative;height:100vh;height:100svh;min-height:520px;max-width:1600px;margin:0 auto;padding:0 clamp(24px,6vw,96px);display:flex;flex-direction:column;justify-content:center}
+.capa-txt{max-width:min(560px,44vw);will-change:transform,opacity}
+.capa-txt .olho{color:#6f8a0e;margin-bottom:18px}
+.capa-txt h1{font:900 clamp(52px,7vw,108px)/.9 Inter,sans-serif;letter-spacing:-.055em;color:var(--tinta)}
+.capa-txt p{font-size:clamp(16px,1.5vw,19px);line-height:1.55;color:var(--tinta2);margin-top:24px;max-width:28em}
+.capa-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px}
+.capa-chips span{font:600 11px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta);background:rgba(255,255,255,.62);border:1px solid rgba(28,35,51,.12);padding:8px 13px;border-radius:999px;backdrop-filter:blur(6px)}
+.capa-pe{position:absolute;left:clamp(24px,6vw,96px);right:clamp(24px,6vw,96px);bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;font-size:12.5px;color:var(--tinta2)}
+.capa-pe .rolar{margin:0}
+.hero{max-width:1180px;margin:0 auto;padding:40px var(--gutter) 30px}
+.h-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--linha);font-size:13px;color:var(--tinta2)}
+.h-top>span:last-child{text-align:right}
+.h-logo{height:34px;width:auto;display:block}
+.h-tit{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:26px 0 18px}
+.h-tit h2{font:800 clamp(36px,5.4vw,66px)/.98 Inter,sans-serif;letter-spacing:-.045em}
+.h-tit p{text-align:right;font-size:14px;line-height:1.55;color:var(--tinta2)}
+.cena{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#cfd8de;isolation:isolate}
+.moldura-branca{position:absolute;inset:0;border:3px solid #fff;border-radius:16px;pointer-events:none;z-index:9;box-shadow:0 30px 60px -36px rgba(28,35,51,.55)}
+.palco{position:absolute;inset:0;transition:transform .62s var(--ease),opacity .5s ease;transform-origin:50% 55%}
+.palco-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 60%;filter:saturate(.9) brightness(1.02);transform:scale(calc(1 + var(--paralaxe,0) * .08));transform-origin:50% 40%}
+.palco::after{content:'';position:absolute;inset:0;background:radial-gradient(60% 70% at 50% 50%,rgba(255,255,255,0) 30%,rgba(232,236,239,.45) 100%);pointer-events:none}
+.h-cel,.h-deitado{position:absolute;z-index:2}
+.h-cel{left:50%;top:50%;height:84%;aspect-ratio:390/844;transform:translate(-50%,-50%);transition:transform .7s var(--ease),opacity .45s ease}
+.h-deitado{left:50%;top:50%;width:76%;aspect-ratio:844/390;transform:translate(-50%,-50%) rotate(90deg) scale(.55);opacity:0;pointer-events:none;transition:transform .7s var(--ease),opacity .45s ease}
+.cena[data-girado] .h-cel{transform:translate(-50%,-50%) rotate(-90deg) scale(.9);opacity:0}
+.cena[data-girado] .h-deitado{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:1}
+.ponto{position:absolute;width:48px;height:48px;margin:-24px 0 0 -24px;border:0;padding:0;background:none;cursor:pointer;z-index:5;display:grid;place-items:center;border-radius:50%;transition:opacity .3s}
+.disco{width:26px;height:26px;border-radius:50%;background:var(--lima2);display:grid;place-items:center;box-shadow:0 0 0 4px rgba(201,228,99,.28),0 6px 14px rgba(20,26,36,.35);transition:transform .25s ease,box-shadow .25s}
+.disco svg{width:12px;height:12px;stroke:var(--lima-esc);stroke-width:1.4;fill:none}
+.ponto:hover .disco,.ponto:focus-visible .disco{transform:scale(1.14);box-shadow:0 0 0 7px rgba(201,228,99,.32),0 8px 18px rgba(20,26,36,.4)}
+.ponto::before{content:'';position:absolute;inset:11px;border-radius:50%;border:1.5px solid rgba(201,228,99,.7);animation:pulso 2.6s ease-out infinite}
+@keyframes pulso{0%{transform:scale(.8);opacity:.9}70%,100%{transform:scale(1.9);opacity:0}}
+.rotulo{position:absolute;left:50%;bottom:calc(100% - 4px);transform:translate(-50%,6px);white-space:nowrap;font:600 12px Inter,sans-serif;color:#fff;background:rgba(20,23,25,.88);padding:6px 10px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.ponto:hover .rotulo,.ponto:focus-visible .rotulo{opacity:1;transform:translate(-50%,0)}
+.ponto:disabled,.cena[data-girado] .ponto,.cena[data-menu] .ponto{opacity:0;pointer-events:none}
+.ponto:disabled::before{animation:none}
+.cena[data-modo="entrando"] .palco,.cena[data-modo="detalhe"] .palco{transform:scale(1.32);opacity:0}
+.det{position:absolute;inset:0;z-index:6;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:4%;padding:3% 5%;opacity:0;transform:scale(1.05);transition:opacity .5s ease .12s,transform .62s cubic-bezier(.3,0,.2,1) .05s;background:var(--fundo-img) var(--fundo-pos,center)/cover no-repeat,#eef0f1}
+.det[hidden]{display:none}
+.det.on{opacity:1;transform:scale(1)}
+.det-cel{position:relative;height:88%;aspect-ratio:390/844;justify-self:center}
+.dp{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:0;background:var(--lima2);color:var(--lima-esc);font:800 13px Inter,sans-serif;cursor:pointer;box-shadow:0 0 0 4px rgba(255,255,255,.65),0 6px 14px rgba(20,26,36,.4);transition:transform .2s;z-index:5}
+.dp:hover,.dp.on{transform:scale(1.18)}
+.dp.on{background:#fff}
+.det-txt{padding:28px 28px 24px;border-radius:24px;max-height:100%;overflow:auto}
+.voltar,.ir{display:inline-flex;align-items:center;gap:6px;font:600 12.5px Inter,sans-serif;color:#e8ebee;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 14px 7px 10px;cursor:pointer;text-decoration:none}
+.voltar{margin-bottom:18px}
+.voltar svg,.ir svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none}
+.voltar:hover,.ir:hover{background:rgba(255,255,255,.14)}
+.ir{margin-top:16px;padding:7px 12px 7px 14px;color:var(--lima-esc);background:var(--lima2);border-color:var(--lima2)}
+.ir:hover{background:#d6ee78}
+.det-txt .olho2{display:block;font:800 13px Inter,sans-serif;color:var(--lima)}
+.det-txt h2{font:900 clamp(26px,3vw,38px)/1 Inter,sans-serif;letter-spacing:-.04em;margin:6px 0 10px}
+.det-p{font-size:14.5px;line-height:1.5;color:#c4c9d0}
+.det-lista{margin-top:16px}
+.det-lista li{border-top:1px solid rgba(255,255,255,.09)}
+.dl{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;padding:11px 0;color:#fff;cursor:pointer;text-align:left;font:700 15px Inter,sans-serif}
+.dl[aria-expanded="true"] .n{background:#fff}
+.det-lista p{display:none;margin:0 0 12px 36px;font-size:13.5px;line-height:1.5;color:#c4c9d0}
+.dl[aria-expanded="true"]+p{display:block}
+.dock-area{position:relative;margin-top:16px;min-height:96px}
+.dock{display:flex;align-items:center;gap:18px;padding:14px 16px 14px 22px;border-radius:18px;animation:sobe .3s ease}
+.dock[hidden]{display:none}
+@keyframes sobe{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ops{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+.op{font:600 13.5px Inter,sans-serif;color:#e8ebee;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:10px 18px;cursor:pointer}
+.op.sel{background:var(--lima2);color:var(--lima-esc);border-color:var(--lima2)}
+.fechar{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.fechar svg{width:12px;height:12px;stroke:#fff;stroke-width:1.6}
+.h-notas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;transition:opacity .25s}
+.h-notas b{display:block;font:700 15px Inter,sans-serif}
+.h-notas p{font-size:13.5px;line-height:1.5;color:var(--tinta2);margin-top:6px}
+.dock-area.menu .h-notas{opacity:0;visibility:hidden;position:absolute;inset:0}
+.h-base{display:flex;justify-content:space-between;gap:16px;margin-top:18px;padding-top:14px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--tinta2)}
+.rolar{white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:8px;margin:34px auto 0;font:600 10.5px Inter,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--tinta3);text-decoration:none;width:max-content}
+.rolar i{width:2px;height:38px;border-radius:2px;background:linear-gradient(var(--lima) 0 40%,transparent 40%);background-size:2px 14px;animation:faixa 1.2s linear infinite}
+@keyframes faixa{to{background-position:0 14px}}
+
+/* ===== painel fixo de leitura (Modo Carro em miniatura): KM do capítulo + barra de progresso ===== */
+.hud{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));z-index:50;transform:translate(-50%,-140%);opacity:0;transition:transform .55s var(--ease),opacity .4s;width:min(560px,calc(100% - 24px))}
+.hud.on{transform:translate(-50%,0);opacity:1}
+.hud-bar{display:flex;align-items:center;gap:14px;padding:8px 10px 8px 8px;border-radius:18px;cursor:pointer;width:100%;text-align:left;font:inherit;color:#fff}
+.hud-placa{display:flex;flex-direction:column;align-items:center;justify-content:center;width:40px;height:46px;border-radius:7px;background:var(--placa);box-shadow:0 0 0 2.5px #fff;flex:0 0 auto;font:800 9px/1 Inter,sans-serif;color:#fff}
+.hud-placa i{width:70%;height:1.5px;background:#fff;margin:3px 0}
+.odo{display:inline-flex;height:1em;overflow:hidden;font:800 17px/1 Inter,sans-serif;font-variant-numeric:tabular-nums}
+.reel{display:flex;flex-direction:column;transition:transform .8s var(--ease-sai)}
+.reel span{height:1em;line-height:1}
+.hud-txt{flex:1;min-width:0}
+.hud-txt b{display:block;font:800 15px/1.1 Inter,sans-serif;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-txt .cl{font-size:9px}
+.trilho{position:relative;height:6px;border-radius:999px;background:linear-gradient(180deg,#0a0b0c,#18191b);box-shadow:inset 0 1px 2px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.06);margin-top:7px}
+.trilho i{position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:0 50%;transform:scaleX(var(--p,0));border-radius:999px;background:linear-gradient(90deg,#8eb31f,#c6e64c);box-shadow:0 0 12px rgba(183,217,45,.35)}
+.hud-seta{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07);flex:0 0 auto;transition:transform .3s}
+.hud-seta svg{width:12px;height:12px;stroke:#fff;stroke-width:1.6;fill:none}
+.hud[data-aberto] .hud-seta{transform:rotate(180deg)}
+.hud-menu{margin-top:8px;padding:10px;border-radius:18px;display:grid;grid-template-columns:1fr 1fr;gap:2px;transform-origin:50% 0;transition:opacity .25s,transform .3s var(--ease)}
+.hud-menu[hidden]{display:grid;opacity:0;transform:scaleY(.92) translateY(-6px);pointer-events:none;visibility:hidden}
+.hud-menu a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;text-decoration:none;font:600 13.5px Inter,sans-serif;color:#e8ebee}
+.hud-menu a:hover,.hud-menu a.atual{background:rgba(255,255,255,.07)}
+.hud-menu a span{font:800 10px Inter,sans-serif;color:var(--lima);width:34px;letter-spacing:.06em}
+
+/* ===== manifesto: o texto se preenche com a rolagem ===== */
+.manifesto{height:220vh;position:relative}
+.manifesto-in{position:sticky;top:0;height:100vh;display:grid;place-items:start start;padding-top:16vh!important;padding:0 var(--gutter);max-width:1180px;margin:0 auto}
+.manifesto p{max-width:min(600px,40vw);font:800 clamp(28px,3.4vw,50px)/1.12 Inter,sans-serif;letter-spacing:-.035em;color:var(--tinta)}
+.manifesto .w{opacity:.14;transition:opacity .35s ease}
+.manifesto .w.on{opacity:1}
+.manifesto .w.lima{color:#7d9a12}
+
+/* ===== trilho da viagem: o eixo tracejado que corre ao lado dos capítulos ===== */
+.viagem{position:relative;max-width:1180px;margin:0 auto;padding:0 var(--gutter) 0 calc(var(--gutter) + var(--eixo))}
+.eixo{position:absolute;left:calc(var(--gutter) + 28px);top:0;bottom:0;width:4px;border-radius:4px;background:repeating-linear-gradient(180deg,rgba(28,35,51,.16) 0 22px,transparent 22px 36px)}
+.eixo i{position:absolute;inset:0;transform-origin:50% 0;transform:scaleY(var(--p,0));background:repeating-linear-gradient(180deg,var(--lima) 0 22px,transparent 22px 36px);filter:drop-shadow(0 0 6px rgba(183,217,45,.5))}
+.marco{position:absolute;left:calc(-1 * var(--eixo) + 8px);top:6px;width:44px;height:52px;border-radius:7px;background:#fff;padding:3px;box-shadow:0 8px 16px -6px rgba(20,26,36,.35);transform:scale(.82);transition:transform .5s var(--ease-sai),filter .5s;filter:grayscale(1) opacity(.55)}
+.marco span{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;border-radius:5px;background:var(--placa);color:#fff;font:800 9px/1 Inter,sans-serif}
+.marco i{width:70%;height:1.5px;background:#fff;margin:3px 0}
+.marco b{font-size:15px}
+.cap.passou .marco{transform:scale(1);filter:none}
+
+/* ===== capítulo ===== */
+.cap{position:relative;padding:120px 0 40px;scroll-margin-top:calc(var(--topo) + var(--hud))}
+.cap-h{max-width:600px}
+.cap-h .olho{color:#7d9a12;margin-bottom:12px}
+.cap-h h2{font:900 clamp(38px,5.6vw,72px)/.96 Inter,sans-serif;letter-spacing:-.05em}
+.cap-h .intro{font-size:clamp(16px,1.6vw,19px);line-height:1.55;color:var(--tinta2);margin-top:18px;max-width:40em}
+/* palavras que sobem (revelar palavras) */
+[data-rev] .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.06em;margin-bottom:-.06em}
+[data-rev] .wi{display:inline-block;transform:translateY(105%);transition:transform .8s var(--ease-sai);transition-delay:calc(var(--i) * 70ms)}
+[data-rev].vis .wi{transform:none}
+[data-sobe]{opacity:0;transform:translateY(26px);transition:opacity .8s ease,transform .9s var(--ease-sai);transition-delay:var(--d,0ms)}
+[data-sobe].vis{opacity:1;transform:none}
+
+/* rolagem guiada: o celular fica parado e um "holofote" anda pelos itens da tela */
+/* o aparelho girado (deitado) não pode alargar a página: corta só na horizontal, sem quebrar o "grudar" */
+.story{overflow-x:clip;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);margin-top:56px}
+/* texto na faixa clara da esquerda, celular sobre a rodovia da direita (como na capa) */
+.story-fig{order:2;position:sticky;top:calc(var(--topo) + 84px);height:calc(100vh - 110px - var(--topo));height:calc(100svh - 110px - var(--topo));display:grid;grid-template-columns:minmax(0,1fr);place-items:center}
+.fone{position:relative;height:min(100%,640px);aspect-ratio:390/844;transition:transform .7s var(--ease),opacity .45s}
+.fone-d{position:absolute;width:min(100%,620px);aspect-ratio:844/390;opacity:0;transform:rotate(90deg) scale(.6);transition:transform .7s var(--ease),opacity .45s;pointer-events:none}
+.story-fig.deitado .fone{transform:rotate(-90deg) scale(.85);opacity:0}
+.story-fig.deitado .fone-d{transform:none;opacity:1}
+.foco{position:absolute;z-index:3;border:2px solid var(--lima2);border-radius:10px;box-shadow:0 0 0 2000px rgba(10,12,14,.42),0 0 18px rgba(201,228,99,.45);transition:left .6s var(--ease),top .6s var(--ease),width .6s var(--ease),height .6s var(--ease),box-shadow .5s,border-color .5s;pointer-events:none}
+.foco.livre{left:-2%!important;top:-1%!important;width:104%!important;height:102%!important;border-color:transparent;box-shadow:0 0 0 2000px rgba(10,12,14,0),0 0 0 transparent}
+.passos{padding:12vh 0 30vh}
+.passo{min-height:52vh;display:flex;align-items:center}
+.leg-passo{display:none}
+.leg-passo .n{width:30px;height:30px;font-size:12px}
+.leg-passo h3{font:800 21px/1.15 Inter,sans-serif;letter-spacing:-.03em}
+.leg-passo p{font-size:15px;line-height:1.5;color:var(--tinta2);margin-top:6px}
+.leg-passo.troca{animation:sobe .35s ease}
+.passo-in{display:flex;gap:16px;max-width:460px;opacity:.28;transform:translateX(10px);transition:opacity .45s,transform .6s var(--ease-sai)}
+.passo.ativo .passo-in{opacity:1;transform:none}
+.passo .n{width:30px;height:30px;font-size:12px;background:rgba(28,35,51,.12);color:var(--tinta2);transition:background .4s,color .4s,transform .4s var(--ease-sai)}
+.passo.ativo .n{background:var(--lima);color:var(--lima-esc);transform:scale(1.12)}
+.passo h3{font:800 clamp(22px,2.4vw,30px)/1.1 Inter,sans-serif;letter-spacing:-.03em}
+.passo p{font-size:16px;line-height:1.6;color:var(--tinta2);margin-top:10px}
+.passo .cl{color:var(--tinta3);display:block;margin-bottom:8px}
+/* foto da legenda: o quadro aproxima até a legenda ficar legível */
+.quadro{position:relative;width:min(100%,560px);border-radius:20px;overflow:hidden;box-shadow:0 40px 70px -34px rgba(20,26,36,.7);border:3px solid #fff}
+.quadro-in{position:relative;transform-origin:0% 100%;transition:transform .9s var(--ease)}
+.quadro-in img{display:block;width:100%}
+.story-fig.zoom .quadro-in{transform:scale(1.75)}
+.quadro .foco{border-radius:6px}
+.dica{display:flex;gap:16px;align-items:baseline;margin-top:20px;padding:20px 24px;border-radius:20px;max-width:760px}
+.dica b{font:700 10.5px Inter,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--lima);flex:0 0 auto}
+.dica p{font-size:15px;line-height:1.55;color:#dfe3e8}
+
+/* guia rápido: cartões que empilham */
+.pilha-passos{margin-top:56px;padding-bottom:12vh}
+.cartao-passo{position:sticky;top:calc(var(--topo) + 96px + var(--i) * 16px);height:min(380px,62vh);margin-bottom:22vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);border-radius:30px;transform-origin:50% 0;will-change:transform}
+.cartao-passo:last-child{margin-bottom:0}
+.cp-txt{padding:clamp(24px,4vw,46px);display:flex;flex-direction:column;justify-content:center}
+.cp-num{font:900 clamp(64px,8vw,104px)/.85 Inter,sans-serif;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1.5px rgba(201,228,99,.85)}
+.cp-txt h3{font:900 clamp(26px,3vw,38px)/1 Inter,sans-serif;letter-spacing:-.04em;margin-top:16px}
+.cp-txt p{font-size:16px;line-height:1.55;color:#c4c9d0;margin-top:12px;max-width:26em}
+.cp-tela{position:relative;overflow:hidden}
+.cp-tela img{position:absolute;left:50%;top:12%;width:62%;transform:translateX(-50%) rotate(-6deg);border-radius:22px;box-shadow:0 0 0 6px #0b0c0d,0 0 0 7px rgba(255,255,255,.14),0 40px 60px -20px rgba(0,0,0,.8)}
+
+/* instalação */
+.inst{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:48px}
+.inst .cdk{padding:28px 30px}
+.inst h3{font:900 26px/1 Inter,sans-serif;letter-spacing:-.03em;margin-bottom:16px}
+.inst li{display:flex;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08);font-size:15px;line-height:1.5;color:#dfe3e8}
+.inst li:first-child{border-top:none}
+.inst li b{color:#fff}
+.nota{margin-top:18px;font-size:15px;color:var(--tinta2)}
+
+/* configurações: galeria que anda de lado com a rolagem */
+.galeria{position:relative;margin-top:40px;width:100vw;margin-left:calc(-1 * (var(--gutter) + var(--eixo)) - max(0px,(100vw - 1180px) / 2))}
+.galeria-in{position:sticky;top:var(--topo);height:calc(100vh - var(--topo));height:calc(100svh - var(--topo));display:flex;align-items:center;overflow:hidden}
+.trilha{display:flex;gap:24px;padding:0 6vw 0 calc(var(--gutter) + var(--eixo) + max(0px,(100vw - 1180px) / 2));will-change:transform}
+.aj{flex:0 0 min(400px,78vw);display:grid;grid-template-columns:150px minmax(0,1fr);gap:20px;padding:22px;border-radius:26px}
+.aj-tela{aspect-ratio:390/844;border-radius:20px;overflow:hidden;box-shadow:0 0 0 5px #0b0c0d,0 0 0 6px rgba(255,255,255,.14)}
+.aj-tela img{display:block;width:100%;height:100%;object-fit:cover}
+.aj h3{font:900 20px/1.1 Inter,sans-serif;letter-spacing:-.03em;margin-bottom:10px}
+.aj dt{font:700 13.5px Inter,sans-serif;margin-top:8px}
+.aj dd{font-size:12.5px;line-height:1.45;color:#aeb5be}
+.galeria.nativo .galeria-in{position:static;height:auto;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 0 24px;-webkit-overflow-scrolling:touch}
+.galeria.nativo .aj{scroll-snap-align:start}
+
+/* dicas: o cartão abre uma janela que nasce dele */
+.faq{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:44px}
+.faq-c{display:flex;flex-direction:column;justify-content:space-between;gap:20px;min-height:150px;padding:22px;border-radius:22px;cursor:pointer;text-align:left;font:inherit;transition:transform .35s var(--ease-sai)}
+.faq-c:hover{transform:translateY(-3px)}
+.faq-c b{font:800 18px/1.2 Inter,sans-serif;letter-spacing:-.02em}
+.faq-c .cl{display:flex;justify-content:space-between;align-items:center}
+.faq-c .mais{width:28px;height:28px;border-radius:50%;background:var(--lima2);display:grid;place-items:center}
+.faq-c .mais svg{width:11px;height:11px;stroke:var(--lima-esc);stroke-width:1.6}
+.veu{position:fixed;inset:0;z-index:60;background:rgba(20,24,30,.35);backdrop-filter:blur(4px);opacity:0;transition:opacity .35s}
+.veu.on{opacity:1}
+.janela{position:fixed;z-index:61;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100% - 32px));max-height:calc(100svh - 48px - var(--topo));overflow:auto;padding:30px;border-radius:26px;transform-origin:0 0}
+.janela h3{font:900 26px/1.1 Inter,sans-serif;letter-spacing:-.03em;margin:10px 0 12px;padding-right:40px}
+.janela p{font-size:16px;line-height:1.6;color:#dfe3e8}
+.janela .fechar{position:absolute;right:16px;top:16px}
+.janela .conteudo{transition:opacity .3s .2s;opacity:0}
+.janela.on .conteudo{opacity:1}
+.janela img{display:block;width:160px;margin:18px auto 0;border-radius:18px;box-shadow:0 0 0 5px #0b0c0d,0 0 0 6px rgba(255,255,255,.14)}
+
+/* fim do trecho */
+.fim{max-width:1180px;margin:80px auto 0;padding:0 var(--gutter) 60px}
+.fim-c{padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(20px,4vw,48px);align-items:center;border-radius:32px}
+.fim-c .placa-g{width:clamp(96px,12vw,140px)}
+.fim-c h2{font:900 clamp(36px,5vw,64px)/.95 Inter,sans-serif;letter-spacing:-.05em}
+.fim-c p{font-size:17px;color:#c4c9d0;margin-top:14px}
+.fim-c .trilho{margin-top:22px;height:8px;max-width:420px}
+.creditos{display:flex;justify-content:flex-start;column-gap:32px;gap:16px;flex-wrap:wrap;margin-top:22px;font-size:12.5px;color:var(--tinta2)}
+
+@media (max-width:900px){
+  :root{--eixo:0px;--fundo-pos:18% 50%}
+  .capa-img{position:absolute;inset:0 0 auto;height:auto;aspect-ratio:1672/941}
+  .capa-web{justify-content:flex-start;padding-top:calc(56.3vw + 28px);padding-bottom:110px;height:auto;min-height:100svh}
+  .capa-txt{position:relative;max-width:none}
+  .manifesto p{max-width:none}
+  .story-fig{order:0}
+  .h-meio{display:none}
+  .h-top{grid-template-columns:1fr auto}
+  .h-tit{flex-direction:column;align-items:flex-start;gap:10px}
+  .h-tit p{text-align:left}
+  .cena{aspect-ratio:4/5}
+  .h-cel{height:80%}
+  .h-deitado{width:94%}
+  .det{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);padding:16px;gap:14px;align-items:start;overflow:auto}
+  .det-cel{height:auto;width:44%;justify-self:center}
+  .h-notas{grid-template-columns:1fr 1fr;gap:16px 20px}
+  .dock{flex-wrap:wrap}
+  .eixo{left:8px;width:3px}
+  .marco{display:none}
+  .viagem{padding-left:calc(var(--gutter) + 6px)}
+  .galeria{margin-left:calc(-1 * (var(--gutter) + 6px))}
+  .trilha{padding-left:calc(var(--gutter) + 6px)}
+  .story{grid-template-columns:1fr;gap:0;margin-top:28px}
+  .story-fig{top:calc(var(--topo) + 84px);height:calc(100vh - var(--topo) - 104px);height:calc(100svh - var(--topo) - 104px);z-index:2}
+  .fone{height:94%}
+  .passos{padding:4vh 0 20vh}
+  /* celular: aparelho e texto do passo atual formam um bloco fixo (texto sempre abaixo do aparelho);
+     a lista de passos vira só o espaço que a rolagem percorre */
+  .story-fig{grid-template-rows:minmax(0,1fr) auto;gap:14px;align-content:stretch}
+  .story-fig .fone{height:100%;max-height:100%}
+  .story-fig.foto .quadro{align-self:center}
+  .leg-passo{display:flex;width:100%;min-height:124px;gap:14px;padding:0 4px}
+  .passo{min-height:46vh;min-height:46svh}
+  .passo-in{visibility:hidden}
+  .passos{padding:2vh 0 34vh}
+  .cartao-passo{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:min(520px,72vh);top:calc(var(--topo) + 86px + var(--i) * 12px)}
+  .cp-tela img{width:48%;top:6%}
+  .inst{grid-template-columns:1fr}
+  .aj{grid-template-columns:110px minmax(0,1fr);padding:18px}
+  .fim-c{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important;animation:none!important}
+  [data-rev] .wi,[data-sobe]{transform:none!important;opacity:1!important}
+  .manifesto{height:auto}.manifesto-in{position:static;height:auto;padding:12vh var(--gutter)}.manifesto .w{opacity:1}
+  .cartao-passo{position:relative;top:0!important;margin-bottom:20px;transform:none!important}
+}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <!-- cetim grafite: cada dobra = sombra escura acima + reflexo cinza abaixo, com borda suave -->
+    <filter id="car-soft" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="car-glow" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="3"/></filter>
+    <!-- granulado fosco bem leve: tira o aspecto de plástico chapado -->
+    <filter id="car-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .07 0 0 0 0"/></filter>
+    <linearGradient id="car-hi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa0a8" stop-opacity=".30"/><stop offset=".35" stop-color="#6b7078" stop-opacity=".14"/><stop offset="1" stop-color="#3a3d42" stop-opacity="0"/></linearGradient>
+    <linearGradient id="car-sh" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+    <linearGradient id="car-crest" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity=".22"/><stop offset=".8" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <!-- fio de luz verde: acende, some (atrás da placa) e acende de novo — nada de linha sólida -->
+    <linearGradient id="car-lime" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c4e24a" stop-opacity="0"/><stop offset=".22" stop-color="#c4e24a" stop-opacity=".55"/><stop offset=".4" stop-color="#c4e24a" stop-opacity=".1"/><stop offset=".62" stop-color="#c4e24a" stop-opacity=".15"/><stop offset=".82" stop-color="#d6f06a" stop-opacity=".8"/><stop offset="1" stop-color="#c4e24a" stop-opacity="0"/></linearGradient>
+    <linearGradient id="car-lime2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c4e24a" stop-opacity="0"/><stop offset=".7" stop-color="#c4e24a" stop-opacity=".55"/><stop offset="1" stop-color="#d6f06a" stop-opacity=".75"/></linearGradient>
+    <symbol id="car-amain" viewBox="0 0 360 600" preserveAspectRatio="none">
+      <path d="M0,212 C70,170 140,176 205,206 C262,232 318,226 360,196 L360,140 C318,170 262,176 205,150 C140,120 70,114 0,156 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,212 C70,170 140,176 205,206 C262,232 318,226 360,196 L360,272 C318,302 262,306 205,280 C140,250 70,246 0,290 Z" fill="url(#car-hi)" filter="url(#car-soft)"/>
+      <path d="M0,352 C80,312 160,336 235,352 C292,364 332,344 360,326 L360,276 C332,294 292,314 235,302 C160,286 80,262 0,302 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,352 C80,312 160,336 235,352 C292,364 332,344 360,326 L360,396 C332,414 292,434 235,422 C160,406 80,384 0,424 Z" fill="url(#car-hi)" filter="url(#car-soft)" opacity=".8"/>
+      <path d="M0,472 C90,432 190,472 270,462 C312,457 340,444 360,436 L360,390 C340,398 312,411 270,416 C190,426 90,386 0,426 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,472 C90,432 190,472 270,462 C312,457 340,444 360,436 L360,500 C340,508 312,521 270,526 C190,536 90,500 0,536 Z" fill="url(#car-hi)" filter="url(#car-soft)" opacity=".65"/>
+      <path d="M0,548 C120,520 240,566 360,536 L360,600 L0,600 Z" fill="#000" fill-opacity=".45" filter="url(#car-soft)"/>
+      <g fill="none" stroke="url(#car-crest)" stroke-width="1" vector-effect="non-scaling-stroke">
+        <path d="M0,212 C70,170 140,176 205,206 C262,232 318,226 360,196"/>
+        <path d="M0,352 C80,312 160,336 235,352 C292,364 332,344 360,326" opacity=".7"/>
+        <path d="M0,472 C90,432 190,472 270,462 C312,457 340,444 360,436" opacity=".5"/>
+      </g>
+      <path d="M0,214 C70,172 140,178 205,208 C262,234 318,228 360,198" fill="none" stroke="url(#car-lime)" stroke-width="3" opacity=".5" filter="url(#car-glow)"/>
+      <path d="M0,214 C70,172 140,178 205,208 C262,234 318,228 360,198" fill="none" stroke="url(#car-lime)" stroke-width=".9" vector-effect="non-scaling-stroke"/>
+      <path d="M180,600 C250,574 310,556 360,552" fill="none" stroke="url(#car-lime2)" stroke-width="3" opacity=".45" filter="url(#car-glow)"/>
+      <path d="M180,600 C250,574 310,556 360,552" fill="none" stroke="url(#car-lime2)" stroke-width=".9" vector-effect="non-scaling-stroke"/>
+      <rect width="360" height="600" filter="url(#car-grain)"/>
+    </symbol>
+    <symbol id="car-atile" viewBox="0 0 200 90" preserveAspectRatio="none">
+      <path d="M0,56 C50,42 110,68 200,46 L200,24 C110,46 50,20 0,34 Z" fill="url(#car-sh)" filter="url(#car-soft)"/>
+      <path d="M0,56 C50,42 110,68 200,46 L200,80 C110,100 50,76 0,90 Z" fill="url(#car-hi)" filter="url(#car-soft)" opacity=".8"/>
+      <path d="M0,56 C50,42 110,68 200,46" fill="none" stroke="url(#car-crest)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <path d="M0,84 C70,74 130,94 200,80 L200,90 L0,90 Z" fill="#000" fill-opacity=".4" filter="url(#car-soft)"/>
+      <rect width="200" height="90" filter="url(#car-grain)"/>
+    </symbol>
+    <symbol id="car-atilel" viewBox="0 0 200 90" preserveAspectRatio="none">
+      <use href="#car-atile"/>
+      <path d="M110,90 C145,80 172,66 200,62" fill="none" stroke="url(#car-lime2)" stroke-width="3" opacity=".45" filter="url(#car-glow)"/>
+      <path d="M110,90 C145,80 172,66 200,62" fill="none" stroke="url(#car-lime2)" stroke-width=".9" vector-effect="non-scaling-stroke"/>
+    </symbol>
+  </defs></svg>
+<nav class="hud" aria-label="Capítulos">
+  <button class="hud-bar cdk" aria-expanded="false"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><span class="hud-placa">KM<i></i><span class="odo" aria-hidden="true"><span class="reel"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span><span class="reel"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></span>
+    <span class="hud-txt"><span class="cl">KM 00</span><b>Guia rápido</b><span class="trilho"><i></i></span></span><span class="hud-seta"><svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5 9 4.5"/></svg></span></button>
+  <div class="hud-menu cdk" hidden><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><a href="#rapido"><span>KM 00</span>Guia rápido</a><a href="#instalacao"><span>KM 01</span>Instalação</a><a href="#inicio"><span>KM 02</span>Tela inicial</a><a href="#camera"><span>KM 03</span>Registrar evidência</a><a href="#legenda"><span>KM 04</span>A legenda da foto</a><a href="#galeria"><span>KM 05</span>Galeria</a><a href="#carro"><span>KM 06</span>Modo Carro</a><a href="#eixo"><span>KM 07</span>Gestão de Eixo</a><a href="#consulta"><span>KM 08</span>Consulta</a><a href="#config"><span>KM 09</span>Configurações</a><a href="#contratos"><span>KM 10</span>Contratos</a><a href="#problemas"><span>KM 11</span>Dicas e soluções</a></div>
+</nav>
+<main><img loading="lazy" class="capa-img" src="img/10d30db7af99.webp" alt="" aria-hidden="true">
+<section class="capa-web" aria-label="Capa"><div class="capa-txt">
+  <span class="olho">Manual do usuário · Versão 293</span>
+  <h1 data-rev>Manual do<br>usuário</h1>
+  <p>Registro fotográfico de rodovias com KM, estaca e coordenadas gravados na própria foto. Direto do campo, sem depender de internet.</p>
+  <div class="capa-chips"><span>Versão 293</span><span>Outubro de 2026</span><span>iPhone e Android</span></div>
+</div>
+<div class="capa-pe"><span>Desenvolvido por <b>Wagner Machado</b></span><a class="rolar" href="#topo">Role para começar<i aria-hidden="true"></i></a></div></section>
+
+<section class="hero" id="topo" aria-label="Conheça o KM Check">
+  <div class="h-tit"><h2 data-rev>O KM certo,<br>em cada foto.</h2><p>Explore o app por dentro.<br>Toque num ponto para começar.</p></div>
+  <div class="cena" data-modo="geral">
+    <div class="palco">
+      <img loading="lazy" class="palco-foto" src="img/c2c54fe8e4af.webp" alt="">
+      <div class="h-cel"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="01-inicio" data-esc="0" src="img/a7e891f8e9d4.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="10-camera" data-esc="1" src="img/10c36e468981.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="20-carro-dia" data-esc="0" src="img/cef49f419250.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="21-carro-noite" data-esc="1" src="img/767976e7eaaa.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div></div></div>
+        <button class="ponto" data-p="camera" style="left:50%;top:88.9%" aria-label="Registrar evidência"><span class="disco" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="rotulo">Registrar evidência</span></button><button class="ponto" data-p="carro" style="left:86.7%;top:20%" aria-label="Modo Carro"><span class="disco" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="rotulo">Modo Carro</span></button><button class="ponto" data-p="noite" style="left:50%;top:42.9%" aria-label="Dia e noite"><span class="disco" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="rotulo">Dia e noite</span></button><button class="ponto" data-p="girar" style="left:50%;top:60.5%" aria-label="Em pé ou deitado"><span class="disco" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span><span class="rotulo">Em pé ou deitado</span></button>
+      </div>
+      <div class="h-deitado" aria-hidden="true"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="22-carro-deitado" data-esc="0" src="img/9b06873019cb.webp" alt="" decoding="async"></div></div></div>
+    </div>
+    <div class="det" data-det="camera" hidden>
+      <div class="det-cel"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="10-camera" data-esc="1" src="img/10c36e468981.webp" alt="" decoding="async"></div></div>
+        <button class="dp" data-i="0" style="left:37.2%;top:70.6%" aria-label="Legenda ao vivo">1</button><button class="dp" data-i="1" style="left:7.9%;top:89.6%" aria-label="Lado da pista">2</button><button class="dp" data-i="2" style="left:50%;top:89.6%" aria-label="Obturador">3</button></div>
+      <div class="det-txt cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div>
+        <button class="voltar" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>Voltar</button>
+        <span class="olho2">KM 03</span><h2 class="prata">Registrar evidência</h2><p class="det-p">A câmera mostra a legenda ao vivo, exatamente como ela vai gravada na foto.</p>
+        <ol class="det-lista"><li><button class="dl" data-i="0" aria-expanded="false"><span class="n">1</span><b>Legenda ao vivo</b></button><p>Rodovia, KM, lado, estaca, contrato e coordenadas, do jeito que saem na foto.</p></li><li><button class="dl" data-i="1" aria-expanded="false"><span class="n">2</span><b>Lado da pista</b></button><p>LD ou LE. Toque de novo no mesmo botão para tirar o lado da legenda.</p></li><li><button class="dl" data-i="2" aria-expanded="false"><span class="n">3</span><b>Obturador</b></button><p>Tira a foto. Sem um GPS confiável, o app avisa e não deixa registrar.</p></li></ol>
+        <a class="ir" href="#camera">Ler o capítulo <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"/></svg></a>
+      </div></div>
+    </div><div class="det" data-det="carro" hidden>
+      <div class="det-cel"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="20-carro-dia" data-esc="0" src="img/cef49f419250.webp" alt="" decoding="async"></div></div>
+        <button class="dp" data-i="0" style="left:50%;top:41.4%" aria-label="KM ao vivo">1</button><button class="dp" data-i="1" style="left:50%;top:51.1%" aria-label="Próximo km">2</button><button class="dp" data-i="2" style="left:73.2%;top:75.4%" aria-label="Lado">3</button></div>
+      <div class="det-txt cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div>
+        <button class="voltar" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>Voltar</button>
+        <span class="olho2">KM 06</span><h2 class="prata">Modo Carro</h2><p class="det-p">Um painel grande para acompanhar a rodovia dirigindo, com o celular no suporte.</p>
+        <ol class="det-lista"><li><button class="dl" data-i="0" aria-expanded="false"><span class="n">1</span><b>KM ao vivo</b></button><p>Quilômetro exato, atualizado pelo GPS enquanto você dirige.</p></li><li><button class="dl" data-i="1" aria-expanded="false"><span class="n">2</span><b>Próximo km</b></button><p>A barra e os metros que faltam para o próximo quilômetro.</p></li><li><button class="dl" data-i="2" aria-expanded="false"><span class="n">3</span><b>Lado</b></button><p>Crescente ou Decrescente, pelo sentido em que o KM está mudando.</p></li></ol>
+        <a class="ir" href="#carro">Ler o capítulo <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M4 9l4 4 4-4"/></svg></a>
+      </div></div>
+    </div>
+    <div class="moldura-branca" aria-hidden="true"></div>
+  </div>
+  <div class="dock-area">
+    <div class="dock cdk" data-menu="noite" role="group" aria-label="Modo Carro" hidden><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><span class="cl">Modo Carro</span><div class="ops"><button class="op sel" data-v="dia" aria-pressed="true">Dia</button><button class="op" data-v="noite" aria-pressed="false">Noite</button></div><button class="fechar" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button></div><div class="dock cdk" data-menu="girar" role="group" aria-label="Celular" hidden><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><span class="cl">Celular</span><div class="ops"><button class="op sel" data-v="pe" aria-pressed="true">Em pé</button><button class="op" data-v="deitado" aria-pressed="false">Deitado</button></div><button class="fechar" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button></div>
+    <div class="h-notas">
+      <div><b>Registrar evidência</b><p>Veja a câmera por dentro. A legenda aparece ao vivo, como vai na foto.</p></div>
+      <div><b>Modo Carro</b><p>O KM grande, para acompanhar a rodovia dirigindo.</p></div>
+      <div><b>Dia e noite</b><p>O painel escurece sozinho 1 hora após o pôr do sol.</p></div>
+      <div><b>Em pé ou deitado</b><p>Gire o celular e a tela se reorganiza.</p></div>
+    </div>
+  </div>
+  <div class="h-base"><span>KM Check · Manual do usuário</span><span class="h-status" role="status">Toque num ponto para começar.</span></div>
+  <a class="rolar" href="#manifesto">Comece a viagem<i aria-hidden="true"></i></a>
+</section>
+<section class="manifesto" id="manifesto" aria-label="O que o KM Check faz"><div class="manifesto-in"><p><span class="w">Cada</span> <span class="w">foto</span> <span class="w">sai</span> <span class="w">com</span> <span class="w">a</span> <span class="w lima">rodovia,</span> <span class="w">o</span> <span class="w lima">KM,</span> <span class="w">a</span> <span class="w lima">estaca</span> <span class="w">e</span> <span class="w">as</span> <span class="w lima">coordenadas</span> <span class="w">gravadas</span> <span class="w">na</span> <span class="w">imagem.</span> <span class="w">Sem</span> <span class="w">anotar</span> <span class="w">nada.</span> <span class="w">Sem</span> <span class="w">depender</span> <span class="w">de</span> <span class="w">internet.</span> <span class="w">Direto</span> <span class="w">do</span> <span class="w">campo.</span></p></div></section>
+<div class="viagem"><span class="eixo" aria-hidden="true"><i></i></span>
+<section class="cap" id="rapido" data-km="00" data-titulo="Guia rápido"><span class="marco" aria-hidden="true"><span>KM<i></i><b>00</b></span></span><header class="cap-h"><span class="olho">Para começar</span><h2 data-rev>Guia rápido</h2><p class="intro" data-sobe>Do primeiro uso à primeira foto, em cinco passos.</p></header>
+  <ol class="pilha-passos"><li class="cartao-passo cdk" style="--i:0"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="cp-txt"><span class="cp-num">01</span><h3>Baixe a rodovia</h3><p>Em Gestão de Eixo, escolha UF e BR e toque em Baixar rodovia. Precisa de internet só nesse momento.</p></div><div class="cp-tela"><img src="img/b5a54b13026e.webp" alt="" loading="lazy" decoding="async"></div></li><li class="cartao-passo cdk" style="--i:1"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="cp-txt"><span class="cp-num">02</span><h3>Confira o KM</h3><p>A tela inicial mostra a rodovia, o KM e a estaca do ponto onde você está, pelo GPS.</p></div><div class="cp-tela"><img src="img/a7e891f8e9d4.webp" alt="" loading="lazy" decoding="async"></div></li><li class="cartao-passo cdk" style="--i:2"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="cp-txt"><span class="cp-num">03</span><h3>Prepare a foto</h3><p>Toque em Registrar evidência. Marque o lado (LD ou LE) e, no botão i, o serviço e o contrato.</p></div><div class="cp-tela"><img src="img/8e099765bad9.webp" alt="" loading="lazy" decoding="async"></div></li><li class="cartao-passo cdk" style="--i:3"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="cp-txt"><span class="cp-num">04</span><h3>Tire a foto</h3><p>Toque no obturador. A legenda com rodovia, KM, estaca, coordenadas e data é gravada na imagem.</p></div><div class="cp-tela"><img src="img/10c36e468981.webp" alt="" loading="lazy" decoding="async"></div></li><li class="cartao-passo cdk" style="--i:4"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="cp-txt"><span class="cp-num">05</span><h3>Pronto</h3><p>A foto vai para a galeria do celular e fica guardada também na galeria do app.</p></div><div class="cp-tela"><img src="img/01f1fa02f22a.webp" alt="" loading="lazy" decoding="async"></div></li></ol></section>
+<section class="cap" id="instalacao" data-km="01" data-titulo="Instalação"><span class="marco" aria-hidden="true"><span>KM<i></i><b>01</b></span></span><header class="cap-h"><span class="olho">KM 01</span><h2 data-rev>Instalação</h2><p class="intro" data-sobe>O KM Check funciona direto do navegador, mas o ideal é instalá-lo na tela inicial. Instalado, ele abre em tela cheia, funciona sem internet e mantém suas configurações.</p></header><div class="inst">
+    <div class="cdk" data-sobe><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div><h3 class="prata">iPhone</h3><ol>
+      <li><span class="n">1</span><span>Abra <b>wagnerxm.github.io/kmcheck</b> no <b>Safari</b>.</span></li>
+      <li><span class="n">2</span><span>Toque no botão <b>Compartilhar</b> na barra do Safari.</span></li>
+      <li><span class="n">3</span><span>Role e toque em <b>Adicionar à Tela de Início</b>.</span></li>
+      <li><span class="n">4</span><span>Toque em <b>Adicionar</b>. O ícone do KM Check aparece na tela inicial.</span></li></ol></div></div>
+    <div class="cdk" data-sobe style="--d:120ms"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div><h3 class="prata">Android</h3><ol>
+      <li><span class="n">1</span><span>Abra <b>wagnerxm.github.io/kmcheck</b> no <b>Chrome</b>.</span></li>
+      <li><span class="n">2</span><span>Toque em <b>Instalar</b> quando o app oferecer, ou no menu ⋮ do Chrome.</span></li>
+      <li><span class="n">3</span><span>Escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</span></li>
+      <li><span class="n">4</span><span>Confirme. O KM Check abre em tela cheia, como os outros apps.</span></li></ol></div></div>
+  </div><p class="nota" data-sobe>Na primeira abertura, permita a localização e a câmera. Sem elas o app não consegue gravar o KM nem tirar a foto.</p></section>
+<section class="cap" id="inicio" data-km="02" data-titulo="Tela inicial"><span class="marco" aria-hidden="true"><span>KM<i></i><b>02</b></span></span><header class="cap-h"><span class="olho">KM 02</span><h2 data-rev>Tela inicial</h2><p class="intro" data-sobe>É o painel de campo. Assim que o GPS encontra sua posição, o app procura a rodovia mais próxima entre as que você baixou e mostra o KM exato.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="01-inicio" data-esc="0" src="img/a7e891f8e9d4.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="01-inicio" data-box="6.96,17.92,34.79,19.82"><div class="passo-in"><span class="n">1</span><div><h3>Placa do KM</h3><p>BR e quilômetro inteiro, no mesmo estilo das placas da rodovia.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="43.37,21.41,47.62,4.99"><div class="passo-in"><span class="n">2</span><div><h3>Rodovia e UF</h3><p>A rodovia onde você está agora.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="43.37,25.51,47.62,6.72"><div class="passo-in"><span class="n">3</span><div><h3>KM exato</h3><p>Quilômetro com metros, em três casas decimais. Fica vermelho quando você está longe do eixo.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="9.01,40.05,81.97,5.69"><div class="passo-in"><span class="n">4</span><div><h3>Estaca</h3><p>Estaca do ponto, a cada 20 m. A rodovia pode ter um zero próprio por lote.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="9.01,48.05,81.97,6.34"><div class="passo-in"><span class="n">5</span><div><h3>Latitude e longitude</h3><p>Coordenadas lidas do GPS do celular.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="80.29,16.97,12.74,6.1"><div class="passo-in"><span class="n">6</span><div><h3>Modo Carro</h3><p>Abre a tela de painel para acompanhar o KM dirigindo.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="82.09,6.43,14.28,6.81"><div class="passo-in"><span class="n">7</span><div><h3>Consulta</h3><p>Converte coordenadas em KM e KM em coordenadas.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="3.12,57.41,46.85,19.42"><div class="passo-in"><span class="n">8</span><div><h3>Configurações</h3><p>Câmera, logo, legenda, aparência, serviços e contratos.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="50.04,57.41,46.85,19.42"><div class="passo-in"><span class="n">9</span><div><h3>Gestão de Eixo</h3><p>Baixar, importar e gerenciar as rodovias do celular.</p></div></div></li><li class="passo" data-tela="01-inicio" data-box="39.52,83.92,20.95,9.89"><div class="passo-in"><span class="n">10</span><div><h3>Registrar evidência</h3><p>Abre a câmera para tirar a foto com legenda.</p></div></div></li></ol></div><div class="dica cdk" data-sobe><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>Dica</b><p>O KM só aparece se a rodovia estiver baixada no celular. Sem rodovia por perto, a placa fica com tracinhos.</p></div></section>
+<section class="cap" id="camera" data-km="03" data-titulo="Registrar evidência"><span class="marco" aria-hidden="true"><span>KM<i></i><b>03</b></span></span><header class="cap-h"><span class="olho">KM 03</span><h2 data-rev>Registrar evidência</h2><p class="intro" data-sobe>A câmera mostra a legenda ao vivo, exatamente como ela será gravada na foto. Tudo o que você ajustar aqui aparece na legenda antes de tirar a foto.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="10-camera" data-esc="1" src="img/10c36e468981.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="11-camera-servico-contrato" data-esc="1" src="img/8e099765bad9.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="fone-d"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="12-camera-deitada" data-esc="1" src="img/3823b8ef1bfe.webp" alt="" decoding="async"></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="10-camera" data-box="0.04,5.24,14.28,6.81"><div class="passo-in"><span class="n">1</span><div><h3>Voltar</h3><p>Fecha a câmera e volta para a tela inicial.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="47.47,7.38,5.05,2.55"><div class="passo-in"><span class="n">2</span><div><h3>Sinal do GPS</h3><p>Verde é sinal forte, amarelo é fraco e vermelho é sem sinal.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="85.68,5.24,14.28,6.81"><div class="passo-in"><span class="n">3</span><div><h3>Trocar câmera</h3><p>Alterna entre a câmera traseira e a frontal.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="0,65.39,74.79,10.52"><div class="passo-in"><span class="n">4</span><div><h3>Legenda ao vivo</h3><p>Rodovia, KM, lado, estaca, contrato, serviço, coordenadas e data.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="26.99,78.35,46.01,4.92"><div class="passo-in"><span class="n">5</span><div><h3>Proporção</h3><p>Formato da foto: 1:1, 4:3 ou 16:9.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="81.14,78.23,18.31,5.15"><div class="passo-in"><span class="n">6</span><div><h3>Logo</h3><p>Liga ou desliga a logo da empresa na foto.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="1.06,86.31,13.68,6.54"><div class="passo-in"><span class="n">7</span><div><h3>Lado da pista</h3><p>LD (direito) ou LE (esquerdo). Toque de novo para tirar o lado.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="24.99,86.31,13.68,6.54"><div class="passo-in"><span class="n">8</span><div><h3>Serviço e contrato</h3><p>Escolha o serviço executado e o contrato da foto.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="37.73,83.8,24.54,11.55"><div class="passo-in"><span class="n">9</span><div><h3>Obturador</h3><p>Tira a foto.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="61.33,86.31,13.68,6.54"><div class="passo-in"><span class="n">10</span><div><h3>Configurações</h3><p>Atalho direto para os ajustes.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="73.29,86.31,13.68,6.54"><div class="passo-in"><span class="n">11</span><div><h3>Flash</h3><p>Liga o flash da câmera traseira, quando o aparelho permite.</p></div></div></li><li class="passo" data-tela="10-camera" data-box="85.25,86.31,13.68,6.54"><div class="passo-in"><span class="n">12</span><div><h3>Galeria</h3><p>Abre as fotos registradas no app.</p></div></div></li><li class="passo" data-tela="11-camera-servico-contrato"><div class="passo-in"><span class="n">·</span><div><h3>Serviço e contrato</h3><p>No botão i você escolhe o serviço e o contrato que vão na segunda linha da legenda. Dá para cadastrar novos aqui mesmo, sem sair da câmera. Contratos vinculados a uma rodovia entram sozinhos quando você chega no trecho.</p></div></div></li><li class="passo" data-tela="12-camera-deitada" data-or="deitado"><div class="passo-in"><span class="n">·</span><div><h3>Celular deitado</h3><p>Gire o celular e a câmera acompanha. A legenda e os botões se reorganizam para a foto na horizontal.</p></div></div></li></ol></div><div class="dica cdk" data-sobe><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>Dica</b><p>Sem GPS ou com o sinal muito impreciso, o app bloqueia a foto e avisa. Assim nenhuma evidência sai com localização errada.</p></div></section>
+<section class="cap" id="legenda" data-km="04" data-titulo="A legenda da foto"><span class="marco" aria-hidden="true"><span>KM<i></i><b>04</b></span></span><header class="cap-h"><span class="olho">KM 04</span><h2 data-rev>A legenda da foto</h2><p class="intro" data-sobe>Cada foto sai com a legenda gravada na própria imagem e com a localização também nos dados do arquivo. Veja o que cada linha significa.</p></header><div class="story"><div class="story-fig foto" aria-hidden="true"><div class="quadro"><div class="quadro-in"><img loading="lazy" src="img/a6bf65e22729.webp" alt=""><span class="foco livre"></span></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela=""><div class="passo-in"><span class="n">·</span><div><h3>A foto registrada</h3><p>BR-226/RN, setembro de 2026. A legenda vai gravada na própria imagem, no canto que você escolher.</p></div></div></li><li class="passo" data-tela="" data-box="0.5,81.4,55,4.4"><div class="passo-in"><span class="n">1</span><div><h3>BR-226/RN - KM 326,040  LD · Est. 16302+0</h3><p>Rodovia e UF, KM com metros, lado da pista e estaca. Longe do eixo, aparece ⚠ no fim.</p></div></div></li><li class="passo" data-tela="" data-box="0.5,85.8,55,4.4"><div class="passo-in"><span class="n">2</span><div><h3>515/2024 - Aplicação de CBUQ</h3><p>Contrato e serviço. Sobre uma ponte ou viaduto, mostra também o nome da OAE.</p></div></div></li><li class="passo" data-tela="" data-box="0.5,90.2,55,4.4"><div class="passo-in"><span class="n">3</span><div><h3>-6,077494, -37,537469</h3><p>Coordenadas no formato escolhido, com a precisão do GPS se você quiser.</p></div></div></li><li class="passo" data-tela="" data-box="0.5,94.6,55,4.6"><div class="passo-in"><span class="n">4</span><div><h3>15/09/2026, 11:27 · SNV Jul/26</h3><p>Data e hora da foto e a versão do SNV usada no cálculo do KM.</p></div></div></li><li class="passo" data-tela=""><div class="passo-in"><span class="n">·</span><div><h3>Nome do arquivo</h3><p>BR-226-RN_KM326+040_LD_2026-09-15_11-27-05.jpg. Rodovia, KM, lado, data e hora no nome, e a localização também nos dados da foto. Este é um modelo de exemplo: você escolhe o que aparece, a posição, a cor e o fundo.</p></div></div></li></ol></div></section>
+<section class="cap" id="galeria" data-km="05" data-titulo="Galeria"><span class="marco" aria-hidden="true"><span>KM<i></i><b>05</b></span></span><header class="cap-h"><span class="olho">KM 05</span><h2 data-rev>Galeria</h2><p class="intro" data-sobe>Todas as fotos ficam guardadas também dentro do app, mesmo depois de salvas no celular. Use a galeria para conferir, salvar de novo ou compartilhar.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="13-galeria" data-esc="1" src="img/01f1fa02f22a.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="13-galeria" data-box="2.09,6.43,14.28,6.81"><div class="passo-in"><span class="n">1</span><div><h3>Voltar</h3><p>Fecha a galeria.</p></div></div></li><li class="passo" data-tela="13-galeria" data-box="57.25,6.43,40.66,6.81"><div class="passo-in"><span class="n">2</span><div><h3>Limpar galeria</h3><p>Apaga do app só as fotos que já estão salvas no celular.</p></div></div></li><li class="passo" data-tela="13-galeria" data-box="9.43,86.76,30.19,7.29"><div class="passo-in"><span class="n">3</span><div><h3>Salvar</h3><p>Salva ou compartilha a foto aberta.</p></div></div></li><li class="passo" data-tela="13-galeria" data-box="38.16,88.6,22.49,3.61"><div class="passo-in"><span class="n">4</span><div><h3>Posição</h3><p>Número da foto e total de fotos no app.</p></div></div></li><li class="passo" data-tela="13-galeria" data-box="59.19,86.76,31.39,7.29"><div class="passo-in"><span class="n">5</span><div><h3>Excluir</h3><p>Apaga a foto do app. A cópia do celular continua lá.</p></div></div></li><li class="passo" data-tela="13-galeria" data-box="11.65,94.11,76.7,5.04"><div class="passo-in"><span class="n">6</span><div><h3>Nome e situação</h3><p>Nome do arquivo e se a foto já está salva no celular.</p></div></div></li></ol></div><div class="dica cdk" data-sobe><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>Dica</b><p>Arraste para os lados para trocar de foto. Dois toques ou o movimento de pinça dão zoom.</p></div></section>
+<section class="cap" id="carro" data-km="06" data-titulo="Modo Carro"><span class="marco" aria-hidden="true"><span>KM<i></i><b>06</b></span></span><header class="cap-h"><span class="olho">KM 06</span><h2 data-rev>Modo Carro</h2><p class="intro" data-sobe>Uma tela de painel para acompanhar a rodovia dirigindo, com o celular no suporte. O KM fica grande, a tela não apaga e a estrada ao fundo anda na velocidade do carro.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="20-carro-dia" data-esc="0" src="img/cef49f419250.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="21-carro-noite" data-esc="1" src="img/767976e7eaaa.webp" alt="" decoding="async" data-revela><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="fone-d"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="22-carro-deitado" data-esc="0" src="img/9b06873019cb.webp" alt="" decoding="async"></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="20-carro-dia" data-box="85.68,5.01,12.23,5.87"><div class="passo-in"><span class="n">1</span><div><h3>Sair</h3><p>Fecha o Modo Carro.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="32.5,11.43,35,19.15"><div class="passo-in"><span class="n">2</span><div><h3>Placa</h3><p>BR e KM inteiro.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="13.62,35.97,72.76,10.84"><div class="passo-in"><span class="n">3</span><div><h3>KM ao vivo</h3><p>Quilômetro exato, atualizado pelo GPS.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="16.71,49.93,66.59,2.43"><div class="passo-in"><span class="n">4</span><div><h3>Próximo km</h3><p>Barra e metros que faltam para o próximo quilômetro.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="8.36,62.71,36.89,5.15"><div class="passo-in"><span class="n">5</span><div><h3>Estaca</h3><p>Estaca do ponto atual.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="58.65,62.71,17.37,5.15"><div class="passo-in"><span class="n">6</span><div><h3>GPS</h3><p>Precisão do sinal em metros.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="8.36,72.87,36.89,4.33"><div class="passo-in"><span class="n">7</span><div><h3>Contrato</h3><p>Contrato ativo no trecho.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="54.75,72.87,36.89,5.15"><div class="passo-in"><span class="n">8</span><div><h3>Lado</h3><p>Crescente ou Decrescente, pelo sentido em que o KM está mudando.</p></div></div></li><li class="passo" data-tela="20-carro-dia" data-box="8.36,83.03,83.29,5.15"><div class="passo-in"><span class="n">9</span><div><h3>Coordenadas</h3><p>Latitude e longitude no formato da legenda.</p></div></div></li><li class="passo" data-tela="21-carro-noite"><div class="passo-in"><span class="n">·</span><div><h3>À noite</h3><p>No automático, a tela escurece 1 hora depois do pôr do sol e clareia no nascer do sol. O horário é calculado pela sua posição, sem internet. Em Configurações você pode deixar sempre claro ou sempre escuro.</p></div></div></li><li class="passo" data-tela="22-carro-deitado" data-or="deitado"><div class="passo-in"><span class="n">·</span><div><h3>No suporte deitado</h3><p>Com o celular na horizontal, o KM fica à esquerda e os outros dados à direita.</p></div></div></li></ol></div></section>
+<section class="cap" id="eixo" data-km="07" data-titulo="Gestão de Eixo"><span class="marco" aria-hidden="true"><span>KM<i></i><b>07</b></span></span><header class="cap-h"><span class="olho">KM 07</span><h2 data-rev>Gestão de Eixo</h2><p class="intro" data-sobe>Aqui ficam as rodovias que o app usa para calcular o KM. Você pode baixar do SNV/DNIT ou importar um arquivo de qualquer rodovia: federal, estadual ou municipal.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="30-gestao-eixo" data-esc="0" src="img/b5a54b13026e.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="31-importar" data-esc="0" src="img/b7a3420cb343.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="33-importar-configurar" data-esc="1" src="img/7059c766db19.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="62-detalhes-rodovia" data-esc="1" src="img/ea59943d75ad.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="63-estaca" data-esc="1" src="img/ca2db8519449.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="30-gestao-eixo"><div class="passo-in"><span class="n">·</span><div><h3>Nesta tela</h3><p>Para baixar, escolha UF, BR, versão do SNV e o código do trecho. Deixe os km em branco para baixar a rodovia inteira.</p></div></div></li><li class="passo" data-tela="30-gestao-eixo" data-box="9.01,24.56,45.56,7.88"><div class="passo-in"><span class="n">1</span><div><h3>Rodovia baixada</h3><p>Nome, trecho de KM e origem dos dados, com a versão do SNV.</p></div></div></li><li class="passo" data-tela="30-gestao-eixo" data-box="54.65,25.09,14.28,6.81"><div class="passo-in"><span class="n">2</span><div><h3>Detalhes</h3><p>Estaca e trechos coincidentes. O ponto verde avisa que há ajuste.</p></div></div></li><li class="passo" data-tela="30-gestao-eixo" data-box="69.01,25.09,21.98,6.81"><div class="passo-in"><span class="n">3</span><div><h3>Remover</h3><p>Tira a rodovia do celular.</p></div></div></li><li class="passo" data-tela="31-importar" data-box="9.01,66.83,81.97,7.64"><div class="passo-in"><span class="n">1</span><div><h3>Importar arquivo</h3><p>Abre o seletor de arquivos do celular.</p></div></div></li><li class="passo" data-tela="31-importar" data-box="9.01,75,81.97,9.32"><div class="passo-in"><span class="n">2</span><div><h3>Shapefile</h3><p>Arquivo .shp com .dbf, ou o .zip. De qualquer órgão.</p></div></div></li><li class="passo" data-tela="31-importar" data-box="9.01,82.73,81.97,9.32"><div class="passo-in"><span class="n">3</span><div><h3>Google Earth e GPS</h3><p>KMZ, KML ou GPX. A linha da estrada ou marcos de km.</p></div></div></li><li class="passo" data-tela="31-importar" data-box="9.01,90.45,81.97,7.66"><div class="passo-in"><span class="n">4</span><div><h3>Planilha</h3><p>Excel ou CSV com KM, latitude e longitude. Aceita UTM.</p></div></div></li><li class="passo" data-tela="33-importar-configurar"><div class="passo-in"><span class="n">·</span><div><h3>Configurar trecho</h3><p>Arquivos exportados do AutoCAD trazem o desenho inteiro do projeto. O app mede as linhas e já marca o Eixo provável.</p></div></div></li><li class="passo" data-tela="33-importar-configurar" data-box="11.22,23.83,53.46,6.93"><div class="passo-in"><span class="n">1</span><div><h3>Rodovia e UF</h3><p>Nome livre: BR-110, RN-118 ou o nome da estrada.</p></div></div></li><li class="passo" data-tela="33-importar-configurar" data-box="11.22,30.58,77.56,7.85"><div class="passo-in"><span class="n">2</span><div><h3>Aviso do arquivo</h3><p>O app explica o que encontrou e o que falta.</p></div></div></li><li class="passo" data-tela="33-importar-configurar" data-box="11.22,40.27,77.56,6.69"><div class="passo-in"><span class="n">3</span><div><h3>KM no início</h3><p>Quilômetro da ponta onde a linha começa.</p></div></div></li><li class="passo" data-tela="33-importar-configurar" data-box="11.22,48.8,77.56,6.22"><div class="passo-in"><span class="n">4</span><div><h3>Ponta do km 0</h3><p>Escolha a ponta A ou B, marcadas no desenho.</p></div></div></li><li class="passo" data-tela="33-importar-configurar" data-box="11.22,54.85,77.56,11.94"><div class="passo-in"><span class="n">5</span><div><h3>Desenho e resumo</h3><p>Traçado, extensão medida e trecho final.</p></div></div></li><li class="passo" data-tela="33-importar-configurar" data-box="11.22,73.71,77.56,5.51"><div class="passo-in"><span class="n">6</span><div><h3>Mais opções</h3><p>Nome do trecho, zero da estaca e contrato.</p></div></div></li><li class="passo" data-tela="62-detalhes-rodovia"><div class="passo-in"><span class="n">·</span><div><h3>Detalhes da rodovia</h3><p>Mostra o trecho baixado, a estaca em uso e os trechos onde duas rodovias usam o mesmo traçado. Nesses trechos você escolhe qual vale para o KM e a legenda.</p></div></div></li><li class="passo" data-tela="63-estaca"><div class="passo-in"><span class="n">·</span><div><h3>Estaca</h3><p>A estaca automática é contada desde o km 0, a cada 20 m. Para lotes com estaqueamento próprio, defina o zero: o KM onde começa e a estaca dele.</p></div></div></li></ol></div></section>
+<section class="cap" id="consulta" data-km="08" data-titulo="Consulta"><span class="marco" aria-hidden="true"><span>KM<i></i><b>08</b></span></span><header class="cap-h"><span class="olho">KM 08</span><h2 data-rev>Consulta</h2><p class="intro" data-sobe>Para quem trabalha com planilhas. Converta uma lista de coordenadas em KM, ou um KM em coordenada, usando as rodovias baixadas.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="40-consulta" data-esc="0" src="img/21c6b8faf305.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="40-consulta"><div class="passo-in"><span class="n">·</span><div><h3>Nesta tela</h3><p>Em KM → Coordenada, escolha a rodovia e digite o KM para ver a latitude e a longitude.</p></div></div></li><li class="passo" data-tela="40-consulta" data-box="9.01,27.75,81.97,14.63"><div class="passo-in"><span class="n">1</span><div><h3>Coordenadas</h3><p>Cole uma por linha. Pode copiar direto do Excel.</p></div></div></li><li class="passo" data-tela="40-consulta" data-box="9.01,45.6,51.93,7.41"><div class="passo-in"><span class="n">2</span><div><h3>Calcular KM</h3><p>Encontra a rodovia e o KM de cada ponto.</p></div></div></li><li class="passo" data-tela="40-consulta" data-box="60.51,45.6,30.48,7.41"><div class="passo-in"><span class="n">3</span><div><h3>Usar GPS</h3><p>Acrescenta a sua posição atual na lista.</p></div></div></li><li class="passo" data-tela="40-consulta" data-box="9.01,52.82,81.97,17.12"><div class="passo-in"><span class="n">4</span><div><h3>Resultado</h3><p>Rodovia, KM e distância até o eixo.</p></div></div></li><li class="passo" data-tela="40-consulta" data-box="9.01,69.53,59.42,5.63"><div class="passo-in"><span class="n">5</span><div><h3>Copiar resultado</h3><p>Copia a tabela pronta para colar no Excel.</p></div></div></li></ol></div></section>
+<section class="cap" id="config" data-km="09" data-titulo="Configurações"><span class="marco" aria-hidden="true"><span>KM<i></i><b>09</b></span></span><header class="cap-h"><span class="olho">KM 09</span><h2 data-rev>Configurações</h2><p class="intro" data-sobe>Os ajustes ficam em três abas: Câmera, Logo e Legenda. Eles valem para todas as próximas fotos.</p></header><div class="galeria"><div class="galeria-in"><div class="trilha"><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/bc6aeaf795f0.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Câmera</h3><dl><dt>Resolução</dt><dd>Tamanho da foto. "Máxima disponível" usa o melhor do aparelho.</dd><dt>Qualidade</dt><dd>Compressão da imagem. Alta é o equilíbrio entre nitidez e tamanho.</dd><dt>Formato</dt><dd>Proporção padrão da foto.</dd><dt>Alerta sonoro</dt><dd>Som ao tirar a foto.</dd></dl></div></article><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/0f15eada284b.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Depois da foto e aparência</h3><dl><dt>Envio automático para a galeria</dt><dd>Salva cada foto no celular assim que ela é tirada.</dd><dt>Tema claro</dt><dd>Fundo claro com cartões escuros.</dd><dt>Modo carro à noite</dt><dd>Automático (escurece 1 h após o pôr do sol), sempre claro ou sempre escuro.</dd></dl></div></article><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/cbb38086e46d.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Logo</h3><dl><dt>Escolher logo</dt><dd>Imagem da empresa. O fundo é recortado sozinho.</dd><dt>Posição</dt><dd>Canto da foto onde a logo aparece.</dd><dt>Opacidade e tamanho</dt><dd>Transparência e tamanho da logo.</dd></dl></div></article><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/1f7122b643db.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Legenda</h3><dl><dt>Posição</dt><dd>Canto da foto onde a legenda aparece.</dd><dt>Tamanho e cor</dt><dd>Tamanho e cor do texto gravado.</dd><dt>Negrito e opacidade</dt><dd>Peso e transparência do texto.</dd></dl></div></article><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/6169564d76ac.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Fundo da legenda</h3><dl><dt>Fundo da legenda</dt><dd>Tarja atrás do texto, para ler sobre qualquer imagem.</dd><dt>Tom do fundo</dt><dd>Claro ou escuro.</dd><dt>Transparência</dt><dd>Quanto da foto aparece por trás da tarja.</dd></dl></div></article><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/3f2b98ac0671.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Conteúdo da legenda</h3><dl><dt>Exibir estaca</dt><dd>Estaca ao lado do KM.</dd><dt>Exibir SNV</dt><dd>Versão do SNV na linha da data.</dd><dt>Nome da OAE</dt><dd>Ponte ou viaduto quando a foto é tirada sobre um.</dd><dt>Formato das coordenadas</dt><dd>Decimal, graus/minutos/segundos e outras opções.</dd><dt>Precisão do GPS</dt><dd>Margem de erro em metros na legenda.</dd><dt>Formato da data</dt><dd>Data com ou sem hora, curta ou por extenso.</dd></dl></div></article><article class="aj cdk"><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><div class="aj-tela"><img src="img/b249f16e99e0.webp" alt="" loading="lazy" decoding="async"></div><div><h3 class="prata">Descrição de serviços</h3><dl><dt>Serviços</dt><dd>Lista para escolha rápida na câmera.</dd></dl></div></article></div></div></div></section>
+<section class="cap" id="contratos" data-km="10" data-titulo="Contratos"><span class="marco" aria-hidden="true"><span>KM<i></i><b>10</b></span></span><header class="cap-h"><span class="olho">KM 10</span><h2 data-rev>Contratos</h2><p class="intro" data-sobe>Cadastre os contratos e vincule cada um ao trecho de rodovia em que ele vale. Dentro do trecho, o contrato entra sozinho na legenda.</p></header><div class="story"><div class="story-fig" aria-hidden="true"><div class="fone"><div class="h-moldura"><div class="h-tela"><img loading="lazy" class="tl on" data-t="57-config-contratos" data-esc="0" src="img/fa56cf4e3732.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="60-vincular-contrato" data-esc="1" src="img/41e260500086.webp" alt="" decoding="async"><img loading="lazy" class="tl" data-t="61-vincular-trecho" data-esc="1" src="img/642dcb86a18b.webp" alt="" decoding="async"><div class="h-sb"><span>9:41</span><span class="h-ilha"></span><span class="h-bat"></span></div><span class="foco livre"></span></div></div></div><div class="leg-passo"></div></div>
+    <ol class="passos"><li class="passo" data-tela="57-config-contratos"><div class="passo-in"><span class="n">·</span><div><h3>Lista de contratos</h3><p>Toque num contrato para usá-lo. A corrente abre os vínculos, AUTO liga ou desliga o automático daquele contrato e o X remove. A chave Automático, embaixo, liga todos os vinculados de uma vez.</p></div></div></li><li class="passo" data-tela="60-vincular-contrato"><div class="passo-in"><span class="n">·</span><div><h3>Vincular a uma rodovia</h3><p>Escolha a rodovia em que o contrato vale. Um contrato pode ter vários trechos, em rodovias diferentes.</p></div></div></li><li class="passo" data-tela="61-vincular-trecho"><div class="passo-in"><span class="n">·</span><div><h3>Trecho do contrato</h3><p>Informe o km inicial e o final, ou use o segmento todo. Escolher um contrato à mão pausa o automático, para o app não trocar o que você escolheu.</p></div></div></li></ol></div></section>
+<section class="cap" id="problemas" data-km="11" data-titulo="Dicas e soluções"><span class="marco" aria-hidden="true"><span>KM<i></i><b>11</b></span></span><header class="cap-h"><span class="olho">KM 11</span><h2 data-rev>Dicas e soluções</h2><p class="intro" data-sobe>As situações mais comuns no campo e o que fazer em cada uma.</p></header><div class="faq"><button class="faq-c cdk" data-t="O KM aparece com tracinhos" data-r="A rodovia não está baixada no celular, ou você está longe de todas as rodovias baixadas. Baixe a rodovia em Gestão de Eixo." data-sobe style="--d:0ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>O KM aparece com tracinhos</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button><button class="faq-c cdk" data-t="O KM ficou vermelho e a legenda tem ⚠" data-r="Você está mais longe do eixo do que a distância de alerta (padrão de 300 m). Confira se está na rodovia certa." data-sobe style="--d:80ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>O KM ficou vermelho e a legenda tem ⚠</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button><button class="faq-c cdk" data-t="GPS impreciso ou desatualizado" data-r="Espere alguns segundos em céu aberto. Dentro de carro ou perto de prédios o sinal piora." data-sobe style="--d:160ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>GPS impreciso ou desatualizado</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button><button class="faq-c cdk" data-t="Localização obrigatória" data-r="O app precisa da localização para gravar as coordenadas. No iPhone: Ajustes, Privacidade, Serviços de Localização, Safari, "Ao Usar o App". No Android: cadeado da barra de endereço, Permissões, Localização." data-img="img/a0972ca8e33a.webp" data-sobe style="--d:0ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>Localização obrigatória</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button><button class="faq-c cdk" data-t="A foto não foi para o celular" data-r="Ela continua guardada na galeria do app. Abra a galeria e toque em Salvar." data-sobe style="--d:80ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>A foto não foi para o celular</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button><button class="faq-c cdk" data-t="Duas rodovias no mesmo trecho" data-r="Em Detalhes da rodovia, escolha qual vale ali. Manter as duas faz o app usar a mais próxima do GPS." data-sobe style="--d:160ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>Duas rodovias no mesmo trecho</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button><button class="faq-c cdk" data-t="Atualizar o app" data-r="O app se atualiza sozinho com internet. No iPhone, se não atualizar, feche o app de vez e abra de novo." data-sobe style="--d:0ms"><svg class="cwv" aria-hidden="true"><use href="#car-atile"/></svg><b>Atualizar o app</b><span class="cl">Ver solução<span class="mais"><svg viewBox="0 0 12 12"><path d="M6 2v8M2 6h8"/></svg></span></span></button></div></section>
+</div>
+<footer class="fim"><div class="fim-c cdk" data-sobe><svg class="cwv" aria-hidden="true"><use href="#car-amain"/></svg><svg class="placa placa-g" viewBox="0 0 150 178" aria-hidden="true"><rect x="2" y="2" width="146" height="174" rx="14" fill="#fff"/><rect x="10" y="10" width="130" height="158" rx="9" fill="#13305c"/><rect x="10" y="10" width="130" height="70" rx="9" fill="#fff" fill-opacity=".05"/><text x="75" y="52" text-anchor="middle" font-family="Inter,Helvetica,Arial,sans-serif" font-weight="800" font-size="31" fill="#fff">FIM</text><line x1="24" y1="68" x2="126" y2="68" stroke="#fff" stroke-width="3"/><text x="75" y="110" text-anchor="middle" font-family="Inter,Helvetica,Arial,sans-serif" font-weight="800" font-size="34" fill="#fff">KM</text><text x="75" y="156" text-anchor="middle" font-family="Inter,Helvetica,Arial,sans-serif" font-weight="800" font-size="42" fill="#fff">11</text></svg><div><span class="olho" style="color:#b7d92d">Fim do trecho</span><h2 class="prata">Boas fotos e boa viagem.</h2><p>O KM Check se atualiza sozinho quando há internet. Este manual acompanha a versão 293.</p><div class="trilho"><i style="--p:1"></i></div></div></div>
+  <div class="creditos"><span>Desenvolvido por <b>Wagner Machado</b></span><span>KM Check · versão 293 · outubro de 2026</span></div></footer></main>
+<script>/* Manual web do KM Check: comportamento. Um único laço de rolagem (requestAnimationFrame) atualiza
+   tudo o que depende da posição; o resto usa IntersectionObserver. Só transform/opacity/clip-path. */
+(() => {
+  const reduz = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fino = matchMedia('(pointer: fine)').matches;
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const telaEscura = img => img && img.dataset.esc === '1';
+
+  /* ---------- palavras que sobem: divide os títulos em palavras ---------- */
+  $$('[data-rev]').forEach(el => {
+    let i = 0;
+    const parte = no => {
+      [...no.childNodes].forEach(c => {
+        if (c.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          c.textContent.split(/(\s+)/).forEach(t => {
+            if (!t) return;
+            if (/^\s+$/.test(t)) { frag.append(t); return; }
+            const w = document.createElement('span'); w.className = 'w';
+            const wi = document.createElement('span'); wi.className = 'wi'; wi.style.setProperty('--i', i++); wi.textContent = t;
+            w.append(wi); frag.append(w);
+          });
+          c.replaceWith(frag);
+        } else if (c.nodeType === 1 && c.tagName !== 'BR') parte(c);
+      });
+    };
+    parte(el);
+  });
+  const ioVis = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); ioVis.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+  $$('[data-rev],[data-sobe]').forEach(el => ioVis.observe(el));
+
+  /* ---------- luz que segue o ponteiro nos cartões ---------- */
+  if (fino && !reduz) document.addEventListener('pointermove', e => {
+    const c = e.target.closest && e.target.closest('.cdk'); if (!c) return;
+    const r = c.getBoundingClientRect();
+    c.style.setProperty('--mx', (e.clientX - r.left) + 'px'); c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  }, { passive: true });
+
+  /* ---------- manifesto: o texto se preenche com a rolagem ---------- */
+  const manif = $('.manifesto'), mWords = manif ? $$('.w', manif) : [];
+
+  /* ---------- rolagem guiada (celular parado + holofote) ---------- */
+  const estreitas = [];
+  $$('.story').forEach(st => {
+    const fig = $('.story-fig', st), fone = $('.fone', fig), foco = $('.foco', fig), passos = $$('.passo', st);
+    const ativa = p => {
+      passos.forEach(x => x.classList.toggle('ativo', x === p));
+      const t = p.dataset.tela, deit = p.dataset.or === 'deitado';
+      fig.classList.toggle('deitado', deit);
+      if (deit) { const d = $('.fone-d', fig); $$('.tl', d).forEach(i => i.classList.toggle('on', i.dataset.t === t)); }
+      else if (fone) {
+        let atual = null;
+        $$('.tl', fone).forEach(i => { const on = i.dataset.t === t; i.classList.toggle('on', on); if (on) atual = i; });
+        fone.classList.toggle('esc', telaEscura(atual));
+      }
+      if (fig.classList.contains('foto')) fig.classList.toggle('zoom', !!p.dataset.box);
+      const leg = $('.leg-passo', fig);
+      if (leg && getComputedStyle(leg).display !== 'none') { leg.innerHTML = $('.passo-in', p).innerHTML; leg.classList.remove('troca'); void leg.offsetWidth; leg.classList.add('troca'); }
+      if (foco) {
+        if (p.dataset.box) {
+          const [l, t2, w, h] = p.dataset.box.split(',').map(Number);
+          Object.assign(foco.style, { left: l + '%', top: t2 + '%', width: w + '%', height: h + '%' });
+          foco.classList.remove('livre');
+        } else foco.classList.add('livre');
+      }
+    };
+    /* celular: vale o último passo que chegou logo abaixo do aparelho (calculado na rolagem) */
+    if (matchMedia('(max-width: 900px)').matches) estreitas.push({ fig, passos, ativa, atual: null });
+    else { const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && ativa(e.target)), { rootMargin: '-46% 0px -46% 0px' }); passos.forEach(p => io.observe(p)); }
+    if (passos[0]) ativa(passos[0]);
+  });
+
+  /* ---------- painel fixo: KM do capítulo (odômetro) + progresso + sumário ---------- */
+  const hud = $('.hud'), hudTit = $('.hud-txt b', hud), hudOlho = $('.hud-txt .cl', hud), reels = $$('.reel', hud), hudMenu = $('.hud-menu', hud), hudBar = $('.hud-bar', hud);
+  const caps = $$('.cap'), hero = $('.hero');
+  let capAtual = null;
+  const odo = num => { String(num).padStart(2, '0').split('').forEach((d, i) => { reels[i].style.transform = 'translateY(' + (-(+d)) + 'em)'; }); };
+  /* embaralhar letras: o nome do capítulo troca como placa de aeroporto */
+  let embT = 0;
+  const embaralha = alvo => {
+    if (reduz) { hudTit.textContent = alvo; return; }
+    const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ini = performance.now(), id = ++embT;
+    const passo = agora => {
+      if (id !== embT) return;
+      const k = Math.min(1, (agora - ini) / 520), fix = Math.floor(alvo.length * k);
+      hudTit.textContent = alvo.split('').map((c, i) => i < fix || c === ' ' ? c : letras[Math.floor(Math.random() * letras.length)]).join('');
+      if (k < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  };
+  const marcaCap = vh => {
+    let c = caps[0];
+    for (const x of caps) if (x.getBoundingClientRect().top <= vh * .42) c = x;
+    if (c === capAtual) return; capAtual = c;
+    odo(c.dataset.km); embaralha(c.dataset.titulo); hudOlho.textContent = 'KM ' + c.dataset.km;
+    $$('a', hudMenu).forEach(a => a.classList.toggle('atual', a.getAttribute('href') === '#' + c.id));
+  };
+  const ioPassou = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting || e.boundingClientRect.top < 0) e.target.classList.add('passou'); }), { rootMargin: '0px 0px -45% 0px' });
+  caps.forEach(c => ioPassou.observe(c));
+  const abreMenu = abrir => { hudMenu.hidden = !abrir; hud.toggleAttribute('data-aberto', abrir); hudBar.setAttribute('aria-expanded', abrir); };
+  hudBar.addEventListener('click', () => abreMenu(hudMenu.hidden));
+  $$('a', hudMenu).forEach(a => a.addEventListener('click', () => abreMenu(false)));
+  document.addEventListener('click', e => { if (!hud.contains(e.target)) abreMenu(false); });
+
+  /* ---------- guia rápido: cartões que empilham ---------- */
+  const cartoes = $$('.cartao-passo');
+
+  /* ---------- galeria das configurações: anda de lado com a rolagem ---------- */
+  const gal = $('.galeria'), trilha = gal && $('.trilha', gal);
+  let galDist = 0;
+  const medeGal = () => {
+    if (!gal) return;
+    const nativo = reduz || innerWidth < 760;
+    gal.classList.toggle('nativo', nativo);
+    if (nativo) { gal.style.height = ''; trilha.style.transform = ''; galDist = 0; return; }
+    galDist = Math.max(0, trilha.scrollWidth - innerWidth + 40);
+    gal.style.height = (innerHeight + galDist) + 'px';
+  };
+
+  /* ---------- laço de rolagem ---------- */
+  const capaImg = $('.capa-img'), capaWeb = $('.capa-web'), capaTxt = $('.capa-txt');
+  const viagem = $('.viagem'), eixo = $('.eixo i'), trilhoHud = $('.trilho i', hud), palcoFoto = $('.palco-foto');
+  let pedido = false;
+  const quadro = () => {
+    pedido = false;
+    const vh = innerHeight, y = scrollY;
+    /* capa: a arte dos celulares se dissolve no fundo, e o texto sobe e some */
+    if (capaWeb) {
+      const c = capaWeb.getBoundingClientRect(), k = Math.min(1, Math.max(0, -c.top / (c.height * .5)));
+      capaImg.style.opacity = (1 - k).toFixed(3); capaImg.style.visibility = k >= 1 ? 'hidden' : '';
+      capaTxt.style.opacity = (1 - k * 1.3).toFixed(3); if (!reduz) capaTxt.style.transform = 'translateY(' + (-k * 60).toFixed(1) + 'px)';
+    }
+    /* painel fixo aparece depois do topo */
+    const hb = hero.getBoundingClientRect().bottom;
+    hud.classList.toggle('on', hb < 40 && viagem.getBoundingClientRect().top < vh * .35);
+    if (hb >= 40 && !hudMenu.hidden) abreMenu(false);
+    /* leve paralaxe na foto do palco enquanto o topo sai */
+    if (palcoFoto && !reduz) palcoFoto.style.setProperty('--paralaxe', Math.min(1, Math.max(0, -hero.getBoundingClientRect().top / vh)).toFixed(3));
+    marcaCap(vh);
+    for (const s of estreitas) {
+      const fr = s.fig.getBoundingClientRect(); if (fr.bottom < -vh || fr.top > vh * 2) continue;
+      const linha = fr.top + fr.height * .5; let a = s.passos[0];
+      for (const p of s.passos) if (p.getBoundingClientRect().top <= linha) a = p;
+      if (a !== s.atual) { s.atual = a; s.ativa(a); }
+    }
+    /* progresso da viagem (eixo lateral e barra do painel) */
+    const r = viagem.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (vh * .5 - r.top) / r.height));
+    eixo.style.setProperty('--p', p.toFixed(4)); trilhoHud.style.setProperty('--p', p.toFixed(4));
+    /* manifesto */
+    if (manif && !reduz) {
+      const m = manif.getBoundingClientRect(), k = Math.min(1, Math.max(0, -m.top / (m.height - vh)));
+      const ate = Math.round(k * 1.15 * mWords.length);
+      mWords.forEach((w, i) => w.classList.toggle('on', i < ate));
+    }
+    /* cartões empilhados: os de trás recuam um pouco quando o próximo encosta */
+    if (!reduz && cartoes.length) {
+      const tops = cartoes.map(c => c.getBoundingClientRect().top);
+      cartoes.forEach((c, i) => {
+        let atras = 0;
+        for (let j = i + 1; j < cartoes.length; j++) {
+          const alvo = parseFloat(getComputedStyle(cartoes[j]).top);
+          const prog = Math.min(1, Math.max(0, 1 - (tops[j] - alvo) / (vh * .6)));
+          atras += prog;
+        }
+        c.style.transform = atras ? 'scale(' + (1 - atras * .045).toFixed(4) + ')' : '';
+        c.style.filter = atras ? 'brightness(' + (1 - atras * .12).toFixed(3) + ')' : '';
+      });
+    }
+    /* galeria lateral */
+    if (gal && galDist) {
+      const g = gal.getBoundingClientRect(), k = Math.min(1, Math.max(0, -g.top / galDist));
+      trilha.style.transform = 'translate3d(' + (-k * galDist).toFixed(1) + 'px,0,0)';
+    }
+  };
+  const pede = () => { if (!pedido) { pedido = true; requestAnimationFrame(quadro); } };
+  addEventListener('scroll', pede, { passive: true });
+  addEventListener('resize', () => { medeGal(); pede(); });
+  medeGal(); quadro();
+
+  /* ---------- dicas: janela que nasce do cartão ---------- */
+  let janela = null, origem = null;
+  const fechaJanela = () => {
+    if (!janela) return;
+    const j = janela, v = $('.veu'), r = origem.getBoundingClientRect(), f = j.getBoundingClientRect();
+    j.classList.remove('on'); v.classList.remove('on');
+    if (!reduz) {
+      j.style.transition = 'transform .45s var(--ease)';
+      j.style.transform = 'translate(' + (r.left - f.left) + 'px,' + (r.top - f.top) + 'px) scale(' + (r.width / f.width) + ',' + (r.height / f.height) + ')';
+    }
+    setTimeout(() => { j.remove(); v.remove(); }, reduz ? 0 : 450);
+    origem.focus({ preventScroll: true }); janela = null;
+  };
+  $$('.faq-c').forEach(c => c.addEventListener('click', () => {
+    if (janela) return;
+    origem = c;
+    const v = document.createElement('div'); v.className = 'veu'; document.body.append(v);
+    const j = document.createElement('div'); j.className = 'janela cdk'; j.setAttribute('role', 'dialog'); j.setAttribute('aria-modal', 'true'); j.setAttribute('aria-label', c.dataset.t);
+    j.innerHTML = '<div class="conteudo"><span class="cl">Dicas e soluções</span><h3></h3><p></p></div><button class="fechar" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button>';
+    $('h3', j).textContent = c.dataset.t; $('p', j).textContent = c.dataset.r;
+    if (c.dataset.img) { const im = document.createElement('img'); im.src = c.dataset.img; im.alt = ''; $('.conteudo', j).append(im); }
+    document.body.append(j);
+    /* nasce do cartão: começa no tamanho e posição dele e cresce até o centro */
+    const f = j.getBoundingClientRect(), r = c.getBoundingClientRect();
+    j.style.left = f.left + 'px'; j.style.top = f.top + 'px'; j.style.transform = 'none';
+    const f2 = j.getBoundingClientRect();
+    if (!reduz) {
+      j.style.transform = 'translate(' + (r.left - f2.left) + 'px,' + (r.top - f2.top) + 'px) scale(' + (r.width / f2.width) + ',' + (r.height / f2.height) + ')';
+      j.getBoundingClientRect();
+      j.style.transition = 'transform .55s var(--ease)'; j.style.transform = 'none';
+    }
+    requestAnimationFrame(() => { v.classList.add('on'); j.classList.add('on'); });
+    $('.fechar', j).addEventListener('click', fechaJanela); v.addEventListener('click', fechaJanela);
+    $('.fechar', j).focus({ preventScroll: true }); janela = j;
+  }));
+
+  /* ---------- topo interativo ---------- */
+  const cena = $('.cena'), status = $('.h-status'), area = $('.dock-area');
+  const pontos = $$('.ponto', cena);
+  const T = reduz ? 0 : 620;
+  const HOVER = { camera: '10-camera', carro: '20-carro-dia' };
+  const FRASES = { geral: 'Toque num ponto para começar.', camera: 'Câmera aberta. Toque nos números.', carro: 'Modo Carro aberto. Toque nos números.', noite: 'Escolha dia ou noite.', girar: 'Escolha em pé ou deitado.' };
+  let modo = 'geral', menu = null, quer = null;
+  const tela = n => { let a = null; $$('.h-cel .tl', cena).forEach(i => { const on = i.dataset.t === n; i.classList.toggle('on', on); if (on) a = i; }); $('.h-cel', cena).classList.toggle('esc', telaEscura(a)); };
+  const diz = t => { status.textContent = t; };
+  const mira = id => { if (modo !== 'geral' || menu) return; quer = id; tela(HOVER[id] || '01-inicio'); };
+  const solta = id => { if (quer !== id || modo !== 'geral' || menu) return; quer = null; tela('01-inicio'); };
+  function entra(id) {
+    if (modo !== 'geral' || menu) return;
+    const det = $('[data-det="' + id + '"]', cena);
+    modo = 'entrando'; cena.dataset.modo = 'entrando'; tela(HOVER[id]);
+    det.hidden = false; requestAnimationFrame(() => requestAnimationFrame(() => det.classList.add('on')));
+    pontos.forEach(p => p.disabled = true);
+    setTimeout(() => { modo = 'detalhe'; cena.dataset.modo = 'detalhe'; $('.voltar', det).focus({ preventScroll: true }); diz(FRASES[id]); }, T);
+  }
+  function volta(depois) {
+    if (modo !== 'detalhe') return;
+    const det = $('.det:not([hidden])', cena), id = det.dataset.det;
+    modo = 'voltando'; det.classList.remove('on'); cena.dataset.modo = 'geral'; tela('01-inicio');
+    setTimeout(() => {
+      det.hidden = true; $$('[aria-expanded="true"]', det).forEach(b => b.setAttribute('aria-expanded', 'false')); $$('.dp.on', det).forEach(b => b.classList.remove('on'));
+      modo = 'geral'; pontos.forEach(p => p.disabled = false); diz(FRASES.geral);
+      if (depois) depois(); else $('[data-p="' + id + '"]', cena).focus({ preventScroll: true });
+    }, T);
+  }
+  function abreMenuCena(id) {
+    if (modo !== 'geral') return;
+    if (menu === id) return fechaMenuCena();
+    if (menu) fechaMenuCena(true);
+    menu = id; quer = null; cena.dataset.menu = id;
+    const d = $('[data-menu="' + id + '"]', area);
+    d.hidden = false; area.classList.add('menu');
+    pontos.forEach(p => { p.disabled = p.dataset.p !== id; });
+    aplica(id, $('.op.sel', d).dataset.v); $('.op.sel', d).focus({ preventScroll: true }); diz(FRASES[id]);
+  }
+  function aplica(id, v) {
+    if (id === 'noite') tela(v === 'noite' ? '21-carro-noite' : '20-carro-dia');
+    if (id === 'girar') { if (v === 'deitado') cena.dataset.girado = ''; else delete cena.dataset.girado; }
+  }
+  function fechaMenuCena(silencio) {
+    if (!menu) return;
+    const id = menu, d = $('[data-menu="' + id + '"]', area);
+    d.hidden = true; area.classList.remove('menu'); menu = null; delete cena.dataset.menu;
+    delete cena.dataset.girado; tela('01-inicio');
+    pontos.forEach(p => { p.disabled = false; });
+    if (!silencio) { $('[data-p="' + id + '"]', cena).focus({ preventScroll: true }); diz(FRASES.geral); }
+  }
+  pontos.forEach(p => {
+    const id = p.dataset.p, det = id in HOVER;
+    p.addEventListener('pointerenter', () => det && mira(id));
+    p.addEventListener('pointerleave', () => det && solta(id));
+    p.addEventListener('focus', () => det && mira(id));
+    p.addEventListener('blur', () => det && solta(id));
+    p.addEventListener('click', () => det ? entra(id) : abreMenuCena(id));
+  });
+  $$('.dock', area).forEach(d => {
+    $$('.op', d).forEach(o => o.addEventListener('click', () => {
+      $$('.op', d).forEach(x => { x.classList.toggle('sel', x === o); x.setAttribute('aria-pressed', x === o); });
+      aplica(d.dataset.menu, o.dataset.v);
+    }));
+    $('.fechar', d).addEventListener('click', () => fechaMenuCena());
+  });
+  $$('.det', cena).forEach(det => {
+    $('.voltar', det).addEventListener('click', () => volta());
+    /* "Ler o capítulo": fecha o detalhe e segue rolando até o capítulo */
+    $('.ir', det).addEventListener('click', e => { e.preventDefault(); const alvo = $(e.currentTarget.getAttribute('href')); volta(() => alvo.scrollIntoView({ behavior: reduz ? 'auto' : 'smooth' })); });
+    const liga = i => {
+      const b = $$('.dl', det)[i], abre = b.getAttribute('aria-expanded') !== 'true';
+      $$('.dl', det).forEach((x, j) => x.setAttribute('aria-expanded', abre && j === i));
+      $$('.dp', det).forEach((x, j) => x.classList.toggle('on', abre && j === i));
+    };
+    $$('.dl', det).forEach((b, i) => b.addEventListener('click', () => liga(i)));
+    $$('.dp', det).forEach((b, i) => b.addEventListener('click', () => liga(i)));
+  });
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (janela) fechaJanela();
+    else if (!hudMenu.hidden) abreMenu(false);
+    else if (modo === 'detalhe') volta();
+    else if (menu) fechaMenuCena();
+  });
+  window.__manual = { entra, volta, abreMenuCena, fechaMenuCena };
+})();
+</script></body></html>

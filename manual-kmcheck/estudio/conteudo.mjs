@@ -2,7 +2,7 @@
  * uma ideia por frase. Cada "tela" aponta um print de manual-kmcheck/prints e, quando tem
  * marcadores, a lista "itens" segue a mesma numeração gravada em prints/marcas.json. */
 
-export const VERSAO = '292';
+export const VERSAO = '293';
 export const DATA = 'outubro de 2026';
 
 export const passosRapidos = [
