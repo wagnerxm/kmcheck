@@ -2119,7 +2119,6 @@ function fechaManual(){ document.getElementById('manual-ov').hidden=true }
 /* boas-vindas + manual de bolso: abre sozinho na tela inicial (modo de testes) até ser visto uma vez;
    depois, o botão de livro reabre já na página da tela atual */
 const BV=document.getElementById('bv'), BV_TRILHA=document.getElementById('bv-trilha'), BV_PAGS=[...BV_TRILHA.children];
-const PAG_DA_TELA={'scr-cam':0,'scr-bases':1};
 let bvPag=0;
 function abreTour(i){
   BV.querySelectorAll('img[data-src]').forEach(im=>{ if(!im.getAttribute('src')) im.setAttribute('src', im.dataset.src) }); // só baixa ao abrir
@@ -2152,7 +2151,7 @@ function fechaBoasVindas(marcaVisto){
 }
 document.getElementById('help-toggle').onclick=()=>{
   const on=document.querySelector('.screen.on'), id=on&&on.id;
-  if(id in PAG_DA_TELA) abreTour(PAG_DA_TELA[id]); else abreManual(CAP_DA_TELA[id]||'');
+  abreManual(CAP_DA_TELA[id]||'');   // o livro abre sempre o manual completo (no capítulo da tela atual)
 };
 document.getElementById('cfg-manual').onclick=()=>abreManual('');
 document.getElementById('bv-sim').onclick=()=>vaiTour(1);
