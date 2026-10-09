@@ -146,28 +146,40 @@ html.kc-teste #app-ver::after{content:' · TESTE';color:#c4e24a;font-weight:700}
 html.kc-teste #help-toggle+#search-toggle{margin-left:8px}
 #help-toggle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 :root[data-theme="light"] #help-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
-/* boas-vindas: mensagem clara no meio da tela inicial, com a arte da capa do manual no topo e os 3 passos
-   que explicam o app. Só aparece no modo de testes e até ser vista uma vez. */
+/* boas-vindas + manual de bolso: um cartão claro no meio da tela inicial. A 1ª página dá as boas-vindas
+   e as seguintes ensinam o app arrastando para o lado, cada uma com a tela real e um holofote no botão
+   daquele passo. O manual completo fica para consulta. Só no modo de testes por enquanto. */
 #bv{position:fixed;inset:0;z-index:250;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
   background:rgba(8,10,12,.46);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .35s ease}
 #bv[hidden]{display:none}
 #bv.on{opacity:1}
-.bv-c{position:relative;width:min(420px,100%);max-height:100%;overflow:auto;border-radius:30px;color:#1c2333;
+.bv-c{position:relative;width:min(420px,100%);max-height:100%;overflow-y:auto;overflow-x:hidden;border-radius:30px;color:#1c2333;display:flex;flex-direction:column;
   background:linear-gradient(180deg,#ffffff 0%,#f4f6f5 100%);box-shadow:0 40px 80px -24px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.7);
   transform:translateY(26px) scale(.94);transition:transform .6s cubic-bezier(.2,.9,.25,1.04)}
 #bv.on .bv-c{transform:none}
-.bv-arte{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:30px 30px 0 0;background:linear-gradient(135deg,#eef1f2,#dfe4e7)}
-.bv-arte img{display:block;width:100%;height:100%;object-fit:cover;object-position:100% 30%;transform:scale(1.1);transition:transform 7s cubic-bezier(.2,.6,.2,1)}
-#bv.on .bv-arte img{transform:scale(1)}
-.bv-arte::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 52%,#fff 100%);pointer-events:none}
-.bv-x{position:absolute;top:12px;left:12px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;
+.bv-x{position:absolute;top:12px;left:12px;z-index:3;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;
   background:rgba(255,255,255,.88);color:#1c2333;box-shadow:0 4px 12px rgba(0,0,0,.18)}
 .bv-x svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
-.bv-corpo{position:relative;margin-top:-22px;padding:0 22px 20px}
+/* trilha das páginas: rolagem lateral nativa com encaixe (o dedo arrasta, o navegador cuida da física) */
+.bv-trilha{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;flex:0 0 auto}
+.bv-trilha::-webkit-scrollbar{display:none}
+.bv-pag{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
+/* página 1: a arte da capa com a saudação na área clara, ao lado dos celulares */
+.bv-arte{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:30px 30px 0 0;background:linear-gradient(135deg,#eef1f2,#dfe4e7)}
+.bv-arte img{display:block;width:100%;height:100%;object-fit:cover;object-position:100% 0%;transform:scale(1.1);transition:transform 7s cubic-bezier(.2,.6,.2,1)}
+#bv.on .bv-arte img{transform:scale(1)}
+.bv-arte::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 58%,#fff 100%);pointer-events:none}
+.bv-saud{position:absolute;left:20px;top:50%;z-index:2;transform:translateY(-38%);max-width:42%;opacity:0;transition:opacity .6s ease .25s,transform .7s cubic-bezier(.2,.9,.25,1) .25s}
+#bv.on .bv-saud{opacity:1;transform:translateY(-50%)}
+.bv-saud small{display:block;font:700 9.5px var(--sans);letter-spacing:.3em;text-transform:uppercase;color:#6f8a0e}
+.bv-saud b{display:block;font:800 24px/1 var(--sans);letter-spacing:-.03em;color:#1c2333;margin-top:6px}
+.bv-corpo{position:relative;padding:14px 22px 6px}
+.bv-pag:first-child .bv-corpo{margin-top:-18px;padding-top:0}
 .bv-olho{display:block;font:700 10.5px var(--sans);letter-spacing:.28em;text-transform:uppercase;color:#6f8a0e}
-.bv-corpo h2{font:800 30px/1.02 var(--sans);letter-spacing:-.035em;margin-top:8px;color:#1c2333}
+.bv-corpo h2{font:800 28px/1.04 var(--sans);letter-spacing:-.035em;margin-top:8px;color:#1c2333}
+.bv-pag:first-child h2{font-size:30px;margin-top:0}
 .bv-corpo>p{font-size:14.5px;line-height:1.5;color:#3b4559;margin-top:10px}
-.bv-passos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.bv-passos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
 .bv-p{background:#fff;border:1px solid #e3e7ea;border-radius:16px;padding:12px 10px 11px;box-shadow:0 8px 16px -10px rgba(28,35,51,.35);
   opacity:0;transform:translateY(12px);transition:opacity .45s ease,transform .6s cubic-bezier(.2,.9,.25,1)}
 #bv.on .bv-p{opacity:1;transform:none}
@@ -177,12 +189,60 @@ html.kc-teste #help-toggle+#search-toggle{margin-left:8px}
 .bv-ic i{position:absolute;right:-5px;top:-5px;width:17px;height:17px;border-radius:50%;background:#c9e463;color:#1d2606;font:800 10px/17px var(--sans);text-align:center;font-style:normal}
 .bv-p b{display:block;font-size:13px;line-height:1.2;color:#1c2333}
 .bv-p small{display:block;font-size:11px;line-height:1.3;color:#66748a;margin-top:3px}
-.bv-acoes{display:grid;gap:4px;margin-top:18px}
-.bv-sim{height:52px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+/* páginas com a tela do app: o celular fica grande e "anda" até o botão do passo, com o holofote nele */
+.bv-vis{--h:clamp(250px,78vw,330px);position:relative;height:var(--h);overflow:hidden;border-radius:30px 30px 0 0;container-type:inline-size;
+  background:url(manual/tour/fundo.webp) 100% 0/cover,#eef1f2}
+.bv-vis::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 40%,rgba(255,255,255,0) 72%,#fff 100%);pointer-events:none}
+.bv-fone{position:absolute;left:19cqw;width:62cqw;padding:2.1cqw;border-radius:10.2cqw;
+  top:clamp(calc(var(--h) - 134.2cqw - 16px), calc(var(--h) / 2 - var(--cy) * 1.342cqw), 16px);
+  background:linear-gradient(140deg,#4d525a 0%,#141517 18%,#0b0c0d 60%,#2d3136 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 0 0 1px #000,0 30px 50px -20px rgba(20,26,36,.6);
+  transform:translateY(22px);opacity:.4;transition:transform .7s cubic-bezier(.2,.9,.25,1),opacity .5s}
+.bv-pag.ativa .bv-fone{transform:none;opacity:1}
+.bv-tela{position:relative;border-radius:8.3cqw;overflow:hidden;aspect-ratio:390/844;background:#0b0c0d}
+.bv-tela img{display:block;width:100%;height:100%;object-fit:cover}
+.bv-foco{position:absolute;border:2px solid #c9e463;border-radius:9px;box-shadow:0 0 0 2000px rgba(10,12,14,.42),0 0 16px rgba(201,228,99,.55);
+  opacity:0;transform:scale(1.25);transition:opacity .45s ease .35s,transform .6s cubic-bezier(.2,.9,.25,1) .35s}
+.bv-pag.ativa .bv-foco{opacity:1;transform:none}
+.bv-foto{background:url(manual/tour/foto.webp) 0% 100%/190% auto,#cfd6db}
+.bv-chip{position:absolute;right:16px;top:16px;z-index:2;font:700 10px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:#1c2333;background:rgba(255,255,255,.9);padding:7px 11px;border-radius:999px}
+.bv-fim{display:grid;place-items:center}
+.bv-ok{position:relative;z-index:2;width:92px;height:92px;border-radius:50%;background:#1c2333;display:grid;place-items:center;box-shadow:0 0 0 10px rgba(201,228,99,.25),0 20px 40px -12px rgba(0,0,0,.5);transform:scale(.6);opacity:0;transition:transform .7s cubic-bezier(.2,1.3,.3,1),opacity .4s}
+.bv-pag.ativa .bv-ok{transform:none;opacity:1}
+.bv-ok svg{width:42px;height:42px;stroke:#c9e463;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* rodapé fixo do cartão: progresso + botões (mudam na 1ª e na última página) */
+.bv-pe{padding:12px 22px 16px;display:grid;gap:10px}
+.bv-prog{display:flex;align-items:center;gap:12px}
+.bv-trilho{flex:1;height:6px;border-radius:999px;background:#e1e5e8;overflow:hidden}
+.bv-trilho i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#8eb31f,#c6e64c);transform-origin:0 50%;transform:scaleX(var(--p,0));transition:transform .45s cubic-bezier(.2,.9,.25,1)}
+.bv-cont{font:700 11.5px var(--sans);color:#66748a;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.bv-botoes{display:flex;gap:8px;align-items:center}
+.bv-sim,.bv-prox{height:52px;border-radius:999px;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;flex:1;
   background:linear-gradient(180deg,#22262b,#121416);color:#c9e463;font:700 15.5px var(--sans);box-shadow:0 12px 22px -10px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
-.bv-sim svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.bv-nao{height:42px;border:0;background:none;cursor:pointer;color:#66748a;font:600 13.5px var(--sans)}
-@media (prefers-reduced-motion:reduce){#bv,.bv-c,.bv-p,.bv-arte img{transition:none!important;transform:none!important}}
+.bv-sim svg,.bv-prox svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bv-volta{height:52px;padding:0 18px;border-radius:999px;border:1px solid #dfe3e6;background:#fff;color:#3b4559;font:600 14px var(--sans);cursor:pointer}
+.bv-nao{height:40px;border:0;background:none;cursor:pointer;color:#66748a;font:600 13.5px var(--sans)}
+/* rodapé com a mesma altura em todas as páginas: o cartão não muda de tamanho ao passar */
+.bv-dica{height:40px;line-height:40px;text-align:center;font:500 12.5px var(--sans);color:#8a95a5;margin:0}
+.bv-c[data-modo="inicio"] .so-meio,.bv-c[data-modo="inicio"] .so-fim{display:none}
+.bv-c[data-modo="meio"] .so-inicio,.bv-c[data-modo="meio"] .so-fim{display:none}
+.bv-c[data-modo="fim"] .so-inicio,.bv-c[data-modo="fim"] .so-meio{display:none}
+@media (prefers-reduced-motion:reduce){#bv,.bv-c,.bv-p,.bv-arte img,.bv-saud,.bv-fone,.bv-foco,.bv-ok,.bv-trilho i{transition:none!important;transform:none!important}}
+/* telas baixas (iPhone SE e afins): tudo um pouco mais compacto para o cartão caber sem rolar */
+@media (max-height:740px){
+  .bv-vis{--h:clamp(200px,58vw,240px)}
+  .bv-arte{aspect-ratio:2/1}
+  .bv-corpo{padding:10px 20px 4px}
+  .bv-corpo h2{font-size:24px}
+  .bv-pag:first-child h2{font-size:25px}
+  .bv-corpo>p{font-size:13.5px;margin-top:7px}
+  .bv-passos{margin-top:12px}
+  .bv-p{padding:10px 9px}
+  .bv-p small{display:none}
+  .bv-ic{width:30px;height:30px;margin-bottom:7px}
+  .bv-pe{padding:8px 20px 12px;gap:8px}
+  .bv-sim,.bv-prox,.bv-volta{height:48px}
+  .bv-nao,.bv-dica{height:34px;line-height:34px}
+}
 #cfg-manual .gbadge svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 #manual-ov{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:#f1f2f3;animation:manSobe .28s cubic-bezier(.2,.8,.2,1)}
 #manual-ov[hidden]{display:none}
@@ -1321,22 +1381,62 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </nav>
 <div class="dev-credit">Desenvolvido por Wagner Machado</div>
 <div id="bv" class="so-teste" role="dialog" aria-modal="true" aria-labelledby="bv-tit" hidden>
-  <div class="bv-c">
-    <div class="bv-arte"><img alt="" data-src="manual/capa.webp"></div>
+  <div class="bv-c" data-modo="inicio">
     <button class="bv-x" id="bv-x" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button>
-    <div class="bv-corpo">
-      <span class="bv-olho">Bem-vindo ao KM Check</span>
-      <h2 id="bv-tit">O KM certo,<br>em cada foto.</h2>
-      <p>Foto com rodovia, KM, estaca e coordenadas gravados na imagem. Direto do campo, até sem internet.</p>
-      <div class="bv-passos">
-        <div class="bv-p"><span class="bv-ic"><i>1</i><svg viewBox="0 0 24 24"><path d="M8 21 10.5 3M16 21 13.5 3"/><path d="M12 9v6M9.5 12.5 12 15l2.5-2.5"/></svg></span><b>Baixe a rodovia</b><small>Em Gestão de Eixo</small></div>
-        <div class="bv-p"><span class="bv-ic"><i>2</i><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><b>Confira o KM</b><small>Pelo GPS, na hora</small></div>
-        <div class="bv-p"><span class="bv-ic"><i>3</i><svg viewBox="0 0 24 24"><path d="M8.5 5.5 9.6 3.9a1 1 0 0 1 .83-.44h3.14a1 1 0 0 1 .83.44l1.1 1.6H17A2.5 2.5 0 0 1 19.5 8v8.5A2.5 2.5 0 0 1 17 19H7a2.5 2.5 0 0 1-2.5-2.5V8A2.5 2.5 0 0 1 7 5.5z"/><circle cx="12" cy="12.4" r="3.2"/></svg></span><b>Tire a foto</b><small>A legenda vai junto</small></div>
-      </div>
-      <div class="bv-acoes">
-        <button class="bv-sim" id="bv-sim">Ver como funciona<svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
-        <button class="bv-nao" id="bv-nao">Agora não</button>
-      </div>
+    <div class="bv-trilha" id="bv-trilha">
+      <section class="bv-pag" aria-roledescription="página" aria-label="1 de 9">
+        <div class="bv-arte"><img alt="" data-src="manual/capa.webp"><div class="bv-saud"><small>Bem-vindo ao</small><b>KM Check</b></div></div>
+        <div class="bv-corpo">
+          <h2 id="bv-tit">O KM certo,<br>em cada foto.</h2>
+          <p>Foto com rodovia, KM, estaca e coordenadas gravados na imagem. Direto do campo, até sem internet.</p>
+          <div class="bv-passos">
+            <div class="bv-p"><span class="bv-ic"><i>1</i><svg viewBox="0 0 24 24"><path d="M8 21 10.5 3M16 21 13.5 3"/><path d="M12 9v6M9.5 12.5 12 15l2.5-2.5"/></svg></span><b>Baixe a rodovia</b><small>Em Gestão de Eixo</small></div>
+            <div class="bv-p"><span class="bv-ic"><i>2</i><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><b>Confira o KM</b><small>Pelo GPS, na hora</small></div>
+            <div class="bv-p"><span class="bv-ic"><i>3</i><svg viewBox="0 0 24 24"><path d="M8.5 5.5 9.6 3.9a1 1 0 0 1 .83-.44h3.14a1 1 0 0 1 .83.44l1.1 1.6H17A2.5 2.5 0 0 1 19.5 8v8.5A2.5 2.5 0 0 1 17 19H7a2.5 2.5 0 0 1-2.5-2.5V8A2.5 2.5 0 0 1 7 5.5z"/><circle cx="12" cy="12.4" r="3.2"/></svg></span><b>Tire a foto</b><small>A legenda vai junto</small></div>
+          </div>
+        </div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="2 de 9">
+        <div class="bv-vis" style="--cy:81"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/30-gestao-eixo.webp"><span class="bv-foco" style="left:9.6%;top:77.6%;width:80.8%;height:7.3%"></span></div></div></div>
+        <div class="bv-corpo"><span class="bv-olho">Passo 1</span><h2>Baixe a rodovia</h2><p>Em Gestão de Eixo, escolha UF e BR e toque em Baixar rodovia. Só precisa de internet nessa hora.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="3 de 9">
+        <div class="bv-vis" style="--cy:31"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/01-inicio.webp"><span class="bv-foco" style="left:8%;top:18%;width:84%;height:27.5%"></span></div></div></div>
+        <div class="bv-corpo"><span class="bv-olho">Passo 2</span><h2>Confira o KM</h2><p>A tela inicial mostra a rodovia, o KM com metros e a estaca do ponto onde você está.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="4 de 9">
+        <div class="bv-vis" style="--cy:84"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/10-camera.webp"><span class="bv-foco" style="left:1.5%;top:86.5%;width:37.5%;height:6.3%"></span></div></div></div>
+        <div class="bv-corpo"><span class="bv-olho">Passo 3</span><h2>Prepare a foto</h2><p>Na câmera, marque o lado da pista, LD ou LE. No botão i, escolha o serviço e o contrato.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="5 de 9">
+        <div class="bv-vis" style="--cy:78"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/10-camera.webp"><span class="bv-foco" style="left:38.5%;top:84%;width:23%;height:11.2%"></span></div></div></div>
+        <div class="bv-corpo"><span class="bv-olho">Passo 4</span><h2>Tire a foto</h2><p>Toque no obturador. A legenda aparece ao vivo e é gravada na imagem.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="6 de 9">
+        <div class="bv-vis bv-foto"><span class="bv-chip">Legenda gravada na imagem</span></div>
+        <div class="bv-corpo"><span class="bv-olho">Na foto</span><h2>A legenda gravada</h2><p>Rodovia, KM, lado, estaca, contrato, coordenadas e data. Você escolhe o que aparece em Configurações.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="7 de 9">
+        <div class="bv-vis" style="--cy:40"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/20-carro-dia.webp"><span class="bv-foco" style="left:14%;top:36%;width:72%;height:11%"></span></div></div></div>
+        <div class="bv-corpo"><span class="bv-olho">Dirigindo</span><h2>Modo Carro</h2><p>Toque no carrinho da tela inicial. O KM fica grande, acompanha a rodovia e escurece à noite.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="8 de 9">
+        <div class="bv-vis" style="--cy:80"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/31-importar.webp"><span class="bv-foco" style="left:9.5%;top:67%;width:81%;height:30%"></span></div></div></div>
+        <div class="bv-corpo"><span class="bv-olho">Outras rodovias</span><h2>Estadual ou municipal</h2><p>Importe um KMZ, Shapefile ou planilha em Gestão de Eixo. O app lê o arquivo e pergunta o que falta.</p></div>
+      </section>
+      <section class="bv-pag" aria-roledescription="página" aria-label="9 de 9">
+        <div class="bv-vis bv-fim"><span class="bv-ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+        <div class="bv-corpo"><span class="bv-olho">Pronto</span><h2>Tudo pronto para o campo.</h2><p>Dúvidas? O manual completo fica no botão de livro, ao lado da lupa.</p></div>
+      </section>
+    </div>
+    <div class="bv-pe">
+      <div class="bv-prog"><span class="bv-trilho"><i></i></span><span class="bv-cont" id="bv-cont" aria-live="polite">2 / 9</span></div>
+      <div class="bv-botoes so-inicio"><button class="bv-sim" id="bv-sim">Ver como funciona<svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button></div>
+      <button class="bv-nao so-inicio" id="bv-nao">Agora não</button>
+      <div class="bv-botoes so-meio"><button class="bv-volta" id="bv-volta">Voltar</button><button class="bv-prox" id="bv-prox">Próximo<svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button></div>
+      <p class="bv-dica so-meio" aria-hidden="true">Deslize para o lado ou toque em Próximo</p>
+      <div class="bv-botoes so-fim"><button class="bv-sim" id="bv-comecar">Começar a usar</button></div>
+      <button class="bv-nao so-fim" id="bv-completo">Ver o manual completo</button>
     </div>
   </div>
 </div>
@@ -1965,31 +2065,60 @@ function abreManual(cap){
   try{ if(!(history.state&&history.state.manual)) history.pushState({manual:1},'') }catch(e){}
 }
 function fechaManual(){ document.getElementById('manual-ov').hidden=true }
-/* boas-vindas: aparece por cima da tela inicial no modo de testes até ser vista uma vez */
+/* boas-vindas + manual de bolso: abre sozinho na tela inicial (modo de testes) até ser visto uma vez;
+   depois, o botão de livro reabre já na página da tela atual */
+const BV=document.getElementById('bv'), BV_TRILHA=document.getElementById('bv-trilha'), BV_PAGS=[...BV_TRILHA.children];
+const PAG_DA_TELA={'scr-cam':0,'scr-bases':1};
+let bvPag=0;
+function abreTour(i){
+  BV.querySelectorAll('img[data-src]').forEach(im=>{ if(!im.getAttribute('src')) im.setAttribute('src', im.dataset.src) }); // só baixa ao abrir
+  BV.hidden=false; BV_TRILHA.scrollLeft=(i||0)*BV_TRILHA.clientWidth; atualizaTour(i||0);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>BV.classList.add('on')));
+  setTimeout(()=>{ const alvo=[...BV.querySelectorAll('.bv-sim,.bv-prox')].find(x=>x.offsetParent); if(alvo) alvo.focus({preventScroll:true}) }, 350);
+}
+function atualizaTour(i){
+  bvPag=i; const n=BV_PAGS.length;
+  BV.querySelector('.bv-c').dataset.modo = i===0 ? 'inicio' : i===n-1 ? 'fim' : 'meio';
+  BV.querySelector('.bv-trilho i').style.setProperty('--p', (i/(n-1)).toFixed(3));
+  document.getElementById('bv-cont').textContent=(i+1)+' / '+n;
+  BV_PAGS.forEach((p,k)=>p.classList.toggle('ativa', k===i));
+}
+function vaiTour(i){
+  i=Math.max(0, Math.min(BV_PAGS.length-1, i));
+  BV_TRILHA.scrollTo({ left:i*BV_TRILHA.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+let _bvR=0;
+BV_TRILHA.addEventListener('scroll', ()=>{ cancelAnimationFrame(_bvR); _bvR=requestAnimationFrame(()=>{ const i=Math.round(BV_TRILHA.scrollLeft/BV_TRILHA.clientWidth); if(i!==bvPag) atualizaTour(i) }) }, {passive:true});
 function mostraBoasVindas(){
   let visto=false; try{ visto=localStorage.getItem('kc-manual-visto')==='1' }catch(e){}
-  const bv=document.getElementById('bv'), naInicial=document.getElementById('scr-cam').classList.contains('on');
-  const deve=modoTeste() && !visto && naInicial && document.getElementById('manual-ov').hidden;
-  if(deve && bv.hidden){
-    const im=bv.querySelector('img[data-src]'); if(im && !im.getAttribute('src')) im.setAttribute('src', im.dataset.src); // só baixa a arte quando for mostrar
-    bv.hidden=false; requestAnimationFrame(()=>requestAnimationFrame(()=>bv.classList.add('on')));
-    setTimeout(()=>document.getElementById('bv-sim').focus({preventScroll:true}), 350);
-  } else if(!deve && !bv.hidden) fechaBoasVindas(false);
+  const naInicial=document.getElementById('scr-cam').classList.contains('on');
+  if(modoTeste() && !visto && naInicial && document.getElementById('manual-ov').hidden && BV.hidden) abreTour(0);
+  else if(!modoTeste() && !BV.hidden) fechaBoasVindas(false);
 }
 function fechaBoasVindas(marcaVisto){
-  const bv=document.getElementById('bv');
   if(marcaVisto) try{ localStorage.setItem('kc-manual-visto','1') }catch(e){}
-  bv.classList.remove('on'); setTimeout(()=>{ if(!bv.classList.contains('on')) bv.hidden=true }, 360);
+  BV.classList.remove('on'); setTimeout(()=>{ if(!BV.classList.contains('on')) BV.hidden=true }, 360);
 }
 document.getElementById('help-toggle').onclick=()=>{
-  const on=document.querySelector('.screen.on'); abreManual(on && CAP_DA_TELA[on.id] || '');
+  const on=document.querySelector('.screen.on'), id=on&&on.id;
+  if(id in PAG_DA_TELA) abreTour(PAG_DA_TELA[id]); else abreManual(CAP_DA_TELA[id]||'');
 };
 document.getElementById('cfg-manual').onclick=()=>abreManual('');
-document.getElementById('bv-sim').onclick=()=>{ fechaBoasVindas(true); abreManual('rapido') };
+document.getElementById('bv-sim').onclick=()=>vaiTour(1);
+document.getElementById('bv-prox').onclick=()=>vaiTour(bvPag+1);
+document.getElementById('bv-volta').onclick=()=>vaiTour(bvPag-1);
+document.getElementById('bv-comecar').onclick=()=>fechaBoasVindas(true);
+document.getElementById('bv-completo').onclick=()=>{ fechaBoasVindas(true); abreManual('') };
 document.getElementById('bv-nao').onclick=()=>fechaBoasVindas(true);
 document.getElementById('bv-x').onclick=()=>fechaBoasVindas(true);
-document.getElementById('bv').addEventListener('click', e=>{ if(e.target.id==='bv') fechaBoasVindas(true) });
-addEventListener('keydown', e=>{ if(e.key==='Escape' && !document.getElementById('bv').hidden) fechaBoasVindas(true) });
+BV.addEventListener('click', e=>{ if(e.target===BV) fechaBoasVindas(true) });
+addEventListener('keydown', e=>{
+  if(BV.hidden) return;
+  if(e.key==='Escape') fechaBoasVindas(true);
+  else if(e.key==='ArrowRight') vaiTour(bvPag+1);
+  else if(e.key==='ArrowLeft') vaiTour(bvPag-1);
+});
+addEventListener('resize', ()=>{ if(!BV.hidden) BV_TRILHA.scrollLeft=bvPag*BV_TRILHA.clientWidth });
 document.getElementById('manual-x').onclick=()=>{ if(history.state&&history.state.manual) history.back(); else fechaManual() };
 addEventListener('popstate', ()=>{ if(!document.getElementById('manual-ov').hidden) fechaManual() });
 setTimeout(mostraBoasVindas, 700); // dá tempo da tela inicial assentar antes da mensagem subir
