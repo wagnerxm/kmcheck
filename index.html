@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Check">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://api.kmcheck.com.br https://kmcheck.com.br https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
 /* CONFIGURAÇÃO PADRÃO OBRIGATÓRIA (v3): aplicada UMA vez — na 1ª instalação e, para quem já tinha o
    app, na 1ª abertura desta versão. Depois disso o que o usuário mudar fica salvo (a marca
@@ -2394,16 +2394,28 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
 })();
 
 /* ================= seletor de versão SNV =================
-   Busca as versões disponíveis no servidor (API ControlCheck).
+   Busca as versões disponíveis no servidor (API do KM Check).
    Se o servidor não responder, usa a versão do index.json local como fallback. */
-const SNV_API='https://controlcheck.duckdns.org/api';
+/* API das rodovias: a própria do KM Check (api.kmcheck.com.br, servidor e banco separados do ControlCheck).
+   A antiga fica de reserva durante a transição: se a nova não responder (sem rede, demora ou erro 5xx),
+   tenta a antiga. Respostas 4xx (ex.: rodovia que não existe) valem e não passam para a reserva. */
+const SNV_APIS=['https://api.kmcheck.com.br/api','https://controlcheck.duckdns.org/api'];
+const SNV_API=SNV_APIS[0];
+async function apiGet(caminho, ms){
+  let ultimo;
+  for(const base of SNV_APIS){
+    try{ const r=await fetch(base+caminho,{signal:AbortSignal.timeout(ms)}); if(r.status<500) return r; ultimo=new Error('HTTP '+r.status) }
+    catch(e){ ultimo=e }
+  }
+  throw ultimo;
+}
 const _snvMonths=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function fmtSnvId(id){ const mi=parseInt(id.slice(4,6),10); return _snvMonths[mi-1]+'/'+id.slice(0,4) }
 (async function loadSnvVersions(){
   const sel=document.getElementById('dl-snv');
   const hint=document.getElementById('dl-snv-hint');
   try{
-    const r=await fetch(SNV_API+'/rodovias/versoes',{signal:AbortSignal.timeout(8000)});
+    const r=await apiGet('/rodovias/versoes',8000);
     if(!r.ok) throw new Error('HTTP '+r.status);
     const vers=await r.json();
     const ok=vers.filter(v=>v.status==='concluido');
@@ -2465,12 +2477,11 @@ function wfsToBase(features, br, uf, snvLabel){
   return {id:`BR-${br}/${uf}`, br:`BR-${br}`, uf, fonte:`SNV ${snvLabel}`,
     kmMin:km.length?km[0]:0, kmMax:km.length?km[km.length-1]:0, lat, lon, km};
 }
-/* ---- Baixar do servidor (API ControlCheck) — versão específica do SNV ---- */
+/* ---- Baixar do servidor (API do KM Check) — versão específica do SNV ---- */
 async function downloadRoadFromApi(br, uf, snvVer, onStatus, kmi, kmf, tipoTr){
   const t=tipoTr||'B';
   if(onStatus) onStatus(`Baixando BR-${br}/${uf} (${t}) SNV ${snvVer}…`);
-  const url=`${SNV_API}/rodovias/${br}/${uf}?snv=${encodeURIComponent(snvVer)}&tipo=${t}`;
-  const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
+  const r=await apiGet(`/rodovias/${br}/${uf}?snv=${encodeURIComponent(snvVer)}&tipo=${t}`,30000);
   if(!r.ok){
     if(r.status===404) throw new Error(`BR-${br}/${uf} não encontrada no SNV ${snvVer}`);
     throw new Error('Servidor: HTTP '+r.status);
@@ -6312,7 +6323,7 @@ function showInstallPrompt(){
         /* Bases baixadas no IndexedDB */
         let bases=[];
         try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.lat?.length||0}))}catch(e){}
-        fetch(SNV_API+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
+        ((u,o)=>fetch(SNV_APIS[0]+u,o).catch(()=>fetch(SNV_APIS[1]+u,o)))('/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({device_id:did,app_version:m[1],platform:plat,user_agent:ua,
             screen:screen.width+'x'+screen.height,brand,os_version:osVer,model,hw,
             location:loc,bases_count:bases.length,bases})
