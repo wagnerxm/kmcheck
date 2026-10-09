@@ -1,0 +1,49 @@
+##############################################
+# KM Check — servidor próprio (base de rodovias + API com chave por app)
+# Separado do ControlCheck. Sobe: PostgreSQL + API Node.
+# Uso (no VPS, em /opt/kmcheck-server):  docker compose up -d --build
+# Segredos no .env (NÃO vai para o GitHub): POSTGRES_PASSWORD, IMPORT_KEY
+# A entrada pela internet (HTTPS) é feita pelo proxy "edge" na rede docker "edge".
+##############################################
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: kmcheck
+      POSTGRES_USER: kmcheck
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - kmcheck_pgdata:/var/lib/postgresql/data
+      - ./api/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kmcheck -d kmcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [interna]
+
+  api:
+    build: ./api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://kmcheck:${POSTGRES_PASSWORD}@db:5432/kmcheck
+      IMPORT_KEY: ${IMPORT_KEY:?Defina IMPORT_KEY no .env}
+      REQUIRE_KEY: ${REQUIRE_KEY:-0}
+    ports:
+      - "127.0.0.1:3010:3000"   # só para testes no próprio servidor
+    networks: [interna, edge]
+
+volumes:
+  kmcheck_pgdata:
+
+networks:
+  interna:
+  edge:
+    external: true
+    name: edge

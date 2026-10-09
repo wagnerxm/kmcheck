@@ -3397,7 +3397,7 @@ function _carFit(el){
   if(el.dataset.fit===key) return;   // só refaz quando o tamanho do texto muda
   el.dataset.fit=key; el.style.fontSize='';
   let fs=parseFloat(getComputedStyle(el).fontSize);
-  while(el.scrollWidth>el.clientWidth+1 && fs>11){ fs-=1; el.style.fontSize=fs+'px' }
+  while(el.scrollWidth>el.clientWidth && fs>11){ fs-=.5; el.style.fontSize=fs+"px" }   // sem folga: 1 px a mais já vira "…" no iPhone
 }
 function closeCar(){
   carwrap.classList.remove('on'); _carOn=false; document.documentElement.classList.remove('carmode','carnight');

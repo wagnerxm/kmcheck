@@ -5,3 +5,6 @@ install-guide.html
 render-jpg.mjs
 .claude/worktrees/
 betedge/
+
+# segredos do servidor do KM Check
+server/.env
