@@ -281,7 +281,9 @@ html.kc-teste #app-ver::after{content:' · TESTE';color:#c4e24a;font-weight:700}
 #manual-if{flex:1;width:100%;border:0;background:#f1f2f3}
 @media (prefers-reduced-motion:reduce){#manual-ov,.mo-c{animation:none}}
 /* ---------- navegação: dock flutuante ---------- */
-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(4px + env(safe-area-inset-bottom));display:flex;gap:4px;
+/* sem área segura embaixo (Android com barra de gestos fora do app) o botão descia até o rodapé
+   "Desenvolvido por" e os dois se sobrepunham: no mínimo 18 px de folga para o crédito */
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px, calc(4px + env(safe-area-inset-bottom)));display:flex;gap:4px;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 55%), rgba(24,26,28,.68);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
   border-radius:999px;padding:6px;z-index:40;
