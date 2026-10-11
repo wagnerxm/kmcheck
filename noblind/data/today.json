@@ -1,6 +1,6 @@
 {
   "date": "2026-10-11",
-  "generated_at": "2026-10-11T16:03:52.861686+00:00",
+  "generated_at": "2026-10-11T21:08:45.819696+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -20,7 +20,6 @@
     "Liga MX",
     "Liga Portugal",
     "MLS",
-    "Pro League (Bélgica)",
     "Süper Lig",
     "3. Liga - Germany",
     "A-League",
@@ -40,7 +39,6 @@
     "League 2",
     "League of Ireland",
     "Ligue 2 - France",
-    "Premier League - Russia",
     "Premiership - Scotland",
     "Primera División - Chile",
     "Saudi Pro League",
@@ -48,7 +46,6 @@
     "Super League - China",
     "Super League - Greece",
     "Superettan - Sweden",
-    "Swiss Superleague",
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
