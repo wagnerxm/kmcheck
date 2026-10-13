@@ -152,6 +152,29 @@ public class KMCheckNativoPlugin extends Plugin {
         });
     }
 
+    /**
+     * Identificação anônima do aparelho para a contagem de usuários do painel. Usa o ANDROID_ID, que o
+     * Android gera por app + aparelho e que NÃO muda se a pessoa desinstalar e instalar de novo (ao contrário
+     * do código guardado pelo app, que se perde). Vai embaralhado (SHA-256), então não dá para chegar ao
+     * ANDROID_ID a partir dele. Uso só para estatística, nunca para anúncio. Devolve { id }.
+     */
+    @PluginMethod
+    public void idAparelho(PluginCall call) {
+        try {
+            String bruto = android.provider.Settings.Secure.getString(getContext().getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            if (bruto == null || bruto.isEmpty()) { call.reject("indisponível"); return; }
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] h = md.digest(("kmcheck:" + bruto).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder("and-");
+            for (int i = 0; i < 16; i++) sb.append(String.format("%02x", h[i]));
+            JSObject r = new JSObject();
+            r.put("id", sb.toString());
+            call.resolve(r);
+        } catch (Exception e) {
+            call.reject("indisponível");
+        }
+    }
+
     private byte[] decodifica(PluginCall call) {
         String b64 = call.getString("base64");
         if (b64 == null || b64.isEmpty()) { call.reject("Arquivo vazio."); return null; }

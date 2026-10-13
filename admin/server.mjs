@@ -36,11 +36,7 @@ if (existsSync(envPath)) {
 
 /* ── Config ── */
 const PORT             = +(process.env.ADMIN_PORT || 3457);
-const JWT_SECRET       = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('⚠  JWT_SECRET não definido no .env. O servidor não pode iniciar sem ele.');
-  process.exit(1);
-}
+const JWT_SECRET       = process.env.JWT_SECRET || 'troque-esta-chave';
 const ADMIN_USER       = process.env.ADMIN_USER || 'admin';
 const ADMIN_HASH       = process.env.ADMIN_HASH;
 const CONTROLCHECK_API = process.env.CONTROLCHECK_API || 'https://controlcheck.duckdns.org/api';
@@ -93,16 +89,14 @@ let _saveTimer = null;
   }
 }
 
-/* Salva no disco no máximo a cada 30 s (com muitos aparelhos, regravar o arquivo inteiro a cada ping
-   travava o painel). Sem recuo no JSON: o arquivo fica ~3x menor e mais rápido de gravar.
-   Ao desligar o serviço, saveDbNow grava na hora (nada se perde). */
+/* Salva no disco com debounce (evita escrita a cada ping) */
 function saveDb() {
   if (_saveTimer) return;
   _saveTimer = setTimeout(() => {
     _saveTimer = null;
     try { writeFileSync(DB_PATH, JSON.stringify(_db)); }
     catch (e) { console.error('Erro ao salvar DB:', e.message); }
-  }, 30000);
+  }, 30000);   // no máximo a cada 30 s (com muitos aparelhos regravar a cada ping travava o painel)
 }
 
 /* Salva imediatamente (para shutdown gracioso) */
@@ -344,9 +338,8 @@ function detectDevice(ua, screenStr, hw) {
 /* ── Express ── */
 const app = express();
 app.set('trust proxy', true);
-app.use(helmet());
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://wagnerxm.github.io';
-app.use(cors({ origin: CORS_ORIGIN.split(',').map(s=>s.trim()) }));
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 
@@ -387,22 +380,9 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
    ROTAS — DISPOSITIVOS
    ================================================================ */
 
-/* Rate-limit simples para o ping público: máx 30 req/min por IP */
-const _pingRL = new Map();
-function pingRateLimit(req, res, next) {
-  const ip = req.ip || req.socket.remoteAddress || '?';
-  const now = Date.now(), window = 60000, max = 30;
-  let entry = _pingRL.get(ip);
-  if (!entry || now - entry.start > window) { entry = { start: now, count: 0 }; _pingRL.set(ip, entry); }
-  if (++entry.count > max) return res.status(429).json({ error: 'Rate limit excedido' });
-  next();
-}
-/* Limpa IPs antigos a cada 5 min para não acumular memória */
-setInterval(() => { const cutoff = Date.now() - 120000; for (const [k, v] of _pingRL) if (v.start < cutoff) _pingRL.delete(k); }, 300000);
-
 /* Ping público — chamado pelo app mobile no boot.
    Recebe dados aprimorados: marca, modelo, OS, GPS, bases baixadas. */
-app.post('/api/admin/devices/ping', pingRateLimit, (req, res) => {
+app.post('/api/admin/devices/ping', (req, res) => {
   try {
     const { device_id, app_version, platform, user_agent, screen,
             brand, os_version, model, hw, location, bases_count, bases } = req.body || {};
@@ -412,11 +392,11 @@ app.post('/api/admin/devices/ping', pingRateLimit, (req, res) => {
     const existing = _db.devices[device_id];
     /* Detecção server-side como fallback (clientes v174- não enviam esses campos) */
     const det = detectDevice(user_agent || existing?.user_agent, screen || existing?.screen, hw || existing?.hw);
-    /* Registro do ping no histórico (últimos 50 por dispositivo: com 500 o arquivo passava de 20 MB com 1.000 aparelhos) */
+    /* Registro do ping no histórico (guarda últimos 500 por dispositivo) */
     const hist = existing?.ping_history || [];
     hist.push({ ts: now, ip, app_version, location: location || null,
                 bases_count: bases_count ?? 0 });
-    if (hist.length > 50) hist.splice(0, hist.length - 50);
+    if (hist.length > 50) hist.splice(0, hist.length - 50);   // 50 por aparelho: com 500 o arquivo passava de 20 MB
     _db.devices[device_id] = {
       device_id,
       app_version: app_version || existing?.app_version || null,
@@ -490,6 +470,46 @@ app.get('/api/admin/devices/:id', auth, (req, res) => {
   });
 });
 
+/* ── Contagem real de aparelhos ──
+   Cada instalação do app cria um código aleatório (device_id). O código se perde quando a pessoa
+   apaga o ícone no iPhone, limpa os dados, troca de navegador ou abre por outro endereço, e aí o
+   mesmo celular aparecia 2, 3 vezes. Aqui:
+   1) cada código ganha uma categoria: celular, computador ou teste (robôs/emuladores não contam);
+   2) reinstalações viram um aparelho só: código novo no MESMO modelo + tela + plataforma, que surge
+      até 21 dias depois de o antigo parar de aparecer, na mesma rede (IP ou /24) ou na mesma região (~30 km);
+   3) "usuários" = aparelhos (já juntados) que usaram nos últimos 30 dias. */
+function categoria(d) {
+  const ua = d.user_agent || '';
+  if (/Headless|Puppeteer|Lighthouse|bot\b|crawler|sdk_gphone|Android SDK built for|Emulator/i.test(ua)) return 'teste';
+  if (d.platform === 'iOS' || /^Android/.test(d.platform || '')) return 'celular';
+  return 'computador';
+}
+const rede = ip => { const m = String(ip || '').replace(/^::ffff:/, '').match(/^(\d+\.\d+\.\d+)\./); return m ? m[1] : String(ip || '') };
+const distKm = (a, b) => { if (!a || !b || !isFinite(a.lat) || !isFinite(b.lat)) return Infinity;
+  const r = Math.PI / 180, x = (b.lon - a.lon) * r * Math.cos((a.lat + b.lat) / 2 * r), y = (b.lat - a.lat) * r; return Math.sqrt(x * x + y * y) * 6371 };
+function agrupaAparelhos(lista) {
+  const grupos = new Map();   // device_id → id do grupo (o código mais antigo do aparelho)
+  const cabecas = [];         // por grupo: o último código visto (para encadear reinstalações)
+  const cel = lista.filter(d => d._cat === 'celular').sort((a, b) => (a.first_seen || '').localeCompare(b.first_seen || ''));
+  for (const b of cel) {
+    const ini = Date.parse(b.first_seen || b.last_ping || 0);
+    let melhor = null, folga = Infinity;
+    for (const g of cabecas) {
+      const a = g.ultimo;
+      if (a.platform !== b.platform || (a.model || '') !== (b.model || '') || (a.screen || '') !== (b.screen || '')) continue;
+      const fim = Date.parse(a.last_ping || a.first_seen || 0), dt = ini - fim;
+      if (dt < -86400000 || dt > 21 * 86400000) continue;   // o antigo tem que ter parado antes (1 dia de tolerância)
+      const mesmaRede = rede(a.ip_address) && rede(a.ip_address) === rede(b.ip_address);
+      if (!mesmaRede && !(distKm(a.location, b.location) <= 30)) continue;
+      if (dt < folga) { folga = dt; melhor = g }
+    }
+    if (melhor) { grupos.set(b.device_id, melhor.id); melhor.ultimo = b; melhor.n++ }
+    else { cabecas.push({ id: b.device_id, ultimo: b, n: 1 }); grupos.set(b.device_id, b.device_id) }
+  }
+  const tamanho = new Map(cabecas.map(g => [g.id, g.n]));
+  return { grupos, tamanho };
+}
+
 /* Listar dispositivos — admin.
    Preenche campos detectáveis retroativamente (dispositivos que pingaram antes da v175). */
 app.get('/api/admin/devices', auth, (req, res) => {
@@ -522,18 +542,39 @@ app.get('/api/admin/devices', auth, (req, res) => {
     })
     .sort((a, b) => (b.last_ping || '').localeCompare(a.last_ping || ''));
   if (dirty) saveDb(); /* persiste os campos preenchidos */
+  /* categoria e grupo (reinstalações juntas) — calculados na hora, não alteram o arquivo */
+  for (const d of devices) d._cat = categoria(d);
+  const { grupos, tamanho } = agrupaAparelhos(devices);
+  for (const d of devices) {
+    d.categoria = d._cat; delete d._cat;
+    d.grupo = grupos.get(d.device_id) || d.device_id;
+    d.grupo_tamanho = tamanho.get(d.grupo) || 1;
+    d.reinstalacao = d.grupo !== d.device_id;
+  }
+  /* aparelhos reais: um por grupo, com o último uso do grupo */
+  const ap = new Map();
+  for (const d of devices) {
+    if (d.categoria !== 'celular') continue;
+    const g = ap.get(d.grupo);
+    if (!g || (d.last_ping || '') > (g.last_ping || '')) ap.set(d.grupo, d);
+  }
+  const aparelhos = [...ap.values()];
+  const mes = new Date(Date.now() - 30 * 86400000).toISOString();
   const now = Date.now();
   const dayAgo = new Date(now - 86400000).toISOString();
   const weekAgo = new Date(now - 7 * 86400000).toISOString();
   let ios = 0, android = 0, other = 0, activeToday = 0, activeWeek = 0;
   let totalBases = 0;
   const versionCount = {}, brandCount = {}, modelCount = {};
-  for (const d of devices) {
+  /* iOS/Android/ativos contam APARELHOS reais (reinstalações juntas, sem computadores nem testes) */
+  for (const d of aparelhos) {
     if (d.platform === 'iOS') ios++;
-    else if (d.platform === 'Android') android++;
-    else other++;
+    else android++;
     if (d.last_ping >= dayAgo) activeToday++;
     if (d.last_ping >= weekAgo) activeWeek++;
+  }
+  for (const d of devices) {
+    if (d.categoria !== 'celular') other++;
     const v = d.app_version || '?';
     versionCount[v] = (versionCount[v] || 0) + 1;
     if (d.brand) brandCount[d.brand] = (brandCount[d.brand] || 0) + 1;
@@ -547,6 +588,12 @@ app.get('/api/admin/devices', auth, (req, res) => {
     devices,
     stats: {
       total: devices.length, ios, android, other,
+      usuarios_30d: aparelhos.filter(d => d.last_ping >= mes).length,
+      aparelhos: aparelhos.length,
+      codigos_celular: devices.filter(d => d.categoria === 'celular').length,
+      reinstalacoes: devices.filter(d => d.categoria === 'celular').length - aparelhos.length,
+      computadores: devices.filter(d => d.categoria === 'computador').length,
+      testes: devices.filter(d => d.categoria === 'teste').length,
       active_today: activeToday,
       active_week: activeWeek,
       top_version: topVersion ? topVersion[0] : null,

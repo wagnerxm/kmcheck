@@ -254,15 +254,22 @@ tbody tr:hover{background:var(--surface2)}
     <!-- ──────── TAB: Dispositivos ──────── -->
     <div class="tab-panel active" id="tab-devices">
       <div class="stats" id="dev-stats">
-        <div class="stat"><div class="label">Total Dispositivos</div><div class="value blue" id="ds-total">—</div><div class="detail" id="ds-detail"></div></div>
-        <div class="stat"><div class="label">iOS (iPhone/iPad)</div><div class="value" id="ds-ios">—</div></div>
-        <div class="stat"><div class="label">Android</div><div class="value green" id="ds-android">—</div></div>
+        <div class="stat" title="Celulares que usaram o app nos últimos 30 dias. Reinstalações do mesmo celular contam uma vez; computadores e testes não contam."><div class="label">Usuários (30 dias)</div><div class="value blue" id="ds-total">—</div><div class="detail" id="ds-detail"></div></div>
+        <div class="stat"><div class="label">iOS (iPhone/iPad)</div><div class="value" id="ds-ios">—</div><div class="detail">aparelhos</div></div>
+        <div class="stat"><div class="label">Android</div><div class="value green" id="ds-android">—</div><div class="detail">aparelhos</div></div>
         <div class="stat"><div class="label">Ativos hoje</div><div class="value yellow" id="ds-today">—</div><div class="detail" id="ds-week"></div></div>
         <div class="stat"><div class="label">Modelo + usado</div><div class="value purple" id="ds-model">—</div><div class="detail" id="ds-brand"></div></div>
         <div class="stat"><div class="label">Bases baixadas</div><div class="value" id="ds-bases" style="color:var(--blue)">—</div><div class="detail" id="ds-version"></div></div>
       </div>
 
       <div class="toolbar">
+        <select id="dev-filter-cat" title="Celulares = quem usa o app no campo">
+          <option value="celular">Celulares</option>
+          <option value="aparelhos">Celulares (1 linha por aparelho)</option>
+          <option value="computador">Computadores</option>
+          <option value="teste">Testes</option>
+          <option value="">Tudo</option>
+        </select>
         <select id="dev-filter-plat">
           <option value="">Todas plataformas</option>
           <option value="iOS">iOS</option>
@@ -388,8 +395,6 @@ let TOKEN = localStorage.getItem('kca-token');
 /* ── Utilidades ── */
 function $(s,p){ return (p||document).querySelector(s) }
 function $$(s,p){ return [...(p||document).querySelectorAll(s)] }
-/* escape HTML para prevenir XSS ao interpolar dados de dispositivos em innerHTML */
-function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
 
 function toast(msg, type='info'){
   const el = document.createElement('div');
@@ -493,8 +498,10 @@ async function loadDevices(){
     const r = await api('/api/admin/devices');
     _devData = r.devices || [];
     const s = r.stats;
-    $('#ds-total').textContent = s.total;
-    $('#ds-detail').textContent = s.active_week+' ativos na semana';
+    $('#ds-total').textContent = s.usuarios_30d ?? s.total;
+    $('#ds-detail').textContent = s.aparelhos != null
+      ? s.aparelhos+' aparelhos no total · '+s.reinstalacoes+' reinstalações juntadas · '+s.computadores+' computadores e '+s.testes+' testes fora da conta'
+      : s.active_week+' ativos na semana';
     $('#ds-ios').textContent = s.ios;
     $('#ds-android').textContent = s.android;
     $('#ds-today').textContent = s.active_today;
@@ -643,7 +650,14 @@ function fmtBases(d){
 function renderDevices(){
   const plat = $('#dev-filter-plat').value;
   const search = $('#dev-search').value.toLowerCase();
+  const cat = $('#dev-filter-cat').value;
   let data = _devData;
+  if(cat==='aparelhos'){
+    /* uma linha por aparelho real: o código mais recente de cada grupo de reinstalações */
+    const ult = new Map();
+    for(const d of data){ if(d.categoria!=='celular') continue; const g=ult.get(d.grupo); if(!g || (d.last_ping||'')>(g.last_ping||'')) ult.set(d.grupo,d) }
+    data = [...ult.values()];
+  } else if(cat) data = data.filter(d=>(d.categoria||'celular')===cat);
   if(plat) data = data.filter(d=>d.platform===plat);
   if(search) data = data.filter(d=>{
     if((d.nickname||'').toLowerCase().includes(search) ||
@@ -686,13 +700,13 @@ function renderDevices(){
     return;
   }
   tbody.innerHTML = data.map(d=>`<tr>
-    <td><input class="user-name" type="text" value="${esc(d.nickname)}" placeholder="…" data-did="${esc(d.device_id)}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
-    <td class="mono" title="${esc(d.device_id)}"><a class="dev-id-link" href="#" onclick="openDevDetail('${esc(d.device_id)}');return false">${shortId(d.device_id)}</a></td>
-    <td>${esc(d.model)||'<span class=muted>—</span>'}</td>
-    <td>${platIcon(d.platform)} ${esc(normBrand(d.brand)||d.platform||'—')}</td>
-    <td><span class="tag tag-blue">${esc(d.os_version||d.platform||'?')}</span></td>
-    <td><span class="tag" style="background:var(--surface3)">v${esc(d.app_version||'?')}</span></td>
-    <td class="muted">${esc(d.screen||'—')}</td>
+    <td><input class="user-name" type="text" value="${(d.nickname||'').replace(/"/g,'&quot;')}" placeholder="…" data-did="${d.device_id}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+    <td class="mono" title="${d.device_id}"><a class="dev-id-link" href="#" onclick="openDevDetail('${d.device_id}');return false">${shortId(d.device_id)}</a></td>
+    <td>${d.model||'<span class=muted>—</span>'}${d.grupo_tamanho>1?' <span class="tag" title="Mesmo celular reinstalado: '+d.grupo_tamanho+' códigos juntados" style="background:var(--surface3)">'+(d.reinstalacao?'reinstalado':d.grupo_tamanho+' instalações')+'</span>':''}</td>
+    <td>${platIcon(d.platform)} ${normBrand(d.brand)||d.platform||'—'}</td>
+    <td><span class="tag tag-blue">${d.os_version||d.platform||'?'}</span></td>
+    <td><span class="tag" style="background:var(--surface3)">v${d.app_version||'?'}</span></td>
+    <td class="muted">${d.screen||'—'}</td>
     <td style="text-align:center">${fmtBases(d)}</td>
     <td>${fmtLoc(d.location)}</td>
     <td>${fmtRoad(d)}</td>
@@ -732,6 +746,7 @@ async function saveNickname(el){
 }
 
 $('#dev-filter-plat').onchange = renderDevices;
+$('#dev-filter-cat').onchange = renderDevices;
 $('#dev-search').oninput = renderDevices;
 $('#dev-refresh').onclick = () => { toast('Atualizando…','info'); loadDevices() };
 

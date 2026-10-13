@@ -59,7 +59,7 @@ Arquivo para enviar: `mobile/android/app/build/outputs/bundle/release/app-releas
   - O usuário pode pedir a exclusão? **Sim** (por e-mail, ver a política).
   - Tipos coletados:
     - **Localização aproximada** — coletada, não compartilhada, **opcional**, finalidade: Análise.
-    - **Identificadores do dispositivo ou outros IDs** (identificador aleatório criado pelo app) — coletado, não compartilhado, opcional, finalidade: Análise.
+    - **Identificadores do dispositivo ou outros IDs** (identificador anônimo do aparelho, SHA-256 do ANDROID_ID; só estatística, sem anúncios) — coletado, não compartilhado, opcional, finalidade: Análise.
     - **Informações e desempenho do app › Diagnóstico** (modelo, versão, desempenho) — coletado, não compartilhado, opcional, finalidade: Análise.
   - **Fotos:** NÃO marcar como coletadas (ficam só no celular; o app não envia).
   - **Localização exata:** NÃO marcar como coletada (é usada só no celular; o envio é só a região aproximada, ~1 km).

@@ -6179,6 +6179,9 @@ function showInstallPrompt(){
       /* Aguarda 4s para o GPS fixar, bases carregarem e a detecção de ProMotion concluir */
       setTimeout(async()=>{try{
         let did=localStorage.getItem('kc-device-id');
+        /* app da loja (Android): identificação que sobrevive a desinstalar/instalar de novo, para o mesmo
+           celular não contar como 2 aparelhos no painel. Fora do app segue o código aleatório de antes. */
+        if(NATIVO){ try{ const r=await NATIVO.chama('idAparelho'); if(r&&r.id){ did=r.id; localStorage.setItem('kc-device-id',did) } }catch(e){} }
         if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
         const ua=navigator.userAgent||'';
         const plat=NATIVO?'Android (app)':(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
