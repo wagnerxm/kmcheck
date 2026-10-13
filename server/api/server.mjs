@@ -26,12 +26,12 @@ const ORIGENS_KMCHECK = (process.env.KMCHECK_ORIGINS ||
   'https://kmcheck.com.br,https://www.kmcheck.com.br,https://wagnerxm.github.io,https://controlcheck.duckdns.org,https://localhost,capacitor://localhost,http://localhost')
   .split(',').map(s => s.trim()).filter(Boolean);
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 20, idleTimeoutMillis: 30000, connectionTimeoutMillis: 15000 });
 const query = async (t, p) => (await pool.query(t, p)).rows;
 const queryOne = async (t, p) => (await pool.query(t, p)).rows[0] ?? null;
 
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', 1);   // só o nginx da frente: o IP do usuário é o último do X-Forwarded-For (não dá para forjar)
 app.disable('x-powered-by');
 /* CORS aberto: quem controla o acesso é a chave, não a origem (apps de outros domínios precisam ler) */
 app.use(cors({ origin: true, allowedHeaders: ['Content-Type', 'x-api-key', 'x-import-key'] }));
@@ -61,15 +61,22 @@ async function acesso(req, res, next) {
     else if (REQUIRE_KEY && !req.get('x-import-key')) return res.status(401).json({ error: 'Envie a chave de API no cabeçalho x-api-key.' });
     else cli = { id: 'anonimo', nome: 'Sem chave', limite_min: 120 };
   }
-  /* limite simples por minuto, por app (evita um app derrubar a base dos outros) */
-  const agora = Math.floor(Date.now() / 60000), u = uso.get(cli.id) || { n: 0, janela: agora, total: 0 };
+  /* limite por minuto. Apps com chave: por chave (um app não derruba a base dos outros).
+     O próprio KM Check e quem não tem chave: por APARELHO (IP). Antes era um balde só de 600/min para
+     todos os usuários do app juntos — com a equipe abrindo o app às 7h, os últimos recebiam 429. */
+  const porAparelho = cli.id === 'kmcheck-app' || cli.id === 'anonimo';
+  const balde = porAparelho ? cli.id + ':' + req.ip : cli.id;
+  const lim = porAparelho ? (cli.id === 'kmcheck-app' ? 120 : 60) : (cli.limite_min || 120);
+  const agora = Math.floor(Date.now() / 60000), u = uso.get(balde) || { n: 0, janela: agora, total: 0 };
   if (u.janela !== agora) { u.n = 0; u.janela = agora }
-  u.n++; u.total++; uso.set(cli.id, u);
-  if (u.n > (cli.limite_min || 120)) return res.status(429).json({ error: 'Muitas requisições. Tente de novo em um minuto.' });
+  u.n++; u.total++; uso.set(balde, u);
+  if (u.n > lim) return res.status(429).json({ error: 'Muitas requisições. Tente de novo em um minuto.' });
   req.cliente = cli;
   next();
 }
 app.use(acesso);
+/* baldes por aparelho de janelas antigas saem da memória (senão o mapa cresce com cada IP que já passou) */
+setInterval(() => { const agora = Math.floor(Date.now() / 60000); for (const [k, u] of uso) if (typeof k === 'string' && k.includes(':') && u.janela < agora - 1) uso.delete(k) }, 120000).unref();
 /* grava o uso das chaves a cada 30 s (não a cada requisição) */
 setInterval(async () => {
   for (const [id, u] of uso) {
@@ -84,13 +91,25 @@ app.get('/api/health', async (_req, res) => {
   catch { res.status(503).json({ ok: false }) }
 });
 
+/* ── cache de leitura ── */
+const CACHE_MAX = 80, cache = new Map();   // chave → {corpo (JSON pronto), ate}
+const doCache = (k) => { const c = cache.get(k); if (c && c.ate > Date.now()) { cache.delete(k); cache.set(k, c); return c.corpo } if (c) cache.delete(k); return null };
+const noCache = (k, obj, ms) => { const corpo = JSON.stringify(obj); cache.set(k, { corpo, ate: Date.now() + ms }); while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value); return corpo };
+const envia = (res, corpo, seg) => res.set('Cache-Control', 'public, max-age=' + seg).type('application/json').send(corpo);
+const limpaCache = () => cache.clear();
+/* pedidos iguais ao mesmo tempo (ex.: a equipe toda abrindo a mesma rodovia às 7h) viram UMA ida ao banco:
+   os outros esperam a mesma resposta. Sem isso, 100 pedidos juntos enchiam a fila do banco e alguns davam erro. */
+const emAndamento = new Map();
+const umaVez = (k, fn) => { if (emAndamento.has(k)) return emAndamento.get(k); const p = fn().finally(() => emAndamento.delete(k)); emAndamento.set(k, p); return p };
+
 /* ── leitura ── */
 const r = express.Router();
 const pad = br => String(br).replace(/\D/g, '').padStart(3, '0');
 r.get('/versoes', async (_req, res) => {
   try {
-    res.json(await query(`SELECT id, label, data_publicacao, arquivo_dnit, total_rodovias, status, created_at
-                          FROM snv_versoes ORDER BY id DESC`));
+    const c = doCache('versoes'); if (c) return envia(res, c, 3600);
+    envia(res, await umaVez('versoes', async () => doCache('versoes') || noCache('versoes', await query(`SELECT id, label, data_publicacao, arquivo_dnit, total_rodovias, status, created_at
+                          FROM snv_versoes ORDER BY id DESC`), 10 * 60000)), 3600);
   } catch (e) { if (e.code === '42P01') return res.json([]); res.status(500).json({ error: 'Erro ao listar versões SNV.' }) }
 });
 r.get('/', async (req, res) => {
@@ -126,11 +145,18 @@ r.get('/:br/:uf', async (req, res) => {
   try {
     const br = pad(req.params.br), uf = String(req.params.uf).toUpperCase();
     const snv = String(req.query.snv || '').toLowerCase(), tipo = String(req.query.tipo || 'B').toUpperCase();
+    const k = ['geo', br, uf, snv, tipo].join('|'), c = doCache(k);
+    if (c) return envia(res, c, 86400);
+    const corpo = await umaVez(k, async () => {
+    const pronto = doCache(k); if (pronto) return pronto;
     const row = snv
       ? await queryOne('SELECT * FROM rodovias WHERE br = $1 AND uf = $2 AND versao_snv = $3 AND tipo_tr = $4 LIMIT 1', [br, uf, snv, tipo])
       : await queryOne('SELECT * FROM rodovias WHERE br = $1 AND uf = $2 AND tipo_tr = $3 ORDER BY versao_snv DESC LIMIT 1', [br, uf, tipo]);
-    if (!row) return res.status(404).json({ error: `Rodovia BR-${br}/${uf} (tipo ${tipo})${snv ? ' SNV ' + snv : ''} não encontrada.` });
-    res.json(row);
+    return row ? noCache(k, row, 6 * 3600000) : null;
+    });
+    if (!corpo) return res.status(404).json({ error: `Rodovia BR-${br}/${uf} (tipo ${tipo})${snv ? ' SNV ' + snv : ''} não encontrada.` });
+    /* com versão do SNV informada a geometria não muda: o celular pode guardar por 1 dia */
+    envia(res, corpo, snv ? 86400 : 600);
   } catch { res.status(500).json({ error: 'Erro ao buscar geometria.' }) }
 });
 
@@ -140,6 +166,7 @@ const chaveImport = (req, res) => {
   return true;
 };
 r.post('/versoes', async (req, res) => {
+  limpaCache();
   if (!chaveImport(req, res)) return;
   try {
     const { id, label, arquivo_dnit, total_rodovias, status } = req.body || {};
@@ -154,6 +181,7 @@ r.post('/versoes', async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Erro ao registrar versão.' }) }
 });
 r.post('/import', async (req, res) => {
+  limpaCache();
   if (!chaveImport(req, res)) return;
   const { rodovias, versao_snv } = req.body || {};
   if (!versao_snv) return res.status(400).json({ error: 'versao_snv é obrigatório.' });
@@ -176,6 +204,7 @@ r.post('/import', async (req, res) => {
   finally { c.release() }
 });
 r.post('/reset', async (req, res) => {
+  limpaCache();
   if (!chaveImport(req, res)) return;
   try {
     const { versao_snv, all } = req.body || {};

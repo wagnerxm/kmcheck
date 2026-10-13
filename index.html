@@ -2502,35 +2502,49 @@ async function apiGet(caminho, ms){
 }
 const _snvMonths=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function fmtSnvId(id){ const mi=parseInt(id.slice(4,6),10); return _snvMonths[mi-1]+'/'+id.slice(0,4) }
+/* A lista de versões fica guardada no celular (kc-snv-vers) por 6 h: o seletor aparece na hora, sem esperar
+   o servidor, e abrir o app não gera pedido ao servidor a cada vez (com muitos usuários abrindo juntos de
+   manhã, isso enchia o servidor à toa). O DNIT publica poucas versões por ano, então 6 h não atrasa nada. */
 (async function loadSnvVersions(){
   const sel=document.getElementById('dl-snv');
   const hint=document.getElementById('dl-snv-hint');
-  try{
-    const r=await apiGet('/rodovias/versoes',8000);
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const vers=await r.json();
+  const VALIDADE=6*3600000;
+  function preenche(vers){
     const ok=vers.filter(v=>v.status==='concluido');
-    if(!ok.length) throw new Error('Nenhuma versão concluída');
+    if(!ok.length) return false;
+    const atual=sel.value;
     sel.innerHTML='';
     for(const v of ok){
       const o=document.createElement('option');
       o.value=v.id; o.textContent=fmtSnvId(v.id);
       sel.appendChild(o);
     }
-    const saved=localStorage.getItem('kc-dlsnv');
+    const saved=atual||localStorage.getItem('kc-dlsnv');
     if(saved && [...sel.options].some(o=>o.value===saved)) sel.value=saved;
     sel.onchange=()=>localStorage.setItem('kc-dlsnv', sel.value);
+    hint.style.display='none';
+    return true;
+  }
+  let guardada=null;
+  try{ guardada=JSON.parse(localStorage.getItem('kc-snv-vers')||'null') }catch(e){}
+  const temGuardada = guardada && Array.isArray(guardada.vers) && preenche(guardada.vers);
+  if(temGuardada && Date.now()-guardada.t < VALIDADE) return;   // ainda vale: nem consulta o servidor
+  try{
+    const r=await apiGet('/rodovias/versoes',8000);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const vers=await r.json();
+    if(!preenche(vers)) throw new Error('Nenhuma versão concluída');
+    try{ localStorage.setItem('kc-snv-vers', JSON.stringify({t:Date.now(), vers:vers.filter(v=>v.status==='concluido').map(v=>({id:v.id,status:v.status}))})) }catch(e){}
   }catch(e){
+    if(temGuardada) return;   // sem servidor agora, mas a lista guardada serve
     /* fallback: versão embutida no index.json (já carregado pelo bloco anterior) */
     if(_localSnv){
       sel.innerHTML='';
       const o=document.createElement('option');
       o.value=''; o.textContent=fmtSnvId(_localSnv)+' (local)';
       sel.appendChild(o);
-      hint.textContent='Servidor fora do ar.\nUsando os dados salvos no app.'; hint.style.display='';
-    } else {
-      hint.textContent='Servidor fora do ar.\nUsando os dados salvos no app.'; hint.style.display='';
     }
+    hint.textContent='Servidor fora do ar.\nUsando os dados salvos no app.'; hint.style.display='';
   }
 })();
 

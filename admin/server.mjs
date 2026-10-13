@@ -93,14 +93,16 @@ let _saveTimer = null;
   }
 }
 
-/* Salva no disco com debounce (evita escrita a cada ping) */
+/* Salva no disco no máximo a cada 30 s (com muitos aparelhos, regravar o arquivo inteiro a cada ping
+   travava o painel). Sem recuo no JSON: o arquivo fica ~3x menor e mais rápido de gravar.
+   Ao desligar o serviço, saveDbNow grava na hora (nada se perde). */
 function saveDb() {
   if (_saveTimer) return;
   _saveTimer = setTimeout(() => {
     _saveTimer = null;
-    try { writeFileSync(DB_PATH, JSON.stringify(_db, null, 2)); }
+    try { writeFileSync(DB_PATH, JSON.stringify(_db)); }
     catch (e) { console.error('Erro ao salvar DB:', e.message); }
-  }, 1000);
+  }, 30000);
 }
 
 /* Salva imediatamente (para shutdown gracioso) */
@@ -410,11 +412,11 @@ app.post('/api/admin/devices/ping', pingRateLimit, (req, res) => {
     const existing = _db.devices[device_id];
     /* Detecção server-side como fallback (clientes v174- não enviam esses campos) */
     const det = detectDevice(user_agent || existing?.user_agent, screen || existing?.screen, hw || existing?.hw);
-    /* Registro do ping no histórico (guarda últimos 500 por dispositivo) */
+    /* Registro do ping no histórico (últimos 50 por dispositivo: com 500 o arquivo passava de 20 MB com 1.000 aparelhos) */
     const hist = existing?.ping_history || [];
     hist.push({ ts: now, ip, app_version, location: location || null,
                 bases_count: bases_count ?? 0 });
-    if (hist.length > 500) hist.splice(0, hist.length - 500);
+    if (hist.length > 50) hist.splice(0, hist.length - 50);
     _db.devices[device_id] = {
       device_id,
       app_version: app_version || existing?.app_version || null,
