@@ -89,6 +89,40 @@ let _saveTimer = null;
   }
 }
 
+/* ── Resumo de uso por dia (para os gráficos do painel) ──
+   O ping_history guarda só os 50 últimos acessos, e quem usa muito perde o começo do mês. Aqui cada
+   aparelho ganha `uso`: um registro por dia (horário de Brasília) com quantos acessos teve, em que horas
+   e em que regiões (lat/lon com 2 casas, ~1 km, igual ao que o app manda). É pequeno e dura 200 dias. */
+const DIAS_USO = 200;
+const horaBR = ts => { const t = new Date(Date.parse(ts) - 3 * 3600000); return { dia: t.toISOString().slice(0, 10), h: t.getUTCHours() } };
+function registraUso(d, ts, location, app_version) {
+  const { dia, h } = horaBR(ts);
+  const uso = d.uso || (d.uso = {});
+  const u = uso[dia] || (uso[dia] = { n: 0, h: {}, l: [] });
+  u.n++; u.h[h] = (u.h[h] || 0) + 1;
+  if (app_version) u.v = app_version;
+  if (location && isFinite(location.lat) && isFinite(location.lon)) {
+    const p = [Math.round(location.lat * 100) / 100, Math.round(location.lon * 100) / 100];
+    if (!u.l.some(q => q[0] === p[0] && q[1] === p[1]) && u.l.length < 8) u.l.push(p);
+  }
+}
+function podaUso(d) {
+  if (!d.uso) return;
+  const corte = new Date(Date.now() - DIAS_USO * 86400000).toISOString().slice(0, 10);
+  for (const dia of Object.keys(d.uso)) if (dia < corte) delete d.uso[dia];
+}
+/* Migração: aparelhos que ainda não têm `uso` ganham o resumo montado do ping_history que existe */
+{
+  let n = 0;
+  for (const d of Object.values(_db.devices)) {
+    if (d.uso) continue;
+    d.uso = {};
+    for (const p of (d.ping_history || [])) if (p.ts) registraUso(d, p.ts, p.location, p.app_version);
+    n++;
+  }
+  if (n) { console.log(`Migração: ${n} dispositivo(s) ganharam o resumo de uso por dia`); try { writeFileSync(DB_PATH, JSON.stringify(_db)); } catch {} }
+}
+
 /* Salva no disco com debounce (evita escrita a cada ping) */
 function saveDb() {
   if (_saveTimer) return;
@@ -414,8 +448,12 @@ app.post('/api/admin/devices/ping', (req, res) => {
       first_seen: existing?.first_seen || now,
       last_ping: now,
       ping_count: (existing?.ping_count || 0) + 1,
-      ping_history: hist
+      ping_history: hist,
+      uso: existing?.uso || {},
+      ...(existing?.nickname ? { nickname: existing.nickname } : {})
     };
+    registraUso(_db.devices[device_id], now, location, app_version);
+    podaUso(_db.devices[device_id]);
     saveDb();
     res.json({ ok: true });
   } catch (e) {
@@ -510,9 +548,9 @@ function agrupaAparelhos(lista) {
   return { grupos, tamanho };
 }
 
-/* Listar dispositivos — admin.
-   Preenche campos detectáveis retroativamente (dispositivos que pingaram antes da v175). */
-app.get('/api/admin/devices', auth, (req, res) => {
+/* Lista de dispositivos com modelo/marca corrigidos, categoria e grupo (reinstalações juntas).
+   Usada pela tabela de aparelhos e pelos gráficos. */
+function montaLista() {
   let dirty = false;
   const devices = Object.values(_db.devices)
     .map(d => {
@@ -551,6 +589,14 @@ app.get('/api/admin/devices', auth, (req, res) => {
     d.grupo_tamanho = tamanho.get(d.grupo) || 1;
     d.reinstalacao = d.grupo !== d.device_id;
   }
+  return devices;
+}
+
+/* Listar dispositivos — admin.
+   Preenche campos detectáveis retroativamente (dispositivos que pingaram antes da v175). */
+app.get('/api/admin/devices', auth, (req, res) => {
+  /* sem o resumo por dia (vai pela rota /uso), para a lista não ficar pesada */
+  const devices = montaLista().map(({ uso, ...d }) => d);
   /* aparelhos reais: um por grupo, com o último uso do grupo */
   const ap = new Map();
   for (const d of devices) {
@@ -604,6 +650,60 @@ app.get('/api/admin/devices', auth, (req, res) => {
       models: modelCount
     }
   });
+});
+
+/* Uso por aparelho real (só celulares, reinstalações juntas) — alimenta os gráficos do painel.
+   Cada aparelho: código mais recente (para abrir a ficha), nome, modelo, quando apareceu e o uso por dia. */
+app.get('/api/admin/uso', auth, (req, res) => {
+  const grupos = new Map(), lista = montaLista();
+  for (const d of lista) {
+    if (d.categoria !== 'celular') continue;
+    let g = grupos.get(d.grupo);
+    if (!g) grupos.set(d.grupo, g = { id: d.grupo, ids: [], inst: d.first_seen, ult: null, dias: {} });
+    g.ids.push(d.device_id);
+    if (d.first_seen && (!g.inst || d.first_seen < g.inst)) g.inst = d.first_seen;
+    if (!g.ult || (d.last_ping || '') > g.ult) {
+      Object.assign(g, { ult: d.last_ping, did: d.device_id, plat: d.platform, modelo: d.model || d.platform, v: d.app_version });
+    }
+    if (d.nickname && !g.nick) g.nick = d.nickname;
+    /* junta os dias dos códigos do mesmo aparelho */
+    for (const [dia, u] of Object.entries(d.uso || {})) {
+      const a = g.dias[dia];
+      if (!a) { g.dias[dia] = { n: u.n, h: { ...u.h }, l: [...u.l], v: u.v }; continue }
+      a.n += u.n; for (const [h, n] of Object.entries(u.h)) a.h[h] = (a.h[h] || 0) + n;
+      for (const p of u.l) if (!a.l.some(q => q[0] === p[0] && q[1] === p[1])) a.l.push(p);
+      if (u.v) a.v = u.v;
+    }
+  }
+  const s = lista;
+  res.json({
+    agora: new Date().toISOString(),
+    aparelhos: [...grupos.values()],
+    fora: { computadores: s.filter(d => d.categoria === 'computador').length, testes: s.filter(d => d.categoria === 'teste').length,
+            reinstalacoes: s.filter(d => d.categoria === 'celular').length - grupos.size }
+  });
+});
+
+/* Ao vivo: quem abriu o app nos últimos 30 min e os últimos acessos de celulares (atualiza a cada 20 s) */
+app.get('/api/admin/agora', auth, (req, res) => {
+  const lista = montaLista().filter(d => d.categoria === 'celular');
+  const meiaHora = new Date(Date.now() - 30 * 60000).toISOString();
+  const eventos = [];
+  for (const d of lista) for (const p of (d.ping_history || []).slice(-10))
+    eventos.push({ ts: p.ts, did: d.device_id, grupo: d.grupo, modelo: d.model || d.platform, plat: d.platform, nick: d.nickname || null, loc: p.location || null });
+  eventos.sort((a, b) => b.ts.localeCompare(a.ts));
+  res.json({
+    agora: new Date().toISOString(),
+    usando: new Set(lista.filter(d => (d.last_ping || '') >= meiaHora).map(d => d.grupo)).size,
+    eventos: eventos.slice(0, 12)
+  });
+});
+
+/* Malha das rodovias federais (desenho simplificado para o mapa do painel). Gerada por gerar-malha.mjs. */
+app.get('/api/admin/malha.js', (req, res) => {
+  const f = join(__dirname, 'malha.js');
+  if (!existsSync(f)) return res.status(404).type('js').send('window.MALHA=null;');
+  res.set('Cache-Control', 'public, max-age=86400').type('js').send(readFileSync(f));
 });
 
 /* ================================================================
