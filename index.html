@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Check">
+<link rel="icon" href="icon-192.png">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://api.kmcheck.com.br https://kmcheck.com.br https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
 /* Armazenamento bloqueado (Safari com "Bloquear todos os cookies", Chrome com cookies bloqueados para o
@@ -172,7 +173,7 @@ header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.
 #dlg-sobre input[type=checkbox]{accent-color:#8fb31a}
 #dlg-sobre .sobre-ver{color:#8a95a5}
 #header-back{display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--gold);
-  font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0;animation:scrIn .15s ease-out}
+  font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0 8px 0 0;min-height:44px;animation:scrIn .15s ease-out}
 #header-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 /* área de toque de 44–48 px (o verificador de acessibilidade da Google Play pede 48dp) sem mudar o desenho:
    uma camada invisível maior que o botão recebe o toque */
@@ -968,6 +969,10 @@ dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
   padding:7px 14px;text-align:center;cursor:pointer;gap:6px;align-items:center;justify-content:center;
   letter-spacing:.02em}
 #gps-banner.on{display:flex}
+/* paisagem: a faixa atravessava a tela e cobria o LE e o ponto do GPS — vira uma etiqueta no canto */
+@media (orientation:landscape){#camwrap.on #gps-banner{top:8px;left:64px;right:auto;max-width:calc(100% - 304px);border-radius:10px}}
+/* tela inicial em paisagem (celular deitado): o botão flutuante ia para o meio e cobria latitude/longitude */
+@media (orientation:landscape) and (max-height:500px){nav.nav1{left:auto;right:calc(12px + env(safe-area-inset-right));transform:none;bottom:8px}}
 #gps-banner svg{width:15px;height:15px;flex-shrink:0}
 .checker{background:#2a2e33;background:repeating-conic-gradient(#33383d 0 25%, #1e2226 0 50%) 0 0/18px 18px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:10px;margin:8px 0}
 .checker canvas{max-width:100%;max-height:240px}
@@ -1523,7 +1528,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </section>
       <section class="bv-pag" aria-roledescription="página" aria-label="9 de 9">
         <div class="bv-vis bv-fim"><span class="bv-ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
-        <div class="bv-corpo"><span class="bv-olho">Pronto</span><h2>Tudo pronto para o campo.</h2><p>Dúvidas? O manual completo fica no botão de livro, ao lado da lupa.</p></div>
+        <div class="bv-corpo"><span class="bv-olho">Pronto</span><h2>Tudo pronto para o campo.</h2><p>Dúvidas? O manual completo fica no ⓘ ao lado da versão, no topo.</p></div>
       </section>
     </div>
     <div class="bv-pe">
@@ -2240,7 +2245,9 @@ document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>goToScreen(b.d
 document.getElementById('logo-home').onclick=()=>goToScreen('scr-cam');
 document.getElementById('header-back').onclick=()=>{
   if(settingsFromCam && document.getElementById('scr-settings').classList.contains('on')){
-    settingsFromCam=false; openCam(); return;
+    /* volta para a tela inicial ANTES de reabrir a câmera: senão, ao fechar a câmera, a pessoa caía nos Ajustes
+       com o botão "Registrar evidência" por cima */
+    settingsFromCam=false; goToScreen('scr-cam'); openCam(); return;
   }
   goToScreen('scr-cam');
 };
@@ -2880,7 +2887,7 @@ document.getElementById('dl-go').onclick=async()=>{
   const uf=document.getElementById('dl-uf').value;
   const brSel=document.getElementById('dl-br').value;
   const br=(brSel==='__outra'?document.getElementById('dl-br-custom').value.trim():brSel);
-  if(!br){ toast('Selecione ou digite uma BR.'); return }
+  if(!br){ toast(navigator.onLine?'Selecione ou digite uma BR.':'Sem internet: não dá para baixar agora.'); return }
   const brPad=br.replace(/\D/g,'').padStart(3,'0');
   let kmi=parseNum(document.getElementById('dl-kmi').value);
   let kmf=parseNum(document.getElementById('dl-kmf').value);
@@ -3732,6 +3739,10 @@ function showGpsDeniedDialog(){
     /* app da loja: não há barra de endereço — a permissão fica nas configurações do Android */
     msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
       '<b>No Android:</b> abra <b>Configurações → Apps → KM Check → Permissões → Localização</b> e escolha "Permitir durante o uso do app".';
+  } else if(_isAndroid && _isPWAStandalone){
+    /* instalado na tela inicial: não há barra de endereço — a permissão é a do Chrome nas configurações */
+    msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
+      '<b>No Android:</b> abra <b>Configurações → Apps → Chrome → Permissões → Localização</b> e escolha "Permitir durante o uso do app".';
   } else if(_isAndroid){
     msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
       '<b>No Android:</b> toque no <b>cadeado 🔒 na barra de endereço</b> do Chrome → <b>Permissões → Localização</b> → Permitir.';
@@ -5014,7 +5025,7 @@ async function openCam(){
     clearInterval(camTick); camTick=null;
     if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
     camwrap.classList.remove('on');
-    document.querySelector('nav').style.display='';
+    document.querySelector('nav').style.display=document.getElementById('scr-cam').classList.contains('on')?'':'none';
     document.querySelector('header.top').style.display='';
     document.querySelector('main').style.display='';
     var _l=document.documentElement.getAttribute('data-theme')==='light';
@@ -5070,7 +5081,8 @@ function closeCam(instant){
   document.body.style.backgroundColor=_c;
   document.getElementById('meta-theme').content=_c;
   disableScreenLock();
-  document.querySelector('nav').style.display='';
+  /* o botão flutuante só existe na tela inicial (fechar a câmera vinda de outra tela não pode trazê-lo) */
+  document.querySelector('nav').style.display=document.getElementById('scr-cam').classList.contains('on')?'':'none';
   document.querySelector('header.top').style.display='';
   document.querySelector('main').style.display='';
   clearInterval(camTick); camTick=null;
@@ -6501,13 +6513,16 @@ function showInstallPrompt(){
   };
   overlay.onclick=e=>{ if(e.target===overlay) btnDismiss.click() };
 
-  /* mostra com delay de 1.5s para o app ter tempo de renderizar */
-  setTimeout(()=>{
+  /* mostra com delay de 1.5s para o app ter tempo de renderizar — e só depois do aviso de dados de uso e das
+     boas-vindas (antes abria por cima deles: o "Permitir / Agora não" ficava sem toque e eram 3 camadas em fila) */
+  const mostra=()=>{
+    if(!usoDecidido() || !document.getElementById('uso').hidden || !document.getElementById('bv').hidden) return setTimeout(mostra, 1000);
     try{ localStorage.setItem('kc-install-shown','1') }catch(e){}   // marca só quando aparece (antes marcava e a recarga sumia com ele)
     overlay.classList.add('on');
     /* no iOS mostra a seta apontando pro botão compartilhar do Safari */
     if(isIOS) document.getElementById('safari-hint').classList.add('on');
-  }, 1500);
+  };
+  setTimeout(mostra, 1500);
 }
 
 /* ================= boot ================= */
