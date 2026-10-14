@@ -141,6 +141,36 @@ header.top{padding:calc(14px + env(safe-area-inset-top)) 20px 12px;display:flex;
 /* logo em alta resolução com fundo transparente (a sombra borrada que havia aqui deixava a logo embaçada) */
 header.top img{height:36px;width:auto;display:block}
 header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.24em;text-transform:uppercase}
+/* versão no cabeçalho: abre "Sobre o KM Check" (privacidade e ajuda) */
+#sobre-btn{margin-left:auto;display:flex;align-items:center;gap:6px;background:none;border:0;padding:10px 2px;cursor:pointer;color:var(--mut);font:inherit}
+#sobre-btn .sub{margin-left:0}
+#sobre-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex:0 0 auto}
+#dlg-sobre h2.sec:first-of-type{margin-top:4px}
+#dlg-sobre .sobre-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+#dlg-sobre .sobre-top h3{margin:0;font-size:19px}
+#dlg-sobre .sobre-x{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--text);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+#dlg-sobre .sobre-x svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+#dlg-sobre .sobre-ver{text-align:center;font-size:11px;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;padding:16px 0 4px;cursor:default;user-select:none;-webkit-user-select:none}
+#dlg-sobre .sobre-ver small{display:block;text-transform:none;letter-spacing:0;font-size:11px;margin-top:4px;opacity:.8}
+/* janela clara no visual da capa do manual: a arte da rodovia em cima, esmaecendo para o cinza-claro, e
+   cartões brancos (fica clara nos dois temas: é a "página" institucional do app) */
+#dlg-sobre{color:#1c2333;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;padding:22px 20px 16px;
+  background:linear-gradient(180deg,rgba(244,245,244,0) 0,rgba(244,245,244,.35) 120px,#f1f2f2 210px),
+    linear-gradient(90deg,rgba(244,245,244,.97) 0%,rgba(244,245,244,.75) 48%,rgba(244,245,244,.1) 100%),
+    url(fundo-sobre.webp) calc(100% + 70px) 0/auto 230px no-repeat,#f1f2f2;   /* +70px: o logo que vem desenhado na arte fica fora da janela (cortado atrás do X ficava feio) */
+  box-shadow:0 24px 60px -20px rgba(10,14,22,.55)}
+#dlg-sobre .sobre-top h3{color:#1c2333;font-weight:800;letter-spacing:-.02em}
+#dlg-sobre .sobre-x{background:rgba(255,255,255,.85);border-color:#dfe3e8;color:#1c2333;box-shadow:0 4px 12px -6px rgba(28,35,51,.35)}
+#dlg-sobre h2.sec{color:#6f8a0e}
+#dlg-sobre .card{background:rgba(255,255,255,.92);border:1px solid #e3e6ea;box-shadow:0 12px 28px -20px rgba(28,35,51,.45);color:#1c2333;backdrop-filter:none;-webkit-backdrop-filter:none}
+#dlg-sobre .card::before,#dlg-sobre .card::after{display:none}
+#dlg-sobre .listrow{border-bottom-color:#eceef1;color:#1c2333}
+#dlg-sobre .ltext b,#dlg-sobre #cfg-manual b{color:#1c2333}
+#dlg-sobre .ltext i,#dlg-sobre #cfg-manual small{color:#5c6678!important}
+#dlg-sobre .lbadge,#dlg-sobre .gbadge{background:#eef3dc;border:0;color:#5d7410}
+#dlg-sobre .lbadge svg,#dlg-sobre .gbadge svg{stroke:#5d7410}
+#dlg-sobre input[type=checkbox]{accent-color:#8fb31a}
+#dlg-sobre .sobre-ver{color:#8a95a5}
 #header-back{display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--gold);
   font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0;animation:scrIn .15s ease-out}
 #header-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -161,14 +191,6 @@ header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.
 html:not(.kc-teste) .so-teste{display:none!important}
 html.kc-teste #app-ver::after{content:' · TESTE';color:#c4e24a;font-weight:700}
 /* ---------- manual do usuário ---------- */
-#help-toggle{margin-left:10px;width:44px;height:44px;border-radius:50%;
-  background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.85);
-  backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
-  border:1px solid rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.18)}
-#help-toggle+#search-toggle{margin-left:8px}
-#help-toggle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-:root[data-theme="light"] #help-toggle{background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), #101010;backdrop-filter:none;-webkit-backdrop-filter:none}
 /* boas-vindas + manual de bolso: um cartão claro no meio da tela inicial. A 1ª página dá as boas-vindas
    e as seguintes ensinam o app arrastando para o lado, cada uma com a tela real e um holofote no botão
    daquele passo. O manual completo fica para consulta. Só no modo de testes por enquanto. */
@@ -1005,8 +1027,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <div id="app">
 <header class="top">
   <button id="header-back" aria-label="Voltar" style="display:none"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg><span>Voltar</span></button>
-  <img id="logo-home" src="logo-kmcheck.png" alt="KM Check" style="cursor:pointer"><span class="sub" id="app-ver">VERSÃO …</span>
-  <button id="help-toggle" aria-label="Manual do usuário"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.1 5.3 7.7 4.7 4.4 4.9v13c3.3-.2 5.7.4 7.6 1.7 1.9-1.3 4.3-1.9 7.6-1.7v-13c-3.3-.2-5.7.4-7.6 1.7z"/><path d="M12 6.6v13"/></svg></button>
+  <img id="logo-home" src="logo-kmcheck.png" alt="KM Check" style="cursor:pointer"><button id="sobre-btn" type="button" aria-label="Sobre o KM Check: privacidade e ajuda"><span class="sub" id="app-ver">VERSÃO …</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></svg></button>
   <button id="search-toggle" aria-label="Consulta">
     <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
   </button>
@@ -1418,31 +1439,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     </div>
   </div>
 
-  <h2 class="sec">Privacidade</h2>
-  <div class="card listcard">
-    <label class="listrow">
-      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
-      <span class="ltext"><b>Enviar dados de uso</b><i>Modelo, versão, rodovias, região (cerca de 1 km) e código do aparelho</i></span>
-      <input type="checkbox" id="cfg-uso">
-    </label>
-    <!-- a política de privacidade pede este código para atender pedidos de exclusão dos dados -->
-    <button class="listrow" id="cfg-did" type="button" style="width:100%;text-align:left;background:none;border-left:0;border-right:0;border-top:0;font:inherit;color:inherit">
-      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
-      <span class="ltext"><b>Código do aparelho</b><i id="cfg-did-v">—</i></span>
-    </button>
-    <a class="listrow" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;border-bottom:0">
-      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/></svg></span>
-      <span class="ltext"><b>Política de privacidade</b><i>O que o app coleta e por quê</i></span>
-    </a>
-  </div>
-
-  <div>
-    <h2 class="sec">Ajuda</h2>
-    <div class="card"><button class="listrow" id="cfg-manual" style="width:100%;background:none;border:0;color:inherit;font:inherit;text-align:left;border-bottom:0">
-      <span class="gbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.1 5.3 7.7 4.7 4.4 4.9v13c3.3-.2 5.7.4 7.6 1.7 1.9-1.3 4.3-1.9 7.6-1.7v-13c-3.3-.2-5.7.4-7.6 1.7z"/><path d="M12 6.6v13"/></svg></span><span style="flex:1"><b style="display:block;font-size:15px">Manual do usuário</b><small style="color:var(--mut);font-size:12px">Todas as telas e funções, passo a passo</small></span>
-      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;stroke:var(--mut);fill:none;stroke-width:2"><path d="M9 6l6 6-6 6"/></svg></button></div>
-  </div>
-
 </section>
 </div>
 
@@ -1804,6 +1800,34 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </dialog>
 
 <!-- diálogo: GPS obrigatório — aparece quando permissão de localização é negada -->
+<!-- Sobre o KM Check: abre pelo toque na versão do cabeçalho. Privacidade (dados de uso, código do aparelho,
+     política) e Ajuda (manual). 7 toques na versão do rodapé ligam/desligam o modo de testes. -->
+<dialog id="dlg-sobre" aria-labelledby="sobre-tit">
+  <div class="sobre-top"><h3 id="sobre-tit">Sobre o KM Check</h3><button class="sobre-x" id="sobre-x" type="button" aria-label="Fechar"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3 3 9"/></svg></button></div>
+  <h2 class="sec">Privacidade</h2>
+  <div class="card listcard">
+    <label class="listrow">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
+      <span class="ltext"><b>Enviar dados de uso</b><i>Modelo, versão, rodovias, região (cerca de 1 km) e código do aparelho</i></span>
+      <input type="checkbox" id="cfg-uso">
+    </label>
+    <!-- a política de privacidade pede este código para atender pedidos de exclusão dos dados -->
+    <button class="listrow" id="cfg-did" type="button" style="width:100%;text-align:left;background:none;border-left:0;border-right:0;border-top:0;font:inherit;color:inherit">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
+      <span class="ltext"><b>Código do aparelho</b><i id="cfg-did-v">—</i></span>
+    </button>
+    <a class="listrow" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;border-bottom:0">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/></svg></span>
+      <span class="ltext"><b>Política de privacidade</b><i>O que o app coleta e por quê</i></span>
+    </a>
+  </div>
+
+  <h2 class="sec">Ajuda</h2>
+    <div class="card"><button class="listrow" id="cfg-manual" style="width:100%;background:none;border:0;color:inherit;font:inherit;text-align:left;border-bottom:0">
+      <span class="gbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.6C10.1 5.3 7.7 4.7 4.4 4.9v13c3.3-.2 5.7.4 7.6 1.7 1.9-1.3 4.3-1.9 7.6-1.7v-13c-3.3-.2-5.7.4-7.6 1.7z"/><path d="M12 6.6v13"/></svg></span><span style="flex:1"><b style="display:block;font-size:15px">Manual do usuário</b><small style="color:var(--mut);font-size:12px">Todas as telas e funções, passo a passo</small></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;stroke:var(--mut);fill:none;stroke-width:2"><path d="M9 6l6 6-6 6"/></svg></button></div>
+  <div class="sobre-ver" id="sobre-ver">KM Check · versão …<small>Desenvolvido por Wagner Machado</small></div>
+</dialog>
 <dialog id="dlg-gps" aria-labelledby="dlg-gps-title">
   <div class="rl-body">
     <svg class="rl-icon" viewBox="0 0 44 44" fill="none" stroke="var(--gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2151,13 +2175,14 @@ document.getElementById('search-toggle').onclick=()=>goToScreen('scr-query');
 
 /* ================= modo de testes (só neste aparelho) =================
    Recursos novos chegam escondidos (classe .so-teste). Para testar antes de liberar para todos,
-   7 toques seguidos na versão do cabeçalho ligam/desligam; fica gravado só neste aparelho (kc-teste).
+   7 toques seguidos na versão do rodapé da janela "Sobre o KM Check" ligam/desligam; fica gravado só neste
+   aparelho (kc-teste). (Antes era na versão do cabeçalho, que agora abre essa janela com um toque.)
    No iPhone o app instalado não tem barra de endereço, por isso não dá para usar um link ?teste=1. */
 const modoTeste=()=>document.documentElement.classList.contains('kc-teste');
 (function(){
   try{ if(localStorage.getItem('kc-teste')==='1') document.documentElement.classList.add('kc-teste') }catch(e){}
   let n=0, t0=0;
-  document.getElementById('app-ver').addEventListener('click', ()=>{
+  document.getElementById('sobre-ver').addEventListener('click', ()=>{
     const ag=Date.now(); n = ag-t0<700 ? n+1 : 1; t0=ag;
     if(n<7) return; n=0;
     const liga=!modoTeste();
@@ -2165,8 +2190,12 @@ const modoTeste=()=>document.documentElement.classList.contains('kc-teste');
     try{ liga ? localStorage.setItem('kc-teste','1') : localStorage.removeItem('kc-teste') }catch(e){}
     /* ao ligar o teste, o cartão de boas-vindas volta (senão, quem já abriu o manual nunca mais o veria para testar) */
     if(liga) try{ localStorage.removeItem('kc-manual-visto') }catch(e){}
+    const d=document.getElementById('dlg-sobre'); if(d.open) d.close();   // as boas-vindas aparecem por baixo da janela
     mostraBoasVindas();
   });
+  document.getElementById('sobre-btn').addEventListener('click', ()=>{ mostraCodigo(); showDlg(document.getElementById('dlg-sobre')) });
+  document.getElementById('sobre-x').addEventListener('click', ()=>document.getElementById('dlg-sobre').close());
+  document.getElementById('dlg-sobre').addEventListener('click', e=>{ if(e.target.id==='dlg-sobre') e.target.close() });   // toque fora fecha
 })();
 
 /* ================= manual do usuário =================
@@ -2234,11 +2263,9 @@ function fechaBoasVindas(marcaVisto){
   if(marcaVisto) try{ localStorage.setItem('kc-manual-visto','1') }catch(e){}
   BV.classList.remove('on'); setTimeout(()=>{ if(!BV.classList.contains('on')) BV.hidden=true }, 360);
 }
-document.getElementById('help-toggle').onclick=()=>{
-  const on=document.querySelector('.screen.on'), id=on&&on.id;
-  abreManual(CAP_DA_TELA[id]||'');   // o livro abre sempre o manual completo (no capítulo da tela atual)
-};
-document.getElementById('cfg-manual').onclick=()=>abreManual('');
+/* o manual abre só pela janela "Sobre o KM Check" (o botão de livro do cabeçalho saiu), já no capítulo da tela atual */
+document.getElementById('cfg-manual').onclick=()=>{ const d=document.getElementById('dlg-sobre'); if(d.open) d.close();
+  const on=document.querySelector('.screen.on'); abreManual(CAP_DA_TELA[on&&on.id]||'') };
 document.getElementById('bv-sim').onclick=()=>vaiTour(1);
 document.getElementById('bv-prox').onclick=()=>vaiTour(bvPag+1);
 document.getElementById('bv-volta').onclick=()=>vaiTour(bvPag-1);
@@ -6408,7 +6435,8 @@ function showInstallPrompt(){
   fetch('sw.js').then(r=>r.text()).then(t=>{
     const m=t.match(/kmcheck-v(\d+)/), va=t.match(/VERSAO_APP = '([^']+)'/);
     /* na tela aparece a versão das lojas (1.0.0); o número do cache é interno */
-    if(m) document.getElementById('app-ver').textContent='VERSÃO '+(va?va[1]:m[1]);
+    if(m){ document.getElementById('app-ver').textContent='VERSÃO '+(va?va[1]:m[1]);
+      document.getElementById('sobre-ver').firstChild.textContent='KM Check · versão '+(va?va[1]:m[1]) }
     /* ── Ping aprimorado para o painel admin — coleta dados do dispositivo, GPS e bases ── */
     if(m && SNV_API && usoAutorizado()){   // só envia com a autorização da pessoa (pedida na 1ª abertura)
       /* O fingerprint de hardware (benchmark de CPU num worker + 2 contextos WebGL + medição de fps)

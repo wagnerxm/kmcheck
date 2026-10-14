@@ -43,7 +43,7 @@ ok('foto marcada como salva no celular (MediaStore)', !!depois.salva);
 await p.evaluate(() => closeCam(true)); await w(800);
 
 /* manual abre dentro do app */
-await p.evaluate(() => document.getElementById('help-toggle').click()); await w(4000);
+await p.evaluate(() => document.getElementById('cfg-manual').click()); await w(4000);
 const man = await p.evaluate(() => { const f = document.getElementById('manual-if'); try { return f.contentDocument && f.contentDocument.querySelectorAll('.cap').length } catch (e) { return -1 } });
 ok(`manual abre (${man} capítulos)`, man >= 10);
 await p.evaluate(() => fechaManual());
