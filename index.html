@@ -132,6 +132,12 @@ main{flex:1;overflow-y:auto;padding-bottom:calc(96px + env(safe-area-inset-botto
 /* transições suaves entre telas */
 .screen{display:none;animation:scrIn .18s ease-out}
 .screen.on{display:block}
+/* tablet, dobrável aberto e celular deitado: as telas ficavam esticadas na largura toda (cartões enormes e
+   vazios). Limita a uma coluna de celular grande, centralizada; o cabeçalho acompanha as mesmas bordas. */
+@media (min-width:640px){
+  .screen{max-width:600px;margin-inline:auto}
+  html header.top{padding-left:max(20px, calc((100% - 600px)/2 + 20px));padding-right:max(20px, calc((100% - 600px)/2 + 20px))}
+}
 @keyframes scrIn{from{opacity:0}to{opacity:1}}
 /* ---------- cabeçalho ---------- */
 header.top{padding:calc(14px + env(safe-area-inset-top)) 20px 12px;display:flex;align-items:center;gap:12px;
@@ -384,7 +390,7 @@ h2.sec::after{content:none}
     linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 30%),
     rgba(255,255,255,.04),
     var(--glassbg);
-  text-align:left;padding:22px}
+  text-align:left;padding:clamp(16px,5.5vw,22px)}
 .heroPhoto{background:
     linear-gradient(135deg, rgba(255,255,255,.09) 0%, transparent 28%),
     linear-gradient(200deg, transparent 52%, rgba(255,255,255,.035) 58%, transparent 66%),
@@ -394,13 +400,15 @@ h2.sec::after{content:none}
 .heroPhoto::after{content:'';position:absolute;left:0;right:0;bottom:0;height:62%;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20200%22%20preserveAspectRatio%3D%22none%22%3E%0A%3Cpath%20d%3D%22M0%2C110%20C90%2C50%20150%2C150%20240%2C95%20C310%2C52%20350%2C120%20400%2C80%20L400%2C200%20L0%2C200%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.055%22/%3E%0A%3Cpath%20d%3D%22M0%2C150%20C100%2C100%20170%2C180%20255%2C135%20C325%2C98%20360%2C160%20400%2C125%20L400%2C200%20L0%2C200%20Z%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.045%22/%3E%0A%3C/svg%3E");
   background-size:100% 100%;background-repeat:no-repeat}
-.herotop{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
-.kmsign{width:124px;height:auto;flex:0 0 auto;margin-left:-8px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+/* tamanhos com clamp(): iguais aos de sempre a partir de ~400 px de largura e encolhem juntos nos celulares
+   estreitos (320–360 px), onde o KM "326,040" saía cortado na borda do cartão */
+.herotop{display:flex;align-items:center;gap:clamp(12px,4.5vw,18px);position:relative;z-index:1}
+.kmsign{width:clamp(92px,31vw,124px);height:auto;flex:0 0 auto;margin-left:-8px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
 .herotext{flex:1;min-width:0}
-.heroroad{font-size:26px;font-weight:700;letter-spacing:.01em;line-height:1.1;color:#b7d92d}
-.herokm{font-family:var(--mono);font-size:40px;font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.08;margin-top:6px}
+.heroroad{font-size:clamp(20px,6.5vw,26px);font-weight:700;letter-spacing:.01em;line-height:1.1;color:#b7d92d}
+.herokm{font-family:var(--mono);font-size:clamp(30px,10vw,40px);font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.08;margin-top:6px}
 .herounit{font-size:13px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
-.heroestaca{font-family:var(--mono);font-size:32px;font-weight:700;color:#b7d92d;letter-spacing:-.01em;line-height:1.08;position:relative;z-index:1}
+.heroestaca{font-family:var(--mono);font-size:clamp(26px,8vw,32px);font-weight:700;color:#b7d92d;letter-spacing:-.01em;line-height:1.08;position:relative;z-index:1}
 .herodiv{height:1px;background:var(--line);margin:16px 4px;position:relative;z-index:1}
 .herostatusrow{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--gold);position:relative;z-index:1}
 .herogpsline{font-size:12px;color:var(--mut);margin-top:6px;font-family:var(--mono);position:relative;z-index:1}
@@ -416,7 +424,7 @@ h2.sec::after{content:none}
     var(--glassbg2);
   backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
   border:1px solid var(--glassborder);
-  border-radius:26px;padding:18px;text-align:left;cursor:pointer;color:var(--text);
+  border-radius:26px;padding:clamp(14px,4.5vw,18px);text-align:left;cursor:pointer;color:var(--text);
   display:flex;flex-direction:column;gap:8px;min-height:124px;
   box-shadow:inset 0 1px 0 var(--glassrimtop), 0 20px 45px rgba(0,0,0,.26), 0 8px 18px rgba(0,0,0,.16);
   transition:transform .16s ease, box-shadow .16s ease}
@@ -426,9 +434,21 @@ h2.sec::after{content:none}
   background-size:100% 100%;background-repeat:no-repeat}
 .gbadge{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--glassborder);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .gcard .gicon{width:19px;height:19px;stroke:var(--gold);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.gcard .gtitle{font-size:15px;font-weight:700;margin-top:6px}
+.gcard .gtitle{font-size:clamp(13.5px,3.75vw,15px);font-weight:700;margin-top:6px}
 .gcard .glink{font-size:11px;color:var(--mut);line-height:1.4}
 .garrow{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-top:auto}
+/* telas BAIXAS (iPhone SE/8, Android pequeno): o botão da câmera flutuante cobria os cartões de baixo logo ao
+   abrir. Aperta a placa e os respiros para os cartões caberem acima dele. */
+@media (max-height:740px){
+  .kmsign{width:clamp(84px,26vw,98px)}
+  .herodiv{margin:10px 4px}
+  .gcard{min-height:0;gap:6px}
+}
+@media (max-height:620px){
+  .hero{padding:14px}
+  .gcard .glink{display:none}
+  .gcard .garrow{display:none}
+}
 .camrow{display:flex;align-items:center;gap:14px;margin-top:18px}
 .iconbtn{width:64px;height:64px;border-radius:50%;background:var(--btnbg);border:1px solid var(--btnborder);color:var(--btntext);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
 .iconbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -436,11 +456,12 @@ h2.sec::after{content:none}
 .iconbtn.primary svg{width:30px;height:30px}
 .iconbtn:active{filter:brightness(1.15)}
 /* ---------- botões ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--btnbg);color:var(--btntext);border:1px solid var(--btnborder);border-radius:999px;padding:15px 18px;font-size:15px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%;transition:filter .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--btnbg);color:var(--btntext);border:1px solid var(--btnborder);border-radius:999px;padding:15px clamp(12px,4.5vw,18px);font-size:15px;font-weight:600;font-family:var(--sans);cursor:pointer;width:100%;transition:filter .15s}
 .btn:active{filter:brightness(1.15)}
 .btn.gold{background:var(--gold);border-color:var(--gold);color:#0d0f08;font-weight:700}
 .btn.ghost{background:transparent;border-color:rgba(255,255,255,.1);color:var(--mut)}
-.btn.small{width:auto;padding:9px 15px;font-size:12px}
+.btn.small{width:auto;padding:9px clamp(11px,3.6vw,15px);font-size:12px}
+#q-run{white-space:nowrap}   /* 320 px: "Calcular KM" quebrava em duas linhas ao lado do "Usar GPS" */
 .btn:disabled{opacity:.45}
 .row{display:flex;gap:10px}
 .row .btn{flex:1}
@@ -454,9 +475,10 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #dl-status,#dl-snv-hint,#ctkm-hint,#ctlink-for{white-space:pre-line}
 .tag{display:inline-block;font-family:var(--mono);font-size:11px;background:var(--panel2);border-radius:7px;padding:2px 8px;color:var(--gold2)}
 /* ---------- listas ---------- */
-.base-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+/* clamp(): no celular de 320 px o nome "BR-226/RN" quebrava em duas linhas ("BR-" / "226/RN") */
+.base-item{display:flex;align-items:center;gap:clamp(8px,3vw,12px);padding:13px 0;border-bottom:1px solid var(--line)}
 .base-item:last-child{border-bottom:none}
-.base-item .bname{font-weight:800;font-size:16px;letter-spacing:.03em;color:#fff}
+.base-item .bname{font-weight:800;font-size:clamp(14.5px,4.6vw,16px);letter-spacing:.03em;color:#fff}
 .base-item .bmeta{font-size:11px;color:#fff;font-family:var(--mono);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .base-item .binfo{flex:1;min-width:0}
 /* botão ⋯ (detalhes da rodovia) — pontinho verde quando há estaca manual ou trecho coincidente */
@@ -482,7 +504,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .estrow.esthead span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;text-align:center}
 .est-x{width:36px;height:36px;border-radius:50%;background:none;border:1px solid var(--line);color:var(--err);font-size:18px;cursor:pointer}
 .ovl-list{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px;font-size:14px;color:var(--text)}
-.base-item .del{margin-left:auto;background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
+.base-item .del{margin-left:auto;background:none;border:1px solid var(--line);color:var(--err);border-radius:999px;padding:10px clamp(10px,3.4vw,14px);font-size:12px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center}
 .ct-item{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}
 .ct-item:last-child{border-bottom:none}
 .ct-item .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--mut);flex:0 0 auto;transition:all .15s}
@@ -696,6 +718,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .pk-list .ct-item{padding:12px 0}
 /* contrato no diálogo "i": mesmo tamanho de item das Configurações (o padding acima o deixava mais alto) */
 .pk-list .ct-item.ctx{padding:2px 0 5px}
+/* celular estreito (320–380 px): o número do contrato virava "14 …". Some o espaço reservado do AUTO (no diálogo
+   não há AUTO; ele só alinhava) e aperta os respiros. */
+@media (max-width:380px){
+  .ctx .ct-top{gap:6px}
+  .pk-list{padding:0 8px}
+  .pk-list .ctx .ib.ph{display:none}
+}
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
@@ -729,13 +758,14 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 55%), rgba(24,26,28,.72);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(255,255,255,.05), 0 14px 34px rgba(0,0,0,.5)}
-#gal-dock button{display:flex;align-items:center;gap:8px;height:48px;padding:0 18px;border-radius:999px;border:none;cursor:pointer;
+/* clamp(): no celular de 320 px o "Excluir" saía para fora da tela */
+#gal-dock button{display:flex;align-items:center;gap:clamp(6px,2vw,8px);height:48px;padding:0 clamp(12px,4.5vw,18px);white-space:nowrap;border-radius:999px;border:none;cursor:pointer;
   background:rgba(255,255,255,.07);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;transition:background .15s,transform .12s}
 #gal-dock button:active{transform:scale(.96);background:rgba(255,255,255,.14)}
 #gal-dock svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #gal-share svg{color:#b7d92d}
 #gal-del{color:#ff8a80!important}
-#gal-count{min-width:76px;text-align:center;color:#fff;font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+#gal-count{min-width:clamp(50px,17vw,76px);text-align:center;color:#fff;font-family:var(--sans);font-size:15px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
 #gal-caption{max-width:100%;text-align:center;color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.03em}
 #gal-caption div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #gal-caption .galst{margin-top:2px}
@@ -930,7 +960,7 @@ dialog{background:
     var(--glassbg);
   backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
   color:var(--text);border-left:1px solid var(--glassborder);border-right:1px solid var(--glassborder);
-  border-radius:22px;padding:20px;max-width:min(92vw,480px);width:100%;
+  border-radius:22px;padding:clamp(14px,4.5vw,20px);max-width:min(calc(100vw - 24px),480px);width:100%;
   max-height:92vh;overflow-y:auto;margin:auto;
   box-shadow:inset 0 1.5px 0 var(--glassrimtop), inset 0 -1.5px 0 var(--glassrimbot), 0 20px 50px rgba(0,0,0,.5);
   animation:dlgIn .2s ease-out}
@@ -4746,6 +4776,10 @@ function disableTiltSensor(){
   document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn').forEach(btn=>btn.style.transform='');
 }
 
+/* Página deitada (paisagem) = largura da JANELA maior que a altura. Antes olhava o palco da câmera: no
+   dobrável aberto e em tablet em pé a tela é quase quadrada, o palco (tela menos as barras) ficava mais
+   largo que alto e a foto saía DEITADA com o aparelho em pé. */
+function paginaDeitada(){ return window.innerWidth>window.innerHeight }
 let camGeom=null; // cache: {u,pad,W,H} — recalculado quando a área útil muda de forma ou inclinação
 /* Retângulo da ÁREA ÚTIL da câmera conforme o formato escolhido (1:1, 4:3=3:4, 16:9=9:16),
    centralizado no palco (o resto fica preto). ar = largura/altura da FOTO (retrato: <1). */
@@ -4754,7 +4788,7 @@ function usefulRect(){
   let [rw,rh]=(CFG.format||'3:4').split(':').map(Number);
   // palco DEITADO (celular na horizontal, bloqueio desligado): o recorte acompanha o aparelho —
   // a largura vira o lado maior. Em retrato mantém o formato em pé, como sempre.
-  if(cw>ch){ const t=rw; rw=rh; rh=t; }
+  if(paginaDeitada()){ const t=rw; rw=rh; rh=t; }
   const ar=rw/rh;
   let w=cw, h=cw/ar;
   if(h>ch){ h=ch; w=ch*ar; }
@@ -4776,7 +4810,7 @@ function layoutOverlays(){
      (pelo mesmo ângulo da legenda, S.tilt) pra realinhar a prévia com o mundo real. */
   let vidRot=0;
   if(video.videoWidth){
-    const frameLand=video.videoWidth>video.videoHeight, pageLand=cw>ch;
+    const frameLand=video.videoWidth>video.videoHeight, pageLand=paginaDeitada();
     if(frameLand!==pageLand) vidRot=frameLand ? (S.tilt||0) : screenTilt();
   }
   if(vidRot){
@@ -5177,8 +5211,8 @@ document.getElementById('shutter').onclick=async()=>{
   /* frames COMPENSADOS (paisagem com página retrato — iOS standalone, bloqueio desativado):
      já vêm "em pé" em relação ao mundo, então nada de girar no canvas; e o recorte vira
      paisagem pra foto final sair idêntica à do modo com bloqueio ativado. */
-  const compensated=(vw>vh)!==(camstage.clientWidth>camstage.clientHeight) && vw>vh;
-  const stageLand=camstage.clientWidth>camstage.clientHeight;
+  const stageLand=paginaDeitada();
+  const compensated=(vw>vh)!==stageLand && vw>vh;
   let targetRatio=rw/rh;
   // palco deitado -> foto deitada (mesma inversão da prévia); mantém o caso "compensado" antigo
   if(stageLand || (compensated && Math.abs(S.tilt)===90)) targetRatio=rh/rw;
