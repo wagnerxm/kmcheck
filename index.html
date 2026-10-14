@@ -595,7 +595,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* frontal espelhada: mantém o translateZ(0) — o transform do espelho sobrescrevia o ajuste acima e o
    recorte 1:1/16:9 podia deixar de valer na câmera frontal do iPhone */
 #camrot.mirror{transform:scaleX(-1) translateZ(0);-webkit-transform:scaleX(-1) translateZ(0)}
-#camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;will-change:transform}
+#camvideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;will-change:transform;opacity:0;transition:opacity .15s}
+/* só aparece com imagem de verdade: antes disso o Android mostrava a capa padrão (ícone de play gigante) */
+#camvideo.vivo{opacity:1}
 /* Android: remove backdrop-filter em todas as camadas — GPU fraca trava com blur */
 [data-android] #cambar2{backdrop-filter:none;-webkit-backdrop-filter:none;background:#141414}
 [data-android] #camtopbar{backdrop-filter:none;-webkit-backdrop-filter:none}
@@ -4513,6 +4515,8 @@ document.getElementById('dlg-logo').addEventListener('close', freeLogoWork);
 
 /* ================= câmera ================= */
 const camwrap=document.getElementById('camwrap'), video=document.getElementById('camvideo'), camstage=document.getElementById('camstage');
+video.addEventListener('playing', ()=>video.classList.add('vivo'));
+video.addEventListener('emptied', ()=>video.classList.remove('vivo'));
 /* O VÍDEO nunca gira — fica estável na área útil (como câmera nativa). Só a INTERFACE
    (camada #camframe da legenda + os glifos dos botões) gira por 'uiTilt', acompanhando a
    orientação física do aparelho. S.tilt guarda esse ângulo (0, 90 ou -90). */

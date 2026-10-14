@@ -1,11 +1,13 @@
 package br.com.kmcheck.app;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.webkit.WebView;
 
 import androidx.activity.OnBackPressedCallback;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebChromeClient;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -18,6 +20,18 @@ public class MainActivity extends BridgeActivity {
            câmera, a placa de KM e o Modo Carro estouravam. 100% = o mesmo tamanho do app no iPhone e no navegador.
            Quem precisa de letra maior tem o zoom do sistema e os tamanhos de legenda do próprio app. */
         if (getBridge() != null && getBridge().getWebView() != null) getBridge().getWebView().getSettings().setTextZoom(100);
+
+        /* Câmera: enquanto o vídeo não tem imagem (abrindo, pedindo permissão), o WebView do Android desenha a
+           "capa" padrão dele — um ícone de play gigante cinza. Aqui a capa padrão vira um pixel transparente.
+           Mantém o cliente do Capacitor (permissões de câmera/GPS, seletor de arquivos), só troca a capa. */
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
+                @Override
+                public Bitmap getDefaultVideoPoster() {
+                    return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+                }
+            });
+        }
 
         /* Botão/gesto "voltar": o app (index.html) deixa uma entrada no histórico sempre que algo está
            aberto por cima da tela inicial (outra tela, câmera, Modo Carro, galeria, manual…). Aqui o
