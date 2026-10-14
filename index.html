@@ -15,6 +15,21 @@
 <meta name="apple-mobile-web-app-title" content="KM Check">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://api.kmcheck.com.br https://kmcheck.com.br https://controlcheck.duckdns.org https://geoservicos.inde.gov.br; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
 <script>
+/* Armazenamento bloqueado (Safari com "Bloquear todos os cookies", Chrome com cookies bloqueados para o
+   site): qualquer acesso ao localStorage LANÇA erro e o app parava inteiro (nenhum botão funcionava).
+   Troca por um armazenamento só na memória: o app funciona, só não guarda as preferências ao fechar. */
+(function(){
+  try{ localStorage.getItem('kc-teste-ls') }
+  catch(e){
+    var mem={};
+    try{ Object.defineProperty(window,'localStorage',{configurable:true,value:{
+      getItem:function(k){ return Object.prototype.hasOwnProperty.call(mem,k)?mem[k]:null },
+      setItem:function(k,v){ mem[k]=String(v) }, removeItem:function(k){ delete mem[k] },
+      clear:function(){ mem={} }, key:function(i){ return Object.keys(mem)[i]||null },
+      get length(){ return Object.keys(mem).length } }}) }catch(e2){}
+    window._lsBloqueado=true;
+  }
+})();
 /* CONFIGURAÇÃO PADRÃO OBRIGATÓRIA (v3): aplicada UMA vez — na 1ª instalação e, para quem já tinha o
    app, na 1ª abertura desta versão. Depois disso o que o usuário mudar fica salvo (a marca
    kc-defaults-v3 impede reaplicar). Roda aqui no <head>, antes de tudo, para o tema e a câmera já
@@ -129,6 +144,13 @@ header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.
 #header-back{display:flex;align-items:center;gap:2px;background:none;border:none;color:var(--gold);
   font-family:var(--sans);font-size:16px;font-weight:500;cursor:pointer;padding:0;animation:scrIn .15s ease-out}
 #header-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+/* área de toque de 44–48 px (o verificador de acessibilidade da Google Play pede 48dp) sem mudar o desenho:
+   uma camada invisível maior que o botão recebe o toque */
+#header-back,.est-x{position:relative}
+#header-back::after{content:'';position:absolute;left:-8px;right:-8px;top:-12px;bottom:-12px}
+.herocar::after,.bv-x::after,.est-x::after{content:'';position:absolute;inset:-6px;border-radius:50%}
+.ctx .ib{position:relative}
+.ctx .ib::after{content:'';position:absolute;inset:-4px 0}
 #search-toggle{margin-left:10px;width:44px;height:44px;border-radius:50%;
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, transparent 35%), rgba(16,16,16,.85);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
@@ -173,7 +195,8 @@ html.kc-teste #app-ver::after{content:' · TESTE';color:#c4e24a;font-weight:700}
 .bv-saud{position:absolute;left:20px;top:50%;z-index:2;transform:translateY(-38%);max-width:42%;opacity:0;transition:opacity .6s ease .25s,transform .7s cubic-bezier(.2,.9,.25,1) .25s}
 #bv.on .bv-saud{opacity:1;transform:translateY(-50%)}
 .bv-saud small{display:block;font:700 9.5px var(--sans);letter-spacing:.3em;text-transform:uppercase;color:#6f8a0e}
-.bv-saud b{display:block;font:800 24px/1 var(--sans);letter-spacing:-.03em;color:#1c2333;margin-top:6px}
+.bv-saud b{display:block;font:800 24px/1 var(--sans);letter-spacing:-.03em;color:#1c2333;margin-top:6px;white-space:nowrap}
+@media (max-width:340px){ .bv-saud b{font-size:20px} }   /* telas de 320 px: "KM Check" quebrava em 2 linhas e cobria o título */
 .bv-corpo{position:relative;padding:14px 22px 6px}
 .bv-pag:first-child .bv-corpo{margin-top:-18px;padding-top:0}
 .bv-olho{display:block;font:700 10.5px var(--sans);letter-spacing:.28em;text-transform:uppercase;color:#6f8a0e}
@@ -1817,7 +1840,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <img src="icon-192.png" class="app-icon" alt="KM Check">
       <div>
         <div class="app-name">KM Check</div>
-        <div class="app-origin">wagnerxm.github.io</div>
+        <div class="app-origin">kmcheck.com.br</div>
       </div>
     </div>
     <!-- conteúdo trocado via JS: Android mostra botão instalar, iOS mostra tutorial -->
@@ -1851,7 +1874,8 @@ if(!AbortSignal.timeout) AbortSignal.timeout=ms=>{const c=new AbortController();
 /* escape HTML para interpolar strings em innerHTML sem risco de XSS */
 const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 /* Safari 15.0-15.3 não tem showModal — fallback para open attribute */
-function showDlg(dlg){ if(typeof dlg.showModal==='function') dlg.showModal(); else dlg.setAttribute('open','') }
+let _dlgOrdem=0;   // ordem de abertura: com dois diálogos abertos, o "voltar" fecha o de cima (não o primeiro do HTML)
+function showDlg(dlg){ dlg.dataset.ordem=++_dlgOrdem; if(typeof dlg.showModal==='function') dlg.showModal(); else dlg.setAttribute('open','') }
 const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
@@ -2135,12 +2159,30 @@ const CAP_DA_TELA={'scr-bases':'eixo','scr-query':'consulta','scr-settings':'con
 function abreManual(cap){
   const ov=document.getElementById('manual-ov'), fr=document.getElementById('manual-if');
   const alvo='manual/index.html'+(cap?'#'+cap:'');
-  if(fr.getAttribute('src')!==alvo) fr.setAttribute('src', alvo);
+  /* trocar o src do iframe (ou navegar por "#capítulo" dentro dele) cria entradas no histórico da página:
+     o "voltar" do Android passava a desfazer a navegação do manual e travava o fechar das telas.
+     location.replace troca o capítulo sem criar entrada; a 1ª carga (vindo de about:blank) já não cria. */
+  if(fr.dataset.alvo!==alvo){
+    if(fr.dataset.alvo) try{ fr.contentWindow.location.replace(new URL(alvo, location.href).href) }catch(e){ fr.setAttribute('src', alvo) }
+    else fr.setAttribute('src', alvo);
+    fr.dataset.alvo=alvo;
+  }
   ov.hidden=false;
   try{ localStorage.setItem('kc-manual-visto','1') }catch(e){}
   mostraBoasVindas();
 }
 function fechaManual(){ document.getElementById('manual-ov').hidden=true }
+/* links "#capítulo" do próprio manual: rola até o capítulo em vez de navegar (navegar criava entrada no
+   histórico, ver acima). Só age se o manual não tratou o clique ele mesmo. */
+document.getElementById('manual-if').addEventListener('load', e=>{
+  try{
+    e.target.contentDocument.addEventListener('click', ev=>{
+      const a=ev.target.closest && ev.target.closest('a[href^="#"]'); if(!a || ev.defaultPrevented) return;
+      const alvo=a.getAttribute('href').length>1 && e.target.contentDocument.getElementById(a.getAttribute('href').slice(1));
+      ev.preventDefault(); if(alvo) alvo.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  }catch(err){}
+});
 /* boas-vindas + manual de bolso: abre sozinho na tela inicial (modo de testes) até ser visto uma vez;
    depois, o botão de livro reabre já na página da tela atual */
 const BV=document.getElementById('bv'), BV_TRILHA=document.getElementById('bv-trilha'), BV_PAGS=[...BV_TRILHA.children];
@@ -3671,7 +3713,7 @@ function legendLines(info){
   }
   const ct=getContract();
   let svc=getSvcSel();
-  if(!svc && CFG.oae && info.km!=null){
+  if(!svc && CFG.oae && info.km!=null && !(info.dist>CFG.maxdist)){   // longe do eixo: a OAE "mais próxima" pode estar a km dali
     const o=findOae(info.br,info.uf,info.km);
     if(o && o.mode==='sobre') svc=o.o.nome;
   }
@@ -4334,8 +4376,13 @@ function screenTilt(){
   if(a===270) return -90;
   return 0;
 }
+/* _motionSeen: já chegou uma leitura CONFIÁVEL do acelerômetro. Sem ela (sensor negado no iPhone, bloqueado
+   no navegador, ou câmera aberta já apontada para o chão) supõe o aparelho na mesma orientação da página.
+   Antes valia 0: com a página deitada a foto saía girada 90° e a legenda atravessada. */
+let _motionSeen=false;
 function refreshTilt(){
-  let t=(S.sensorTilt||0) - screenTilt();
+  const sens=_motionSeen ? (S.sensorTilt||0) : screenTilt();
+  let t=sens - screenTilt();
   if(t>180) t-=360; else if(t<-180) t+=360;
   if(Math.abs(t)===180) t=0;   // nunca vira a interface de cabeça para baixo
   applyTilt(t);
@@ -4424,6 +4471,7 @@ function onDeviceMotion(e){
   // especificação (bug antigo e conhecido do WebKit) — sem negar aqui, retrato lia como paisagem.
   // Android segue a especificação e NÃO deve ser negado.
   const gx=_isIOS?-g.x:g.x, gy=_isIOS?-g.y:g.y;
+  if(!_motionSeen){ if(gx==null || gy==null || Math.hypot(gx,gy)<2) return; _motionSeen=true; S.sensorTilt=screenTilt() }
   S.sensorTilt=tiltFromGravity(gx, gy, S.sensorTilt||0);
   refreshTilt();
 }
@@ -4454,7 +4502,7 @@ function disableScreenLock(){
 }
 function disableTiltSensor(){
   window.removeEventListener('devicemotion', onDeviceMotion);
-  S.tilt=0; S.sensorTilt=0;
+  S.tilt=0; S.sensorTilt=0; _motionSeen=false;
   document.querySelectorAll('#cambar2 .cbtn, #camtopbar .topbtn').forEach(btn=>btn.style.transform='');
 }
 
@@ -4529,7 +4577,13 @@ function styleLivePlate(){
   const lp=document.getElementById('liveplate');
   if(!lp||!camGeom) return;
   const {u,pad}=camGeom;
-  const size=17*u*CFG.legsz, lh=size*1.22;
+  let size=17*u*CFG.legsz, lh=size*1.22;
+  /* mesma redução da foto (burnLegend) para linha comprida: a prévia mostra o que vai sair gravado */
+  { const m=styleLivePlate._m||(styleLivePlate._m=document.createElement('canvas').getContext('2d'));
+    m.font=`${CFG.legbold?700:400} ${size}px Arial, Helvetica, sans-serif`;
+    let maxW=0; for(const el of lp.children){ const w=m.measureText(el.textContent||'').width; if(w>maxW) maxW=w }
+    const cabe=(camGeom.W||0)-2*pad-(CFG.legbg?size*0.8:0);
+    if(cabe>0 && maxW>cabe){ size*=cabe/maxW; lh=size*1.22 } }
   const right = (CFG.legpos==='br'||CFG.legpos==='tr');
   const top   = (CFG.legpos==='tl'||CFG.legpos==='tr');
   lp.style.textAlign = right ? 'right' : 'left';
@@ -4708,6 +4762,7 @@ async function openCam(){
     document.documentElement.style.backgroundColor=_bg;
     document.body.style.backgroundColor=_bg;
     document.getElementById('meta-theme').content=_bg;
+    disableTiltSensor();   // o sensor ligado no início (iOS) ficava rodando a 15 Hz com a câmera fechada
     toast('Câmera negada ou indisponível.');
     return false;   // o flip usa isso para voltar à câmera anterior
   }
@@ -4767,11 +4822,19 @@ function closeCam(instant){
 /* app no meio de algo que um recarregamento perderia: câmera, galeria, diálogo aberto ou download */
 function appBusy(){
   return camwrap.classList.contains('on') || document.getElementById('gallerywrap').classList.contains('on') ||
-    !!document.querySelector('dialog[open]') || document.getElementById('dl-go').disabled || _impBusy;
+    !!document.querySelector('dialog[open]') || document.getElementById('dl-go').disabled || _impBusy ||
+    gravandoFoto() || document.getElementById('carwrap').classList.contains('on') ||
+    !document.getElementById('manual-ov').hidden || !document.getElementById('bv').hidden || !document.getElementById('uso').hidden;
 }
+/* foto ainda sendo montada ou gravada (canvas → galeria do app → celular): recarregar agora perderia a foto */
+let _salvando=0;
+const gravandoFoto=()=>_capturing || _salvando>0;
+function segurando(p){ _salvando++; return Promise.resolve(p).finally(()=>{ _salvando--; if(!_salvando && document.hidden && _pendingReload && !appBusyFundo()) location.reload() }) }
+/* no segundo plano só o que continuaria rodando importa (download, importação, foto sendo gravada) */
+const appBusyFundo=()=>document.getElementById('dl-go').disabled || _impBusy || gravandoFoto();
 /* atualização pendente: aplica quando o app vai para o segundo plano (invisível para o usuário) */
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden && _pendingReload && !document.getElementById('dl-go').disabled && !_impBusy) location.reload();
+  if(document.hidden && _pendingReload && !appBusyFundo()) location.reload();
 });
 let _pendingReload=false;
 document.getElementById('camback').onclick=()=>closeCam();
@@ -4782,7 +4845,10 @@ document.getElementById('camflip').onclick=async()=>{ if(_flipping) return; _fli
   S.facing=prev==='environment'?'user':'environment'; closeCam(true);
   /* aparelho sem a outra câmera (ou ocupada): volta para a anterior em vez de deixar o app
      tentando abrir para sempre uma câmera que não existe */
-  if(!(await openCam())){ S.facing=prev; await openCam(); }
+  /* openCam: true = abriu, false = falhou, undefined = cancelada no meio (voltar, obturador). Antes o
+     cancelamento era tratado como falha e a câmera reabria sozinha por cima da tela inicial. */
+  const g=_camGen;
+  if((await openCam())===false && g===_camGen-1){ S.facing=prev; await openCam(); }
 }finally{ _flipping=false } };
 /* iOS pausa/encerra a captura quando o app vai para segundo plano; ao voltar, a prévia podia ficar
    preta (track 'ended') e o obturador gravava foto preta. Reabre a câmera só se ela morreu. */
@@ -4790,6 +4856,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden || !camwrap.classList.contains('on') || _camClosing || _flipping) return;
   const vt=S.stream && S.stream.getVideoTracks()[0];
   if(vt && vt.readyState==='ended'){ closeCam(true); openCam(); }
+  else if(video.paused) video.play().catch(()=>{});   // iOS: a trilha volta "live" mas o vídeo fica pausado
 });
 /* som clássico de obturador: dois "clicks" mecânicos curtos (ruído filtrado com envelope bem
    rápido), em vez do "bip" senoidal antigo — curto, limpo e discreto, como câmera de celular.
@@ -4826,6 +4893,8 @@ document.getElementById('shutter').onclick=async()=>{
   if(!video.videoWidth){ toast('Câmera ainda carregando…'); return }
   const _vt=S.stream && S.stream.getVideoTracks()[0];
   if(!_vt || _vt.readyState!=='live'){ toast('Reabrindo a câmera…'); closeCam(true); openCam(); return }
+  /* trilha "live" mas sem imagem (muted/pausado): a foto sairia preta ou congelada com GPS e hora atuais */
+  if(_vt.muted || video.paused || video.readyState<2){ video.play().catch(()=>{}); toast('Câmera sem imagem.\nTente de novo em um instante.'); return }
   /* GPS OBRIGATÓRIO — bloqueia captura se não houver posição válida, recente e minimamente precisa.
      Idade máxima: 2 min parado, mas só 15 s em movimento (>10 km/h) — a 80 km/h uma leitura de
      2 min atrás estaria ~2,7 km para trás e a legenda gravaria o KM errado.
@@ -5444,14 +5513,20 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   const BW=rotated?H:W, BH=rotated?W:H;
   const u=Math.max(BW,BH)/1000;
   const pad=20*u;
-  const size=17*u*CFG.legsz;
-  const lh=size*1.22;
+  let size=17*u*CFG.legsz;
+  let lh=size*1.22;
   ctx.save();
   ctx.translate(W/2,H/2);
   if(tiltDeg) ctx.rotate(tiltDeg*Math.PI/180);
   ctx.translate(-BW/2,-BH/2);   // a partir daqui o sistema é a caixa "em pé" BW×BH
   ctx.textBaseline='alphabetic';
   ctx.font=`${CFG.legbold?700:400} ${size}px Arial, Helvetica, sans-serif`;
+  /* linha comprida (contrato + serviço, estaca + ⚠, letra "Grande") passava da borda e saía cortada na
+     foto, enquanto a prévia mostrava inteira: reduz a letra só o bastante para a linha mais longa caber */
+  { let maxW=0;
+    for(let i=0;i<L.length;i++){ let w=ctx.measureText(L[i]).width; if(i===L.length-1 && snvTag) w+=size*1.5+ctx.measureText(snvTag).width; if(w>maxW) maxW=w }
+    const cabe=BW-2*pad-(CFG.legbg?size*0.8:0);
+    if(cabe>0 && maxW>cabe){ size*=cabe/maxW; lh=size*1.22; ctx.font=`${CFG.legbold?700:400} ${size}px Arial, Helvetica, sans-serif` } }
   const legRight = CFG.legpos==='br' || CFG.legpos==='tr';
   const legTop   = CFG.legpos==='tl' || CFG.legpos==='tr';
   ctx.textAlign = legRight ? 'right' : 'left';
@@ -5571,7 +5646,8 @@ function photoName(info){
   const d=info.dt||new Date(), z=n=>String(n).padStart(2,'0');
   const quando=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}-${z(d.getSeconds())}`;
   const parts=[];
-  if(info.km!=null && info.br){
+  /* longe do eixo (⚠ na legenda): o nome não leva rodovia/KM, que seriam de outro lugar */
+  if(info.km!=null && info.br && !(info.dist>CFG.maxdist)){
     let k=Math.floor(info.km), m=Math.round((info.km-k)*1000);
     if(m>=1000){ k++; m=0 }
     parts.push(`${info.br}-${info.uf}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^\w\-]/g,''), `KM${k}+${String(m).padStart(3,'0')}`);
@@ -5870,7 +5946,7 @@ function saveAndShare(blob){
   const name=photoName(S.lastInfo||{});
   const file=new File([blob], name, {type:'image/jpeg'});
   /* 1) salva na galeria interna do app (IndexedDB) — sempre, independente de CFG.autosave */
-  const idP=savePhotoToGallery(blob, name).catch(e=>{
+  const idP=segurando(savePhotoToGallery(blob, name)).catch(e=>{
     console.error('[KMCheck] IndexedDB falhou:', e);
     toast('⚠ Erro ao salvar foto internamente');
     return null;
@@ -5884,7 +5960,7 @@ function saveAndShare(blob){
   if(!CFG.autosave) return;
   if(NATIVO){
     /* app da loja: grava direto na galeria (pasta KM Check), sem service worker nem download */
-    blobB64(blob).then(b64=>NATIVO.chama('salvarImagem',{nome:name, mime:'image/jpeg', base64:b64}))
+    segurando(blobB64(blob).then(b64=>NATIVO.chama('salvarImagem',{nome:name, mime:'image/jpeg', base64:b64})))
       .then(saida).catch(()=>toast('⚠ A foto não foi salva no celular.\nUse "Salvar" na galeria do app.', 4200));
     return;
   }
@@ -5907,7 +5983,7 @@ function saveAndShare(blob){
          navigator.share DENTRO do gesto do usuário (fallback síncrono). */
       const hasSW=navigator.serviceWorker && navigator.serviceWorker.controller;
       if(hasSW){
-        _downloadViaSW(blob, name).then(ok=>{
+        segurando(_downloadViaSW(blob, name)).then(ok=>{
           if(ok) saida(); else toast('⚠ A foto não foi salva no celular.\nUse "Salvar" na galeria do app.', 4200);
         });
       } else if(navigator.canShare && navigator.canShare({files:[file]})){
@@ -6015,7 +6091,7 @@ for(const [id, key, lbl] of [['cfg-res','res','lbl-res'],['cfg-qual','qual','lbl
   const paintLbl=()=>{ if(lbl && el.selectedIndex>=0){ const t=document.getElementById(lbl); if(t) t.textContent=el.options[el.selectedIndex].textContent } };
   paintLbl();
   el.onchange=()=>{ localStorage.setItem('kc-'+key, el.value); paintLbl(); paintGps(); refreshLive();
-    if(key==='format') paintRatioSel(); };
+    if(key==='format'){ setFormat(el.value); paintRatioSel() } };   // setFormat: o formato escolhido na câmera (memória) não pode mais valer por cima do dos Ajustes
 }
 
 /* controles deslizantes (%) */
@@ -6095,7 +6171,6 @@ function showInstallPrompt(){
   /* já instalado ou já mostrou — sai */
   if(_isPWAStandalone || NATIVO) return;   // instalado ou baixado da loja: não há o que instalar
   if(localStorage.getItem('kc-install-shown')) return;
-  localStorage.setItem('kc-install-shown','1');
 
   const overlay=document.getElementById('install-overlay');
   const body=document.getElementById('install-body');
@@ -6148,6 +6223,7 @@ function showInstallPrompt(){
 
   /* mostra com delay de 1.5s para o app ter tempo de renderizar */
   setTimeout(()=>{
+    try{ localStorage.setItem('kc-install-shown','1') }catch(e){}   // marca só quando aparece (antes marcava e a recarga sumia com ele)
     overlay.classList.add('on');
     /* no iOS mostra a seta apontando pro botão compartilhar do Safari */
     if(isIOS) document.getElementById('safari-hint').classList.add('on');
@@ -6163,6 +6239,7 @@ function showInstallPrompt(){
   paintTags();
   loadLogo();
   showInstallPrompt();
+  if(window._lsBloqueado) toast('⚠ O navegador está bloqueando o armazenamento do site.\nAs configurações não serão guardadas ao fechar.', 6000);
   /* GPS inicia no boot — só watchPosition (contínuo, alta precisão).
      NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
      interfere com o watchPosition, cancelando os callbacks e deixando S.pos vazio. */
@@ -6183,9 +6260,10 @@ function showInstallPrompt(){
     /* Quando um novo SW assume o controle, recarrega a página para garantir que
        o HTML e os assets correspondam à versão nova do cache.
        Se a câmera está ativa, adia o reload para não perder captura em andamento. */
-    let refreshing=false;
+    let refreshing=false, tinhaSW=!!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
       if(refreshing) return;
+      if(!tinhaSW){ tinhaSW=true; return }   // 1ª instalação: a página já é a versão nova
       /* não recarrega no meio do trabalho (download de rodovia, diálogo, galeria, câmera): fica
          pendente e é aplicada ao fechar a câmera ou quando o app for para o segundo plano */
       if(appBusy()){ _pendingReload=true; return; }
@@ -6535,7 +6613,7 @@ function showInstallPrompt(){
 (function(){
   const $id=id=>document.getElementById(id);
   const aberto={
-    dialogo:()=>document.querySelector('dialog[open]'),
+    dialogo:()=>[...document.querySelectorAll('dialog[open]')].sort((a,b)=>(+b.dataset.ordem||0)-(+a.dataset.ordem||0))[0]||null,
     uso:()=>!$id('uso').hidden,
     bv:()=>!$id('bv').hidden,
     manual:()=>!$id('manual-ov').hidden,
@@ -6547,7 +6625,9 @@ function showInstallPrompt(){
   const algoAberto=()=>Object.values(aberto).some(f=>f());
   /* fecha só a camada de cima, na ordem em que elas se sobrepõem */
   function fechaTopo(){
-    const d=aberto.dialogo(); if(d){ d.close(); return }
+    /* dispara "cancel" antes de fechar: as perguntas (trecho coincidente, estaca, fotos antigas) só se
+       resolvem pelo cancel — com d.close() direto a pergunta ficava pendurada e o "Baixar rodovia" travava */
+    const d=aberto.dialogo(); if(d){ if(d.dispatchEvent(new Event('cancel',{cancelable:true}))) d.close(); return }
     if(aberto.uso()) return;                          // a pergunta de dados de uso pede uma resposta
     if(aberto.bv()){ fechaBoasVindas(true); return }
     if(aberto.manual()){ fechaManual(); return }
@@ -6560,7 +6640,7 @@ function showInstallPrompt(){
   const tem=()=>!!(history.state && history.state.kcVoltar);
   function arma(){
     if(algoAberto()){ if(!tem()) try{ history.pushState({kcVoltar:1},'') }catch(e){} }
-    else if(tem()){ ignora=true; try{ history.back() }catch(e){ ignora=false } }
+    else if(tem()){ ignora=true; try{ history.back(); setTimeout(()=>{ ignora=false }, 700) }catch(e){ ignora=false } }   // segurança: se o back não gerar popstate, não engole o próximo "voltar"
   }
   addEventListener('popstate', ()=>{
     if(ignora){ ignora=false; return }

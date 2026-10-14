@@ -14,6 +14,11 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(KMCheckNativoPlugin.class);
         super.onCreate(savedInstanceState);
 
+        /* Letra do sistema em 130–200%: o WebView aumentava todo o texto do app (o CSS é em px) e a barra da
+           câmera, a placa de KM e o Modo Carro estouravam. 100% = o mesmo tamanho do app no iPhone e no navegador.
+           Quem precisa de letra maior tem o zoom do sistema e os tamanhos de legenda do próprio app. */
+        if (getBridge() != null && getBridge().getWebView() != null) getBridge().getWebView().getSettings().setTextZoom(100);
+
         /* Botão/gesto "voltar": o app (index.html) deixa uma entrada no histórico sempre que algo está
            aberto por cima da tela inicial (outra tela, câmera, Modo Carro, galeria, manual…). Aqui o
            "voltar" vai para essa entrada, e a página fecha só o que está por cima. Sem nada aberto,

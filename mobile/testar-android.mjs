@@ -10,6 +10,8 @@ const w = ms => new Promise(r => setTimeout(r, ms));
 const ok = (nome, v) => console.log((v ? '✓ ' : '✗ ') + nome);
 
 ok('ponte nativa ativa (NATIVO)', await p.evaluate(() => !!NATIVO));
+/* o emulador é lento: espera o GPS e a lista de versões em vez de conferir cedo demais */
+await p.waitForFunction(() => S.pos && document.getElementById('dl-snv').options.length > 5, { timeout: 60000 }).catch(() => {});
 ok('sem convite de instalação', await p.evaluate(() => !document.querySelector('.install-overlay.on')));
 console.log('  posição GPS:', await p.evaluate(() => S.pos ? `${S.pos.lat.toFixed(5)}, ${S.pos.lon.toFixed(5)}` : 'sem GPS'));
 
@@ -27,14 +29,14 @@ const km = await p.evaluate(() => { S.fix = findKm(S.pos.lat, S.pos.lon); paintG
 ok('KM calculado pelo GPS: ' + km, !!km);
 
 /* câmera abre com imagem */
-await p.evaluate(() => { openCam() }); await w(6000);   // sem await: na 1ª vez o Android pergunta a permissão
+await p.evaluate(() => { openCam() }); await p.waitForFunction(() => document.getElementById('camvideo').videoWidth > 0, { timeout: 30000 }).catch(() => {}); await w(1000);   // sem await: na 1ª vez o Android pergunta a permissão
 const cam = await p.evaluate(() => ({ aberta: document.getElementById('camwrap').classList.contains('on'), video: document.getElementById('camvideo').videoWidth }));
 ok(`câmera abre com vídeo (${cam.video} px)`, cam.aberta && cam.video > 0);
 
 /* foto: grava pela peça nativa na galeria do Android */
 const antes = await p.evaluate(async () => (await getPhotoMetas()).length);
 await p.evaluate(() => { localStorage.setItem('kc-autosave', '1'); document.getElementById('shutter').click(); });
-await w(7000);
+await p.waitForFunction(n => getPhotoMetas().then(m => m.length > n && m[0].saved), { timeout: 40000, polling: 500 }, antes).catch(() => {});
 const depois = await p.evaluate(async () => { const m = await getPhotoMetas(); return { n: m.length, salva: m[0] && m[0].saved, nome: m[0] && m[0].name }; });
 ok(`foto registrada na galeria do app (${antes} → ${depois.n}): ${depois.nome}`, depois.n > antes);
 ok('foto marcada como salva no celular (MediaStore)', !!depois.salva);

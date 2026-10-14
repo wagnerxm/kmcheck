@@ -2,10 +2,12 @@
 // Só muda quando sai uma versão nova nas lojas (1.0.0 → 1.0.1 → 1.1.0…).
 // CACHE: número interno, sobe a CADA alteração (é o que faz os aparelhos baixarem a versão nova).
 const VERSAO_APP = '1.0.0';
-const CACHE = 'kmcheck-v317';
+const CACHE = 'kmcheck-v318';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png', 'logo-kmcheck.png'];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache:'reload' — busca no servidor, não no cache HTTP do navegador (ícones e logo valem 30 dias lá:
+  // trocar a imagem com o mesmo nome não chegava aos aparelhos mesmo subindo a versão)
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== 'kmcheck-dl' && k !== MANUAL).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -47,8 +49,10 @@ function networkFirst(req, isDoc) {
     const timer = setTimeout(() => { fromCache().then(finish); }, NET_TIMEOUT);
     fetch(req).then(resp => {
       clearTimeout(timer);
-      if (resp.ok) { const copy = resp.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-      finish(resp);
+      if (resp.ok) { const copy = resp.clone(); caches.open(CACHE).then(c => c.put(req, copy)); finish(resp); }
+      // servidor com erro por um instante (502/503 na sincronização, 404): a cópia boa do cache vale mais que a
+      // página de erro — antes quem abria o app nessa hora via a tela do servidor no lugar do app
+      else fromCache().then(r => finish(r || resp));
     }).catch(() => {
       clearTimeout(timer);
       fromCache().then(r => finish(r || Response.error()));
@@ -65,6 +69,8 @@ self.addEventListener('fetch', e => {
   // Painel administrativo (kmcheck.com.br/admin e /api/...): fica fora do SW do app. Senão o cache do app
   // guardava os números do painel (mostrava dados velhos) e, com sinal fraco, abria o app no lugar do painel.
   if (url.pathname === '/admin' || url.pathname.startsWith('/admin/') || url.pathname.startsWith('/api/')) return;
+  // política de privacidade: sem sinal, o fallback do documento entregava o app no lugar dela
+  if (url.pathname.includes('/privacidade/')) return;
   /* ── Download forçado via SW ──
      O app coloca o blob no cache 'kmcheck-dl' e navega um iframe para /__dl/nome.jpg.
      Servimos com Content-Disposition: attachment → Chrome baixa automaticamente,
