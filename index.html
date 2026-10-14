@@ -3596,7 +3596,17 @@ function restartGps(){
   startGps();
 }
 const gpsStale=ms=>!S.pos || !S.pos.t || Date.now()-S.pos.t>ms;
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden && _gpsGotFix && gpsStale(15000)) restartGps() });
+/* app no fundo: para o GPS e religa ao voltar. Economiza bateria e, no Android 7–9 (sem a opção "só durante
+   o uso"), o GPS seguia ligado com o app minimizado, contra o que diz a política de privacidade. */
+let _gpsPausado=false;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    if(S.watchId!=null){ try{ navigator.geolocation.clearWatch(S.watchId) }catch(e){} S.watchId=null; _gpsPausado=true }
+    return;
+  }
+  if(_gpsPausado){ _gpsPausado=false; startGps(); return }
+  if(_gpsGotFix && gpsStale(15000)) restartGps();
+});
 /* Mostra diálogo explicando que GPS é obrigatório, com instrução por plataforma */
 function showGpsDeniedDialog(){
   const dlg=document.getElementById('dlg-gps');
