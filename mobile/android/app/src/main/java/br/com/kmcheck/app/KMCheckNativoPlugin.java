@@ -1,5 +1,6 @@
 package br.com.kmcheck.app;
 
+import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -14,10 +15,13 @@ import android.view.WindowManager;
 import androidx.core.content.FileProvider;
 
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,18 +34,41 @@ import java.io.OutputStream;
  * dentro de um app nativo; aqui a gravação vai direto para a galeria pelo MediaStore, na pasta
  * "Pictures/KM Check", sem pedir permissão de armazenamento no Android 10+ (só até o Android 9).
  */
-@CapacitorPlugin(name = "KMCheckNativo")
+@CapacitorPlugin(
+    name = "KMCheckNativo",
+    permissions = { @Permission(alias = "galeria", strings = { Manifest.permission.WRITE_EXTERNAL_STORAGE }) }
+)
 public class KMCheckNativoPlugin extends Plugin {
 
     private static final String PASTA = "KM Check";
 
+    /** Do Android 7 ao 9 gravar na pasta pública exige a permissão de armazenamento, pedida na hora. Antes ela
+        só estava declarada no manifesto e nunca era pedida: nesses aparelhos nenhuma foto chegava à galeria. */
+    private boolean precisaPermissao(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q || getPermissionState("galeria") == PermissionState.GRANTED) return false;
+        requestPermissionForAlias("galeria", call, "galeriaRespondida");
+        return true;
+    }
+
+    @PermissionCallback
+    private void galeriaRespondida(PluginCall call) {
+        if (getPermissionState("galeria") != PermissionState.GRANTED) { call.reject("Sem permissão para gravar na galeria."); return; }
+        if ("salvarArquivo".equals(call.getMethodName())) gravaArquivo(call); else gravaImagem(call);
+    }
+
     /** Grava uma imagem (base64) na galeria do celular. Devolve { uri }. */
     @PluginMethod
     public void salvarImagem(PluginCall call) {
+        if (!precisaPermissao(call)) gravaImagem(call);
+    }
+
+    private void gravaImagem(PluginCall call) {
         String nome = call.getString("nome", "km-check.jpg");
         String mime = call.getString("mime", "image/jpeg");
         byte[] dados = decodifica(call);
         if (dados == null) return;
+        Uri pendente = null;
+        ContentResolver cr = getContext().getContentResolver();
         try {
             Uri uri;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -49,14 +76,16 @@ public class KMCheckNativoPlugin extends Plugin {
                 v.put(MediaStore.Images.Media.DISPLAY_NAME, nome);
                 v.put(MediaStore.Images.Media.MIME_TYPE, mime);
                 v.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/" + PASTA);
+                v.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
                 v.put(MediaStore.Images.Media.IS_PENDING, 1);
-                ContentResolver cr = getContext().getContentResolver();
                 uri = cr.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), v);
                 if (uri == null) throw new Exception("galeria indisponível");
+                pendente = uri;   // se a escrita falhar, a linha "pendente" é apagada (senão vira lixo e o próximo nome ganha " (1)")
                 try (OutputStream os = cr.openOutputStream(uri)) { os.write(dados); }
                 v.clear();
                 v.put(MediaStore.Images.Media.IS_PENDING, 0);
                 cr.update(uri, v, null, null);
+                pendente = null;
             } else {
                 /* Android 9 ou anterior: arquivo na pasta pública + aviso ao índice de mídia */
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), PASTA);
@@ -69,7 +98,8 @@ public class KMCheckNativoPlugin extends Plugin {
             JSObject r = new JSObject();
             r.put("uri", uri.toString());
             call.resolve(r);
-        } catch (Exception e) {
+        } catch (Throwable e) {   // Throwable: inclui falta de memória, que derrubava o app
+            if (pendente != null) try { cr.delete(pendente, null, null); } catch (Throwable ignora) {}
             call.reject("Não consegui salvar a imagem: " + e.getMessage());
         }
     }
@@ -77,6 +107,10 @@ public class KMCheckNativoPlugin extends Plugin {
     /** Grava um arquivo qualquer (exportações, zip) em Downloads/KM Check. Devolve { uri }. */
     @PluginMethod
     public void salvarArquivo(PluginCall call) {
+        if (!precisaPermissao(call)) gravaArquivo(call);
+    }
+
+    private void gravaArquivo(PluginCall call) {
         String nome = call.getString("nome", "km-check.bin");
         String mime = call.getString("mime", "application/octet-stream");
         byte[] dados = decodifica(call);
@@ -106,7 +140,7 @@ public class KMCheckNativoPlugin extends Plugin {
             JSObject r = new JSObject();
             r.put("uri", uri.toString());
             call.resolve(r);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             call.reject("Não consegui salvar o arquivo: " + e.getMessage());
         }
     }
@@ -136,7 +170,7 @@ public class KMCheckNativoPlugin extends Plugin {
             escolha.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getActivity().startActivity(escolha);
             call.resolve();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             call.reject("Não consegui compartilhar: " + e.getMessage());
         }
     }
@@ -182,5 +216,6 @@ public class KMCheckNativoPlugin extends Plugin {
         if (b64.startsWith("data:") && virgula > 0) b64 = b64.substring(virgula + 1);
         try { return Base64.decode(b64, Base64.DEFAULT); }
         catch (IllegalArgumentException e) { call.reject("Arquivo inválido."); return null; }
+        catch (OutOfMemoryError e) { call.reject("Pouca memória para salvar a foto."); return null; }
     }
 }

@@ -25,8 +25,11 @@ public class MainActivity extends BridgeActivity {
                 if (wv != null && wv.canGoBack()) {
                     wv.goBack();
                 } else {
+                    /* desliga só para repassar ao sistema e religa em seguida: no Android 12+ o app vai para o fundo
+                       (não fecha) e, ao voltar, o callback desligado fazia o "voltar" sair do app de qualquer tela */
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();
+                    setEnabled(true);
                 }
             }
         });

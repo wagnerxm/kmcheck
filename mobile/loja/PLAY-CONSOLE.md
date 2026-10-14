@@ -58,11 +58,15 @@ Arquivo para enviar: `mobile/android/app/build/outputs/bundle/release/app-releas
   - Os dados são criptografados em trânsito? **Sim** (HTTPS).
   - O usuário pode pedir a exclusão? **Sim** (por e-mail, ver a política).
   - Tipos coletados:
-    - **Localização aproximada** — coletada, não compartilhada, **opcional**, finalidade: Análise.
+    - **Localização exata** — coletada, não compartilhada, **opcional**, finalidade: Análise.
+      O app manda as coordenadas com 2 casas decimais (~1 km). Pela regra da Google isso é "exata"
+      (só é "aproximada" quando a área é de 3 km² ou mais). Não marcar "Localização aproximada".
     - **Identificadores do dispositivo ou outros IDs** (identificador anônimo do aparelho, SHA-256 do ANDROID_ID; só estatística, sem anúncios) — coletado, não compartilhado, opcional, finalidade: Análise.
     - **Informações e desempenho do app › Diagnóstico** (modelo, versão, desempenho) — coletado, não compartilhado, opcional, finalidade: Análise.
+    - **Atividade no app › Outras ações no app** (lista de rodovias baixadas) — coletado, não compartilhado, opcional, finalidade: Análise.
   - **Fotos:** NÃO marcar como coletadas (ficam só no celular; o app não envia).
-  - **Localização exata:** NÃO marcar como coletada (é usada só no celular; o envio é só a região aproximada, ~1 km).
+  - A janela "Ajude a melhorar o app" (1ª abertura) lista esses dados antes do "Permitir", como a Google exige.
+    O código do aparelho aparece em Configurações › Privacidade, para pedidos de exclusão.
 - **Permissões sensíveis:** o app não usa localização em segundo plano, nem acesso a todos os arquivos, nem SMS/chamadas. Não há formulário extra a preencher.
 
 ## 4. Assinatura
