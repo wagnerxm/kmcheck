@@ -1471,7 +1471,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 id="uso-tit">Ajude a melhorar o app</h2>
     <!-- a Google Play exige dizer AQUI, antes do "Permitir", quais dados vão (não basta a política) -->
     <p>Dados técnicos ajudam a identificar falhas e melhorar o aplicativo.</p>
-    <p class="uso-l">Enviamos o modelo do celular, a versão do app, as rodovias baixadas, a região onde você está (cerca de 1 km) e um código do aparelho.</p>
+    <p class="uso-l">Enviamos o modelo e o desempenho do celular, a versão do app, as rodovias baixadas, a região onde você está (cerca de 2 km, nunca o ponto exato) e um código do aparelho.</p>
     <p>Suas fotos nunca são enviadas.</p>
     <div class="uso-b"><button class="uso-nao" id="uso-nao">Agora não</button><button class="uso-sim" id="uso-sim">Permitir</button></div>
     <a class="uso-pol" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener">Política de privacidade</a>
@@ -1823,7 +1823,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="card listcard">
     <label class="listrow">
       <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>
-      <span class="ltext"><b>Enviar dados de uso</b><i>Modelo, versão, rodovias, região (cerca de 1 km) e código do aparelho</i></span>
+      <span class="ltext"><b>Enviar dados de uso</b><i>Modelo, desempenho, versão, rodovias, região (cerca de 2 km) e código do aparelho</i></span>
       <input type="checkbox" id="cfg-uso">
     </label>
     <!-- a política de privacidade pede este código para atender pedidos de exclusão dos dados -->
@@ -6812,7 +6812,9 @@ function showInstallPrompt(){
         }
         /* GPS — usa a posição já fixada pelo watchPosition */
         let loc=null;
-        if(S.pos&&isFinite(S.pos.lat)) loc={lat:+S.pos.lat.toFixed(2),lon:+S.pos.lon.toFixed(2)};   // só a região (~1 km), nunca o ponto exato
+        /* só a região, nunca o ponto exato: grade de 0,02° (~2 km de lado, ~5 km²). A Google Play trata como
+           "localização exata" qualquer coisa com área menor que 3 km² — 2 casas decimais (~1 km²) contava como exata */
+        if(S.pos&&isFinite(S.pos.lat)){ const g=v=>+(Math.round(v/0.02)*0.02).toFixed(2); loc={lat:g(S.pos.lat),lon:g(S.pos.lon)} }
         /* Bases baixadas no IndexedDB */
         let bases=[];
         try{const all=await dbAll();bases=all.map(b=>({id:b.id,br:b.br||'',uf:b.uf||'',n:b.lat?.length||0}))}catch(e){}
