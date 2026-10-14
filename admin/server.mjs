@@ -769,7 +769,7 @@ app.get('/api/admin/snv-leve.json', (req, res) => {
 /* Manifesto: permite pôr o painel na tela de início do celular e abrir em tela cheia, sem as barras do navegador */
 app.get('/api/admin/manifest.webmanifest', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400').type('application/manifest+json').send(JSON.stringify({
-    name: 'KM Check Painel', short_name: 'KM Painel', id: '/admin', start_url: '/admin', scope: '/',
+    name: 'KM Check Painel', short_name: 'KM Painel', id: '/admin', start_url: '/admin', scope: '/admin',   // escopo só do painel: não se mistura com o app instalado no mesmo domínio
     display: 'standalone', orientation: 'any', background_color: '#060708', theme_color: '#060708', lang: 'pt-BR',
     icons: [{ src: '/app/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/app/icon-512.png', sizes: '512x512', type: 'image/png' }]
   }));
