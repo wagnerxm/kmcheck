@@ -2,7 +2,7 @@
 // Só muda quando sai uma versão nova nas lojas (1.0.0 → 1.0.1 → 1.1.0…).
 // CACHE: número interno, sobe a CADA alteração (é o que faz os aparelhos baixarem a versão nova).
 const VERSAO_APP = '1.0.0';
-const CACHE = 'kmcheck-v316';
+const CACHE = 'kmcheck-v317';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png', 'logo-kmcheck.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -62,6 +62,9 @@ self.addEventListener('fetch', e => {
   // com ignoreSearch — offline, pedir outra versão/tipo do SNV devolvia a resposta guardada de OUTRA
   // consulta, e cada rodovia baixada ficava duplicada no cache. O app já trata a falta de rede.
   if (url.origin !== self.location.origin) return;
+  // Painel administrativo (kmcheck.com.br/admin e /api/...): fica fora do SW do app. Senão o cache do app
+  // guardava os números do painel (mostrava dados velhos) e, com sinal fraco, abria o app no lugar do painel.
+  if (url.pathname === '/admin' || url.pathname.startsWith('/admin/') || url.pathname.startsWith('/api/')) return;
   /* ── Download forçado via SW ──
      O app coloca o blob no cache 'kmcheck-dl' e navega um iframe para /__dl/nome.jpg.
      Servimos com Content-Disposition: attachment → Chrome baixa automaticamente,
