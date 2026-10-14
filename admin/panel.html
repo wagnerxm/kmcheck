@@ -2,7 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- ícone na tela de início: abre em tela cheia, sem as barras do navegador (as margens do entalhe já são tratadas com safe-area) -->
+<link rel="manifest" href="/api/admin/manifest.webmanifest">
+<meta name="theme-color" content="#060708">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KM Painel">
 <title>KM Check — Admin</title>
 <link rel="icon" type="image/svg+xml" href="/app/admin/favicon.svg">
 <link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
@@ -45,7 +52,7 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 .forte::before{background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.2) 20%,transparent 40%,transparent 60%,rgba(255,255,255,.2) 80%,rgba(255,255,255,.5) 100%)}
 
 /* ── Login ── */
-#login{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100%;min-height:100vh;min-height:100dvh;padding:16px}   /* dvh: no celular a página tem altura automática e o 100% não centralizava */
+#login{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100%;min-height:100vh;min-height:100dvh;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}   /* dvh: no celular a página tem altura automática e o 100% não centralizava */
 .login-card{border-radius:32px;padding:40px;width:100%;max-width:380px;text-align:center}
 .login-card .logo{width:56px;height:56px;border-radius:50%;background:var(--lima);color:#0a0c0e;display:grid;place-items:center;margin:0 auto 18px;font-weight:700}
 .login-card h1{font-size:28px;letter-spacing:-.04em}

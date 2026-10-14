@@ -765,6 +765,15 @@ app.get('/api/admin/snv-leve.json', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400').type('json').send(readFileSync(f));
 });
 
+/* Manifesto: permite pôr o painel na tela de início do celular e abrir em tela cheia, sem as barras do navegador */
+app.get('/api/admin/manifest.webmanifest', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400').type('application/manifest+json').send(JSON.stringify({
+    name: 'KM Check Painel', short_name: 'KM Painel', id: '/admin', start_url: '/admin', scope: '/',
+    display: 'standalone', orientation: 'any', background_color: '#060708', theme_color: '#060708', lang: 'pt-BR',
+    icons: [{ src: '/app/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/app/icon-512.png', sizes: '512x512', type: 'image/png' }]
+  }));
+});
+
 /* Malha das rodovias federais (desenho simplificado para o mapa do painel). Gerada por gerar-malha.mjs. */
 app.get('/api/admin/malha.js', (req, res) => {
   const f = join(__dirname, 'malha.js');
