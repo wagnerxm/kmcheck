@@ -25,7 +25,7 @@ img{display:block}
 #splash .od small{font-size:.28em;letter-spacing:.3em;color:#6f8a0e}
 
 /* ===== topo fixo ===== */
-nav{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:10px clamp(16px,2vw,24px);background:rgba(255,255,255,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+nav{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:10px clamp(16px,2vw,24px);background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 nav .logo img{height:38px;width:auto}
 nav .links{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:700}
 nav .links a:hover{color:#6f8a0e}
@@ -43,23 +43,12 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
   position:sticky;top:0;transform-origin:50% 30%;will-change:transform,filter}
 #s2,#s3{border-radius:28px 28px 0 0;box-shadow:0 -24px 60px rgba(0,0,0,.28)}
 #s1{z-index:1}#s2{z-index:2}#s3{z-index:3}
-#s1{height:100vh;padding-top:84px}
+#s1{height:100vh;padding:0;background:#050505}
 #s2,#s3{height:100vh;padding-top:72px}
 .mc{position:relative;overflow:hidden;border-radius:16px;background-repeat:no-repeat;background-color:#dfe3e6}
 .mc>*{position:relative;z-index:2}
 .rev{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1) calc(var(--i)*120ms),transform .6s cubic-bezier(.16,1,.3,1) calc(var(--i)*120ms)}
 .vis .rev{opacity:1;transform:none}
-
-/* seção 1 */
-.faixa{flex:0 0 80px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(1.3rem,2.1vw,1.9rem);text-align:center}
-.faixa i{width:11px;height:11px;border-radius:50%;background:var(--lima);margin-right:14px;box-shadow:0 0 0 4px rgba(183,217,45,.3)}
-.hero{flex:1;min-height:0}
-.hero .t1{position:absolute;top:28px;left:28px;max-width:300px;font-size:14px;font-weight:700;line-height:20px}
-.hero .bl{position:absolute;left:16px;bottom:30px}
-.hero .bl>span{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
-.hero h1{font-size:clamp(3rem,7.4vw,9rem);font-weight:800;line-height:.86;letter-spacing:-.04em}
-.hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--lima) 62% 92%,transparent 92%)}
-.hero .br{position:absolute;right:28px;bottom:32px;display:flex;flex-direction:column;align-items:flex-end;gap:14px;font-size:14px;font-weight:700}
 
 /* seção 2 */
 .g2{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr .8fr;gap:8px}
@@ -135,13 +124,49 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
 .com-cursor,.com-cursor *{cursor:none!important}
 .elastico{will-change:transform}
 
+/* ===== hero: esfera de fotos (o círculo e o título compartilham o MESMO ponto central 0×0) ===== */
+:root{--hw:min(56vw,640px);--persp:1150px}
+#stage{position:absolute;inset:0;z-index:10;perspective:var(--persp);perspective-origin:50% 50%;overflow:hidden;touch-action:none;cursor:grab}
+#stage.arrasta{cursor:grabbing}
+@media (pointer:coarse){#stage{touch-action:pan-y}}
+#world{position:absolute;top:50%;left:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+#orb{position:absolute;top:0;left:0;width:0;height:0;transform-style:preserve-3d}
+#headline{position:absolute;top:0;left:0;width:var(--hw);margin-left:calc(var(--hw) / -2);margin-top:-1.3em;height:2.6em;text-align:center;font-weight:800;
+  font-size:clamp(28px,4.4vw,66px);line-height:1.04;letter-spacing:-.035em;color:#fff;text-shadow:0 2px 34px rgba(0,0,0,.6);pointer-events:none;user-select:none;-webkit-user-select:none}
+/* o h1 tem altura real (2,6em, centrada na origem): sem ela o Chrome cortava a 1ª linha por estar fora da caixa 0px */
+#headline .inner{position:absolute;top:50%;left:0;width:100%;transform:translateY(-50%)}
+#headline .inner>span{display:inline-block}
+/* entrada por animation (fill backwards), não por transition: com opacity:0 inicial o Chrome deixava a 1ª linha sem rasterizar dentro do contexto 3D */
+@keyframes palIn{from{opacity:0;transform:translateY(.42em)}to{opacity:1;transform:none}}
+#headline .lima-t{color:var(--lima)}
+#headline .inner>span{opacity:0;transform:translateY(.42em);filter:blur(7px)}
+#s1.vis #headline .inner>span{opacity:1;transform:none;filter:blur(0);transition:opacity 1.05s,transform 1.15s,filter 1.05s;transition-delay:calc(.9s + var(--i)*.085s)}
+.card{position:absolute;top:0;left:0;width:var(--cw,160px);height:calc(var(--cw,160px)/1.5);margin-left:calc(var(--cw,160px)/-2);margin-top:calc(var(--cw,160px)/-3);backface-visibility:hidden}
+.card.tall{height:calc(var(--cw,160px)*1.25);margin-top:calc(var(--cw,160px)*-.625)}
+.card figure{position:relative;width:100%;height:100%;overflow:hidden;border-radius:4px;background:#0a0a0a;transition:transform .5s ease}
+.card:hover figure{transform:scale(1.045)}
+.card img{width:100%;height:100%;object-fit:cover;opacity:0}
+.card img.in{opacity:1}
+#s1.vis .card img{transition:opacity .8s ease-out}
+.card figure::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,var(--d,0));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);border-radius:4px;pointer-events:none}
+.vig{position:absolute;inset:0;z-index:12;pointer-events:none;background:radial-gradient(ellipse 88% 92% at 50% 50%,transparent 48%,rgba(0,0,0,.26) 80%,rgba(0,0,0,.72) 100%)}
+.chrome{position:absolute;z-index:30;opacity:0;transition:opacity 1.2s .15s}
+#s1.vis .chrome{opacity:1}
+.h-info{left:clamp(16px,2.6vw,34px);bottom:clamp(16px,2.6vw,34px);max-width:300px;font-size:13px;line-height:1.6;color:rgba(244,242,239,.72);font-weight:500}
+.h-cta{right:clamp(16px,2.6vw,34px);bottom:clamp(16px,2.6vw,34px);display:flex;flex-direction:column;align-items:flex-end;gap:12px;font-size:13px;font-weight:700;color:rgba(244,242,239,.72)}
+.cue{left:50%;bottom:clamp(20px,3vw,38px);transform:translateX(-50%);display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(244,242,239,.5);white-space:nowrap;pointer-events:none}
+.cue s{display:block;position:relative;width:44px;height:1px;background:rgba(244,242,239,.28);overflow:hidden}
+.cue s::after{content:'';position:absolute;inset:0;background:#f4f2ef;transform:translateX(-100%);animation:sweep 2.6s ease infinite}
+@keyframes sweep{55%{transform:none}100%{transform:translateX(100%)}}
+@media (max-width:900px){#headline{font-size:clamp(24px,6.4vw,40px)}.cue{display:none}}
+@media (max-width:640px){:root{--hw:min(84vw,360px)}.h-info{display:none}}
+
 /* telas estreitas: empilha (quem cair aqui no celular vai para o app, mas fica correto) */
 @media (max-width:900px){
   nav .links a:not(.btn){display:none}
   section,#s1,#s2,#s3{height:auto;min-height:100vh;position:relative;border-radius:0;box-shadow:none}
   .g2,.g3{display:flex;flex-direction:column}
   .g2>.mc{min-height:260px}.recs{position:relative;flex-wrap:wrap}.g2>.mc.sub{min-height:420px}
-  .faixa{flex-basis:56px}.hero{min-height:420px}
   .passos{position:static;padding:0 20px 20px;margin-top:70px}
   .alto{min-height:420px}.ov a{height:150px}.dupla{min-height:260px}
 }
@@ -162,16 +187,18 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
   </div>
 </nav>
 
-<!-- 1 · ABERTURA -->
-<section id="s1" data-bg="img/rodovia.webp" data-fx=".8">
-  <div class="mc faixa rev" style="--i:0"><i></i>KM pelo GPS</div>
-  <div class="mc faixa rev" style="--i:1"><i></i>Legenda gravada na foto</div>
-  <div class="mc faixa rev" style="--i:2"><i></i>Funciona sem internet</div>
-  <div class="mc hero rev" style="--i:3">
-    <div class="t1">Desenvolvido para obras e fiscalização<br>de rodovias federais, estaduais e municipais</div>
-    <div class="bl"><span>Rodovia, KM e estaca em cada foto</span><h1 id="h1">O <em>KM</em> certo,<br>em cada foto.</h1></div>
-    <div class="br"><span>Grátis · Android e iPhone</span><a class="btn lima cta elastico" href="#s3">Baixe grátis</a></div>
+<!-- 1 · ABERTURA: esfera 3D de fotos com o título no centro do círculo -->
+<section id="s1">
+  <div id="stage">
+    <div id="world">
+      <div id="orb"><div class="card" data-i="0"><figure><img src="img/c01.webp" alt="" draggable="false"></figure></div><div class="card" data-i="1"><figure><img src="img/c02.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="2"><figure><img src="img/c03.webp" alt="" draggable="false"></figure></div><div class="card" data-i="3"><figure><img src="img/c04.webp" alt="" draggable="false"></figure></div><div class="card" data-i="4"><figure><img src="img/c05.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="5"><figure><img src="img/c06.webp" alt="" draggable="false"></figure></div><div class="card" data-i="6"><figure><img src="img/c07.webp" alt="" draggable="false"></figure></div><div class="card" data-i="7"><figure><img src="img/c08.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="8"><figure><img src="img/c09.webp" alt="" draggable="false"></figure></div><div class="card" data-i="9"><figure><img src="img/c10.webp" alt="" draggable="false"></figure></div><div class="card" data-i="10"><figure><img src="img/c11.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="11"><figure><img src="img/c12.webp" alt="" draggable="false"></figure></div><div class="card" data-i="12"><figure><img src="img/c13.webp" alt="" draggable="false"></figure></div><div class="card" data-i="13"><figure><img src="img/c14.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="14"><figure><img src="img/c15.webp" alt="" draggable="false"></figure></div><div class="card" data-i="15"><figure><img src="img/c16.webp" alt="" draggable="false"></figure></div><div class="card" data-i="16"><figure><img src="img/c17.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="17"><figure><img src="img/c18.webp" alt="" draggable="false"></figure></div><div class="card" data-i="18"><figure><img src="img/c19.webp" alt="" draggable="false"></figure></div><div class="card" data-i="19"><figure><img src="img/c20.webp" alt="" draggable="false"></figure></div><div class="card" data-i="20"><figure><img src="img/c21.webp" alt="" draggable="false"></figure></div></div>
+      <h1 id="headline" aria-label="O KM certo, em cada foto."><span class="inner"><span style="--i:0">O</span> <span style="--i:1" class="lima-t">KM</span> <span style="--i:2">certo,</span> <span style="--i:3">em</span> <span style="--i:4">cada</span> <span style="--i:5">foto.</span></span></h1>
+    </div>
   </div>
+  <div class="vig"></div>
+  <div class="chrome h-info">Rodovia, KM e estaca pelo GPS.<br>Para obras e fiscalização de rodovias.</div>
+  <div class="chrome h-cta"><a class="btn lima cta elastico" href="#s3">Baixe grátis</a><span>Grátis · Android e iPhone</span></div>
+  <div class="chrome cue"><s></s>Arraste para girar</div>
 </section>
 
 <!-- 2 · COMO FUNCIONA -->
@@ -289,10 +316,8 @@ function quebra(el){
     });
   })(el);
 }
-var h1=document.getElementById('h1'); quebra(h1);
 function abreHero(){
   document.getElementById('s1').classList.add('vis');
-  setTimeout(function(){h1.classList.add('palavras-ok')},350);
 }
 
 if(!reduz&&desk){
@@ -343,7 +368,7 @@ if(!reduz&&desk){
     addEventListener('mousemove',function(ev){
       m.x=ev.clientX;m.y=ev.clientY;
       if(!ligado){ligado=true;a2.x=m.x;a2.y=m.y;document.documentElement.classList.add('cur-on')}
-      an.classList.toggle('sobre',!!ev.target.closest('a,button'));
+      an.classList.toggle('sobre',!!ev.target.closest('a,button,.card'));
     });
     document.addEventListener('mouseleave',function(){ligado=false;document.documentElement.classList.remove('cur-on')});
     (function laco(){
@@ -380,6 +405,78 @@ if(!reduz) document.querySelectorAll('.luz').forEach(function(el){
     el.style.setProperty('--x',(ev.clientX-r.left)+'px');el.style.setProperty('--y',(ev.clientY-r.top)+'px');
   });
 });
+
+/* ===== hero: esfera de fotos (ponto central compartilhado: círculo e título) ===== */
+(function(){
+  var stage=document.getElementById('stage'), world=document.getElementById('world'), head=document.getElementById('headline'), sec=document.getElementById('s1');
+  var els=[].slice.call(document.querySelectorAll('#orb .card')), N=els.length, GA=Math.PI*(3-Math.sqrt(5));
+  var cs=els.map(function(el,i){
+    var y=1-(i/(N-1))*2, rad=Math.sqrt(Math.max(0,1-y*y)), th=i*GA, x=Math.cos(th)*rad, z=Math.sin(th)*rad;
+    return {el:el,x:x,y:y,z:z,lat:Math.asin(y)*180/Math.PI,lon:Math.atan2(x,z)*180/Math.PI,op:-1,d:-1,img:el.querySelector('img')};
+  });
+  cs.forEach(function(c){var im=c.img;function ok(){im.classList.add('in')}if(im.complete)ok();else im.onload=ok});
+  var R=300,persp=1150,spin=0,tilt=-4,camZ=0,dragX=0,dragY=0,velX=0,velY=0,LIM=32,W0=0,H0=0;
+  function layout(force){
+    var w=sec.clientWidth,h=sec.clientHeight;
+    if(!force&&Math.abs(w-W0)<20&&Math.abs(h-H0)<20) return; W0=w;H0=h;
+    var hr=w<=380?.38:w<=640?.42:.46, wr=w<=380?.48:w<=640?.52:.58, fl=w<=380?108:w<=640?120:155;
+    R=Math.max(fl,Math.min(480,h*hr,w*wr));
+    var cw=Math.round(Math.max(72,R*(w<=380?.44:w<=640?.46:.47)));
+    persp=w<=380?620:w<=640?760:w<=900?920:1150;
+    stage.style.setProperty('--persp',persp+'px'); sec.style.setProperty('--cw',cw+'px');
+    cs.forEach(function(c){c.el.style.transform='translate3d('+(c.x*R)+'px,'+(-c.y*R)+'px,'+(c.z*R)+'px) rotateY('+c.lon+'deg) rotateX('+c.lat+'deg)'});
+  }
+  layout(true);
+  addEventListener('resize',function(){layout()});
+  /* arrastar: yaw/pitch, 0,13° por pixel; sem clique acidental */
+  var dr=null;
+  stage.addEventListener('pointerdown',function(ev){
+    dr={id:ev.pointerId,x:ev.clientX,y:ev.clientY,lx:ev.clientX,ly:ev.clientY,on:ev.pointerType!=='touch',t:ev.pointerType==='touch'};
+    if(dr.on){stage.setPointerCapture(ev.pointerId);stage.classList.add('arrasta')}
+  });
+  stage.addEventListener('pointermove',function(ev){
+    if(!dr||ev.pointerId!==dr.id) return;
+    if(!dr.on){
+      var ax=Math.abs(ev.clientX-dr.x),ay=Math.abs(ev.clientY-dr.y);
+      if(ax<10&&ay<10) return;
+      if(ay>ax*1.15){dr=null;return}
+      dr.on=true;stage.setPointerCapture(ev.pointerId);stage.classList.add('arrasta');
+    }
+    var dx=ev.clientX-dr.lx,dy=ev.clientY-dr.ly;dr.lx=ev.clientX;dr.ly=ev.clientY;
+    dragX+=dx*.13;dragY-=dy*.13; velX=dx*.13;velY=-dy*.13;
+    dragY=limitar(dragY,-LIM-tilt,LIM-tilt);
+  });
+  function solta(){dr=null;stage.classList.remove('arrasta')}
+  stage.addEventListener('pointerup',solta);stage.addEventListener('pointercancel',solta);
+  function frame(){
+    if(!dr||!dr.on){
+      dragX+=velX;dragY+=velY;velX*=.94;velY*=.94;
+      if(Math.abs(velX)<.002)velX=0; if(Math.abs(velY)<.002)velY=0;
+      dragY=limitar(dragY,-LIM-tilt,LIM-tilt);
+    }
+    var p=limitar(scrollY/(innerHeight*.16),0,1);
+    camZ=lerp(camZ,p*Math.min(64,R*.12),.075);   /* só avança, nunca atravessa a esfera */
+    var sx=tilt+dragY, sy=spin+dragX;
+    world.style.transform='translateZ('+camZ+'px) rotateY('+sy+'deg) rotateX('+sx+'deg)';
+    /* título: contra-rotação + avanço de 62% do raio; só as fotos mais próximas passam na frente */
+    head.style.transform='rotateX('+(-sx)+'deg) rotateY('+(-sy)+'deg) translateZ('+(R*.62)+'px)';
+    head.style.opacity=Math.max(0,1-p*.55);
+    var cx=Math.cos(sx*Math.PI/180),sxs=Math.sin(sx*Math.PI/180),cy=Math.cos(sy*Math.PI/180),sys=Math.sin(sy*Math.PI/180);
+    var near=persp*.66, shade=1-Math.min(1,p*1.6);
+    cs.forEach(function(c){
+      var y1=-c.y*cx-c.z*sxs, z1=-c.y*sxs+c.z*cx;   /* pitch, depois yaw */
+      var zf=-c.x*sys+z1*cy;
+      var base=.14+.86*Math.pow((zf+1)/2,.85), dim=shade*(1-base);
+      var absZ=zf*R+camZ, fade=1;
+      if(absZ>near) fade=Math.max(0,1-(absZ-near)/190);
+      dim=Math.round(dim*100)/100; fade=Math.round(fade*100)/100;
+      if(dim!==c.d){c.d=dim;c.el.style.setProperty('--d',dim)}
+      if(fade!==c.op){c.op=fade;c.el.style.opacity=fade}
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
 
 /* ===== entrada em cascata ao rolar ===== */
 var legTocou=false;
