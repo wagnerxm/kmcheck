@@ -66,8 +66,28 @@ public class KMCheckNativoPlugin extends Plugin {
         if (!precisaPermissao(call)) gravaImagem(call);
     }
 
+    /** O nome vem do JS e vira caminho de arquivo: tira barras, ".." e caracteres que o Android/FAT recusam.
+        Sem isto um nome como "../shared_prefs/x" gravaria fora da pasta (no Android 9 ou no cache do app). */
+    private static String nomeSeguro(String nome, String padrao) {
+        if (nome == null) return padrao;
+        String n = nome.replaceAll("[\\\\/:*?\"<>|\\x00-\\x1f]", "_").replaceAll("^[.\\s]+", "").trim();
+        if (n.isEmpty()) return padrao;
+        return n.length() > 120 ? n.substring(n.length() - 120) : n;   // corta o começo: preserva a extensão
+    }
+
+    /** Android 9 ou anterior: File na pasta pública SOBRESCREVIA uma foto de mesmo nome (o MediaStore do 10+ já
+        acrescenta " (1)"). Aqui faz o mesmo: "nome (1).jpg", "nome (2).jpg"… */
+    private static File arquivoLivre(File dir, String nome) {
+        File f = new File(dir, nome);
+        if (!f.exists()) return f;
+        int ponto = nome.lastIndexOf('.');
+        String base = ponto > 0 ? nome.substring(0, ponto) : nome, ext = ponto > 0 ? nome.substring(ponto) : "";
+        for (int i = 1; i < 1000; i++) { f = new File(dir, base + " (" + i + ")" + ext); if (!f.exists()) return f; }
+        return f;
+    }
+
     private void gravaImagem(PluginCall call) {
-        String nome = call.getString("nome", "km-check.jpg");
+        String nome = nomeSeguro(call.getString("nome"), "km-check.jpg");
         String mime = call.getString("mime", "image/jpeg");
         byte[] dados = decodifica(call);
         if (dados == null) return;
@@ -94,7 +114,7 @@ public class KMCheckNativoPlugin extends Plugin {
                 /* Android 9 ou anterior: arquivo na pasta pública + aviso ao índice de mídia */
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), PASTA);
                 if (!dir.exists() && !dir.mkdirs()) throw new Exception("não consegui criar a pasta");
-                File f = new File(dir, nome);
+                File f = arquivoLivre(dir, nome);
                 try (FileOutputStream os = new FileOutputStream(f)) { os.write(dados); }
                 MediaScannerConnection.scanFile(getContext(), new String[]{f.getAbsolutePath()}, new String[]{mime}, null);
                 uri = Uri.fromFile(f);
@@ -115,10 +135,12 @@ public class KMCheckNativoPlugin extends Plugin {
     }
 
     private void gravaArquivo(PluginCall call) {
-        String nome = call.getString("nome", "km-check.bin");
+        String nome = nomeSeguro(call.getString("nome"), "km-check.bin");
         String mime = call.getString("mime", "application/octet-stream");
         byte[] dados = decodifica(call);
         if (dados == null) return;
+        Uri pendente = null;
+        ContentResolver cr = getContext().getContentResolver();
         try {
             Uri uri;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -127,17 +149,18 @@ public class KMCheckNativoPlugin extends Plugin {
                 v.put(MediaStore.Downloads.MIME_TYPE, mime);
                 v.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/" + PASTA);
                 v.put(MediaStore.Downloads.IS_PENDING, 1);
-                ContentResolver cr = getContext().getContentResolver();
                 uri = cr.insert(MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), v);
                 if (uri == null) throw new Exception("Downloads indisponível");
+                pendente = uri;   // como na foto: se a escrita falhar, apaga a linha "pendente" (senão fica um arquivo fantasma em Downloads)
                 try (OutputStream os = cr.openOutputStream(uri)) { os.write(dados); }
                 v.clear();
                 v.put(MediaStore.Downloads.IS_PENDING, 0);
                 cr.update(uri, v, null, null);
+                pendente = null;
             } else {
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), PASTA);
                 if (!dir.exists() && !dir.mkdirs()) throw new Exception("não consegui criar a pasta");
-                File f = new File(dir, nome);
+                File f = arquivoLivre(dir, nome);
                 try (FileOutputStream os = new FileOutputStream(f)) { os.write(dados); }
                 uri = Uri.fromFile(f);
             }
@@ -145,6 +168,7 @@ public class KMCheckNativoPlugin extends Plugin {
             r.put("uri", uri.toString());
             call.resolve(r);
         } catch (Throwable e) {
+            if (pendente != null) try { cr.delete(pendente, null, null); } catch (Throwable ignora) {}
             call.reject("Não consegui salvar o arquivo: " + e.getMessage());
         }
     }
@@ -152,7 +176,7 @@ public class KMCheckNativoPlugin extends Plugin {
     /** Abre o "Compartilhar" do Android com um arquivo (base64). */
     @PluginMethod
     public void compartilhar(PluginCall call) {
-        String nome = call.getString("nome", "km-check.jpg");
+        String nome = nomeSeguro(call.getString("nome"), "km-check.jpg");
         String mime = call.getString("mime", "image/jpeg");
         String titulo = call.getString("titulo", "Compartilhar");
         byte[] dados = decodifica(call);

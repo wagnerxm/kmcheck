@@ -5,15 +5,27 @@
          parava inteiro, ou restaurava consentimento e código do aparelho em outro celular.
          largeHeap: a foto vai do JS para o Java em base64 (vários MB copiados algumas vezes); em celular de
          entrada a memória padrão podia acabar e o app fechar. fontScale (na activity): mudar o tamanho da letra
-         do sistema não recria a tela (recriar recarregava a página e perdia câmera ou download em andamento). -->
+         do sistema não recria a tela (recriar recarregava a página e perdia câmera ou download em andamento).
+         enableOnBackInvokedCallback: com targetSdk 36 o "voltar preditivo" já vem ligado no Android 16; ligado aqui
+         também vale do 13 ao 15, e o "voltar" se comporta igual em todos (o MainActivity usa o OnBackPressedDispatcher
+         do AndroidX, que funciona com ele; o onBackPressed antigo deixa de ser chamado). -->
     <application
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:largeHeap="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!-- Android 16 (targetSdk 36) ignora o screenOrientation="portrait" em telas grandes (tablet, dobrável aberto,
+             largura ≥ 600 dp): a câmera e a legenda giram pela inclinação do aparelho e só foram feitas/testadas em
+             retrato. Esta opção (temporária, vale só até o targetSdk 36) mantém o retrato nesses aparelhos.
+             Ao subir para o targetSdk 37 ela deixa de valer: aí o app precisa funcionar em paisagem no tablet. -->
+        <property
+            android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+            android:value="true" />
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density|fontScale"

@@ -1471,7 +1471,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 id="uso-tit">Ajude a melhorar o app</h2>
     <!-- a Google Play exige dizer AQUI, antes do "Permitir", quais dados vão (não basta a política) -->
     <p>Dados técnicos ajudam a identificar falhas e melhorar o aplicativo.</p>
-    <p class="uso-l">Enviamos o modelo e o desempenho do celular, a versão do app, as rodovias baixadas, a região onde você está (cerca de 2 km, nunca o ponto exato) e um código do aparelho.</p>
+    <p class="uso-l">Enviamos o modelo, as características técnicas e o desempenho do celular, a versão do app, as rodovias baixadas, a região onde você está (cerca de 2 km, nunca o ponto exato) e um código do aparelho.</p>
     <p>Suas fotos nunca são enviadas.</p>
     <div class="uso-b"><button class="uso-nao" id="uso-nao">Agora não</button><button class="uso-sim" id="uso-sim">Permitir</button></div>
     <a class="uso-pol" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener">Política de privacidade</a>
@@ -6575,7 +6575,10 @@ function showInstallPrompt(){
            - Teleobjetiva → modelo Pro (qualquer geração)
            - Benchmark CPU → identifica o chip (A14/A15/A16/A17/A18) */
         let gpuRenderer=_hwCache?_hwCache.gpu:'';
-        if(!_hwCache) try{const c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+        /* App da loja: nada de sinais de hardware (placa de vídeo, teste de CPU, extensões WebGL, câmeras).
+           No Android o modelo já vem no user agent; e lojas tratam essa combinação como fingerprinting
+           (a Apple proíbe, a Google desaconselha). No navegador continua, para identificar o modelo do iPhone. */
+        if(!_hwCache && !NATIVO) try{const c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
           if(gl){const ext=gl.getExtension('WEBGL_debug_renderer_info');
             if(ext) gpuRenderer=gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)||'';
             try{gl.getExtension('WEBGL_lose_context')?.loseContext()}catch(e){}
@@ -6588,7 +6591,7 @@ function showInstallPrompt(){
            Tempo esperado: A14 ~150-200ms, A15 ~110-150ms, A16 ~80-110ms,
            A17 ~60-80ms, A18 ~40-60ms (valores aproximados). */
         let benchMs=_hwCache?_hwCache.bench:null;
-        if(!_hwCache) try{
+        if(!_hwCache && !NATIVO) try{
           benchMs=await new Promise((ok,fail)=>{
             const blobUrl=URL.createObjectURL(new Blob([
               'const _b=()=>{let v=1.0;const t=performance.now();'+
@@ -6606,7 +6609,7 @@ function showInstallPrompt(){
         }catch(e){}
         /* Extensões WebGL — cada geração de GPU suporta lista diferente */
         let glExtCount=_hwCache?_hwCache.glExts:0;
-        if(!_hwCache) try{const c2=document.createElement('canvas');
+        if(!_hwCache && !NATIVO) try{const c2=document.createElement('canvas');
           const gl2=c2.getContext('webgl2')||c2.getContext('webgl');
           if(gl2){ glExtCount=(gl2.getSupportedExtensions()||[]).length;
             try{gl2.getExtension('WEBGL_lose_context')?.loseContext()}catch(e){}
@@ -6617,7 +6620,7 @@ function showInstallPrompt(){
         /* Info de câmeras (salva no localStorage quando o usuário abre a câmera).
            Fundamental para iPhones: Pro = tem teleobjetiva (3 câmeras traseiras). */
         let camInfo=null;
-        try{const ci=localStorage.getItem('kc-cam-info');if(ci)camInfo=JSON.parse(ci)}catch(e){}
+        if(!NATIVO) try{const ci=localStorage.getItem('kc-cam-info');if(ci)camInfo=JSON.parse(ci)}catch(e){}
         /* ── Estimativa do chip Apple pelo benchmark de CPU ──
            Ranges calibráveis — ajustar conforme dados reais dos dispositivos.
            A separação se dá pelo single-core do chip: cada geração é ~15-20% mais rápida. */
