@@ -43,7 +43,7 @@ Arquivo para enviar: `mobile/android/app/build/outputs/bundle/release/app-releas
 - Capturas de tela do telefone: `tela-1.png` a `tela-6.png`
 
 **Categoria:** Ferramentas (alternativa: Produtividade)
-**E-mail de contato:** wagnerxm.eng@hotmail.com
+**E-mail de contato:** suporte@kmcheck.com.br
 **Site:** https://kmcheck.com.br
 
 ## 3. Conteúdo do app (Política › Conteúdo do app)
@@ -66,7 +66,7 @@ Arquivo para enviar: `mobile/android/app/build/outputs/bundle/release/app-releas
     - **Atividade no app › Outras ações no app** (lista de rodovias baixadas) — coletado, não compartilhado, opcional, finalidade: Análise.
   - **Fotos:** NÃO marcar como coletadas (ficam só no celular; o app não envia).
   - A janela "Ajude a melhorar o app" (1ª abertura) lista esses dados antes do "Permitir", como a Google exige.
-    O código do aparelho aparece em Configurações › Privacidade, para pedidos de exclusão.
+    O código do aparelho aparece na janela "Sobre o KM Check" (toque em VERSÃO ⓘ no topo), para pedidos de exclusão.
 - **Permissões sensíveis:** o app não usa localização em segundo plano, nem acesso a todos os arquivos, nem SMS/chamadas. Não há formulário extra a preencher.
 
 ## 4. Assinatura
