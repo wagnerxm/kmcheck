@@ -8,11 +8,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const BASE = 'http://localhost:3456/';
-const DIR = path.resolve('manual-kmcheck/prints');
+/* KC_ANDROID=1: prints com cara de Android (tela de 412×915 de um Pixel, navegador Android) para as
+   capturas da Google Play, numa pasta própria — os prints do manual (iPhone) não são tocados */
+const ANDROID = process.env.KC_ANDROID === '1';
+const DIR = path.resolve(ANDROID ? 'manual-kmcheck/prints-android' : 'manual-kmcheck/prints');
 const FOTO = path.resolve('manual-kmcheck/estudio/foto-rodovia.mjpeg');
 fs.mkdirSync(DIR, { recursive: true });
 const so = process.argv.slice(2);
-const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+const UA = ANDROID ? 'Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36'
+  : 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
 const args = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'];
@@ -25,6 +29,7 @@ const ctx = browser.defaultBrowserContext();
 await ctx.overridePermissions(BASE, ['geolocation', 'camera']);
 
 async function novaPagina({ largura = 390, altura = 844, noite = false, instalado = true } = {}) {
+  if (ANDROID) { if (largura === 390) largura = 412; if (altura === 844) altura = 915; if (largura === 844) largura = 915; if (altura === 390) altura = 412 }
   const page = await browser.newPage();
   await page.setUserAgent(UA);
   await page.setViewport({ width: largura, height: altura, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
@@ -44,7 +49,9 @@ async function novaPagina({ largura = 390, altura = 844, noite = false, instalad
   }, noite);
   page.on('pageerror', e => console.log('  ⚠ erro na página:', e.message));
   /* bordas do iPhone (barra de status e barrinha de baixo): o app usa env(safe-area-inset-*) */
-  try{ const cdp = await page.createCDPSession(); await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: largura > altura ? { left: 47, right: 47, bottom: 21 } : { top: 47, bottom: 34 } }) }catch(e){ console.log('  ⚠ sem área segura:', e.message) }
+  /* Android: barra de status de 24dp em cima e barra de gestos de 16dp embaixo */
+  const ins = ANDROID ? (largura > altura ? { left: 24, right: 24, bottom: 16 } : { top: 24, bottom: 16 }) : (largura > altura ? { left: 47, right: 47, bottom: 21 } : { top: 47, bottom: 34 });
+  try{ const cdp = await page.createCDPSession(); await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: ins }) }catch(e){ console.log('  ⚠ sem área segura:', e.message) }
   return page;
 }
 /* instala as rodovias de exemplo a partir dos dados do próprio projeto (data/rodovias) */
