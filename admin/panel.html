@@ -45,7 +45,7 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 .forte::before{background:linear-gradient(180deg,rgba(255,255,255,.5) 0%,rgba(255,255,255,.2) 20%,transparent 40%,transparent 60%,rgba(255,255,255,.2) 80%,rgba(255,255,255,.5) 100%)}
 
 /* ── Login ── */
-#login{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100%;padding:16px}
+#login{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100%;min-height:100vh;min-height:100dvh;padding:16px}   /* dvh: no celular a página tem altura automática e o 100% não centralizava */
 .login-card{border-radius:32px;padding:40px;width:100%;max-width:380px;text-align:center}
 .login-card .logo{width:56px;height:56px;border-radius:50%;background:var(--lima);color:#0a0c0e;display:grid;place-items:center;margin:0 auto 18px;font-weight:700}
 .login-card h1{font-size:28px;letter-spacing:-.04em}
@@ -1508,37 +1508,35 @@ $('#dm-close').onclick = () => $('#dev-modal').classList.remove('open');
 $('#dev-modal').onclick = e => { if (e.target === $('#dev-modal')) $('#dev-modal').classList.remove('open') };
 
 /* ══════════════════════════════════════════════════
-   FUNDO: estrada à noite, escura e neutra (para quando a aba some, para não gastar)
+   FUNDO: rede — pontos que flutuam e se ligam por linhas finas quando ficam perto
+   (lembra aparelhos conectados; para quando a aba some, para não gastar bateria)
    ══════════════════════════════════════════════════ */
 (function(){
-  const cv=$('#fundo'), g=cv.getContext('2d'); let w,h,t=0,raf; const parado=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  const estrelas=Array.from({length:120},()=>({x:Math.random(),y:Math.random()*.5,a:Math.random(),r:Math.random()<.1?1.6:1}));
-  const carros=Array.from({length:6},(_,i)=>({z:i/6,lado:i%2?1:-1,v:.0015+Math.random()*.001}));
-  function tam(){ const dpr=Math.min(1.5,devicePixelRatio||1); w=innerWidth; h=innerHeight; cv.width=w*dpr; cv.height=h*dpr; g.setTransform(dpr,0,0,dpr,0,0) }
-  const luz=(x,y,r,cor,a)=>{ const k=g.createRadialGradient(x,y,0,x,y,r); k.addColorStop(0,cor.replace('A',a)); k.addColorStop(1,cor.replace('A',0)); g.fillStyle=k; g.fillRect(x-r,y-r,r*2,r*2) };
-  function quadro(){
-    t+=0.0045; const hz=h*.52, fx=w*.62, P=z=>Math.pow(z,2.3);
-    const ceu=g.createLinearGradient(0,0,0,hz); ceu.addColorStop(0,'#040506'); ceu.addColorStop(1,'#0c0e10'); g.fillStyle=ceu; g.fillRect(0,0,w,hz);
-    for(const s of estrelas){ g.fillStyle='rgba(235,240,245,'+(.1+.35*Math.abs(Math.sin(t*1.6+s.a*9)))+')'; g.fillRect(s.x*w,s.y*h,s.r,s.r) }
-    const chao=g.createLinearGradient(0,hz,0,h); chao.addColorStop(0,'#0c0e10'); chao.addColorStop(.3,'#07080a'); g.fillStyle=chao; g.fillRect(0,hz,w,h-hz);
-    g.beginPath(); g.moveTo(fx-3,hz); g.lineTo(fx+3,hz); g.lineTo(fx+w*1.3,h); g.lineTo(fx-w*1.3,h); g.closePath();
-    const asf=g.createLinearGradient(0,hz,0,h); asf.addColorStop(0,'#16191c'); asf.addColorStop(1,'#0b0c0e'); g.fillStyle=asf; g.fill();
-    g.strokeStyle='rgba(255,255,255,.32)'; g.lineWidth=1.5; g.beginPath(); g.moveTo(fx-3,hz); g.lineTo(fx-w*1.15,h); g.moveTo(fx+3,hz); g.lineTo(fx+w*1.15,h); g.stroke();
-    for(let k=0;k<16;k++){ const z0=(k/16+t)%1, z1=Math.min(1,z0+.03);
-      g.strokeStyle='rgba(214,240,106,'+(.2+.55*z0)+')'; g.lineWidth=1+7*P(z0);
-      g.beginPath(); g.moveTo(fx,hz+(h-hz)*P(z0)); g.lineTo(fx,hz+(h-hz)*P(z1)); g.stroke() }
-    luz(fx,hz,w*.35,'rgba(220,228,240,A)',.07);   // leve claridade no horizonte, neutra
-    for(const c of carros){
-      c.z+=c.lado<0?c.v:-c.v*.7; if(c.z>1) c.z=0; if(c.z<0) c.z=1;
-      const p=P(c.z), y=hz+(h-hz)*p, x=fx+c.lado*w*.42*p, d=3+24*p;
-      if(c.lado<0){ luz(x-d*.7,y,d*1.5,'rgba(255,252,240,A)',.45); luz(x+d*.7,y,d*1.5,'rgba(255,252,240,A)',.45) }
-      else { luz(x-d*.6,y,d*1,'rgba(255,120,90,A)',.3); luz(x+d*.6,y,d*1,'rgba(255,120,90,A)',.3) }
+  const cv=$('#fundo'), g=cv.getContext('2d'); let w,h,raf,ant=performance.now(),nos=[];
+  const parado=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function tam(){
+    const dpr=Math.min(1.5,devicePixelRatio||1); w=innerWidth; h=innerHeight; cv.width=w*dpr; cv.height=h*dpr; g.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.round(w*h/(w<700?9000:16000));   // mais espaçado em tela grande, para não virar teia
+    nos=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*14,vy:(Math.random()-.5)*14,l:Math.random()<.18}));
+  }
+  function quadro(agora){
+    const dt=Math.min(.05,(agora-ant)/1000); ant=agora, D=w<700?110:150;
+    g.fillStyle='#060708'; g.fillRect(0,0,w,h);
+    for(const p of nos){ p.x+=p.vx*dt; p.y+=p.vy*dt; if(p.x<0||p.x>w) p.vx*=-1; if(p.y<0||p.y>h) p.vy*=-1 }
+    g.lineWidth=1;
+    for(let i=0;i<nos.length;i++) for(let j=i+1;j<nos.length;j++){
+      const a=nos[i], b=nos[j], dx=a.x-b.x, dy=a.y-b.y; if(dx>D||dx<-D||dy>D||dy<-D) continue;
+      const d=Math.sqrt(dx*dx+dy*dy); if(d>D) continue;
+      const al=(1-d/D)*.22; g.strokeStyle=(a.l&&b.l)?'rgba(183,217,45,'+(al*1.6)+')':'rgba(255,255,255,'+al+')';
+      g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.stroke();
     }
+    for(const p of nos){ g.fillStyle=p.l?'rgba(214,240,106,.85)':'rgba(255,255,255,.45)'; g.beginPath(); g.arc(p.x,p.y,p.l?2:1.4,0,7); g.fill() }
+    const k=g.createRadialGradient(w/2,h/2,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.75); k.addColorStop(0,'rgba(6,7,8,0)'); k.addColorStop(1,'rgba(6,7,8,.75)'); g.fillStyle=k; g.fillRect(0,0,w,h);
     if(!parado&&!document.hidden) raf=requestAnimationFrame(quadro);
   }
-  tam(); addEventListener('resize',()=>{ tam(); if(parado) quadro() });
-  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!parado){ cancelAnimationFrame(raf); raf=requestAnimationFrame(quadro) } });
-  if(parado){ t=.3; quadro() } else raf=requestAnimationFrame(quadro);
+  tam(); addEventListener('resize',()=>{ tam(); if(parado) quadro(ant) });
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!parado){ cancelAnimationFrame(raf); ant=performance.now(); raf=requestAnimationFrame(quadro) } });
+  if(parado) quadro(ant); else raf=requestAnimationFrame(quadro);
 })();
 
 /* ══════════════════════════════════════════════════
