@@ -479,7 +479,7 @@ app.get('/api/admin/devices/:id', auth, (req, res) => {
   /* Agrupa pings por dia */
   const byDay = {};
   for (const p of (d.ping_history || [])) {
-    const day = p.ts.slice(0, 10); // 'YYYY-MM-DD'
+    const day = horaBR(p.ts).dia; // 'YYYY-MM-DD' no horário de Brasília (antes era o dia em UTC: 21h já caía no dia seguinte)
     if (!byDay[day]) byDay[day] = [];
     byDay[day].push(p);
   }

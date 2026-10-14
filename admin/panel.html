@@ -289,7 +289,11 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
 
 /* telas menores: a aba rola por dentro (no celular não cabe tudo numa tela) */
 @media(max-width:1180px){ .abas button{padding:8px 11px} .marca em{display:none} .vivo .txt{display:none} }
-@media(max-width:900px){
+.abas .ico{display:none}
+.abas .curto{display:none}
+#dev-cards{display:none}
+/* tablet: empilha e rola */
+@media(max-width:900px) and (min-width:761px){
   html,body{overflow:auto;height:auto}
   #dash{height:auto;min-height:100%}
   .topo{flex-wrap:wrap;height:auto;border-radius:26px;padding:10px;gap:8px}
@@ -309,8 +313,111 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
   .calor{gap:2px;height:300px;flex:none}.calor .h:nth-child(odd){visibility:hidden}
   .pico{min-height:170px}
   .table-wrap{max-height:70vh}
-  .dev-info{grid-template-columns:1fr}
 }
+
+/* ===== CELULAR =====
+   Cada aba rola na vertical, as abas ficam numa barra embaixo (ao alcance do polegar), as janelas
+   sobem de baixo e a tabela de aparelhos vira lista de cartões. Vidro com menos desfoque: no celular
+   o desfoque forte em cima do fundo animado pesa e esquenta o aparelho. */
+@media(max-width:760px){
+  html,body{overflow-x:hidden;overflow-y:auto;height:auto}
+  .forte{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+  #dash{height:auto;min-height:100%;padding:calc(8px + env(safe-area-inset-top)) 12px calc(104px + env(safe-area-inset-bottom));gap:12px}
+  /* topo: marca + ao vivo + sair na 1ª linha, período na 2ª */
+  .topo{position:sticky;top:calc(6px + env(safe-area-inset-top));z-index:50;flex-wrap:wrap;height:auto;border-radius:24px;padding:8px 8px 8px 12px;gap:8px}
+  .topo .dir{display:contents}
+  .marca{font-size:18px;order:1}.marca em{display:none}
+  .vivo{order:2;margin-left:auto;padding:8px 12px}.vivo .txt{display:inline}
+  .sair{order:3;width:36px;height:36px}
+  .periodo{order:4;width:100%;padding:3px}
+  .periodo button{flex:1;padding:8px 0}
+  .topo.sem-periodo .periodo{display:none}
+  /* barra de abas embaixo */
+  .abas{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;margin:0;padding:5px;height:66px;border-radius:24px;
+    background:rgba(16,18,20,.55);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.12)}
+  .abas button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 2px;font-size:10.5px;border-radius:19px}
+  .abas .ico{display:block;width:20px;height:20px}
+  .abas .marcador{top:5px;bottom:5px;border-radius:19px}
+  .abas .curto{display:inline}.abas .longo{display:none}
+  /* cada aba empilhada, rolando a página */
+  .palco{flex:none}
+  .aba{position:static;display:none;transform:none;gap:12px}
+  .aba.on{display:flex;flex-direction:column}
+  .card{border-radius:22px;padding:18px}
+  .cab h2{font-size:20px}
+  .cab{margin-bottom:10px}
+  /* Resumo */
+  .hero{order:1;padding:20px 20px 18px;gap:14px}
+  .hero h1{white-space:normal;font-size:26px}
+  .grande .odo{font-size:84px}
+  .grande .uni{font-size:22px;padding-bottom:8px}
+  .kpis{order:2;grid-template-rows:none;gap:10px}
+  .kpi{min-height:118px;padding:14px 15px;border-radius:20px}
+  .kpi .val{font-size:30px}
+  .kpi .val small{display:block;margin:4px 0 0;font-size:13px}
+  .kpi .anel{width:40px;height:40px;right:12px;bottom:12px}
+  .kpi.sp{padding-bottom:30px}.spark{height:30px}
+  .clicavel .seta{opacity:.6;top:10px;right:12px;font-size:0}
+  .clicavel .seta::after{content:'›';font-size:18px;line-height:1}
+  .kpi .det{white-space:normal;line-height:1.35}
+  .clicavel:hover{transform:none}
+  .dia{order:3}
+  .dia .grafico{height:220px;flex:none}
+  .plat{order:4;display:grid;grid-template-columns:132px 1fr;column-gap:16px;align-items:center}
+  .plat .cab{grid-column:1/-1}
+  .roda{height:132px;flex:none}.roda svg{max-height:132px}
+  .roda .meio b{font-size:24px}
+  .leg{grid-template-columns:1fr;margin:0}
+  .atv{order:5}
+  .feed{flex:none;-webkit-mask:none;mask:none}
+  .feed .ev:nth-child(n+6){display:none}
+  /* Mapa */
+  .mapa{height:min(62vh,520px);flex:none}
+  .mapa-leg{bottom:10px}
+  .barras{flex:none;gap:14px}
+  /* Horários: dias nas colunas e horas nas linhas (cabe em pé) */
+  .calor{flex:none;gap:3px}
+  .pico{min-height:150px;flex:none}
+  .mini{flex:none;height:56px}
+  /* Aparelhos: lista de cartões no lugar da tabela */
+  .stats{grid-template-columns:1fr 1fr;gap:10px}
+  .stat{padding:12px 14px;border-radius:18px}
+  .stat .value{font-size:22px}
+  #a-aparelhos .table-wrap{display:none}
+  #dev-cards{display:flex;flex-direction:column;gap:6px}
+  .toolbar{gap:6px}
+  .toolbar select{flex:1;min-width:0}
+  .toolbar input[type=text]{min-width:0;width:100%;order:5}
+  #dev-refresh{display:none}
+  .dcard{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:10px 6px;border-top:1px solid rgba(255,255,255,.06);cursor:pointer}
+  .dcard:first-child{border-top:0}
+  .dcard b{font-size:13.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dcard small{display:block;font-size:11.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dcard .dir2{text-align:right;font-size:11.5px;color:var(--text2);white-space:nowrap}
+  .dcard .dir2 .tag{margin-bottom:3px}
+  /* Cobertura SNV: só as colunas que importam */
+  #a-snv .stats{grid-template-columns:1fr 1fr}
+  #a-snv .card:first-of-type .table-wrap{max-height:60vh}
+  #a-snv table th:nth-child(3),#a-snv table td:nth-child(3),#a-snv table th:nth-child(4),#a-snv table td:nth-child(4),#a-snv table th:nth-child(6),#a-snv table td:nth-child(6){display:none}
+  #a-snv .card:last-of-type .table-wrap{max-height:40vh}
+  #road-sync{display:none}
+  /* janelas sobem de baixo, como no próprio celular */
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal{max-width:100%!important;max-height:90vh;border-radius:28px 28px 0 0;padding-bottom:env(safe-area-inset-bottom);animation:folha .45s cubic-bezier(.16,1,.3,1)}
+  .modal::after{content:'';position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:4px;background:rgba(255,255,255,.25)}
+  .modal-header{padding:24px 18px 12px}
+  .modal-header h2{font-size:20px}
+  .modal-body{padding:4px 18px 22px}
+  .dev-info{gap:6px}
+  .dev-info .item{padding:8px 11px}
+  .dev-info .item .val{font-size:12.5px;word-break:break-word}
+  .day-row{gap:8px;padding:9px 10px;font-size:12px}
+  .day-row .tag{display:none}
+  .login-card{padding:32px 24px;border-radius:28px}
+}
+@keyframes folha{from{transform:translateY(100%)}to{transform:none}}
+/* toque não tem "passar o mouse": as dicas flutuantes não aparecem (o toque já abre a lista/ficha) */
+@media(hover:none){ .dica{display:none} }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -336,11 +443,11 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
     <div class="marca"><i>KM</i>KM Check <em>Painel</em></div>
     <nav class="abas vidro" id="abas">
       <span class="marcador" id="marcador"></span>
-      <button data-a="resumo" class="on">Resumo</button>
-      <button data-a="mapa">Mapa</button>
-      <button data-a="hora">Horários</button>
-      <button data-a="aparelhos">Aparelhos</button>
-      <button data-a="snv">Cobertura SNV</button>
+      <button data-a="resumo" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Resumo</span></button>
+      <button data-a="mapa"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Mapa</span></button>
+      <button data-a="hora"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Horários</span></button>
+      <button data-a="aparelhos"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg><span>Aparelhos</span></button>
+      <button data-a="snv"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 10 4h4l6 16"/><path d="M12 8v2M12 13v2M12 18v1"/></svg><span class="longo">Cobertura SNV</span><span class="curto">SNV</span></button>
     </nav>
     <div class="dir">
       <div class="periodo vidro" id="periodo"><button data-d="7">7 dias</button><button data-d="30" class="on">30 dias</button><button data-d="90">90 dias</button></div>
@@ -446,6 +553,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
           <span class="spacer"></span>
           <button class="btn-secondary btn-sm" id="dev-refresh">↻ Atualizar</button>
         </div>
+        <div id="dev-cards"></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -636,6 +744,8 @@ function abre(nome){
   $$('#abas button').forEach(b=>b.classList.toggle('on',b.dataset.a===nome));
   $$('.aba').forEach(a=>a.classList.toggle('on',a.id==='a-'+nome));
   poeMarcador(); escondeDica();
+  $('.topo').classList.toggle('sem-periodo', nome==='aparelhos'||nome==='snv');
+  if(_cel.matches) scrollTo({top:0});
   if(ULT){
     if(nome==='resumo') setTimeout(()=>linha(SERIE),60);
     if(nome==='mapa'){ Object.values(barraEl).forEach(el=>el.querySelector('.enche').style.width=0); setTimeout(()=>{ mapa(ULT); barras(ULT) },80) }
@@ -832,8 +942,26 @@ function barras(r){
 
 /* ── mapa de calor + resumo dos horários ── */
 const DS=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'], DSL=['segunda','terça','quarta','quinta','sexta','sábado','domingo'];
-(function(){ let h='<span></span>'; for(let i=0;i<16;i++) h+=`<span class="h">${i+5}h</span>`;
-  DS.forEach((d,r)=>{ h+=`<span class="d">${d}</span>`; for(let c=0;c<16;c++) h+=`<span class="q" data-r="${r}" data-c="${c}"><i></i></span>` }); $('#calor').innerHTML=h })();
+const _cel=matchMedia('(max-width:760px)');
+function montaCalor(){
+  const el=$('#calor'); let h='<span></span>';
+  if(_cel.matches){   /* em pé: 7 colunas (dias) × 16 linhas (horas) */
+    DS.forEach(d=>h+=`<span class="h">${d}</span>`);
+    for(let c=0;c<16;c++){ h+=`<span class="d">${c+5}h</span>`; for(let r=0;r<7;r++) h+=`<span class="q" data-r="${r}" data-c="${c}"><i></i></span>` }
+    el.style.gridTemplateColumns='34px repeat(7,1fr)'; el.style.gridTemplateRows='auto repeat(16,24px)';
+  } else {
+    for(let i=0;i<16;i++) h+=`<span class="h">${i+5}h</span>`;
+    DS.forEach((d,r)=>{ h+=`<span class="d">${d}</span>`; for(let c=0;c<16;c++) h+=`<span class="q" data-r="${r}" data-c="${c}"><i></i></span>` });
+    el.style.gridTemplateColumns=''; el.style.gridTemplateRows='';
+  }
+  el.innerHTML=h;
+}
+montaCalor();
+/* no celular a barra de abas vai para fora do topo: o topo é vidro (backdrop-filter) e, dentro dele,
+   "position:fixed" ficaria presa ao topo em vez de à tela */
+function lugarDasAbas(){ const a=$('#abas'); if(_cel.matches){ if(a.parentNode!==$('#dash')) $('#dash').appendChild(a) } else if(a.parentNode!==$('.topo')) $('.marca').after(a); poeMarcador() }
+lugarDasAbas();
+_cel.addEventListener('change',()=>{ montaCalor(); lugarDasAbas(); if(ULT) calor(ULT) });
 function calor(r){
   const max=Math.max(1,...r.calor.flat());
   $$('#calor .q').forEach(q=>{ const v=r.calor[q.dataset.r][q.dataset.c], i=q.firstChild;
@@ -1127,6 +1255,10 @@ function renderDevices(){
     return 0;
   });
   const tbody = $('#dev-tbody');
+  /* no celular: um cartão por aparelho (tocar abre a ficha) */
+  $('#dev-cards').innerHTML = data.length ? data.slice(0,300).map(d=>{ const fx=_snvReady?getDevFix(d):null, via=fx&&fx.dist<=5000?fx.br+'/'+fx.uf+' · km '+fx.km.toFixed(1):'';
+    return `<div class="dcard" data-did="${esc(d.device_id)}"><span class="ic ${d.platform==='iOS'?'ios':''}">${icone}</span><span style="min-width:0"><b>${esc(d.nickname||d.model||shortId(d.device_id))}</b><small>${esc([d.nickname?d.model:'',d.os_version,'v'+(d.app_version||'?')].filter(Boolean).join(' · '))}</small>${via?'<small>'+via+'</small>':''}</span><span class="dir2">${d.last_ping?quando(d.last_ping):'—'}<br>${d.ping_count||0} usos</span></div>` }).join('')
+    : '<p class="empty">Nenhum dispositivo encontrado</p>';
   if(!data.length){ tbody.innerHTML = '<tr><td colspan="13" class="empty">Nenhum dispositivo encontrado</td></tr>'; return }
   tbody.innerHTML = data.map(d=>`<tr>
     <td><input class="user-name" type="text" value="${esc(d.nickname||'')}" placeholder="…" data-did="${esc(d.device_id)}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
@@ -1167,6 +1299,7 @@ async function saveNickname(el){
   } catch(e){ toast('Erro ao salvar nome: '+e.message); el.style.borderColor='var(--red)'; }
 }
 
+$('#dev-cards').addEventListener('click',e=>{ const c=e.target.closest('.dcard'); if(c) openDevDetail(c.dataset.did) });
 $('#dev-filter-plat').onchange = renderDevices;
 $('#dev-filter-cat').onchange = renderDevices;
 $('#dev-search').oninput = renderDevices;
