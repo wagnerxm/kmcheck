@@ -7,509 +7,302 @@
 <meta name="description" content="App de campo para documentação fotográfica de rodovias: rodovia, KM, estaca, coordenadas e data gravados dentro de cada foto. Funciona sem internet.">
 <link rel="icon" href="img/logo.png">
 <style>
-/* Inter hospedada aqui mesmo (sem fonte de terceiros: mais rápido e sem dúvida de licença) */
+/* Mesma identidade do manual do KM Check: fundo claro abstrato fixo, grafite em cetim, verde-limão, placa azul de km.
+   Uma viagem contínua pela rodovia: as seções são transparentes sobre o fundo fixo.
+   Fonte Inter hospedada aqui (sem fonte de terceiros). Animações só com transform/opacity e respeitam "reduzir movimento". */
 @font-face{font-family:Inter;font-weight:500;font-display:swap;src:url(img/Inter-Medium.woff2) format('woff2')}
 @font-face{font-family:Inter;font-weight:700;font-display:swap;src:url(img/Inter-Bold.woff2) format('woff2')}
 @font-face{font-family:Inter;font-weight:800;font-display:swap;src:url(img/Inter-ExtraBold.woff2) format('woff2')}
-:root{--tinta:#0b0c0d;--lima:#b7d92d;--lima-esc:#1d2606;--vidro:rgba(255,255,255,.2)}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--tinta);background:#0b0c0d;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-img{display:block}
-
-/* ===== abertura: odômetro ===== */
-#splash{position:fixed;inset:0;z-index:100;background:#fff;display:flex;align-items:flex-end;transition:opacity .7s}
-#splash.sai{opacity:0;pointer-events:none}
-#splash .od{padding:clamp(24px,3vw,40px);display:flex;align-items:baseline;gap:.35em;line-height:1;font-weight:800;font-size:clamp(4rem,9vw,9rem);font-variant-numeric:tabular-nums}
-#splash .od small{font-size:.28em;letter-spacing:.3em;color:#6f8a0e}
-
-/* ===== topo fixo ===== */
-nav{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:10px clamp(16px,2vw,24px);background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-nav .logo img{height:38px;width:auto}
-nav .links{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:700}
-nav .links a:hover{color:#6f8a0e}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:999px;font:700 14px Inter,sans-serif;border:1px solid var(--tinta);background:#fff;transition:background .2s,color .2s,transform .2s;cursor:pointer}
-.btn:hover{background:var(--tinta);color:#fff}
-.btn.lima{background:var(--lima);border-color:var(--lima);color:var(--lima-esc)}
-.btn.lima:hover{background:var(--tinta);border-color:var(--tinta);color:var(--lima)}
-.cta{padding:18px 32px;font-size:18px;background:#fff;border:0}
-.cta.lima{background:var(--lima)}
-.cta:hover{transform:scale(1.05)}
-
-/* ===== seções ===== */
-section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;padding:8px 20px;overflow:hidden;background:#fff;
-  /* pilha de seções (j01): cada seção gruda no topo e a próxima sobe por cima; a de baixo encolhe e escurece */
-  position:sticky;top:0;transform-origin:50% 30%;will-change:transform,filter}
-#s2,#s3{border-radius:28px 28px 0 0;box-shadow:0 -24px 60px rgba(0,0,0,.28)}
-#s1{z-index:1}#s2{z-index:2}#s3{z-index:3}
-#s1{height:100vh;padding:0;background:#050505}
-#s2,#s3{height:100vh;padding-top:72px}
-.mc{position:relative;overflow:hidden;border-radius:16px;background-repeat:no-repeat;background-color:#dfe3e6}
-.mc>*{position:relative;z-index:2}
-.rev{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1) calc(var(--i)*120ms),transform .6s cubic-bezier(.16,1,.3,1) calc(var(--i)*120ms)}
-.vis .rev{opacity:1;transform:none}
-
-/* seção 2 */
-.g2{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr .8fr;gap:8px}
-.mc h2{font-size:clamp(1.6rem,2.2vw,2rem);font-weight:800;color:#fff}
-.sombra::after{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.05) 55%,rgba(0,0,0,.5))}
-.passos{position:absolute;left:28px;bottom:24px;right:28px;display:flex;gap:12px}
-.passo{flex:1;background:var(--vidro);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:14px;padding:12px 14px;color:#fff;font-size:13px;font-weight:700;line-height:1.3}
-.passo b{display:block;color:var(--lima);font-size:12px;letter-spacing:.2em;margin-bottom:4px}
-.leg{position:absolute;left:24px;bottom:24px;width:min(560px,calc(100% - 48px));background:rgba(20,22,25,.82);border-radius:12px;padding:16px 20px;color:#fff;font-weight:700;font-size:clamp(15px,1.55vw,22px);line-height:1.45;min-height:5.9em}
-.leg .l{display:block;white-space:nowrap;overflow:hidden;width:0}
-.leg .cur{display:inline-block;width:.5ch;background:var(--lima);height:1em;vertical-align:-.12em;animation:pisca 1s steps(1) infinite}
-@keyframes pisca{50%{opacity:0}}
-.mc .tt{position:absolute;top:24px;left:28px;color:#fff;font-weight:800;font-size:clamp(1.6rem,2.2vw,2.2rem);line-height:1.05}
-.mc .st{position:absolute;top:24px;right:28px;color:#fff;font-size:13px;font-weight:700;opacity:.9}
-.big{position:absolute;top:24px;left:28px;color:#fff;font-weight:800;font-size:clamp(2.6rem,5.2vw,5.4rem);line-height:.92;letter-spacing:-.03em}
-.big small{display:block;margin-top:14px;font-size:14px;letter-spacing:0;font-weight:700;opacity:.92;line-height:1.4}
-.recs{position:absolute;inset:0;display:flex;gap:8px;padding:10px}
-.rec{flex:1;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;justify-content:space-between;background:var(--vidro);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);color:#fff}
-.rec.on{background:rgba(255,255,255,.9);color:var(--tinta)}
-.rec h3{font-size:clamp(1.2rem,2vw,2rem);font-weight:800;line-height:1.05;letter-spacing:-.01em}
-.rec p{font-size:12.5px;font-weight:500;line-height:1.35;opacity:.85;margin-top:8px}
-.rec .n{align-self:flex-end;width:42px;height:42px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
-
-/* seção 3 */
-.g3{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.col{display:flex;flex-direction:column;gap:8px;min-height:0}
-.card{border-radius:16px;overflow:hidden;min-height:0}
-.c-tit{background:#fafaf9;padding:28px;display:flex;flex-direction:column;justify-content:space-between;flex:1.1}
-.c-tit h2{font-size:clamp(3rem,6.2vw,6.2rem);font-weight:800;line-height:.95;letter-spacing:-.04em}
-.c-tit p{font-size:14px;font-weight:700}
-.dupla{display:flex;gap:8px;flex:1.5;min-height:0}
-.dupla div{flex:1;border-radius:16px;overflow:hidden;background:#e4e7ea}
-.dupla img{width:100%;height:100%;object-fit:cover;object-position:top}
-.c-app{background:#e4e4e7;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex:.9}
-.c-app .tx p{font-size:14px;font-weight:700;margin-bottom:10px}
-.c-app h3{font-size:clamp(1.4rem,2.2vw,2.1rem);font-weight:800;line-height:1.1}
-.lojas{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-.lojas .btn{justify-content:center;padding:12px 22px}
-.qr{background:#fff;padding:10px;border-radius:14px;height:min(150px,100%);aspect-ratio:1}
-.qr img{width:100%;height:100%}
-.alto{position:relative;background:#cfd6da}
-.alto>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:78% 50%}
-.alto .ov{position:absolute;left:20px;right:20px;bottom:20px;display:flex;gap:8px}
-.ov a{flex:1;height:200px;border-radius:16px;padding:20px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .25s}
-.ov a:hover{transform:translateY(-4px)}
-.ov .b{background:#fff}
-.ov .v{background:rgba(18,20,23,.6);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);color:#fff}
-.ov h4{font-size:clamp(1.2rem,1.7vw,1.7rem);font-weight:800;line-height:1.15}
-.ov small{display:block;margin-top:6px;font-size:12px;font-weight:500;opacity:.85}
-.ov .ar{align-self:flex-end;width:46px;height:46px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center}
-.ov .ar svg{transform:rotate(-45deg)}
-.rodape{position:absolute;top:16px;right:20px;z-index:3;display:flex;gap:18px;background:rgba(18,20,23,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
-.rodape a:hover{text-decoration:underline}
-
-
-/* ===== movimento ===== */
-/* palavra por palavra (j16): cada palavra sobe de dentro de uma máscara */
-.pw{display:inline-block;overflow:hidden;padding-bottom:.14em;margin-bottom:-.14em;vertical-align:top}
-.pw>.palavra{display:inline-block;transform:translateY(105%);transition:transform .9s cubic-bezier(.16,1,.3,1)}
-.vis .pw>.palavra,.palavras-ok .pw>.palavra{transform:none}
-/* luz que segue o mouse (j12): brilho lima nos cartões de vidro */
-.luz{position:relative}
-.luz::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .3s;border-radius:inherit;
-  background:radial-gradient(260px circle at var(--x,50%) var(--y,50%),rgba(183,217,45,.34),transparent 70%)}
-.luz:hover::before{opacity:1}
-.luz>*{position:relative;z-index:1}
-/* cursor com peso (j09): o ponto vai na hora, o anel chega depois */
-.cur-ponto,.cur-anel{position:fixed;top:0;left:0;z-index:200;pointer-events:none;opacity:0;border-radius:50%;transition:opacity .25s,width .25s,height .25s,margin .25s,background .25s,border-color .25s}
-.cur-ponto{width:8px;height:8px;margin:-4px 0 0 -4px;background:#fff;mix-blend-mode:difference}
-.cur-anel{width:38px;height:38px;margin:-19px 0 0 -19px;border:1.5px solid var(--lima)}
-.cur-anel.sobre{width:64px;height:64px;margin:-32px 0 0 -32px;background:rgba(183,217,45,.22)}
-.cur-on .cur-ponto,.cur-on .cur-anel{opacity:1}
-.com-cursor,.com-cursor *{cursor:none!important}
-.elastico{will-change:transform}
-
-/* ===== hero: esfera de fotos (o círculo e o título compartilham o MESMO ponto central 0×0) ===== */
-:root{--hw:min(56vw,640px);--persp:1150px}
-#stage{position:absolute;inset:0;z-index:10;perspective:var(--persp);perspective-origin:50% 50%;overflow:hidden;touch-action:none;cursor:grab}
-#stage.arrasta{cursor:grabbing}
-@media (pointer:coarse){#stage{touch-action:pan-y}}
-#world{position:absolute;top:50%;left:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
-#orb{position:absolute;top:0;left:0;width:0;height:0;transform-style:preserve-3d}
-#headline{position:absolute;top:0;left:0;width:var(--hw);margin-left:calc(var(--hw) / -2);margin-top:-1.3em;height:2.6em;text-align:center;font-weight:800;
-  font-size:clamp(28px,4.4vw,66px);line-height:1.04;letter-spacing:-.035em;color:#fff;text-shadow:0 2px 34px rgba(0,0,0,.6);pointer-events:none;user-select:none;-webkit-user-select:none}
-/* o h1 tem altura real (2,6em, centrada na origem): sem ela o Chrome cortava a 1ª linha por estar fora da caixa 0px */
-#headline .inner{position:absolute;top:50%;left:0;width:100%;transform:translateY(-50%)}
-#headline .inner>span{display:inline-block}
-/* entrada por animation (fill backwards), não por transition: com opacity:0 inicial o Chrome deixava a 1ª linha sem rasterizar dentro do contexto 3D */
-@keyframes palIn{from{opacity:0;transform:translateY(.42em)}to{opacity:1;transform:none}}
-#headline .lima-t{color:var(--lima)}
-#headline .inner>span{opacity:0;transform:translateY(.42em);filter:blur(7px)}
-#s1.vis #headline .inner>span{opacity:1;transform:none;filter:blur(0);transition:opacity 1.05s,transform 1.15s,filter 1.05s;transition-delay:calc(.9s + var(--i)*.085s)}
-.card{position:absolute;top:0;left:0;width:var(--cw,160px);height:calc(var(--cw,160px)/1.5);margin-left:calc(var(--cw,160px)/-2);margin-top:calc(var(--cw,160px)/-3);backface-visibility:hidden}
-.card.tall{height:calc(var(--cw,160px)*1.25);margin-top:calc(var(--cw,160px)*-.625)}
-.card figure{position:relative;width:100%;height:100%;overflow:hidden;border-radius:4px;background:#0a0a0a;transition:transform .5s ease}
-.card:hover figure{transform:scale(1.045)}
-.card img{width:100%;height:100%;object-fit:cover;opacity:0}
-.card img.in{opacity:1}
-#s1.vis .card img{transition:opacity .8s ease-out}
-.card figure::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,var(--d,0));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);border-radius:4px;pointer-events:none}
-.vig{position:absolute;inset:0;z-index:12;pointer-events:none;background:radial-gradient(ellipse 88% 92% at 50% 50%,transparent 48%,rgba(0,0,0,.26) 80%,rgba(0,0,0,.72) 100%)}
-.chrome{position:absolute;z-index:30;opacity:0;transition:opacity 1.2s .15s}
-#s1.vis .chrome{opacity:1}
-.h-info{left:clamp(16px,2.6vw,34px);bottom:clamp(16px,2.6vw,34px);max-width:300px;font-size:13px;line-height:1.6;color:rgba(244,242,239,.72);font-weight:500}
-.h-cta{right:clamp(16px,2.6vw,34px);bottom:clamp(16px,2.6vw,34px);display:flex;flex-direction:column;align-items:flex-end;gap:12px;font-size:13px;font-weight:700;color:rgba(244,242,239,.72)}
-.cue{left:50%;bottom:clamp(20px,3vw,38px);transform:translateX(-50%);display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(244,242,239,.5);white-space:nowrap;pointer-events:none}
-.cue s{display:block;position:relative;width:44px;height:1px;background:rgba(244,242,239,.28);overflow:hidden}
-.cue s::after{content:'';position:absolute;inset:0;background:#f4f2ef;transform:translateX(-100%);animation:sweep 2.6s ease infinite}
-@keyframes sweep{55%{transform:none}100%{transform:translateX(100%)}}
-@media (max-width:900px){#headline{font-size:clamp(24px,6.4vw,40px)}.cue{display:none}}
-@media (max-width:640px){:root{--hw:min(84vw,360px)}.h-info{display:none}}
-
-/* telas estreitas: empilha (quem cair aqui no celular vai para o app, mas fica correto) */
-@media (max-width:900px){
-  nav .links a:not(.btn){display:none}
-  section,#s1,#s2,#s3{height:auto;min-height:100vh;position:relative;border-radius:0;box-shadow:none}
-  .g2,.g3{display:flex;flex-direction:column}
-  .g2>.mc{min-height:260px}.recs{position:relative;flex-wrap:wrap}.g2>.mc.sub{min-height:420px}
-  .passos{position:static;padding:0 20px 20px;margin-top:70px}
-  .alto{min-height:420px}.ov a{height:150px}.dupla{min-height:260px}
+@font-face{font-family:Inter;font-weight:900;font-display:swap;src:url(img/Inter-Black.woff2) format('woff2')}
+:root{
+  --tinta:#1c2333;--tinta2:#3b4559;--tinta3:#66748a;--linha:rgba(28,35,51,.12);
+  --lima:#b7d92d;--lima2:#c9e463;--lima-esc:#1d2606;--placa:#13305c;
+  --ease:cubic-bezier(.16,1,.3,1);--gut:clamp(24px,5vw,72px);color-scheme:light;
 }
-@media (prefers-reduced-motion:reduce){.pw>.palavra{transform:none;transition:none}.rev{transition:none}.leg .cur{animation:none}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--tinta);background:#eceeef;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:-2;background:url(img/fundo.webp) 100% 0%/cover no-repeat,#eef0f1;pointer-events:none}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--lima);outline-offset:3px;border-radius:6px}
+.olho{display:block;font:700 11px Inter,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:#6f8a0e}
+.tit{font-weight:900;letter-spacing:-.055em;line-height:.92;color:var(--tinta);text-wrap:balance}
+.sec{position:relative;padding:clamp(80px,12vh,150px) var(--gut)}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ===== botões ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 28px;border-radius:999px;font:700 15px Inter,sans-serif;cursor:pointer;border:1px solid var(--tinta);color:var(--tinta);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .25s,color .25s,border-color .25s;will-change:transform}
+.btn:hover{background:var(--tinta);color:#fff}
+.btn.lima{background:var(--lima);border-color:var(--lima);color:var(--lima-esc);box-shadow:0 10px 24px -10px rgba(120,150,10,.6)}
+.btn.lima:hover{background:var(--tinta);border-color:var(--tinta);color:var(--lima)}
+.btn.escuro{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.28);color:#fff}
+.btn.escuro:hover{background:#fff;color:var(--tinta)}
+
+/* ===== cartões do app (cetim grafite) ===== */
+.cdk{position:relative;overflow:hidden;border:1px solid transparent;border-radius:28px;color:#fff;
+  background:radial-gradient(120% 60% at 12% -8%,rgba(255,255,255,.10),rgba(255,255,255,0) 55%) padding-box,radial-gradient(90% 70% at 105% 110%,rgba(0,0,0,.55),rgba(0,0,0,0) 60%) padding-box,linear-gradient(168deg,#2a2c30 0%,#1d1f22 30%,#141517 62%,#0b0c0d 100%) padding-box,linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.06) 30%,rgba(255,255,255,.03) 70%,rgba(255,255,255,.10)) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 1px 1px rgba(0,0,0,.10),0 10px 18px -6px rgba(15,20,30,.22),0 34px 54px -22px rgba(15,20,30,.55)}
+.cdk::before{content:'';position:absolute;left:-10%;right:-10%;top:46%;height:38%;border-radius:50%;border-top:1.5px solid rgba(183,217,45,.28);transform:rotate(-3deg);pointer-events:none}
+/* luz que segue o ponteiro (j12): brilho lima discreto no cetim */
+.cdk::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),rgba(201,228,99,.14),transparent 62%)}
+@media (hover:hover){.cdk:hover::after{opacity:1}}
+.cdk>*{position:relative;z-index:1}
+.num{font:900 clamp(64px,8vw,104px)/.85 Inter,sans-serif;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1.5px rgba(201,228,99,.85)}
+.cdk h3{font-weight:900;font-size:clamp(28px,3.2vw,44px);letter-spacing:-.045em;line-height:1;color:#fff}
+.cdk p{font-size:clamp(14px,1.2vw,16.5px);line-height:1.55;color:rgba(255,255,255,.72);max-width:34ch}
+
+/* ===== celular ===== */
+.fone{position:absolute;width:clamp(210px,19vw,270px);aspect-ratio:600/1298;filter:drop-shadow(0 30px 30px rgba(0,0,0,.45))}
+.h-moldura{position:relative;width:100%;height:100%;padding:3.4%;border-radius:16.5%/7.6%;background:linear-gradient(140deg,#4d525a 0%,#141517 18%,#0b0c0d 60%,#2d3136 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 0 0 1px #000}
+.h-tela{position:relative;width:100%;height:100%;border-radius:13.5%/6.2%;overflow:hidden;background:#0b0c0d;isolation:isolate}
+.h-tela img{width:100%;height:100%;object-fit:cover;object-position:top}
+.h-tela::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.14) 0%,rgba(255,255,255,.04) 26%,transparent 40%);pointer-events:none}
+.h-ilha{position:absolute;left:50%;top:2.2%;width:28%;height:3%;transform:translateX(-50%);background:#000;border-radius:999px;z-index:2}
+
+/* ===== placa de km ===== */
+.placa{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:var(--placa);color:#fff;border:3px solid #fff;border-radius:10px;padding:8px 14px;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 14px 22px -10px rgba(20,26,36,.5);font-weight:800;line-height:1.05;text-align:center}
+.placa b{display:block;font-size:15px;padding-bottom:4px;border-bottom:1.5px solid rgba(255,255,255,.8);margin-bottom:4px;letter-spacing:.01em}
+.placa span{font-size:13px;letter-spacing:.06em}
+.placa strong{display:block;font-size:24px;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* ===== topo (HUD) ===== */
+header{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:6px;padding:7px 8px 7px 12px;border-radius:999px;color:#fff;
+  background:linear-gradient(168deg,#2a2c30,#141517 62%,#0b0c0d);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 16px 30px -14px rgba(15,20,30,.55)}
+.hud-placa{display:inline-flex;align-items:center;gap:6px;background:var(--placa);border:2px solid #fff;border-radius:7px;padding:3px 8px;font:800 11px/1 Inter,sans-serif;margin-right:8px}
+.hud-placa i{width:1px;height:10px;background:rgba(255,255,255,.7)}
+.odo{display:flex;height:1.05em;overflow:hidden;font-size:14px;line-height:1.05;font-variant-numeric:tabular-nums}
+.reel{display:flex;flex-direction:column;transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.reel span{height:1.05em}
+header nav{display:flex;gap:2px}
+header nav a{font-size:13px;font-weight:700;padding:9px 14px;border-radius:999px;color:rgba(255,255,255,.78);transition:color .2s,background .2s}
+header nav a:hover{color:#fff;background:rgba(255,255,255,.1)}
+header .btn{padding:10px 20px;font-size:13px;margin-left:4px}
+
+/* ===== estrada lateral: linha que se preenche conforme o km ===== */
+.via{position:fixed;left:clamp(14px,2.2vw,32px);top:90px;bottom:60px;width:3px;z-index:5;border-radius:3px;background:repeating-linear-gradient(to bottom,rgba(28,35,51,.22) 0 12px,transparent 12px 22px);pointer-events:none}
+.via i{position:absolute;left:0;top:0;width:100%;height:calc(var(--p,0)*100%);background:var(--lima);border-radius:3px;box-shadow:0 0 12px rgba(183,217,45,.7)}
+
+/* ===== 1 · capa ===== */
+#capa{min-height:100vh;display:flex;align-items:center;padding:96px var(--gut) 90px;background:url(img/rodovia.webp) 100% 50%/cover no-repeat,#e6e9ec;overflow:hidden}
+#capa .txt{position:relative;z-index:2;max-width:min(52vw,760px);padding-left:clamp(0px,3vw,48px)}
+#capa h1{font-size:clamp(52px,8.3vw,132px);margin:18px 0 26px}
+#capa .lead{font-size:clamp(16px,1.5vw,21px);line-height:1.5;color:var(--tinta2);max-width:36ch;margin-bottom:34px}
+#capa .acoes{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.pilula{display:inline-block;margin-top:34px;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.7);font:700 11px Inter,sans-serif;letter-spacing:.22em;color:var(--tinta2)}
+#capa .cred{position:absolute;left:var(--gut);bottom:26px;font-size:13px;color:var(--tinta2)}
+#capa .cred b{color:var(--tinta)}
+/* revelar palavra por palavra (j16) */
+.pw{display:inline-block;overflow:hidden;padding:0 .04em .14em;margin:0 -.04em -.14em;vertical-align:top}
+.pw>.pa{display:inline-block;transform:translateY(105%);transition:transform .95s var(--ease);transition-delay:calc(var(--i)*80ms + .15s)}
+.dentro .pw>.pa{transform:none}
+
+/* ===== 2 · como funciona (pilha de cartões, j01) ===== */
+#como .cab{margin-bottom:56px;max-width:760px}
+#como h2,#legenda h2,#recursos h2{font-size:clamp(40px,5.6vw,84px)}
+#como .sub{margin-top:18px;font-size:clamp(16px,1.4vw,20px);color:var(--tinta2);line-height:1.5}
+.pilha{position:relative;padding-bottom:6vh}
+.folha{position:sticky;top:calc(96px + var(--k)*22px);height:clamp(340px,38vw,420px);margin-bottom:34px;transform-origin:50% 0;will-change:transform,filter;display:grid;grid-template-columns:1.05fr 1fr;align-items:center}
+.folha .tx{padding:0 0 0 clamp(28px,4.4vw,56px);display:grid;gap:14px;align-content:center}
+.folha .fone{right:clamp(30px,8%,110px);top:clamp(36px,16%,66px);transform:rotate(-7deg);z-index:1}
+
+/* ===== 3 · legenda ===== */
+#legenda .grade{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(28px,5vw,72px);align-items:center}
+#legenda p.l{margin:22px 0 28px;font-size:clamp(16px,1.4vw,20px);line-height:1.55;color:var(--tinta2);max-width:38ch}
+.campos{display:grid;gap:12px;list-style:none}
+.campos li{display:flex;align-items:center;gap:12px;font-weight:700;font-size:15.5px}
+.campos li::before{content:'';width:22px;height:22px;border-radius:50%;background:var(--lima) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d2606' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/70% no-repeat;flex:0 0 auto}
+.quadro{position:relative;border-radius:26px;overflow:hidden;box-shadow:0 40px 70px -28px rgba(15,20,30,.6),0 0 0 1px rgba(255,255,255,.6);transform:rotate(1.2deg)}
+.quadro img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.quadro .marca{position:absolute;left:1.2%;bottom:2.2%;width:54.5%;height:24%;border:2px solid var(--lima);border-radius:10px;box-shadow:0 0 0 4px rgba(183,217,45,.25);transform-origin:0 100%;transform:scaleX(0);transition:transform 1.1s var(--ease) .5s}
+.quadro.dentro .marca{transform:none}
+.quadro .rot{position:absolute;left:1.2%;bottom:27.5%;background:var(--lima);color:var(--lima-esc);font:800 11px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:6px 12px;border-radius:999px;opacity:0;transition:opacity .6s 1.3s}
+.quadro.dentro .rot{opacity:1}
+#legenda .placa{position:absolute;left:-26px;top:-22px;z-index:3;transform:rotate(-6deg)}
+
+/* ===== 4 · recursos ===== */
+#recursos .cab{margin-bottom:48px;max-width:780px}
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.rec{min-height:clamp(340px,34vw,440px);display:flex;flex-direction:column;justify-content:flex-start;gap:12px;padding:clamp(26px,3vw,40px)}
+.rec .tag{font:700 10.5px Inter,sans-serif;letter-spacing:.28em;color:var(--lima2);text-transform:uppercase}
+.rec>:not(.fone){max-width:54%}
+.rec.larga>:not(.fone){max-width:none}
+.rec .fone{right:clamp(18px,6%,60px);bottom:-18%;width:clamp(170px,15vw,215px);transform:rotate(6deg)}
+.rec.l .fone{transform:rotate(-6deg)}
+.rec.larga{grid-column:1/-1;min-height:auto;flex-direction:row;align-items:center;justify-content:space-between;gap:24px}
+.rec.larga .stat{font:900 clamp(56px,8vw,112px)/.85 Inter,sans-serif;letter-spacing:-.06em;color:var(--lima2)}
+
+/* ===== 5 · baixar ===== */
+#baixar .cdk{display:grid;grid-template-columns:1.3fr .7fr;gap:30px;align-items:center;padding:clamp(34px,5vw,72px)}
+#baixar h2{font-size:clamp(40px,5.2vw,78px);font-weight:900;letter-spacing:-.055em;line-height:.92;color:#fff;text-wrap:balance}
+#baixar .lojas{display:flex;flex-wrap:wrap;gap:12px;margin:30px 0 22px}
+#baixar .mini{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:14px;font-weight:700;color:rgba(255,255,255,.7)}
+#baixar .mini a:hover{color:var(--lima2)}
+.qr{justify-self:center;text-align:center;font-size:13px;color:rgba(255,255,255,.7);font-weight:700}
+.qr img{width:100%;height:auto}
+.qr div{background:#fff;padding:16px;border-radius:22px;width:clamp(150px,15vw,200px);margin:0 auto 12px;box-shadow:0 20px 40px -18px rgba(0,0,0,.7)}
+footer{padding:0 var(--gut) 40px;text-align:center;font-size:13.5px;color:var(--tinta2)}
+footer b{color:var(--tinta)}
+footer a{text-decoration:underline;text-underline-offset:3px}
+
+/* revelação ao rolar */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .9s var(--ease)}
+.rv.dentro{opacity:1;transform:none}
+
+@media (max-width:900px){
+  header nav a:not(.btn){display:none}.via{display:none}
+  #capa{background-position:70% 50%}#capa .txt{max-width:100%}
+  .folha{position:relative;top:auto;grid-template-columns:1fr;height:auto;padding-bottom:300px}.folha .fone{top:auto;bottom:-120px;right:50%;transform:translateX(50%) rotate(-5deg)}
+  #legenda .grade,.bento,#baixar .cdk{grid-template-columns:1fr}.rec.larga{flex-direction:column;align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){.pw>.pa{transform:none;transition:none}.rv{opacity:1;transform:none;transition:none}.reel{transition:none}}
 </style>
 </head>
 <body>
 
-<div id="splash" aria-hidden="true"><div class="od"><small>KM</small><span id="odo">000</span></div></div>
-
-<nav>
-  <a class="logo" href="#s1" aria-label="KM Check"><img src="img/logo.png" alt="KM Check"></a>
-  <div class="links">
-    <a href="#s2">Recursos</a>
+<header>
+  <span class="hud-placa">KM<i></i><span class="odo" aria-hidden="true"><span class="reel" id="r1"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span><span class="reel" id="r2"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></span>
+  <nav>
+    <a href="#como">Como funciona</a>
+    <a href="#recursos">Recursos</a>
     <a href="../manual/">Manual</a>
     <a href="mailto:suporte@kmcheck.com.br">Suporte</a>
-    <a class="btn lima elastico" href="#s3">Baixar app</a>
-  </div>
-</nav>
+  </nav>
+  <a class="btn lima el" href="#baixar">Baixar app</a>
+</header>
+<div class="via" aria-hidden="true"><i></i></div>
 
-<!-- 1 · ABERTURA: esfera 3D de fotos com o título no centro do círculo -->
-<section id="s1">
-  <div id="stage">
-    <div id="world">
-      <div id="orb"><div class="card" data-i="0"><figure><img src="img/c01.webp" alt="" draggable="false"></figure></div><div class="card" data-i="1"><figure><img src="img/c02.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="2"><figure><img src="img/c03.webp" alt="" draggable="false"></figure></div><div class="card" data-i="3"><figure><img src="img/c04.webp" alt="" draggable="false"></figure></div><div class="card" data-i="4"><figure><img src="img/c05.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="5"><figure><img src="img/c06.webp" alt="" draggable="false"></figure></div><div class="card" data-i="6"><figure><img src="img/c07.webp" alt="" draggable="false"></figure></div><div class="card" data-i="7"><figure><img src="img/c08.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="8"><figure><img src="img/c09.webp" alt="" draggable="false"></figure></div><div class="card" data-i="9"><figure><img src="img/c10.webp" alt="" draggable="false"></figure></div><div class="card" data-i="10"><figure><img src="img/c11.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="11"><figure><img src="img/c12.webp" alt="" draggable="false"></figure></div><div class="card" data-i="12"><figure><img src="img/c13.webp" alt="" draggable="false"></figure></div><div class="card" data-i="13"><figure><img src="img/c14.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="14"><figure><img src="img/c15.webp" alt="" draggable="false"></figure></div><div class="card" data-i="15"><figure><img src="img/c16.webp" alt="" draggable="false"></figure></div><div class="card" data-i="16"><figure><img src="img/c17.webp" alt="" draggable="false"></figure></div><div class="card tall" data-i="17"><figure><img src="img/c18.webp" alt="" draggable="false"></figure></div><div class="card" data-i="18"><figure><img src="img/c19.webp" alt="" draggable="false"></figure></div><div class="card" data-i="19"><figure><img src="img/c20.webp" alt="" draggable="false"></figure></div><div class="card" data-i="20"><figure><img src="img/c21.webp" alt="" draggable="false"></figure></div></div>
-      <h1 id="headline" aria-label="O KM certo, em cada foto."><span class="inner"><span style="--i:0">O</span> <span style="--i:1" class="lima-t">KM</span> <span style="--i:2">certo,</span> <span style="--i:3">em</span> <span style="--i:4">cada</span> <span style="--i:5">foto.</span></span></h1>
-    </div>
+<!-- 1 · CAPA -->
+<section id="capa">
+  <div class="txt">
+    <span class="olho">KM Check</span>
+    <h1 class="tit" id="h1">O KM certo,<br>em cada foto.</h1>
+    <p class="lead">Registro fotográfico de rodovias com KM, estaca e coordenadas gravados na própria foto. Direto do campo, sem depender de internet.</p>
+    <div class="acoes"><a class="btn lima el" href="#baixar">Baixe grátis</a><a class="btn el" href="../manual/">Ver o manual</a></div>
+    <span class="pilula">Versão 1.0.0</span>
   </div>
-  <div class="vig"></div>
-  <div class="chrome h-info">Rodovia, KM e estaca pelo GPS.<br>Para obras e fiscalização de rodovias.</div>
-  <div class="chrome h-cta"><a class="btn lima cta elastico" href="#s3">Baixe grátis</a><span>Grátis · Android e iPhone</span></div>
-  <div class="chrome cue"><s></s>Arraste para girar</div>
+  <div class="cred">Desenvolvido por <b>Wagner Machado</b></div>
 </section>
 
 <!-- 2 · COMO FUNCIONA -->
-<section id="s2" data-bg="img/foto.webp" data-fx=".5">
-  <div class="g2">
-    <div class="mc sombra rev" style="--i:0">
-      <div class="tt">Como funciona</div>
-      <div class="passos">
-        <div class="passo luz"><b>01</b>Baixe a rodovia do SNV/DNIT</div>
-        <div class="passo luz"><b>02</b>O GPS acha o KM exato</div>
-        <div class="passo luz"><b>03</b>A foto sai com a legenda gravada</div>
-      </div>
-    </div>
-    <div class="mc sombra rev" style="--i:1;grid-row:span 2">
-      <div class="st">Exemplo de legenda real</div>
-      <div class="leg" id="leg">
-        <span class="l">BR-226/RN - KM 326,040 LD · Est. 16302+0</span>
-        <span class="l">14 00515/2024 - Aplicação de CBUQ</span>
-        <span class="l">-6,077504, -37,537466</span>
-        <span class="l">09/10/2026 · SNV Jul/26<span class="cur"></span></span>
-      </div>
-    </div>
-    <div class="mc sombra rev" style="--i:2">
-      <div class="big">Sem sinal,<br>sem problema.<small>Rodovias salvas no aparelho.<br>O KM sai pelo GPS, em qualquer estrada.</small></div>
-    </div>
-    <div class="mc rev" style="--i:3;grid-column:1/-1">
-      <div class="recs">
-        <div class="rec on luz"><div><h3>Câmera</h3><p>Foto 1:1, 4:3 ou 16:9 com legenda gravada.</p></div><span class="n">01</span></div>
-        <div class="rec luz"><div><h3>Modo Carro</h3><p>Painel grande do KM, que escurece à noite.</p></div><span class="n">02</span></div>
-        <div class="rec luz"><div><h3>Importar KMZ e Shapefile</h3><p>Qualquer rodovia: federal, estadual ou municipal.</p></div><span class="n">03</span></div>
-        <div class="rec luz"><div><h3>Consulta</h3><p>Coordenada em KM e KM em coordenada.</p></div></div>
-      </div>
+<section class="sec" id="como">
+  <div class="wrap">
+    <div class="cab rv"><span class="olho">Para começar</span><h2 class="tit" style="margin-top:14px">Do app à foto, em três passos.</h2><p class="sub">Você baixa a rodovia uma vez. Depois o GPS faz o resto, até sem sinal.</p></div>
+    <div class="pilha">
+      <article class="cdk folha" style="--k:0">
+        <div class="tx"><div class="num">01</div><h3>Baixe a rodovia</h3><p>Escolha UF e BR do SNV/DNIT, ou importe KMZ, Shapefile e planilha. Precisa de internet só nesse momento.</p></div>
+        <div class="fone"><div class="h-moldura"><div class="h-tela"><img src="img/30-gestao-eixo.webp" alt="Tela Gestão de Eixo do app" loading="lazy"><i class="h-ilha"></i></div></div></div>
+      </article>
+      <article class="cdk folha" style="--k:1">
+        <div class="tx"><div class="num">02</div><h3>Confira o KM</h3><p>A tela inicial mostra rodovia, KM e estaca do ponto onde você está, pelo GPS, acompanhando o carro.</p></div>
+        <div class="fone"><div class="h-moldura"><div class="h-tela"><img src="img/01-inicio.webp" alt="Tela inicial com KM e estaca" loading="lazy"><i class="h-ilha"></i></div></div></div>
+      </article>
+      <article class="cdk folha" style="--k:2">
+        <div class="tx"><div class="num">03</div><h3>Fotografe</h3><p>Toque em Registrar evidência. A legenda sai gravada dentro da imagem, com rodovia, KM, coordenadas e data.</p></div>
+        <div class="fone"><div class="h-moldura"><div class="h-tela"><img src="img/10-camera.webp" alt="Câmera do app com legenda" loading="lazy"><i class="h-ilha"></i></div></div></div>
+      </article>
     </div>
   </div>
 </section>
 
-<!-- 3 · GESTÃO DE EIXO + DOWNLOAD -->
-<section id="s3">
-  <div class="g3">
-    <div class="col">
-      <div class="card c-tit rev" style="--i:0"><h2>Gestão<br>de Eixo</h2><p>Baixe do SNV ou importe o seu traçado</p></div>
-      <div class="dupla rev" style="--i:1"><div><img src="img/tela-4.webp" alt="Importação de rodovia no app" loading="lazy"></div><div><img src="img/tela-6.webp" alt="Consulta de coordenada e KM no app" loading="lazy"></div></div>
-      <div class="card c-app rev" style="--i:2">
-        <div class="tx"><p>Baixe o app</p><h3>Gratuito para<br>Android e iPhone</h3>
-          <div class="lojas">
-            <a class="btn elastico" href="https://play.google.com/store/apps/details?id=br.com.kmcheck.app">Google Play</a>
-            <a class="btn elastico" href="#">App Store</a>
-          </div></div>
-        <div class="qr"><img src="img/qr.svg" alt="QR code para abrir o KM Check no celular"></div>
-      </div>
+<!-- 3 · LEGENDA -->
+<section class="sec" id="legenda">
+  <div class="wrap grade">
+    <div class="rv">
+      <span class="olho">O resultado</span>
+      <h2 class="tit" style="margin-top:14px">A prova está dentro da foto.</h2>
+      <p class="l">Nada de planilha para cruzar depois. Cada imagem já sai identificada, e ninguém consegue separar a legenda da foto.</p>
+      <ul class="campos"><li>Rodovia, KM e lado (LD ou LE)</li><li>Estaca interpolada do SNV/DNIT</li><li>Contrato e serviço executado</li><li>Coordenadas do GPS</li><li>Data e hora do registro</li></ul>
     </div>
-    <div class="card alto rev" style="--i:3">
-      <div class="rodape"><a href="../privacidade/">Política de privacidade</a><a href="../?app=1">Abrir o app no navegador</a></div>
-      <img src="img/rodovia.webp" alt="Rodovia com o app KM Check em dois celulares" loading="lazy">
-      <div class="ov">
-        <a class="b luz" href="../manual/"><h4>Manual<br>do usuário<small>Passo a passo ilustrado</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
-        <a class="v luz" href="mailto:suporte@kmcheck.com.br"><h4>Suporte<small>suporte@kmcheck.com.br</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
-      </div>
+    <div style="position:relative" class="rv">
+      <div class="placa"><b>BR-226</b><span>KM</span><strong>326</strong></div>
+      <div class="quadro" id="quadro"><img src="img/foto-legenda.webp" alt="Foto da rodovia BR-226 com legenda gravada: KM 326,040, estaca, contrato, coordenadas e data" loading="lazy"><span class="marca"></span><span class="rot">Legenda gravada</span></div>
     </div>
   </div>
 </section>
+
+<!-- 4 · RECURSOS -->
+<section class="sec" id="recursos">
+  <div class="wrap">
+    <div class="cab rv"><span class="olho">Recursos</span><h2 class="tit" style="margin-top:14px">Feito para o dia a dia de obra.</h2></div>
+    <div class="bento">
+      <article class="cdk rec rv"><span class="tag">Modo Carro</span><h3>Acompanhe o KM dirigindo</h3><p>Painel grande, que escurece à noite. Distância até o próximo km e GPS em tempo real.</p><div class="fone"><div class="h-moldura"><div class="h-tela"><img src="img/20-carro-dia.webp" alt="Modo Carro" loading="lazy"><i class="h-ilha"></i></div></div></div></article>
+      <article class="cdk rec l rv"><span class="tag">Qualquer rodovia</span><h3>Federal, estadual ou municipal</h3><p>Baixe do SNV ou importe KMZ, Shapefile, Google Earth e planilha com seu traçado.</p><div class="fone"><div class="h-moldura"><div class="h-tela"><img src="img/31-importar.webp" alt="Importar rodovia" loading="lazy"><i class="h-ilha"></i></div></div></div></article>
+      <article class="cdk rec larga rv"><div style="display:grid;gap:12px"><span class="tag">Offline</span><h3>Funciona sem internet</h3><p style="max-width:44ch">As rodovias ficam salvas no aparelho. O KM sai pelo GPS em qualquer estrada, mesmo sem sinal.</p></div><div class="stat">363</div></article>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · BAIXAR -->
+<section class="sec" id="baixar">
+  <div class="wrap">
+    <div class="cdk rv">
+      <div><span class="olho" style="color:var(--lima2)">Baixe o app</span><h2 style="margin-top:14px">Gratuito para Android e iPhone.</h2>
+        <div class="lojas"><a class="btn lima el" href="https://play.google.com/store/apps/details?id=br.com.kmcheck.app">Google Play</a><a class="btn escuro el" href="#">App Store</a></div>
+        <div class="mini"><a href="../manual/">Manual do usuário</a><a href="mailto:suporte@kmcheck.com.br">suporte@kmcheck.com.br</a><a href="../privacidade/">Política de privacidade</a></div></div>
+      <div class="qr"><div><img src="img/qr.svg" alt="QR code para abrir o KM Check no celular"></div>Aponte a câmera do celular</div>
+    </div>
+  </div>
+</section>
+<footer>Desenvolvido por <b>Wagner Machado</b> · <a href="../?app=1">Abrir o app no navegador</a></footer>
 
 <script>
-/* ===== cartões em mosaico =====
-   Cada .mc de uma seção com data-bg mostra uma "janela" da MESMA imagem: a imagem é escalada para
-   cobrir a seção inteira e cada cartão desloca o fundo pela sua posição dentro dela. */
+var reduz=matchMedia('(prefers-reduced-motion:reduce)').matches, desk=matchMedia('(min-width:901px)').matches;
+var lerp=function(a,b,t){return a+(b-a)*t}, limitar=function(v,a,b){return Math.max(a,Math.min(b,v))};
+
+/* j16 · palavra por palavra no título da capa */
 (function(){
-  var secs=[].slice.call(document.querySelectorAll('section[data-bg]'));
-  secs.forEach(function(sec){
-    var img=new Image(); img.src=sec.dataset.bg;
-    var fx=parseFloat(sec.dataset.fx||.5);
-    function pinta(){
-      if(!img.naturalWidth) return;
-      var s=sec.getBoundingClientRect(), k=sec.offsetWidth/(s.width||1), sw=sec.offsetWidth, sh=sec.offsetHeight;
-      var esc=Math.max(sh/img.naturalHeight, sw/img.naturalWidth);
-      var rw=img.naturalWidth*esc, rh=img.naturalHeight*esc;
-      var ox=(rw-sw)*fx, oy=(rh-sh)*.5;
-      sec.querySelectorAll('.mc').forEach(function(c){
-        var r=c.getBoundingClientRect(), x=(r.left-s.left)*k, y=(r.top-s.top)*k;
-        c.style.backgroundImage='url('+sec.dataset.bg+')';
-        c.style.backgroundSize=rw+'px '+rh+'px';
-        c.style.backgroundPosition=(-(x+ox))+'px '+(-(y+oy))+'px';
-      });
-    }
-    img.onload=pinta; if(img.complete) pinta();
-    new ResizeObserver(pinta).observe(sec);
-    /* a posição dos cartões muda durante a animação de entrada: repinta ao terminar */
-    sec.addEventListener('transitionend',pinta);
-  });
+  var h=document.getElementById('h1'),n=0;
+  (function anda(no){[].slice.call(no.childNodes).forEach(function(c){
+    if(c.nodeType===3){var f=document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach(function(t){if(!t)return;
+        if(/^\s+$/.test(t)){f.appendChild(document.createTextNode(' '));return}
+        var m=document.createElement('span');m.className='pw';var w=document.createElement('span');w.className='pa';w.textContent=t;w.style.setProperty('--i',n++);m.appendChild(w);f.appendChild(m)});
+      no.replaceChild(f,c)}else if(c.nodeType===1&&c.tagName!=='BR')anda(c)})})(h);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){h.classList.add('dentro')})});
 })();
 
+/* revelação ao rolar */
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('dentro');io.unobserve(e.target)}})},{threshold:.18});
+document.querySelectorAll('.rv,.quadro').forEach(function(el){io.observe(el)});
 
-/* ===== movimento (referências: naocodei.com/free-code) ===== */
-var reduz=matchMedia('(prefers-reduced-motion:reduce)').matches;
-var desk=matchMedia('(min-width:901px)').matches;
-var lerp=function(a,b,t){return a+(b-a)*t}, limitar=function(v,a,b){return Math.max(a,Math.min(b,v))};
-var secoes=[].slice.call(document.querySelectorAll('section'));
+/* luz que segue o mouse nos cartões (j12) */
+document.querySelectorAll('.cdk').forEach(function(el){el.addEventListener('mousemove',function(ev){var r=el.getBoundingClientRect();el.style.setProperty('--mx',(ev.clientX-r.left)+'px');el.style.setProperty('--my',(ev.clientY-r.top)+'px')})});
 
-/* j16 · palavra por palavra: cada palavra sobe de uma máscara, com atraso em cascata */
-function quebra(el){
-  var n=0;
-  (function anda(no){
-    [].slice.call(no.childNodes).forEach(function(c){
-      if(c.nodeType===3){
-        var frag=document.createDocumentFragment();
-        c.textContent.split(/(\s+)/).forEach(function(t){
-          if(!t) return;
-          if(/^\s+$/.test(t)){frag.appendChild(document.createTextNode(' '));return}
-          var m=document.createElement('span');m.className='pw';
-          var w=document.createElement('span');w.className='palavra';w.textContent=t;
-          w.style.transitionDelay=(n++*90)+'ms';m.appendChild(w);frag.appendChild(m);
-        });
-        no.replaceChild(frag,c);
-      }else if(c.nodeType===1&&c.tagName!=='BR') anda(c);
-    });
-  })(el);
+/* HUD: o km sobe conforme você rola a página (j18, odômetro) e a linha lateral se preenche */
+var r1=document.getElementById('r1'),r2=document.getElementById('r2'),via=document.querySelector('.via');
+function hud(){
+  var max=document.documentElement.scrollHeight-innerHeight, p=max>0?limitar(scrollY/max,0,1):0, km=Math.round(p*82);
+  r1.style.transform='translateY('+(-Math.floor(km/10)*10)+'%)';r2.style.transform='translateY('+(-(km%10)*10)+'%)';
+  via.style.setProperty('--p',p);
 }
-function abreHero(){
-  document.getElementById('s1').classList.add('vis');
-}
+addEventListener('scroll',hud,{passive:true});addEventListener('resize',hud);hud();
 
 if(!reduz&&desk){
-  /* j10 · rolagem com inércia: o scroll persegue o alvo em vez de saltar até ele.
-     Mantém a barra de rolagem nativa (e o sticky da pilha) porque só chama scrollTo. */
-  var alvo=scrollY, atual=scrollY, rodando=false;
-  var maxScroll=function(){return document.documentElement.scrollHeight-innerHeight};
-  function passo(){
-    atual=lerp(atual,alvo,.085);
-    if(Math.abs(alvo-atual)<.4){atual=alvo;rodando=false}
-    scrollTo(0,atual);
-    if(rodando) requestAnimationFrame(passo);
-  }
-  function vai(y){alvo=limitar(y,0,maxScroll()); if(!rodando){rodando=true;atual=scrollY;requestAnimationFrame(passo)}}
-  addEventListener('wheel',function(ev){
-    if(ev.ctrlKey) return;               /* zoom do navegador passa direto */
-    ev.preventDefault();
-    var d=ev.deltaMode===1?ev.deltaY*32:ev.deltaY;
-    vai((rodando?alvo:scrollY)+d);
-  },{passive:false});
-  /* rolagem que não é nossa (barra, teclado): ressincroniza para não brigar */
+  /* j10 · rolagem com inércia: o scroll persegue o alvo (a barra nativa e o sticky continuam funcionando) */
+  var alvo=scrollY,atual=scrollY,rodando=false;
+  var maxS=function(){return document.documentElement.scrollHeight-innerHeight};
+  function passo(){atual=lerp(atual,alvo,.09);if(Math.abs(alvo-atual)<.4){atual=alvo;rodando=false}scrollTo(0,atual);if(rodando)requestAnimationFrame(passo)}
+  function vai(y){alvo=limitar(y,0,maxS());if(!rodando){rodando=true;atual=scrollY;requestAnimationFrame(passo)}}
+  addEventListener('wheel',function(ev){if(ev.ctrlKey)return;ev.preventDefault();vai((rodando?alvo:scrollY)+(ev.deltaMode===1?ev.deltaY*32:ev.deltaY))},{passive:false});
   addEventListener('scroll',function(){if(!rodando){alvo=atual=scrollY}},{passive:true});
-  /* links de âncora deslizam até a seção (cada seção ocupa uma tela) */
-  document.querySelectorAll('a[href^="#s"]').forEach(function(a){
-    a.addEventListener('click',function(ev){
-      var i=secoes.indexOf(document.querySelector(a.getAttribute('href')));
-      if(i<0) return; ev.preventDefault(); vai(i*innerHeight);
-    });
-  });
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(ev){
+    var id=a.getAttribute('href');var el=id.length>1&&document.querySelector(id);if(!el)return;
+    ev.preventDefault();vai(el.getBoundingClientRect().top+scrollY-(id==='#capa'?0:20))})});
 
-  /* j01 · pilha de seções: enquanto a próxima sobe por cima, a de baixo encolhe e escurece */
-  function pilha(){
-    secoes.forEach(function(sec,i){
-      var prox=secoes[i+1]; if(!prox) return;
-      var p=limitar(1-prox.getBoundingClientRect().top/innerHeight,0,1);
-      sec.style.transform=p>0?'scale('+(1-p*.07)+')':'';
-      sec.style.filter=p>0?'brightness('+(1-p*.5)+')':'';
-    });
-  }
-  addEventListener('scroll',pilha,{passive:true}); addEventListener('resize',pilha); pilha();
+  /* j01 · pilha: a folha de baixo encolhe e escurece enquanto a próxima sobe por cima */
+  var folhas=[].slice.call(document.querySelectorAll('.folha'));
+  function pilha(){folhas.forEach(function(f,i){var n=folhas[i+1];if(!n)return;
+    var top=parseFloat(getComputedStyle(n).top),d=limitar(1-(n.getBoundingClientRect().top-top)/(n.offsetHeight*.9),0,1);
+    f.style.transform=d>0?'scale('+(1-d*.06)+')':'';f.style.filter=d>0?'brightness('+(1-d*.45)+')':''})}
+  addEventListener('scroll',pilha,{passive:true});addEventListener('resize',pilha);pilha();
 
-  /* j09 · cursor: ponto na hora, anel com atraso; o anel cresce sobre links e botões */
-  if(matchMedia('(hover:hover) and (pointer:fine)').matches){
-    var pt=document.createElement('div'),an=document.createElement('div');
-    pt.className='cur-ponto';an.className='cur-anel';document.body.append(pt,an);
-    document.documentElement.classList.add('com-cursor');
-    var m={x:0,y:0},a2={x:0,y:0},ligado=false;
-    addEventListener('mousemove',function(ev){
-      m.x=ev.clientX;m.y=ev.clientY;
-      if(!ligado){ligado=true;a2.x=m.x;a2.y=m.y;document.documentElement.classList.add('cur-on')}
-      an.classList.toggle('sobre',!!ev.target.closest('a,button,.card'));
-    });
-    document.addEventListener('mouseleave',function(){ligado=false;document.documentElement.classList.remove('cur-on')});
-    (function laco(){
-      pt.style.transform='translate('+m.x+'px,'+m.y+'px)';
-      a2.x=lerp(a2.x,m.x,.14);a2.y=lerp(a2.y,m.y,.14);
-      an.style.transform='translate('+a2.x+'px,'+a2.y+'px)';
-      requestAnimationFrame(laco);
-    })();
-  }
-
-  /* j14 · botão elástico: mola com velocidade e amortecimento (oscila e assenta sozinha) */
-  var mols=[].slice.call(document.querySelectorAll('.elastico')).map(function(b){
-    var o={b:b,e:1,v:0,t:1};
-    b.addEventListener('mouseenter',function(){o.t=1.08});
-    b.addEventListener('mouseleave',function(){o.t=1});
-    b.addEventListener('mousedown',function(){o.t=.94});
-    b.addEventListener('mouseup',function(){o.t=1.08});
-    return o;
-  });
-  (function molas(){
-    mols.forEach(function(o){
-      if(Math.abs(o.t-o.e)<.0005&&Math.abs(o.v)<.0005) return;
-      o.v=(o.v+(o.t-o.e)*.22)*.72; o.e+=o.v;
-      o.b.style.transform='scale('+o.e+')';
-    });
-    requestAnimationFrame(molas);
-  })();
+  /* j14 · botão elástico: mola com amortecimento */
+  var mols=[].slice.call(document.querySelectorAll('.el')).map(function(b){var o={b:b,e:1,v:0,t:1};
+    b.addEventListener('mouseenter',function(){o.t=1.07});b.addEventListener('mouseleave',function(){o.t=1});
+    b.addEventListener('mousedown',function(){o.t=.94});b.addEventListener('mouseup',function(){o.t=1.07});return o});
+  (function molas(){mols.forEach(function(o){if(Math.abs(o.t-o.e)<.0005&&Math.abs(o.v)<.0005)return;o.v=(o.v+(o.t-o.e)*.22)*.72;o.e+=o.v;o.b.style.transform='scale('+o.e+')'});requestAnimationFrame(molas)})();
 }
-
-/* j12 · luz que segue o mouse: o JS só escreve a posição, o brilho é um gradiente do CSS */
-if(!reduz) document.querySelectorAll('.luz').forEach(function(el){
-  el.addEventListener('mousemove',function(ev){
-    var r=el.getBoundingClientRect();
-    el.style.setProperty('--x',(ev.clientX-r.left)+'px');el.style.setProperty('--y',(ev.clientY-r.top)+'px');
-  });
-});
-
-/* ===== hero: esfera de fotos (ponto central compartilhado: círculo e título) ===== */
-(function(){
-  var stage=document.getElementById('stage'), world=document.getElementById('world'), head=document.getElementById('headline'), sec=document.getElementById('s1');
-  var els=[].slice.call(document.querySelectorAll('#orb .card')), N=els.length, GA=Math.PI*(3-Math.sqrt(5));
-  var cs=els.map(function(el,i){
-    var y=1-(i/(N-1))*2, rad=Math.sqrt(Math.max(0,1-y*y)), th=i*GA, x=Math.cos(th)*rad, z=Math.sin(th)*rad;
-    return {el:el,x:x,y:y,z:z,lat:Math.asin(y)*180/Math.PI,lon:Math.atan2(x,z)*180/Math.PI,op:-1,d:-1,img:el.querySelector('img')};
-  });
-  cs.forEach(function(c){var im=c.img;function ok(){im.classList.add('in')}if(im.complete)ok();else im.onload=ok});
-  var R=300,persp=1150,spin=0,tilt=-4,camZ=0,dragX=0,dragY=0,velX=0,velY=0,LIM=32,W0=0,H0=0;
-  function layout(force){
-    var w=sec.clientWidth,h=sec.clientHeight;
-    if(!force&&Math.abs(w-W0)<20&&Math.abs(h-H0)<20) return; W0=w;H0=h;
-    var hr=w<=380?.38:w<=640?.42:.46, wr=w<=380?.48:w<=640?.52:.58, fl=w<=380?108:w<=640?120:155;
-    R=Math.max(fl,Math.min(480,h*hr,w*wr));
-    var cw=Math.round(Math.max(72,R*(w<=380?.44:w<=640?.46:.47)));
-    persp=w<=380?620:w<=640?760:w<=900?920:1150;
-    stage.style.setProperty('--persp',persp+'px'); sec.style.setProperty('--cw',cw+'px');
-    cs.forEach(function(c){c.el.style.transform='translate3d('+(c.x*R)+'px,'+(-c.y*R)+'px,'+(c.z*R)+'px) rotateY('+c.lon+'deg) rotateX('+c.lat+'deg)'});
-  }
-  layout(true);
-  addEventListener('resize',function(){layout()});
-  /* arrastar: yaw/pitch, 0,13° por pixel; sem clique acidental */
-  var dr=null;
-  stage.addEventListener('pointerdown',function(ev){
-    dr={id:ev.pointerId,x:ev.clientX,y:ev.clientY,lx:ev.clientX,ly:ev.clientY,on:ev.pointerType!=='touch',t:ev.pointerType==='touch'};
-    if(dr.on){stage.setPointerCapture(ev.pointerId);stage.classList.add('arrasta')}
-  });
-  stage.addEventListener('pointermove',function(ev){
-    if(!dr||ev.pointerId!==dr.id) return;
-    if(!dr.on){
-      var ax=Math.abs(ev.clientX-dr.x),ay=Math.abs(ev.clientY-dr.y);
-      if(ax<10&&ay<10) return;
-      if(ay>ax*1.15){dr=null;return}
-      dr.on=true;stage.setPointerCapture(ev.pointerId);stage.classList.add('arrasta');
-    }
-    var dx=ev.clientX-dr.lx,dy=ev.clientY-dr.ly;dr.lx=ev.clientX;dr.ly=ev.clientY;
-    dragX+=dx*.13;dragY-=dy*.13; velX=dx*.13;velY=-dy*.13;
-    dragY=limitar(dragY,-LIM-tilt,LIM-tilt);
-  });
-  function solta(){dr=null;stage.classList.remove('arrasta')}
-  stage.addEventListener('pointerup',solta);stage.addEventListener('pointercancel',solta);
-  function frame(){
-    if(!dr||!dr.on){
-      dragX+=velX;dragY+=velY;velX*=.94;velY*=.94;
-      if(Math.abs(velX)<.002)velX=0; if(Math.abs(velY)<.002)velY=0;
-      dragY=limitar(dragY,-LIM-tilt,LIM-tilt);
-    }
-    var p=limitar(scrollY/(innerHeight*.16),0,1);
-    camZ=lerp(camZ,p*Math.min(64,R*.12),.075);   /* só avança, nunca atravessa a esfera */
-    var sx=tilt+dragY, sy=spin+dragX;
-    world.style.transform='translateZ('+camZ+'px) rotateY('+sy+'deg) rotateX('+sx+'deg)';
-    /* título: contra-rotação + avanço de 62% do raio; só as fotos mais próximas passam na frente */
-    head.style.transform='rotateX('+(-sx)+'deg) rotateY('+(-sy)+'deg) translateZ('+(R*.62)+'px)';
-    head.style.opacity=Math.max(0,1-p*.55);
-    var cx=Math.cos(sx*Math.PI/180),sxs=Math.sin(sx*Math.PI/180),cy=Math.cos(sy*Math.PI/180),sys=Math.sin(sy*Math.PI/180);
-    var near=persp*.66, shade=1-Math.min(1,p*1.6);
-    cs.forEach(function(c){
-      var y1=-c.y*cx-c.z*sxs, z1=-c.y*sxs+c.z*cx;   /* pitch, depois yaw */
-      var zf=-c.x*sys+z1*cy;
-      var base=.14+.86*Math.pow((zf+1)/2,.85), dim=shade*(1-base);
-      var absZ=zf*R+camZ, fade=1;
-      if(absZ>near) fade=Math.max(0,1-(absZ-near)/190);
-      dim=Math.round(dim*100)/100; fade=Math.round(fade*100)/100;
-      if(dim!==c.d){c.d=dim;c.el.style.setProperty('--d',dim)}
-      if(fade!==c.op){c.op=fade;c.el.style.opacity=fade}
-    });
-    requestAnimationFrame(frame);
-  }
-  frame();
-})();
-
-/* ===== entrada em cascata ao rolar ===== */
-var legTocou=false;
-function digita(){
-  if(legTocou) return; legTocou=true;
-  var ls=[].slice.call(document.querySelectorAll('#leg .l'));
-  if(matchMedia('(prefers-reduced-motion:reduce)').matches){ls.forEach(function(l){l.style.width='auto'});return}
-  var i=0;
-  (function prox(){
-    if(i>=ls.length) return;
-    var l=ls[i++], w=l.scrollWidth||400; l.style.width='auto'; var full=l.scrollWidth; l.style.width='0';
-    l.style.transition='width '+(full*2.5)+'ms steps('+Math.max(8,Math.round(full/11))+')';
-    requestAnimationFrame(function(){requestAnimationFrame(function(){l.style.width=full+'px';setTimeout(function(){l.style.width='auto'},full*2.5)})});
-    setTimeout(prox,full*2.5+160);
-  })();
-}
-var io=new IntersectionObserver(function(es){es.forEach(function(e){
-  if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);if(e.target.id==='s2')setTimeout(digita,500)}
-})},{threshold:.15});
-document.querySelectorAll('section:not(#s1)').forEach(function(s){io.observe(s)});
-
-/* ===== abertura: odômetro KM 000 → 100 em 2 s ===== */
-(function(){
-  var sp=document.getElementById('splash'), od=document.getElementById('odo'), n=0;
-  function fim(){sp.classList.add('sai');setTimeout(function(){sp.remove()},700);abreHero()}
-  var visto=false; try{visto=sessionStorage.getItem('kc-site-splash')}catch(e){}
-  if(visto||matchMedia('(prefers-reduced-motion:reduce)').matches){sp.remove();abreHero();return}
-  try{sessionStorage.setItem('kc-site-splash','1')}catch(e){}
-  var t=setInterval(function(){
-    n++; od.textContent=('00'+n).slice(-3);
-    if(n>=100){clearInterval(t);setTimeout(fim,200)}
-  },20);
-})();
 </script>
 </body>
 </html>
