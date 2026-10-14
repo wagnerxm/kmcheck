@@ -316,10 +316,9 @@ incentivo a mexer no celular ao volante — Diretriz 1.4.)
 
 - Obrigatório: **iPhone 6,9"** — 1320×2868 ou 1290×2796 (retrato), de 1 a 10 imagens. Com elas a Apple reaproveita
   para os tamanhos menores. iPad não é necessário (app só para iPhone).
-- **Não usar** `mobile/loja/tela-*.png`: são 1080×1920 com moldura e barra de status de **Android** — a Apple recusa
-  capturas que mostram outra plataforma (Diretriz 2.3.3/2.3.10). Gerar de novo com o `mobile/loja/gerar-loja.mjs`
-  apontando para prints do iPhone (`manual-kmcheck/prints/`, que já usavam moldura de iPhone) e saída em 1290×2796,
-  ou tirar prints no próprio iPhone (botão lateral + volume) já com o app do TestFlight.
+- **Prontas:** `mobile/loja/ios/tela-1..6.png` (1290×2796, moldura de iPhone com Dynamic Island), geradas por
+  `node mobile/loja/gerar-loja-ios.mjs` a partir de `manual-kmcheck/prints-ios` (`KC_IOS=1 node manual-kmcheck/estudio/capturar.mjs
+  camera galeria inicio carro consulta importar`). **Não usar** `mobile/loja/tela-*.png` (são de Android).
 - As mesmas 6 telas da Play funcionam bem: início com KM, câmera com legenda, Modo Carro, importar, galeria, consulta.
 - Ícone da loja: vem do próprio build (`AppIcon-1024.png`); não se envia à parte.
 
@@ -374,7 +373,7 @@ from any highway. To see the core features without being on a Brazilian highway:
    Photos app (only "Add Photos" permission is requested). The attached video shows the app on a real highway.
 
 Native features (not a website wrapper): all app files are bundled and the app runs fully offline; photos are
-saved through PhotoKit; native share sheet; keeps the screen awake while in use (car mode); native haptics on
+saved through PhotoKit; native GPS through Core Location; native share sheet; keeps the screen awake while in use (car mode); native haptics on
 the shutter; location-services status check and deep link to the app's Settings page; exports saved to the
 Files app. Highway geometry is stored locally (IndexedDB) and interpolated on device.
 ```
