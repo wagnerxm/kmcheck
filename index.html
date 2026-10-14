@@ -449,6 +449,12 @@ h2.sec::after{content:none}
   .gcard .glink{display:none}
   .gcard .garrow{display:none}
 }
+/* celular pequeno com barras do Android (320×512 úteis): ainda encostava no botão — tira o ícone dos cartões */
+@media (max-height:540px){
+  .gcard .gbadge{display:none}
+  .gcard .gtitle{margin-top:0}
+  .heroestaca{font-size:24px}
+}
 .camrow{display:flex;align-items:center;gap:14px;margin-top:18px}
 .iconbtn{width:64px;height:64px;border-radius:50%;background:var(--btnbg);border:1px solid var(--btnborder);color:var(--btntext);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
 .iconbtn svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
