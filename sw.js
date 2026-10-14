@@ -2,7 +2,7 @@
 // Só muda quando sai uma versão nova nas lojas (1.0.0 → 1.0.1 → 1.1.0…).
 // CACHE: número interno, sobe a CADA alteração (é o que faz os aparelhos baixarem a versão nova).
 const VERSAO_APP = '1.0.0';
-const CACHE = 'kmcheck-v324';
+const CACHE = 'kmcheck-v325';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png', 'logo-kmcheck.png', 'fundo-sobre.webp'];
 self.addEventListener('install', e => {
   // cache:'reload' — busca no servidor, não no cache HTTP do navegador (ícones e logo valem 30 dias lá:
@@ -10,7 +10,9 @@ self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== 'kmcheck-dl' && k !== MANUAL).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  // só apaga caches do próprio KM Check: outros apps no mesmo endereço (wagnerxm.github.io) dividem o
+  // armazenamento — apagar "todos menos o meu" levava o cache deles, e o deles levava o nosso (app sem abrir offline)
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('kmcheck-') && k !== CACHE && k !== 'kmcheck-dl' && k !== MANUAL).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 // Estratégia: o DOCUMENTO (index.html / navegação) e os dados das rodovias usam REDE PRIMEIRO — sempre
 // pegam a versão mais nova quando há internet, caindo pro cache quando offline. Os demais assets

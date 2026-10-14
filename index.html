@@ -1554,7 +1554,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button id="camflip" class="topbtn" aria-label="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M17 2v4M17 6l-3-3M7 22v-4M7 18l3 3"/><path d="M20 12a8 8 0 0 0-13.6-5.7L4 8M4 12a8 8 0 0 0 13.6 5.7L20 16"/></svg></button>
   </div>
   <!-- banner de GPS desativado — aparece quando a câmera abre sem localização -->
-  <div id="gps-banner">
+  <div id="gps-banner" role="button" tabindex="0">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3.5"/><line x1="10" y1="1" x2="10" y2="4.5"/><line x1="10" y1="15.5" x2="10" y2="19"/><line x1="1" y1="10" x2="4.5" y2="10"/><line x1="15.5" y1="10" x2="19" y2="10"/></svg>
     <span>GPS desligado.<br>Toque para ativar</span>
   </div>
@@ -1898,7 +1898,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1c1e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="fflate.js"></script>
 <script>
@@ -2023,11 +2023,12 @@ function idb(){
    grande dela se perdia e sobrava só o nome (erro "Failed to read large IndexedDB value" ao abrir). */
 const _ESCRITA={durability:'strict'};
 function _tx(d, store, mode){ return mode==='readwrite' ? d.transaction(store,mode,_ESCRITA) : d.transaction(store,mode) }
-async function _basesTx(mode){
+async function _storeTx(store, mode){
   const d=await idb();
-  try{ return _tx(d,'bases',mode) }
-  catch(e){ if(_db===d) _db=null; return _tx(await idb(),'bases',mode) }
+  try{ return _tx(d,store,mode) }
+  catch(e){ if(_db===d) _db=null; return _tx(await idb(),store,mode) }
 }
+const _basesTx=mode=>_storeTx('bases',mode);
 /* Lê rodovia por rodovia: antes um getAll() falhava inteiro se UMA estivesse danificada e o app ficava sem
    nenhuma ("Não consegui ler as rodovias salvas"). As danificadas vão para dbAll.quebradas (ver o boot). */
 async function dbAll(){
@@ -2407,7 +2408,7 @@ function toast(msg,ms){ const t=document.getElementById('toast'); t.textContent=
    intervalo de KM no findKm (_excl). "Manter as duas" = vale a mais próxima, como sempre foi. */
 function getAllEstRefs(){ try{ return JSON.parse(localStorage.getItem('kc-estrefs')||'{}') }catch(e){ return {} } }
 function getEstRefs(id){ return getAllEstRefs()[id]||[] }
-function setEstRefs(id, refs){ const all=getAllEstRefs(); if(refs && refs.length) all[id]=refs; else delete all[id]; localStorage.setItem('kc-estrefs', JSON.stringify(all)) }
+function setEstRefs(id, refs){ const all=getAllEstRefs(); if(refs && refs.length) all[id]=refs; else delete all[id]; try{ localStorage.setItem('kc-estrefs', JSON.stringify(all)) }catch(e){} }
 function getOverlaps(){ try{ return JSON.parse(localStorage.getItem('kc-overlaps')||'[]') }catch(e){ return [] } }
 let _excl={};
 function rebuildExcl(){
@@ -2417,7 +2418,7 @@ function rebuildExcl(){
     else if(o.keep==='b') (_excl[o.a]=_excl[o.a]||[]).push([o.aKi,o.aKf]);
   }
 }
-function setOverlaps(list){ localStorage.setItem('kc-overlaps', JSON.stringify(list)); rebuildExcl() }
+function setOverlaps(list){ try{ localStorage.setItem('kc-overlaps', JSON.stringify(list)) }catch(e){} rebuildExcl() }
 rebuildExcl();
 /* Trechos onde a base N passa a menos de 30 m do eixo da base E por pelo menos 300 m seguidos (um
    simples cruzamento/entroncamento dá poucas dezenas de metros e é ignorado). Índice em grade
@@ -3093,7 +3094,8 @@ async function readShapefile(shpFile, dbfFile, shxFile, prj, fname){
   const offsets=shxFile?readShxOffsets(await shxFile.arrayBuffer()):null;
   let full=null;
   const geomAt=async i=>{
-    if(offsets){ const [off,len]=offsets[i]; return parseShpRecord(await shpFile.slice(off, off+8+len).arrayBuffer()) }
+    if(offsets && offsets[i]){ const [off,len]=offsets[i];   // .shx mais curto que o .dbf: cai na leitura sequencial
+      return parseShpRecord(await shpFile.slice(off, off+8+len).arrayBuffer()) }
     if(!full) full=readShpSequential(await shpFile.arrayBuffer());   // sem .shx: varre o .shp inteiro
     return full[i];
   };
@@ -3259,7 +3261,8 @@ function readTable(text, fname){
 }
 /* .xlsx = zip de XML: lê a 1ª planilha e devolve o texto separado por tabulação */
 async function xlsxToText(buf){
-  const zf=fflate.unzipSync(new Uint8Array(buf)), dec=new TextDecoder('utf-8');
+  /* só textos e planilhas: descompactar imagens/anexos do Excel estourava a memória no iPhone (como no .zip) */
+  const zf=fflate.unzipSync(new Uint8Array(buf),{filter:f=>f.name==='xl/sharedStrings.xml'||/^xl\/worksheets\/sheet\d+\.xml$/.test(f.name)}), dec=new TextDecoder('utf-8');
   const ss=zf['xl/sharedStrings.xml']?[...new DOMParser().parseFromString(dec.decode(zf['xl/sharedStrings.xml']),'text/xml').getElementsByTagName('si')].map(si=>[...si.getElementsByTagName('t')].map(t=>t.textContent).join('')):[];
   const sheet=Object.keys(zf).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort((a,b)=>parseInt(a.match(/\d+/))-parseInt(b.match(/\d+/)))[0];
   if(!sheet) throw new Error('O Excel não tem planilha.');
@@ -3544,7 +3547,7 @@ function openImportDialog({cands, fname, extra}){
       if(!inst.length) toast('Nenhuma rodovia instalada.\nConfira as coordenadas do arquivo.', 5000);
       for(const b of inst) await checkOverlaps(b);
       if(inst.length){ renderBases(); ctRefresh() }
-    }catch(e){ toast('Erro ao salvar.\n'+e.message, 4200) }
+    }catch(e){ renderBases(); toast('Erro ao salvar.\n'+e.message, 4200) }   // as já instaladas aparecem mesmo se uma falhar
     finally{ ok.disabled=false; _impBusy=false }
   };
   showDlg(dlg);
@@ -4263,7 +4266,7 @@ function autoContract(){
     }
   }
   if(!hits.length || hits.includes(cur)) return;
-  localStorage.setItem('kc-contract', hits[0]);
+  try{ localStorage.setItem('kc-contract', hits[0]) }catch(e){}   // dentro do GPS: armazenamento cheio não pode congelar o KM
   ctRefresh();   // sem mensagem (regra do app: nada de confirmação) — a legenda e o botão "i" já mostram o contrato
 }
 function renderCtMode(){
@@ -4958,7 +4961,8 @@ async function openCam(){
   paintGps();   // legenda ao vivo pronta já na abertura (com a câmera fechada o paintGps não monta a placa)
   /* a cada 1–2 s: atualiza a legenda (relógio) e, se o GPS parou de mandar leitura há mais de 20 s,
      reinicia o watch — câmera aberta é justamente quando a posição precisa estar fresca */
-  clearInterval(camTick); camTick=setInterval(()=>{ paintGps(); if(_gpsGotFix && gpsStale(20000)) restartGps() }, _isAndroid?2000:1000);
+  clearInterval(camTick); camTick=setInterval(()=>{ if(document.hidden) return;   /* minimizado: não religa o GPS em 2º plano */
+    paintGps(); if(_gpsGotFix && gpsStale(20000)) restartGps() }, _isAndroid?2000:1000);
 
   try{
     const stream=await navigator.mediaDevices.getUserMedia(camConstraints());
@@ -5097,7 +5101,10 @@ document.getElementById('camflip').onclick=async()=>{ if(_flipping) return; _fli
 /* iOS pausa/encerra a captura quando o app vai para segundo plano; ao voltar, a prévia podia ficar
    preta (track 'ended') e o obturador gravava foto preta. Reabre a câmera só se ela morreu. */
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden || !camwrap.classList.contains('on') || _camClosing || _flipping) return;
+  /* minimizado com a câmera aberta: solta a câmera (no Android ela ficava presa — lanterna acesa e
+     "câmera em uso" nos outros apps). Ao voltar, a trilha está 'ended' e a câmera reabre logo abaixo. */
+  if(document.hidden){ if(camwrap.classList.contains('on') && S.stream && !_capturing && !_flipping) S.stream.getTracks().forEach(t=>t.stop()); return }
+  if(!camwrap.classList.contains('on') || _camClosing || _flipping) return;
   const vt=S.stream && S.stream.getVideoTracks()[0];
   if(vt && vt.readyState==='ended'){ closeCam(true); openCam(); }
   else if(video.paused) video.play().catch(()=>{});   // iOS: a trilha volta "live" mas o vídeo fica pausado
@@ -5424,9 +5431,12 @@ const shutterBtn=document.getElementById('shutter');
    saved=true podem ser apagadas pelo "Limpar galeria" — as que só existem no app nunca são apagadas
    por ele. Fotos de versões anteriores não têm a marca e contam como "só no app" (seguro). */
 async function savePhotoToGallery(blob, name){
-  const d=await idb();
-  return new Promise((res,rej)=>{ const t=_tx(d,'photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now(), saved:false});
-    t.onsuccess=()=>{ const id=t.result; t.transaction.oncomplete=()=>res(id) }; t.onerror=()=>rej(t.error) });   /* só conta depois de gravada no disco */
+  /* _storeTx: reconecta se o iOS derrubou a conexão em 2º plano (antes toda foto falhava até fechar o app).
+     _txDone: espera o COMMIT — com o armazenamento cheio o Chrome/WebView só acusa o erro ali (abort), não no
+     pedido; antes a promessa ficava pendente para sempre: sem aviso, foto perdida e _salvando travado. */
+  const tx=await _storeTx('photos','readwrite'), rq=tx.objectStore('photos').add({name, blob, ts:Date.now(), saved:false});
+  await _txDone(tx, rq);   /* só conta depois de gravada no disco */
+  return rq.result;
 }
 /* via='share': saiu pelo Compartilhar (WhatsApp, e-mail, "Salvar imagem"…). O app não sabe se foi para a
    galeria do celular, então ela NÃO conta como salva: o "Limpar galeria" pergunta antes, como as antigas. */
@@ -5442,17 +5452,19 @@ async function markPhotoSaved(id, via){
 /* getAllPhotos carregava TODOS os blobs na RAM de uma vez — OOM após 50-100 fotos.
    Agora: getPhotoMetas() traz só metadados (cursor), getPhotoBlob(id) busca sob demanda. */
 async function getPhotoMetas(){
-  const d=await idb();
-  return new Promise((res,rej)=>{
-    const metas=[], cur=d.transaction('photos').objectStore('photos').openCursor();
-    cur.onsuccess=()=>{
-      const c=cur.result;
-      /* legacy: foto de antes da v259 — não tem o campo "saved" (o app não sabe se foi salva no celular) */
-      if(c){ const v=c.value, comp=v.via==='share'; metas.push({id:v.id, name:v.name, ts:v.ts, saved:!!v.saved && !comp, comp, legacy:v.saved===undefined}); c.continue(); }
-      else res(metas.sort((a,b)=>b.ts-a.ts));
-    };
-    cur.onerror=()=>rej(cur.error);
-  });
+  /* foto por foto (como o dbAll): com o cursor, UM registro ilegível ("Failed to read large IndexedDB value")
+     derrubava a leitura inteira e a galeria não abria — nenhuma foto ficava acessível */
+  const tx=await _storeTx('photos','readonly');
+  const ids=await new Promise((res,rej)=>{ const q=tx.objectStore('photos').getAllKeys(); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error) });
+  const metas=[];
+  for(const id of ids){
+    const tx2=await _storeTx('photos','readonly');
+    const v=await new Promise(res=>{ const q=tx2.objectStore('photos').get(id); q.onsuccess=()=>res(q.result); q.onerror=e=>{ e.preventDefault(); res(null) } });
+    if(!v) continue;
+    /* legacy: foto de antes da v259 — não tem o campo "saved" (o app não sabe se foi salva no celular) */
+    const comp=v.via==='share'; metas.push({id:v.id, name:v.name, ts:v.ts, saved:!!v.saved && !comp, comp, legacy:v.saved===undefined});
+  }
+  return metas.sort((a,b)=>b.ts-a.ts);
 }
 async function getPhotoBlob(id){
   const d=await idb();
@@ -5560,7 +5572,7 @@ async function openGallery(){
   galIdx=0; galBusy=false; await galRender();
   document.getElementById('gallerywrap').classList.add('on');
 }
-document.getElementById('cam-gallery').onclick=openGallery;
+document.getElementById('cam-gallery').onclick=()=>openGallery().catch(()=>toast('⚠ Não consegui abrir a galeria.'));
 document.getElementById('gal-close').onclick=()=>{
   document.getElementById('gallerywrap').classList.remove('on');
   for(const u of _galUrls.values()) URL.revokeObjectURL(u);
@@ -6479,6 +6491,10 @@ function showInstallPrompt(){
 
 /* ================= boot ================= */
 (async function(){
+  /* GPS liga ANTES de ler as rodovias: com muitas bases (registros de vários MB) ou o banco travado na abertura,
+     o dbAll demorava e o GPS não ligava. O watchPosition não precisa das bases — o renderBases recalcula o KM. */
+  startGps();
+  initGpsPermWatch();
   /* falha ao ler o IndexedDB: avisa em vez de mostrar "Nenhuma rodovia baixada" — parecia que tudo
      tinha sumido e o usuário baixava de novo por cima */
   try{ S.bases=await dbAll() }catch(e){ S.bases=[]; S.basesErr=true; toast('Não consegui ler as rodovias salvas.\nFeche e abra o app de novo.', 6000) }
@@ -6493,9 +6509,6 @@ function showInstallPrompt(){
   /* GPS inicia no boot — só watchPosition (contínuo, alta precisão).
      NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
      interfere com o watchPosition, cancelando os callbacks e deixando S.pos vazio. */
-  startGps();
-  /* Monitora estado da permissão GPS (change events no Android, visibilitychange em todos) */
-  initGpsPermWatch();
   /* Armazenamento PERSISTENTE: sem isso, com o aparelho cheio o sistema pode apagar TODOS os dados
      do app (rodovias baixadas, fotos da galeria, configurações) sem aviso. App instalado costuma
      receber a permissão automaticamente; se negar, segue como antes. */

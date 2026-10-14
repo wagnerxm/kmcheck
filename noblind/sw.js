@@ -1,10 +1,10 @@
-const CACHE = 'noblind-v45';
+const CACHE = 'noblind-v46';
 const ASSETS = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'banner-hero.jpg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('noblind-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 // Estratégia: o DOCUMENTO (index.html / navegação) usa REDE PRIMEIRO — sempre pega a versão
 // mais nova quando há internet, caindo pro cache só quando offline. Demais assets (fontes,
