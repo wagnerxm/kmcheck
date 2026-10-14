@@ -11,8 +11,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KM Painel">
 <title>KM Check — Admin</title>
-<link rel="icon" type="image/svg+xml" href="/app/admin/favicon.svg">
-<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<!-- logo própria do painel (o app de campo tem a dele) -->
+<link rel="icon" type="image/png" href="/api/admin/img/painel-favicon-64.png">
+<link rel="apple-touch-icon" href="/api/admin/img/painel-apple-touch.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
 <style>
@@ -54,7 +55,8 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 /* ── Login ── */
 #login{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;height:100%;min-height:100vh;min-height:100dvh;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}   /* dvh: no celular a página tem altura automática e o 100% não centralizava */
 .login-card{border-radius:32px;padding:40px;width:100%;max-width:380px;text-align:center}
-.login-card .logo{width:56px;height:56px;border-radius:50%;background:var(--lima);color:#0a0c0e;display:grid;place-items:center;margin:0 auto 18px;font-weight:700}
+/* a arte tem fundo preto: "lighten" faz o preto sumir em cima do vidro escuro, e a máscara suaviza a borda do quadrado */
+.login-card .logo{display:block;width:176px;height:176px;margin:-10px auto 4px;mix-blend-mode:lighten;-webkit-mask:radial-gradient(closest-side,#000 82%,transparent);mask:radial-gradient(closest-side,#000 82%,transparent)}
 .login-card h1{font-size:28px;letter-spacing:-.04em}
 .login-card .sub{color:var(--text2);font-size:13px;margin:4px 0 26px}
 .login-card .field{text-align:left;margin-bottom:14px}
@@ -68,7 +70,7 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 #dash{position:relative;z-index:10;height:100%;display:none;flex-direction:column;padding:14px 20px 18px;gap:14px}
 .topo{flex:none;height:58px;border-radius:999px;display:flex;align-items:center;gap:14px;padding:0 8px 0 14px}
 .marca{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:600;letter-spacing:-.04em;white-space:nowrap}
-.marca i{width:28px;height:28px;border-radius:50%;background:var(--lima);display:grid;place-items:center;color:#0a0c0e;font-style:normal;font-size:11px;font-weight:700;letter-spacing:0}
+.marca img{width:34px;height:34px;margin:-3px 0;mix-blend-mode:lighten}
 .marca em{font-size:19px;letter-spacing:0;color:rgba(255,255,255,.7)}
 .abas{display:flex;gap:2px;padding:4px;border-radius:999px;margin-left:8px;position:relative}
 .abas button{position:relative;z-index:1;padding:8px 15px;border-radius:999px;color:rgba(255,255,255,.65);font-weight:500;white-space:nowrap}
@@ -434,8 +436,8 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
 <!-- ════════════════════ LOGIN ════════════════════ -->
 <div id="login">
   <div class="login-card forte">
-    <span class="logo">KM</span>
-    <h1>KM Check <em>Painel</em></h1>
+    <img class="logo" src="/api/admin/img/painel-icone-512.png" alt="KM Check">
+    <h1><em>Painel</em></h1>
     <div class="sub">Acesso do administrador</div>
     <div class="field"><label>Usuário</label><input type="text" id="lg-user" placeholder="admin" autocomplete="username"></div>
     <div class="field"><label>Senha</label><input type="password" id="lg-pass" placeholder="••••••••" autocomplete="current-password"></div>
@@ -447,7 +449,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
 <!-- ════════════════════ PAINEL ════════════════════ -->
 <div id="dash">
   <header class="topo forte">
-    <div class="marca"><i>KM</i>KM Check <em>Painel</em></div>
+    <div class="marca"><img src="/api/admin/img/painel-cabeca-128.png" alt="">KM Check <em>Painel</em></div>
     <nav class="abas vidro" id="abas">
       <span class="marcador" id="marcador"></span>
       <button data-a="resumo" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Resumo</span></button>
