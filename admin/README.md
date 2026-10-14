@@ -60,7 +60,7 @@ ADMIN_PORT=3457
 ADMIN_USER=admin
 ADMIN_HASH=$2a$12$XXXXXXX   ← cole o hash aqui
 JWT_SECRET=XXXXXXX            ← cole a chave JWT aqui
-CONTROLCHECK_API=https://controlcheck.duckdns.org/api
+KMCHECK_API=http://127.0.0.1:3010/api
 ```
 
 ### 4. Testar

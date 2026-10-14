@@ -39,8 +39,9 @@ const PORT             = +(process.env.ADMIN_PORT || 3457);
 const JWT_SECRET       = process.env.JWT_SECRET || 'troque-esta-chave';
 const ADMIN_USER       = process.env.ADMIN_USER || 'admin';
 const ADMIN_HASH       = process.env.ADMIN_HASH;
-const CONTROLCHECK_API = process.env.CONTROLCHECK_API || 'https://controlcheck.duckdns.org/api';
-const GITHUB_PAGES     = 'https://wagnerxm.github.io/kmcheck';
+/* tudo vem do próprio KM Check: a API das rodovias (kmcheck-server, no mesmo VPS) e o site kmcheck.com.br */
+const KMCHECK_API      = process.env.KMCHECK_API || 'http://127.0.0.1:3010/api';
+const KMCHECK_SITE     = process.env.KMCHECK_SITE || 'https://kmcheck.com.br';
 const DNIT_WFS         = 'https://geoservicos.inde.gov.br/geoserver/DNIT/wfs';
 
 if (!ADMIN_HASH) {
@@ -785,7 +786,7 @@ app.get('/api/admin/malha.js', (req, res) => {
    ROTAS — COBERTURA DE RODOVIAS
    ================================================================ */
 
-/* Cache em memória das rodovias disponíveis no GitHub Pages */
+/* Cache em memória das rodovias disponíveis no site do KM Check (kmcheck.com.br) */
 let _availableCache = null;
 let _availableCacheTime = 0;
 const CACHE_TTL = 10 * 60 * 1000; // 10 min
@@ -794,7 +795,7 @@ async function fetchAvailableRoads() {
   const now = Date.now();
   if (_availableCache && now - _availableCacheTime < CACHE_TTL) return _availableCache;
   try {
-    const r = await fetch(`${GITHUB_PAGES}/data/rodovias/index.json`, {
+    const r = await fetch(`${KMCHECK_SITE}/data/rodovias/index.json`, {
       signal: AbortSignal.timeout(15000)
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -817,7 +818,7 @@ async function fetchServerVersions() {
   const now = Date.now();
   if (_versionsCache && now - _versionsCacheTime < CACHE_TTL) return _versionsCache;
   try {
-    const r = await fetch(`${CONTROLCHECK_API}/rodovias/versoes`, {
+    const r = await fetch(`${KMCHECK_API}/rodovias/versoes`, {
       signal: AbortSignal.timeout(10000)
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -999,5 +1000,5 @@ app.listen(PORT, () => {
   console.log(`   Usuário: ${ADMIN_USER}`);
   console.log(`   Dispositivos no banco: ${devCount}`);
   console.log(`   Rodovias DNIT no banco: ${_db.dnit_roads.length}`);
-  console.log(`   API: ${CONTROLCHECK_API}\n`);
+  console.log(`   API: ${KMCHECK_API}\n`);
 });
