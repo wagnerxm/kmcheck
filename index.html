@@ -966,6 +966,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0}
 .impcard.more .impmore svg{transform:rotate(180deg)}
 .imp-err{color:var(--err);font-size:12.5px;margin-top:10px;white-space:pre-line}
 .imp-err:empty{display:none}
+.impall{background:none;border:none;color:var(--gold2);font-size:13px;font-family:var(--sans);padding:8px 2px 2px;cursor:pointer}
+.impall[hidden]{display:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 /* ── prompt de instalação ── */
 .install-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:900;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .3s;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -1742,6 +1744,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <dialog id="dlg-imp" aria-labelledby="imp-title">
   <h2 class="imp-t1" id="imp-title">Configurar trecho</h2>
   <p class="imp-sub" id="imp-sub"></p>
+  <button class="impall" id="imp-all" hidden>Marcar todas</button>
   <div id="imp-list"></div>
   <p class="imp-err" id="imp-err" role="alert"></p>
   <div class="row" style="margin-top:14px">
@@ -1951,9 +1954,22 @@ function idb(){
     r.onblocked=()=>rej(new Error('O app está aberto em outra aba.\nFeche as outras abas do KM Check.'));
     r.onsuccess=()=>{ _db=r.result; _db.onclose=()=>{_db=null}; _db.onversionchange=()=>{_db.close();_db=null}; res(_db) };
     r.onerror=()=>rej(r.error); })}
-async function dbAll(){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases').objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
-async function dbPut(b){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').put(b); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
-async function dbDel(id){ const d=await idb(); return new Promise((res,rej)=>{ const t=d.transaction('bases','readwrite').objectStore('bases').delete(id); t.onsuccess=res; t.onerror=()=>rej(t.error) })}
+/* Transação em 'bases'. No iOS, depois de um tempo em 2º plano, a conexão cai sem disparar onclose
+   ("Connection to Indexed Database server lost") e d.transaction() LANÇA — o singleton ficava
+   apontando para uma conexão morta até fechar o app. Zera e reabre 1x antes de desistir. */
+async function _basesTx(mode){
+  const d=await idb();
+  try{ return d.transaction('bases',mode) }
+  catch(e){ if(_db===d) _db=null; return (await idb()).transaction('bases',mode) }
+}
+async function dbAll(){ const tx=await _basesTx('readonly'); return new Promise((res,rej)=>{ const t=tx.objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
+/* Escrita só vale quando a TRANSAÇÃO completa: o onsuccess do pedido vem antes do commit, e um
+   QuotaExceededError (disco cheio) aborta depois dele — a rodovia "instalava" e sumia ao reabrir. */
+function _txDone(tx, req){ return new Promise((res,rej)=>{
+  tx.oncomplete=()=>res();
+  tx.onabort=tx.onerror=()=>rej(tx.error||req.error||new Error('Falha ao gravar no armazenamento do aparelho.')) })}
+async function dbPut(b){ const tx=await _basesTx('readwrite'); return _txDone(tx, tx.objectStore('bases').put(b)) }
+async function dbDel(id){ const tx=await _basesTx('readwrite'); return _txDone(tx, tx.objectStore('bases').delete(id)) }
 
 /* ================= geometria ================= */
 const R=6371008.8, D2R=Math.PI/180;
@@ -2028,8 +2044,9 @@ function findKm(lat,lon){
   return {km, dist, br:b.br, uf:b.uf, axLat:lat2, axLon:lon2, fonte:b.fonte, id:b.id};
 }
 function kmToCoord(base, km){
-  const a=base.km;
+  const a=base.km, fant=basePhantom(base);   // ligação fantasma não é estrada: interpolar nela dava um ponto no meio do nada
   for(let i=0;i<a.length-1;i++){
+    if(fant[i]) continue;
     const lo=Math.min(a[i],a[i+1]), hi=Math.max(a[i],a[i+1]);
     if(km>=lo && km<=hi){
       const t=(a[i+1]===a[i])?0:(km-a[i])/(a[i+1]-a[i]);
@@ -2070,9 +2087,10 @@ function fmtDMS(v,isLat){
   return `${deg}°${String(min).padStart(2,'0')}'${s.toFixed(1).replace('.',',').padStart(4,'0')}"${hemi}`;
 }
 function fmtGMD(v,isLat){
-  const {deg,hemi}=dmsParts(v,isLat);
-  const minFloat=(Math.abs(v)-Math.floor(Math.abs(v)))*60;
-  return `${deg}°${minFloat.toFixed(3).replace('.',',')}'${hemi}`;
+  let {deg,hemi}=dmsParts(v,isLat);
+  let m=Math.round((Math.abs(v)-Math.floor(Math.abs(v)))*60*1000)/1000;
+  if(m>=60){ m-=60; deg++; }   // 59,9996' arredondava para "60,000'" em vez de subir o grau
+  return `${deg}°${m.toFixed(3).replace('.',',')}'${hemi}`;
 }
 function formatCoord(lat, lon){
   switch(CFG.coordstyle){
@@ -2358,9 +2376,12 @@ function detectOverlaps(N, E){
   }
   return out;
 }
-/* pergunta qual rodovia vale num trecho coincidente → 'a' | 'b' | 'both' */
+/* pergunta qual rodovia vale num trecho coincidente → 'a' | 'b' | 'both'.
+   Fila: duas instalações quase juntas (ou o ⋯ da lista durante uma instalação) chamavam isto ao mesmo
+   tempo — o 2º sobrescrevia os botões do 1º diálogo e a 1ª promessa nunca resolvia. */
+let _ovlFila=Promise.resolve();
 function askOverlap(o){
-  return new Promise(resolve=>{
+  const p=_ovlFila.then(()=>new Promise(resolve=>{
     const dlg=document.getElementById('dlg-ovl');
     document.getElementById('ovl-list').innerHTML=
       `<div><b>${_esc(o.a)}</b>: km ${fkm(o.aKi)} a ${fkm(o.aKf)}</div><div><b>${_esc(o.b)}</b>: km ${fkm(o.bKi)} a ${fkm(o.bKf)}</div>`;
@@ -2371,8 +2392,13 @@ function askOverlap(o){
     const fin=k=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(k) };
     bx.querySelectorAll('button').forEach(b=>b.onclick=()=>fin(b.dataset.k));
     dlg.oncancel=e=>{ e.preventDefault(); fin(o.keep||'both') };   // Voltar/Esc: mantém como estava
+    /* fechado por fora com dlg.close(): não deixa a promessa (e a fila) pendurada. O evento 'close' chega
+       atrasado (próximo quadro): o do diálogo anterior da fila cai aqui com este já aberto — por isso o !dlg.open */
+    dlg.onclose=()=>{ if(!dlg.open) fin(o.keep||'both') };
     showDlg(dlg);
-  });
+  }));
+  _ovlFila=p.catch(()=>{});
+  return p;
 }
 /* depois de instalar N: procura trechos coincidentes com as outras rodovias e pergunta qual vale.
    Rodovia baixada de novo: reaproveita a escolha já feita para o mesmo trecho (não pergunta outra vez). */
@@ -2422,13 +2448,14 @@ function askEstaca(id, okLabel, kmSugerido){
     const fin=v=>{ if(done) return; done=true; if(dlg.open) dlg.close(); resolve(v) };
     document.getElementById('est-cancel').onclick=()=>fin(null);
     dlg.oncancel=e=>{ e.preventDefault(); fin(null) };
+    dlg.onclose=()=>{ if(!dlg.open) fin(null) };   // fechado por fora com dlg.close(): resolve como cancelado (o 'close' atrasado de um uso anterior não conta)
     document.getElementById('est-ok').onclick=()=>{
       if(auto.checked) return fin([]);
       const out=[];
       for(const row of rows.children){
         const kmv=row.querySelector('.est-km').value.trim(), ev=row.querySelector('.est-e').value.trim(), mv=row.querySelector('.est-m').value.trim();
         if(!kmv && !ev && !mv) continue;
-        const km=parseNum(kmv), e=ev===''?0:Number(ev), m=mv===''?0:parseNum(mv);
+        const km=parseNum(kmv), e=ev===''?0:Number(semMilhar(ev)), m=mv===''?0:parseNum(mv);
         if(km==null || km<0){ toast('Informe o KM de cada zero (ex.: 300,000).'); return }
         if(!Number.isInteger(e) || e<0){ toast('A estaca precisa ser um número inteiro (ex.: 0).'); return }
         if(m==null || m<0 || m>=20){ toast('Os metros vão de 0 a 19 (cada estaca tem 20 m).'); return }
@@ -2480,7 +2507,8 @@ function renderBases(){
   const sel=document.getElementById('k-base');
   sel.innerHTML='';
   if(!S.bases.length){
-    el.innerHTML='<p class="empty">Nenhuma rodovia baixada.<br>Baixe uma rodovia ou importe um arquivo.</p>';
+    el.innerHTML=S.basesErr ? '<p class="empty">Não consegui ler as rodovias salvas.<br>Feche e abra o app de novo.</p>'   // boot: IndexedDB falhou
+      : '<p class="empty">Nenhuma rodovia baixada.<br>Baixe uma rodovia ou importe um arquivo.</p>';
   } else {
     /* lista enxuta: nome, segmento e SNV. Estaca e trechos coincidentes ficam nos detalhes (botão ⋯);
        o pontinho verde no ⋯ avisa que a rodovia tem estaca manual ou trecho coincidente */
@@ -2738,6 +2766,12 @@ function parseNum(v){
   if(s.includes(',')) s=s.replace(/\./g,'').replace(',','.');
   const n=parseFloat(s); return isFinite(n)?n:null;
 }
+/* inteiro digitado (estaca): "1.000" é mil com ponto de milhar, não 1 — Number/parseInt liam o ponto
+   como decimal. Só tira os pontos quando cada um vem seguido de exatamente 3 dígitos e não há vírgula. */
+function semMilhar(v){
+  const s=String(v==null?'':v).trim();
+  return !s.includes(',') && /^-?\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g,'') : s;
+}
 /* KM para preencher campo editável: sem separador de milhar (o fkm agrupa — "1.300,000") */
 function kmInput(km){ return km.toFixed(3).replace('.',',') }
 document.getElementById('dl-go').onclick=async()=>{
@@ -2767,7 +2801,15 @@ document.getElementById('dl-go').onclick=async()=>{
     let b;
     if(snvVer){
       /* Versão específica selecionada → buscar do servidor (API) */
-      b=await downloadRoadFromApi(brPad, uf, snvVer, msg=>{ status.textContent=msg }, kmi, kmf, tipoTr);
+      try{ b=await downloadRoadFromApi(brPad, uf, snvVer, msg=>{ status.textContent=msg }, kmi, kmf, tipoTr) }
+      catch(e){
+        /* servidor fora/lento/5xx (não 404, que é "não existe nessa versão"): o tipo B tem cópia nos dados
+           do app (JSON pré-processado → GeoServer). Antes o erro parava aqui e a rodovia não vinha nunca. */
+        const rede=e.name==='TypeError'||e.name==='AbortError'||e.name==='TimeoutError'||/HTTP 5\d\d/.test(e.message);
+        if(!(rede && tipoTr==='B')) throw e;
+        status.textContent='Servidor fora do ar. Usando os dados do app…';
+        b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
+      }
     } else {
       /* "Mais recente" → fluxo padrão (JSON local → WFS GeoServer) */
       b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
@@ -2780,7 +2822,9 @@ document.getElementById('dl-go').onclick=async()=>{
     await checkOverlaps(b); renderBases();
   }catch(err){
     status.textContent=DL_DEFAULT_HINT;
-    toast('Falha: '+err.message+(snvVer?'':'. Alternativa: importe o shapefile do DNIT Cloud.'));
+    /* "Failed to fetch" (Chrome), "Load failed" (Safari), "NetworkError…" (Firefox): mesma coisa, em inglês */
+    const msg=/Failed to fetch|Load failed|NetworkError/i.test(err.message)?'Sem conexão com o servidor. Tente de novo com internet.':err.message;
+    toast('Falha: '+msg+(snvVer?'':'. Alternativa: importe o shapefile do DNIT Cloud.'));
   }
   btn.disabled=false; btn.textContent='Baixar rodovia';
 };
@@ -2804,6 +2848,7 @@ document.getElementById('filein').onchange=async e=>{
   }catch(err){ toast('Falha ao ler o arquivo.\n'+err.message, 4200) }
 };
 const _ext=n=>(n.toLowerCase().match(/\.([a-z0-9]+)$/)||[])[1]||'';
+const _ZIP_OK=['shp','dbf','shx','prj','kml','kmz','csv','txt','geojson','json','gpx','xlsx'];
 async function readImportFiles(files){
   const by=x=>files.find(f=>_ext(f.name)===x);
   const first=files[0], fname=first.name;
@@ -2813,7 +2858,9 @@ async function readImportFiles(files){
   }
   const x=_ext(fname);
   if(x==='zip'||x==='kmz'){
-    const zf=fflate.unzipSync(new Uint8Array(await first.arrayBuffer())), names=Object.keys(zf);
+    /* só descompacta o que o leitor usa: ZIP do DNIT/QGIS traz PDF, imagens, .sbn… e tudo ia para a
+       memória (no iPhone, o Safari derrubava a página com zips grandes) */
+    const zf=fflate.unzipSync(new Uint8Array(await first.arrayBuffer()), {filter:f=>_ZIP_OK.includes(_ext(f.name))}), names=Object.keys(zf);
     const find=e=>names.find(n=>_ext(n)===e);
     if(find('shp') && find('dbf')){
       const mk=n=>new File([zf[n]], n);
@@ -2864,6 +2911,14 @@ function utmToGeo(E, N, zone, south){
 /* fuso do .prj: "UTM zone 24S" no nome ou meridiano central + falso norte */
 function prjZone(txt){
   if(!txt) return null;
+  /* projetado mas não UTM (Policônica do IBGE, Mercator, Web Mercator do Google…): os metros iam para o
+     utmToGeo como se fossem UTM e a rodovia "instalava" no meio do oceano. Recusa com o nome da projeção. */
+  const pj=(txt.match(/PROJECTION\s*\[\s*"([^"]+)"/i)||[])[1];
+  if(pj && !/^transverse_mercator$/i.test(pj.trim())){
+    const nm=/polyconic/i.test(pj)?'Policônica':/auxiliary_sphere|pseudo|web_?mercator/i.test(pj+txt.slice(0,120))?'Web Mercator':/mercator/i.test(pj)?'Mercator'
+      :/lambert/i.test(pj)?'Cônica de Lambert':/albers/i.test(pj)?'Albers':pj.replace(/_/g,' ');
+    throw new Error('Projeção do arquivo não suportada ('+nm+').\nExporte em SIRGAS 2000 geográfico (lat/long) ou UTM.');
+  }
   let m=txt.match(/UTM[ _]?zone[ _]?(\d{1,2})\s*([NS])/i) || txt.match(/zone[ _]?(\d{1,2})([NS])\b/i);
   if(m) return {zone:+m[1], south:m[2].toUpperCase()==='S'};
   const cm=txt.match(/central_meridian"\s*,\s*(-?[\d.]+)/i), fn=txt.match(/false_northing"\s*,\s*([\d.]+)/i);
@@ -2887,7 +2942,9 @@ function readDbfBuf(buf){
   const dec=new TextDecoder('latin1'); const records=[]; let ro=headerLen;
   for(let r=0;r<numRecords;r++){
     if(ro+recordLen>buf.byteLength) break;
-    if(v.getUint8(ro)===0x2A){ ro+=recordLen; continue }
+    /* apagado (0x2A): entra como null — pular desalinhava o índice com o .shp e cada trecho seguinte
+       recebia os atributos (BR, UF, KM) do vizinho */
+    if(v.getUint8(ro)===0x2A){ records.push(null); ro+=recordLen; continue }
     let fo=ro+1; const rec={};
     for(const f of fields){
       const raw=dec.decode(new Uint8Array(buf, fo, f.len)).trim();
@@ -2933,9 +2990,10 @@ const _F_KMF=[/^vl_km_fin/,/^km_?fi[mn]/,/^kmf$/,/^km_?final/,/^fim$/];
 const _F_KM=[/^km$/,/^vl_km$/,/^marco/,/^km_?ponto/];
 async function readShapefile(shpFile, dbfFile, shxFile, prj, fname){
   const recs=readDbfBuf(await dbfFile.arrayBuffer());
-  const keys=recs.length?Object.keys(recs[0]):[], low=Object.fromEntries(keys.map(k=>[k.toLowerCase(),k]));
+  const r0=recs.find(r=>r), keys=r0?Object.keys(r0):[], low=Object.fromEntries(keys.map(k=>[k.toLowerCase(),k]));
   const lk=Object.keys(low), F=r=>{ const k=_field(lk,r); return k?low[k]:null };
-  const fRoad=F(_F_ROAD), fUf=F(_F_UF), fKi=F(_F_KMI), fKf=F(_F_KMF), fKm=F(_F_KM), snv=keys.includes('vl_br');
+  /* campos do SNV pelo nome em minúsculas: exportado do QGIS/ArcGIS vem "VL_BR"/"SG_TIPO_TR" (igual ao fetch-snv-wfs.mjs) */
+  const fRoad=F(_F_ROAD), fUf=F(_F_UF), fKi=F(_F_KMI), fKf=F(_F_KMF), fKm=F(_F_KM), snv=!!low.vl_br, fTipo=low.sg_tipo_tr;
   const offsets=shxFile?readShxOffsets(await shxFile.arrayBuffer()):null;
   let full=null;
   const geomAt=async i=>{
@@ -2947,8 +3005,8 @@ async function readShapefile(shpFile, dbfFile, shxFile, prj, fname){
   const cand=(name,uf)=>{ const k=name+'/'+uf; let c=groups.get(k); if(!c) groups.set(k, c={name, uf, segs:[], kmPts:[], lines:[]}); return c };
   const defName=guessRoad(fname), defUf=guessUf(fname);
   for(let i=0;i<recs.length;i++){
-    const r=recs[i];
-    if(snv && r.sg_tipo_tr && r.sg_tipo_tr!=='B') continue;   // SNV: só eixo principal (acessos têm km próprio)
+    const r=recs[i]; if(!r) continue;   // registro apagado no .dbf
+    if(snv && fTipo && r[fTipo] && r[fTipo]!=='B') continue;   // SNV: só eixo principal (acessos têm km próprio)
     const g=await geomAt(i); if(!g) continue;
     const name=normRoad(fRoad && r[fRoad]!=null && r[fRoad]!=='' ? r[fRoad] : defName);
     const uf=String(fUf && r[fUf] ? r[fUf] : defUf).toUpperCase().slice(0,2);
@@ -2980,7 +3038,8 @@ function kmFromLabel(s){
   if(!s) return null; s=String(s);
   const m=s.match(/km\s*([\d.,]+)(?:\s*\+\s*(\d{1,3}))?/i);
   if(!m) return null;
-  const k=parseNum(m[1]); if(k==null) return null;
+  /* com "+m" o km é inteiro: o ponto só pode ser de milhar ("km 1.300+200" = 1300,2, não 1,2) */
+  const k=parseNum(m[2]!=null?m[1].replace(/\./g,''):m[1]); if(k==null) return null;
   return m[2]!=null ? Math.floor(k)+(+m[2])/1000 : k;
 }
 function readKml(xml, fname){
@@ -3058,8 +3117,21 @@ function readGeoJson(txt, fname){
 /* ---- planilha (CSV/TXT/colado do Excel/XLSX) ----
    Cada linha: KM + LAT + LONG (em graus) ou KM + E + N (UTM, em metros). Sem coluna de KM, a
    sequência de pontos vira o traçado e o usuário informa o km do início. */
+/* colunas de uma linha. Com tab/";" a vírgula é decimal ("1.300,5;-5,59"). Sem eles, CSV com vírgula
+   ("-5.591172,-37.301907", "300.5,-5.59,-37.30") era recusado: separa pela vírgula quando há ponto
+   decimal ou ",-" (vírgula colada num negativo). Não separa se alguma coluna ficar com dois números
+   separados por espaço ("1.300,5 -5,59") nem se a linha mistura ", " e ",5" ("1.300,5, -5,59"): aí a
+   vírgula é decimal e o separador é o espaço. */
+function _splitCells(line){
+  let cells=line.split(/\t|;/); if(cells.length>1) return cells;
+  if(line.includes(',') && (/\d\.\d/.test(line) || line.includes(',-')) && !(/,\s/.test(line) && /,\d/.test(line))){
+    cells=line.split(',');
+    if(!cells.some(c=>/\d\s+[-+]?\d/.test(c))) return cells;
+  }
+  return line.split(/\s{1,}|,(?=\s)/);
+}
 function _lineNums(line){
-  let cells=line.split(/\t|;/); if(cells.length===1) cells=line.split(/\s{1,}|,(?=\s)/);
+  const cells=_splitCells(line);
   const out=[];
   for(let c of cells){
     c=c.trim(); if(!c) continue;
@@ -3121,6 +3193,9 @@ function finishCands(list, utmZone, fonte, fname, estLabels){
     c.zone = c.utm ? utmZone : null;
     c.hasKm = c.segs.length>0 || c.kmPts.length>=2;
     if(!c.hasKm) c.line=chainLines(c.lines);
+    /* um marco "KM 10" sozinho (sem linha): não tem traçado nem 2 pontos de KM — o desenho da janela
+       quebrava em c.line[0] ("Cannot read properties of undefined") */
+    if(!c.hasKm && c.line.length<2) continue;
     if(c.kmPts.length) c.kmPts.sort((a,b)=>a.km-b.km);
     let lo=Infinity, hi=-Infinity;
     for(const s of c.segs){ lo=Math.min(lo,s.kmi,s.kmf); hi=Math.max(hi,s.kmi,s.kmf) }
@@ -3130,6 +3205,9 @@ function finishCands(list, utmZone, fonte, fname, estLabels){
     cands.push(c);
   }
   cands.sort((a,b)=>(a.name+a.uf).localeCompare(b.name+b.uf,'pt',{numeric:true}));
+  /* shapefile nacional do SNV: ~360 rodovias vinham TODAS marcadas e o "Instalar 360" enchia o aparelho.
+     Com mais de 5, começa tudo desmarcado, menos as da UF onde o GPS está (se souber) */
+  if(cands.length>5){ const u=_ufDoGps(cands); cands.forEach(c=>{ c.on=!!u && c.uf===u }) }
   /* muitas linhas sem KM (desenho exportado do AutoCAD: eixo + bordas + blocos + hachuras): mostra só as
      maiores e marca uma só, a mais provável de ser o eixo (a maior que não é bloco/hachura) */
   const loose=cands.filter(c=>!c.hasKm);
@@ -3145,6 +3223,21 @@ function finishCands(list, utmZone, fonte, fname, estLabels){
     return {cands:[...withKm, best, ...keep.filter(c=>c!==best)], fname, extra};
   }
   return {cands, fname, extra};
+}
+/* UF onde o GPS está, para pré-marcar a importação: a da rodovia instalada mais próxima (até 20 km) ou a do
+   candidato do arquivo com vértice mais perto (até ~30 km). Posição velha de outra sessão não conta. */
+function _ufDoGps(cands){
+  const p=S.pos; if(!p || (p===_cachedPos && Date.now()-(p.t||0)>3600000)) return '';
+  if(S.fix && S.fix.dist<20000 && S.fix.uf) return S.fix.uf;
+  const cs=Math.cos(p.lat*D2R); let best=(30/111)**2, uf='';
+  const ver=(c,q)=>{ const dx=(q[0]-p.lon)*cs, dy=q[1]-p.lat, d=dx*dx+dy*dy; if(d<best){ best=d; uf=c.uf } };
+  for(const c of cands){
+    if(c.utm || !c.uf) continue;
+    for(const s of c.segs) for(const q of s.pts) ver(c,q);
+    for(const q of c.kmPts) ver(c,[q.x,q.y]);
+    if(c.line) for(const q of c.line) ver(c,q);
+  }
+  return uf;
 }
 /* os números de estaca do desenho ficam colados ao eixo: se o "0" está a menos de 15 m de uma ponta e o
    maior número perto da outra, essa ponta é o início ('A' = 1º ponto da linha, 'B' = último) */
@@ -3300,7 +3393,12 @@ function openImportDialog({cands, fname, extra}){
   });
   const ok=document.getElementById('imp-ok'), n=()=>cards.filter(cd=>!val(cd,'.imp-on')||val(cd,'.imp-on').checked).length;
   const setOk=()=>{ const k=n(); ok.textContent=k>1?'Instalar '+k:'Instalar' };
-  box.querySelectorAll('.imp-on').forEach(cb=>cb.onchange=setOk); setOk();
+  /* "Marcar/Desmarcar todas": arquivo com muitas rodovias (SNV nacional) começa desmarcado (finishCands) */
+  const all=document.getElementById('imp-all'), cbs=[...box.querySelectorAll('.imp-on')];
+  const paintAll=()=>{ all.textContent=cbs.every(cb=>cb.checked)?'Desmarcar todas':'Marcar todas' };
+  all.hidden=cbs.length<=5;
+  all.onclick=()=>{ const on=!cbs.every(cb=>cb.checked); cbs.forEach(cb=>cb.checked=on); setOk(); paintAll() };
+  cbs.forEach(cb=>cb.onchange=()=>{ setOk(); paintAll() }); setOk(); paintAll();
   document.getElementById('imp-err').textContent='';
   document.getElementById('imp-cancel').onclick=()=>dlg.close();
   ok.disabled=false;
@@ -3317,6 +3415,12 @@ function openImportDialog({cands, fname, extra}){
       if(!uf){ bad('escolha a UF.'); return }
       const zone=c.utm?val(card,'.imp-zone').value:'';
       if(c.utm && !zone){ bad('escolha o fuso UTM.'); return }
+      /* confere DEPOIS de converter: fuso/hemisfério errado ou projeção que o .prj não declarou davam
+         coordenadas no oceano ou na África — a rodovia instalava e o KM nunca aparecia */
+      { const G=_toGeo(c, zone), pts=[...c.segs.flatMap(s=>[s.pts[0], s.pts[s.pts.length-1]]), ...c.kmPts.map(q=>[q.x,q.y]), ...(c.line||[])];
+        const st=Math.max(1, Math.floor(pts.length/200)); let n=0, dentro=0;
+        for(let i=0;i<pts.length;i+=st){ const [lo,la]=G(pts[i]); n++; if(la>=-35&&la<=6&&lo>=-75&&lo<=-32) dentro++ }
+        if(n && dentro<n/2){ bad('as coordenadas ficam fora do Brasil.\n'+(c.utm?'Confira o fuso UTM.':'Exporte em SIRGAS 2000 geográfico (lat/long) ou UTM.')); return } }
       const job={c, name, uf, zone, nome:val(card,'.imp-nome').value.trim(), ct:val(card,'.imp-ct').value};
       if(c.hasKm){
         const ki=parseNum(val(card,'.imp-ki').value), kf=parseNum(val(card,'.imp-kf').value);
@@ -3327,7 +3431,7 @@ function openImportDialog({cands, fname, extra}){
         job.k0=k0; job.pontaB=val(card,'.imp-ponta .on').dataset.v==='B';
       }
       if(val(card,'.imp-est .on').dataset.v==='zero'){
-        const km=parseNum(val(card,'.imp-ezkm').value), e=parseInt(val(card,'.imp-eze').value,10), m=parseInt(val(card,'.imp-ezm').value||'0',10);
+        const km=parseNum(val(card,'.imp-ezkm').value), e=parseInt(semMilhar(val(card,'.imp-eze').value),10), m=parseInt(val(card,'.imp-ezm').value||'0',10);
         if(km==null||!(e>=0)||!(m>=0&&m<20)){ bad('confira o zero da estaca.\nKm, estaca e metros de 0 a 19.'); return }
         job.est={km, e, m};
       }
@@ -3399,8 +3503,7 @@ function parseCoordLines(text){
   const rows=[]; let skipped=0;
   for(const raw of text.split(/\r?\n/)){
     const line=raw.trim(); if(!line) continue;
-    let cells=line.split(/\t|;/);
-    if(cells.length===1) cells=line.split(/\s{1,}|,(?=\s)/);
+    const cells=_splitCells(line);
     // números: tratar vírgula decimal quando separador não é vírgula
     const nums=[];
     for(let c of cells){
@@ -3420,7 +3523,10 @@ function parseCoordLines(text){
     // classificar: lon ∈ [-75,-32]; lat ∈ [-35,6] (preferindo negativos com casas decimais); km = restante
     const cand=nums.slice();
     let lat=null,lon=null,km=null;
-    const li=cand.findIndex(n=>n>=-75&&n<=-32);
+    /* no RS a latitude passa de −32 e também cabia na faixa da longitude: "-32,5 -52,4" virava lon −32,5.
+       Com dois candidatos, a longitude é a de maior módulo (no Brasil, |lon| > |lat| abaixo de −32) */
+    let li=-1;
+    cand.forEach((n,i)=>{ if(n>=-75&&n<=-32 && (li<0||Math.abs(n)>Math.abs(cand[li]))) li=i });
     if(li>=0) lon=cand.splice(li,1)[0];
     const score=n=>(n<0?2:0)+(Math.abs(n%1)>1e-9?1:0);
     let bi=-1,bs=-1;
@@ -3452,7 +3558,7 @@ function startGps(){
     /* Rejeita (0,0) — "Null Island": alguns Androids (Samsung, Xiaomi, Motorola) retornam
        lat=0 lon=0 como posição padrão antes do GPS travar o fix real. */
     if(_la===0&&_lo===0) return;
-    S.gpsDenied=false; _gpsGotFix=true;
+    S.gpsDenied=false; _gpsGotFix=true; S.gpsErr=null;
     S.pos={lat:_la, lon:_lo, acc:p.coords.accuracy, alt:p.coords.altitude,
            spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
     try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
@@ -3461,6 +3567,7 @@ function startGps(){
     paintGps();
     paintGpsBanner();
   }, err=>{
+    S.gpsErr=err.code;   // motivo mostrado no banner quando a leitura envelhece (paintGpsBanner)
     if(err.code===1){
       /* PERMISSION_DENIED — o watch não vai entregar mais nada.
          Limpa o ID para permitir nova tentativa após o usuário ativar nas configurações.
@@ -3521,11 +3628,20 @@ document.getElementById('gps-retry').onclick=()=>{
 function paintGpsBanner(){
   const b=document.getElementById('gps-banner'); if(!b) return;
   const hasGps=S.pos && _validGps(S.pos.lat, S.pos.lon);
-  b.classList.toggle('on', !hasGps);
+  /* leitura velha (> 60 s) também acende: a posição guardada da sessão anterior (kc-lastpos) ou um GPS
+     que parou de responder apareciam como se fossem a posição atual */
+  const velho=hasGps && gpsStale(60000);
+  b.classList.toggle('on', !hasGps || velho);
+  const porque={1:'sem permissão', 2:'sem sinal', 3:'sem resposta'}[S.gpsErr];
+  const html=!hasGps||S.gpsDenied ? 'GPS desligado.<br>Toque para ativar'
+    : velho ? 'GPS desatualizado'+(porque?' ('+porque+')':'')+'.<br>Toque para tentar de novo' : '';
+  const sp=b.querySelector('span'); if(html && sp && sp.innerHTML!==html) sp.innerHTML=html;
 }
+/* a leitura envelhece sem evento nenhum (o watch só chama quando chega leitura ou erro): repinta sozinho */
+setInterval(paintGpsBanner, 5000);
 document.getElementById('gps-banner').onclick=()=>{
   if(S.gpsDenied) showGpsDeniedDialog();
-  else startGps();
+  else restartGps();   // watch ativo mas mudo: startGps() não fazia nada (já tinha watchId)
 };
 /* Detecta mudança de permissão em tempo real (Android Chrome)
    e tenta reiniciar GPS quando o app volta ao foreground (iOS/Android) */
@@ -4016,6 +4132,11 @@ function setCtAutoFor(c,on){
 function autoContract(){
   if(!ctAutoOn()) return;
   const f=S.fix; if(!f || f.dist>CFG.maxdist) return;
+  /* posição guardada da sessão anterior (kc-lastpos) com mais de 2 min: o carro já pode estar em outro
+     trecho — trocava o contrato na abertura do app antes do 1º fix. Leitura imprecisa também não vale. */
+  const p=S.pos; if(!p) return;
+  if(p===_cachedPos && (!p.t || Date.now()-p.t>120000)) return;
+  if(p.acc>CFG.maxdist) return;
   const links=getCtLinks(), cur=getContract(), hits=[];
   for(const c of getContracts()){
     if(!ctAutoFor(c)) continue;   // este contrato está com o automático desligado
@@ -6232,7 +6353,9 @@ function showInstallPrompt(){
 
 /* ================= boot ================= */
 (async function(){
-  try{ S.bases=await dbAll() }catch(e){ S.bases=[] }
+  /* falha ao ler o IndexedDB: avisa em vez de mostrar "Nenhuma rodovia baixada" — parecia que tudo
+     tinha sumido e o usuário baixava de novo por cima */
+  try{ S.bases=await dbAll() }catch(e){ S.bases=[]; S.basesErr=true; toast('Não consegui ler as rodovias salvas.\nFeche e abra o app de novo.', 6000) }
   renderBases();
   renderContracts();
   renderServices();
