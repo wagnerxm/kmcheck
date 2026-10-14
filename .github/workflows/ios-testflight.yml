@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22   # o Capacitor 8 exige Node 22+
 
       # versão para a loja = VERSAO_APP do sw.js; número interno = o do cache (kmcheck-v324 → 324), igual ao Android
       - name: Versão

@@ -11,7 +11,9 @@ const BASE = 'http://localhost:3456/';
 /* KC_ANDROID=1: prints com cara de Android (tela de 412×915 de um Pixel, navegador Android) para as
    capturas da Google Play, numa pasta própria — os prints do manual (iPhone) não são tocados */
 const ANDROID = process.env.KC_ANDROID === '1';
-const DIR = path.resolve(ANDROID ? 'manual-kmcheck/prints-android' : 'manual-kmcheck/prints');
+/* KC_IOS=1: prints de iPhone Pro Max (430×932 @3x = 1290×2796, o tamanho de 6,9" que a App Store pede), pasta própria */
+const IOS = process.env.KC_IOS === '1';
+const DIR = path.resolve(ANDROID ? 'manual-kmcheck/prints-android' : IOS ? 'manual-kmcheck/prints-ios' : 'manual-kmcheck/prints');
 const FOTO = path.resolve('manual-kmcheck/estudio/foto-rodovia.mjpeg');
 fs.mkdirSync(DIR, { recursive: true });
 const so = process.argv.slice(2);
@@ -29,6 +31,7 @@ const ctx = browser.defaultBrowserContext();
 await ctx.overridePermissions(BASE, ['geolocation', 'camera']);
 
 async function novaPagina({ largura = 390, altura = 844, noite = false, instalado = true } = {}) {
+  if (IOS) { if (largura === 390) largura = 430; if (altura === 844) altura = 932; if (largura === 844) largura = 932; if (altura === 390) altura = 430 }
   if (ANDROID) { if (largura === 390) largura = 412; if (altura === 844) altura = 915; if (largura === 844) largura = 915; if (altura === 390) altura = 412 }
   const page = await browser.newPage();
   await page.setUserAgent(UA);
@@ -50,7 +53,7 @@ async function novaPagina({ largura = 390, altura = 844, noite = false, instalad
   page.on('pageerror', e => console.log('  ⚠ erro na página:', e.message));
   /* bordas do iPhone (barra de status e barrinha de baixo): o app usa env(safe-area-inset-*) */
   /* Android: barra de status de 24dp em cima e barra de gestos de 16dp embaixo */
-  const ins = ANDROID ? (largura > altura ? { left: 24, right: 24, bottom: 16 } : { top: 24, bottom: 16 }) : (largura > altura ? { left: 47, right: 47, bottom: 21 } : { top: 47, bottom: 34 });
+  const ins = ANDROID ? (largura > altura ? { left: 24, right: 24, bottom: 16 } : { top: 24, bottom: 16 }) : (largura > altura ? { left: 59, right: 59, bottom: 21 } : { top: IOS ? 59 : 47, bottom: 34 });
   try{ const cdp = await page.createCDPSession(); await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: ins }) }catch(e){ console.log('  ⚠ sem área segura:', e.message) }
   return page;
 }
