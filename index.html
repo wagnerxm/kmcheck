@@ -610,6 +610,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 [data-android] #camframe{transition:transform .15s ease}
 [data-android] .cbtn,[data-android] .topbtn{transition:none}
 [data-android] .card::before,[data-android] .gcard::after{display:none}
+/* Android (app da loja e Chrome): em celulares com certas placas de vídeo, desfoque (backdrop-filter) e sombra
+   por filtro (drop-shadow) deixavam "lixo" desenhado em volta — riscos perto da placa de KM e por cima do texto
+   dos cartões. Sem esses efeitos o visual é o mesmo, com fundo sólido e sombra comum. */
+[data-android] #search-toggle,[data-android] #sobre-btn,[data-android] .herocar{backdrop-filter:none;-webkit-backdrop-filter:none}
+[data-android] .kmsign{filter:none}
+[data-android] .card,[data-android] .gcard{transform:translateZ(0)}   /* cada cartão numa camada própria: redesenha inteiro, sem sobras */
 /* #camframe (legenda/logo) é a CAMADA que gira junto com o aparelho — só a interface, não o
    vídeo. O JS troca largura<->altura e rotaciona por uiTilt, dentro da mesma área útil. */
 #camframe{position:absolute;left:50%;top:50%;pointer-events:none;overflow:visible;z-index:2;
@@ -1545,7 +1551,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
   <div id="camstage">
     <div id="camrot">
-      <video id="camvideo" autoplay playsinline muted></video>
+      <video id="camvideo" autoplay playsinline muted poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></video>
     </div>
     <!-- camada da legenda/logo: gira com o aparelho, o vídeo por baixo fica parado -->
     <div id="camframe">
