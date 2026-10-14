@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Manifesto de privacidade do KM Check (iOS). Vai em ios/App/App/PrivacyInfo.xcprivacy, marcado no alvo "App".
+  Tem que bater com as respostas de "Privacidade do app" no App Store Connect (ver LEIA-ME.md, seção 7).
+
+  - NSPrivacyTracking = false: nada é cruzado com dados de outras empresas, sem anúncios, sem SDK de terceiros.
+    Por isso NÃO há App Tracking Transparency nem NSUserTrackingUsageDescription.
+  - Dados coletados: só o "aviso de uso" (POST api.kmcheck.com.br/api/admin/devices/ping), e só depois que a
+    pessoa toca "Permitir" na janela "Ajude a melhorar o app". Finalidade única: Análise (Analytics).
+    "Vinculado" = true porque tudo vai junto com o código do aparelho (é por ele que se pede a exclusão).
+  - Localização: o ping manda uma grade de 0,02° (2 casas decimais, ~2 km). Para a Apple, "precisa" é 3 casas
+    decimais ou mais; logo isto é Localização APROXIMADA (CoarseLocation).
+  - Fotos NÃO entram: ficam no aparelho e nunca vão para servidor.
+  - APIs com motivo obrigatório: o próprio Capacitor (KeyValueStore) usa UserDefaults para guardar a versão do
+    binário instalado = CA92.1 (dados do próprio app). O plugin KMCheckNativo não usa timestamp de arquivo,
+    espaço em disco, tempo de boot nem teclados ativos (a limpeza da pasta temporária apaga tudo, sem ler datas).
+    Se um dia o plugin passar a ler datas de arquivo (modificationDate), acrescentar FileTimestamp C617.1.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<!-- código do aparelho: SHA-256("kmcheck:" + identifierForVendor), prefixo "ios-" -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<!-- região (grade de ~2 km), nunca o ponto exato -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<!-- rodovias baixadas (lista de BR/UF e nº de pontos) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<!-- desempenho do aparelho (no iOS nativo, depois da correção proposta: só o modelo vindo do sistema;
+		     enquanto o benchmark de CPU continuar rodando, ele também cai aqui) -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePerformanceData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<!-- modelo, versão do iOS, versão do app, tamanho da tela -->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

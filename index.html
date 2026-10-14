@@ -1922,7 +1922,7 @@ const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ 
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
 /* ================= app nativo (Google Play) =================
-   Dentro do app Android (Capacitor) a página é a mesma; só o que o navegador fazia com truques passa
+   Dentro do app da loja (Android ou iPhone, Capacitor) a página é a mesma; só o que o navegador fazia com truques passa
    para a peça nativa KMCheckNativo: gravar foto na galeria, compartilhar e manter a tela acesa.
    Fora do app (site/PWA) NATIVO fica null e nada muda. */
 /* copiar texto: navigator.clipboard pode ser recusado (WebView do app da loja, navegador sem permissão);
@@ -1933,7 +1933,11 @@ async function copiaTexto(txt){
     document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return ok }catch(e){ return false }
 }
 const NATIVO=(()=>{ try{ const C=window.Capacitor;
-  if(C && C.isNativePlatform && C.isNativePlatform() && C.nativePromise) return { chama:(m,o)=>C.nativePromise('KMCheckNativo', m, o||{}) };
+  if(C && C.isNativePlatform && C.isNativePlatform() && C.nativePromise){
+    /* 'android' ou 'ios': os textos de ajuda (onde liberar permissão) e algumas peças mudam de um para o outro */
+    const so=(C.getPlatform && C.getPlatform())||'android';
+    return { so, ios:so==='ios', android:so!=='ios', chama:(m,o)=>C.nativePromise('KMCheckNativo', m, o||{}) };
+  }
 }catch(e){} return null })();
 /* as 363 rodovias (~137 MB) não vão dentro do app da loja: vêm do servidor próprio */
 const DADOS = NATIVO ? 'https://kmcheck.com.br/' : '';
@@ -3717,7 +3721,11 @@ function showGpsDeniedDialog(){
   if(!dlg || dlg.open) return;
   const msg=document.getElementById('gps-msg');
   /* Instrução específica por plataforma para reativar localização */
-  if(_isIOS){
+  if(NATIVO && NATIVO.ios){
+    /* app da loja no iPhone: a permissão fica na página do próprio app nos Ajustes (iOS 18+: Ajustes → Apps → KM Check) */
+    msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
+      '<b>No iPhone:</b> abra <b>Ajustes → Apps → KM Check → Localização</b>, escolha "Durante o Uso do App" e ligue <b>Localização Exata</b>.';
+  } else if(_isIOS){
     msg.innerHTML='O KM Check precisa do GPS para gravar coordenadas.<br><br>'+
       '<b>No iPhone:</b> vá em <b>Ajustes → Privacidade → Serviços de Localização → Safari</b> e selecione "Ao Usar o App".';
   } else if(NATIVO){
@@ -3756,7 +3764,13 @@ setInterval(paintGpsBanner, 5000);
 document.getElementById('gps-banner').onclick=async()=>{
   /* app da loja: o WebView não mostra o "Ativar localização" do sistema — se ela estiver desligada no
      celular, o toque abre direto a tela de Localização do Android */
-  if(NATIVO && !S.gpsDenied){ try{ const r=await NATIVO.chama('localizacao'); if(r && r.ligada===false){ toast('A localização do celular está desligada.\nLigue e volte para o app.', 5000); NATIVO.chama('abrirAjustesLocalizacao').catch(()=>{}); return } }catch(e){} }
+  if(NATIVO && !S.gpsDenied){ try{ const r=await NATIVO.chama('localizacao');
+    if(r && r.ligada===false){
+      /* iPhone: só dá para ensinar o caminho (o iOS não deixa um app abrir os Serviços de Localização direto) */
+      if(NATIVO.ios){ toast('A localização do iPhone está desligada.\nAjustes → Privacidade e Segurança → Serviços de Localização.', 6000); return }
+      toast('A localização do celular está desligada.\nLigue e volte para o app.', 5000); NATIVO.chama('abrirAjustesLocalizacao').catch(()=>{}); return }
+    if(NATIVO.ios && r && r.permissao==='negada'){ S.gpsDenied=true; showGpsDeniedDialog(); return }
+  }catch(e){} }
   if(S.gpsDenied) showGpsDeniedDialog();
   else restartGps();   // watch ativo mas mudo: startGps() não fazia nada (já tinha watchId)
 };
@@ -4972,8 +4986,9 @@ async function openCam(){
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
     if(gen!==_camGen) return;
-    /* ── Enumera câmeras para fingerprint de modelo ── */
-    try{
+    /* ── Enumera câmeras para fingerprint de modelo ── (não no app da loja: lá o modelo vem do sistema e
+       as lojas tratam juntar sinais do aparelho como fingerprinting — a Apple proíbe) */
+    if(!NATIVO) try{
       const devs=await navigator.mediaDevices.enumerateDevices();
       const vids=devs.filter(d=>d.kind==='videoinput');
       const backs=vids.filter(d=>/back|traseira|rear/i.test(d.label));
@@ -5010,7 +5025,9 @@ async function openCam(){
     disableTiltSensor();   // o sensor ligado no início (iOS) ficava rodando a 15 Hz com a câmera fechada
     if(NATIVO) startGps();
     /* app da loja: depois de "não perguntar de novo" o Android nega na hora — ensina onde liberar */
-    if(NATIVO && e && /NotAllowed|Security|Permission/i.test(e.name||'')) toast('Câmera sem permissão.\nConfigurações → Apps → KM Check → Permissões → Câmera.', 6000);
+    if(NATIVO && e && /NotAllowed|Security|Permission/i.test(e.name||'')) toast(NATIVO.ios
+      ? 'Câmera sem permissão.\nAjustes → Apps → KM Check → Câmera.'
+      : 'Câmera sem permissão.\nConfigurações → Apps → KM Check → Permissões → Câmera.', 6000);
     else toast('Câmera negada ou indisponível.');
     return false;   // o flip usa isso para voltar à câmera anterior
   }
@@ -5160,7 +5177,9 @@ document.getElementById('shutter').onclick=async()=>{
   }
   if(S.pos.acc!=null && S.pos.acc>500){
     toast(NATIVO && S.pos.acc>1000
-      ? `⚠ Localização aproximada (±${Math.round(S.pos.acc)} m).\nConfigurações → Apps → KM Check → Permissões → Localização → ligue "Usar local exato".`
+      ? (NATIVO.ios
+        ? `⚠ Localização aproximada (±${Math.round(S.pos.acc)} m).\nAjustes → Apps → KM Check → Localização → ligue "Localização Exata".`
+        : `⚠ Localização aproximada (±${Math.round(S.pos.acc)} m).\nConfigurações → Apps → KM Check → Permissões → Localização → ligue "Usar local exato".`)
       : `⚠ GPS impreciso (±${Math.round(S.pos.acc)} m).\nAguarde o sinal melhorar.`, NATIVO && S.pos.acc>1000 ? 7000 : undefined);
     return;
   }
@@ -5175,6 +5194,7 @@ document.getElementById('shutter').onclick=async()=>{
   // iOS/Safari NÃO expõe vibração para a web (trava do sistema) — lá não vibra de jeito nenhum;
   // a piscada da tela + o som de obturador cobrem a sensação de disparo no iPhone.
   if(navigator.vibrate) try{ navigator.vibrate([40,25,40]) }catch(e){}
+  else if(NATIVO && NATIVO.ios) NATIVO.chama('vibrar',{forte:true}).catch(()=>{});   // app do iPhone: batida do Taptic
   if(CFG.soundalert) playShutterSound();
   /* try/catch global: se QUALQUER etapa da captura falhar (canvas, legenda, EXIF), o
      usuário vê um aviso em vez de silêncio total — antes o erro era engolido sem toast. */
@@ -5728,7 +5748,8 @@ document.getElementById('gal-share').onclick=async()=>{
       if(!m.saved){
         /* se a galeria recusar (sem permissão, sem espaço), a saída é o Compartilhar: a foto não fica presa no app */
         try{ await NATIVO.chama('salvarImagem',{nome:m.name, mime:'image/jpeg', base64:b64}); ok=true }
-        catch(e){ await NATIVO.chama('compartilhar',{nome:m.name, mime:'image/jpeg', base64:b64, titulo:'Salvar ou enviar a foto'}); ok='share' }
+        catch(e){ const r=await NATIVO.chama('compartilhar',{nome:m.name, mime:'image/jpeg', base64:b64, titulo:'Salvar ou enviar a foto'});
+          ok = r && r.concluido===false ? false : 'share' }   // iPhone: cancelou = a foto continua "só no app" (no Android r vem vazio)
       }
       else { await NATIVO.chama('compartilhar',{nome:m.name, mime:'image/jpeg', base64:b64, titulo:'Compartilhar foto'}); ok=true }
     } else if(navigator.canShare && navigator.canShare({files:[file]})){
@@ -6550,7 +6571,7 @@ function showInstallPrompt(){
       /* Detecta ProMotion (120Hz) via requestAnimationFrame — sinais de hardware do iPhone Pro.
          Roda antes do setTimeout para ter ~4s de frames coletados. */
       let _proMotion=_hwCache?_hwCache.proMotion:null; // null=não testou, true=120Hz, false=60Hz
-      if(!_hwCache && /iPhone/.test(navigator.userAgent)){
+      if(!_hwCache && !NATIVO && /iPhone/.test(navigator.userAgent)){   // app da loja: sem medir a tela (ver fingerprint abaixo)
         const ts=[];
         const rAF=t=>{ts.push(t);if(ts.length<30)requestAnimationFrame(rAF);else{
           /* Calcula fps médio pelos intervalos entre frames */
@@ -6569,7 +6590,7 @@ function showInstallPrompt(){
         if(!did){ did=crypto.randomUUID?crypto.randomUUID():(Math.random().toString(36).slice(2)+Date.now().toString(36)); localStorage.setItem('kc-device-id',did) }
         try{ mostraCodigo() }catch(e){}
         const ua=navigator.userAgent||'';
-        const plat=NATIVO?'Android (app)':(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
+        const plat=NATIVO?(NATIVO.ios?'iOS (app)':'Android (app)'):(/iPhone|iPad/.test(ua)?'iOS':(/Android/.test(ua)?'Android':(/Win/.test(ua)?'Windows':(/Mac/.test(ua)?'Mac':'Outro'))));
         /* Marca do dispositivo */
         let brand='';
         if(/iPhone|iPad|Macintosh/.test(ua)) brand='Apple';
@@ -6826,6 +6847,8 @@ function showInstallPrompt(){
             if(fn) model=fn;
           }
         }
+        /* app do iPhone: modelo exato do sistema ("iPhone16,1") e versão do iOS — o painel traduz o código para o nome */
+        if(NATIVO && NATIVO.ios){ try{ const r=await NATIVO.chama('infoAparelho'); if(r){ if(r.modelo) model=r.modelo; if(r.sistema) osVer=r.sistema } }catch(e){} }
         /* GPS — usa a posição já fixada pelo watchPosition */
         let loc=null;
         /* só a região, nunca o ponto exato: grade de 0,02° (~2 km de lado, ~5 km²). A Google Play trata como

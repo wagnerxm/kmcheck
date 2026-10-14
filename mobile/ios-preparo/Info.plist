@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist do KM Check para iOS. Feito a partir do modelo do @capacitor/ios 8.5.3 (template SPM).
+  Substitui por inteiro o ios/App/App/Info.plist que o "npx cap add ios" gera.
+  O que mudou em relação ao modelo do Capacitor está comentado.
+-->
+<plist version="1.0">
+<dict>
+	<key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<!-- idioma do app: português (Brasil). Faz os textos do sistema (Compartilhar, alertas de permissão,
+	     "Ajustes") aparecerem em pt-BR. O modelo vinha "en". -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>pt-BR</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>pt-BR</string>
+	</array>
+	<!-- nome embaixo do ícone (o modelo vinha "My App") -->
+	<key>CFBundleDisplayName</key>
+	<string>KM Check</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<!-- MARKETING_VERSION = VERSAO_APP do sw.js (1.0.0); CURRENT_PROJECT_VERSION = número do cache (kmcheck-vNNN) -->
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- ===== textos das permissões (aparecem no pedido do sistema; a Apple recusa texto vago) ===== -->
+	<key>NSCameraUsageDescription</key>
+	<string>O KM Check usa a câmera para tirar as fotos da rodovia com a legenda gravada na imagem (rodovia, KM, estaca, coordenadas, data e hora).</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>O KM Check usa a sua localização enquanto o app está aberto para mostrar em que rodovia e em que KM você está e gravar as coordenadas na legenda da foto.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>O KM Check salva no app Fotos as fotos que você tira nele, já com a legenda. Ele não lê nem altera as suas outras fotos.</string>
+	<!-- NSPhotoLibraryUsageDescription (leitura da Fototeca) NÃO é necessário: o app só ADICIONA fotos (addOnly),
+	     e escolher o logo pelo <input type="file"> usa o seletor do sistema, que não pede permissão.
+	     Só acrescentar se o envio ao App Store Connect devolver o aviso ITMS-90683 pedindo este texto:
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O KM Check abre a Fototeca só quando você escolhe uma imagem para usar como logo na legenda.</string>
+	-->
+
+	<!-- criptografia: só HTTPS do próprio iOS (e SHA-256, que não é cifra) = isento. Evita a pergunta de
+	     conformidade de exportação a cada build enviado. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- exportações (salvarArquivo) vão para Documentos/KM Check e aparecem no app Arquivos em
+	     "No Meu iPhone › KM Check". Os dados do WebView (rodovias, galeria) ficam em Library, que NÃO aparece. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<!-- o modelo do Capacitor ainda traz "armv7" (32 bits, que nem existe mais no iOS 15+) -->
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<!-- só retrato, como no Android (screenOrientation="portrait"). A foto deitada continua funcionando: o app
+	     gira a legenda pela inclinação do aparelho (devicemotion), sem a página girar. Com a página travada em
+	     retrato a dica "ative o bloqueio de rotação" (maybeRotLockHint) nunca aparece, que é o certo no app. -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<!-- iPad: o projeto vai só para iPhone (TARGETED_DEVICE_FAMILY = 1). Se um dia liberar iPad, a Apple exige
+	     todas as orientações OU UIRequiresFullScreen = true -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>
