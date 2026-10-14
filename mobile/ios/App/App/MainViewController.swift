@@ -26,6 +26,20 @@ class MainViewController: CAPBridgeViewController {
         /* deslizar da borda não deve "voltar página" (o app é uma página só; o voltar é do próprio app) */
         webView?.allowsBackForwardNavigationGestures = false
     }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        /* fundo escuro (o mesmo do app) atrás do WebView: sem o "piscar" branco ao abrir */
+        let fundo = UIColor(red: 10 / 255, green: 12 / 255, blue: 14 / 255, alpha: 1)
+        view.backgroundColor = fundo
+        webView?.isOpaque = false
+        webView?.backgroundColor = fundo
+        webView?.scrollView.backgroundColor = fundo
+        /* o app rola por dentro (o <main>); a página inteira "elástica" arrastava o cabeçalho e o menu junto */
+        webView?.scrollView.bounces = false
+        /* toque longo não abre a prévia de link do iOS (no app parecia travamento) */
+        webView?.allowsLinkPreview = false
+    }
 }
 
 /**

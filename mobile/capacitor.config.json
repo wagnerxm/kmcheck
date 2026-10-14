@@ -16,5 +16,12 @@
   },
   "server": {
     "errorPath": "webview-antiga.html"
+  },
+  "ios": {
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "scrollEnabled": true,
+    "limitsNavigationsToAppBoundDomains": false,
+    "allowsLinkPreview": false
   }
 }

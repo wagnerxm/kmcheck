@@ -5,11 +5,13 @@
   "description": "KM Check para Android (Google Play). O app é o mesmo index.html do site; o Capacitor só embala e liga as partes nativas.",
   "scripts": {
     "copiar": "node copiar-app.mjs",
-    "sync": "node copiar-app.mjs && npx cap sync android"
+    "sync": "node copiar-app.mjs && npx cap sync android",
+    "sync:ios": "node copiar-app.mjs && npx cap sync ios"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
-    "@capacitor/core": "8.5.3"
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "^8.5.3"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3"

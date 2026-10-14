@@ -1980,6 +1980,27 @@ const NATIVO=(()=>{ try{ const C=window.Capacitor;
     return { so, ios:so==='ios', android:so!=='ios', chama:(m,o)=>C.nativePromise('KMCheckNativo', m, o||{}) };
   }
 }catch(e){} return null })();
+/* app de iPhone: o navigator.geolocation do WKWebView pede a permissão DUAS vezes (a do iOS e outra "localhost quer
+   usar sua localização" a cada abertura) — a Apple reprova. Aqui ele passa a vir do GPS nativo (CoreLocation, no
+   KMCheckNativoPlugin.swift: gpsVigiar/gpsParar), no mesmo formato do navegador: o resto do app (startGps etc.)
+   não muda nada. Erro 1 = permissão negada, 2 = sem sinal, como no navegador. */
+if(NATIVO && NATIVO.ios){
+  const C=window.Capacitor;
+  const geo={
+    watchPosition(ok, erro, op){
+      return C.nativeCallback('KMCheckNativo', 'gpsVigiar', { alta: !op || op.enableHighAccuracy!==false }, (r, e)=>{
+        if(e || !r){ if(erro) erro({ code:2, message:(e && e.message) || 'GPS indisponível' }); return }
+        if(r.erro){ if(erro) erro({ code:r.erro, message:r.msg || '' }); return }
+        ok({ coords:{ latitude:r.lat, longitude:r.lon, accuracy:r.acc, altitude:r.alt, altitudeAccuracy:r.altAcc,
+                      speed:r.spd, heading:r.head }, timestamp:r.ts });
+      });
+    },
+    clearWatch(id){ if(id!=null) C.nativePromise('KMCheckNativo', 'gpsParar', { id:String(id) }).catch(()=>{}) },
+    getCurrentPosition(ok, erro, op){ let id=null, fim=false;
+      id=geo.watchPosition(p=>{ if(fim) return; fim=true; geo.clearWatch(id); ok(p) }, e=>{ if(fim) return; fim=true; geo.clearWatch(id); if(erro) erro(e) }, op) }
+  };
+  try{ Object.defineProperty(navigator, 'geolocation', { value:geo, configurable:true }) }catch(e){}
+}
 /* as 363 rodovias (~137 MB) não vão dentro do app da loja: vêm do servidor próprio */
 const DADOS = NATIVO ? 'https://kmcheck.com.br/' : '';
 /* app da loja: o seletor de arquivos do Android converte as extensões do "accept" em tipos e descarta as que

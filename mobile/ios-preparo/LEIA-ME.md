@@ -1,22 +1,24 @@
 # KM Check na App Store (iPhone) — preparo e passo a passo
 
 O app do iPhone é o **mesmo `index.html`** do site e do Android, embalado pelo **Capacitor 8.5.3**
-(a mesma versão do Android). Esta pasta tem tudo o que dá para deixar pronto sem Mac; o resto
-(gerar o projeto Xcode, assinar e enviar) só dá para fazer num Mac, e está descrito abaixo passo a passo.
+(a mesma versão do Android).
 
-| Arquivo desta pasta | Vai para (depois do `npx cap add ios`) | O que é |
+**Situação (14/10/2026):** o projeto do iPhone **já existe** em `mobile/ios` (gerado pelo `npx cap add ios` e
+ajustado), e é **compilado num Mac do GitHub** pelo workflow `.github/workflows/ios-testflight.yml` — **não é
+preciso ter Mac**. Os arquivos que antes ficavam nesta pasta para copiar foram para o lugar definitivo:
+
+| Arquivo | Onde está | O que é |
 |---|---|---|
-| `Info.plist` | `mobile/ios/App/App/Info.plist` (substitui) | pt-BR, textos das permissões, só retrato, criptografia isenta, pasta no app Arquivos |
-| `PrivacyInfo.xcprivacy` | `mobile/ios/App/App/` (novo, marcado no alvo App) | manifesto de privacidade (dados coletados + APIs com motivo obrigatório) |
-| `App/KMCheckNativoPlugin.swift` | `mobile/ios/App/App/` (novo) | plugin nativo, o mesmo do Java: salvarImagem, salvarArquivo, compartilhar, telaAcesa, idAparelho, localizacao, abrirAjustesLocalizacao (+ infoAparelho e vibrar, só iPhone) |
-| `App/MainViewController.swift` | `mobile/ios/App/App/` (novo) | registra o plugin e põe `confirm()`/`alert()` em português |
-| `App/SceneDelegate.swift` | `mobile/ios/App/App/SceneDelegate.swift` (substitui) | igual ao do Capacitor, abrindo a `MainViewController` |
-| `Assets.xcassets/AppIcon.appiconset/` | `mobile/ios/App/App/Assets.xcassets/` (substitui) | ícone 1024×1024 **sem transparência** (a Apple recusa ícone com canal alfa) |
-| `Assets.xcassets/Splash.imageset/` | `mobile/ios/App/App/Assets.xcassets/` (substitui) | tela de abertura: fundo `#0a0c0e` com o logo no centro (igual à do Android) |
+| `Info.plist` | `mobile/ios/App/App/` | pt-BR, textos das permissões, só retrato, criptografia isenta, pasta no app Arquivos |
+| `PrivacyInfo.xcprivacy` | `mobile/ios/App/App/` (já no alvo App) | manifesto de privacidade (dados coletados + APIs com motivo obrigatório) |
+| `KMCheckNativoPlugin.swift` | `mobile/ios/App/App/` | plugin nativo, o mesmo do Java (+ infoAparelho, vibrar e o **GPS nativo** gpsVigiar/gpsParar, só iPhone) |
+| `MainViewController.swift` | `mobile/ios/App/App/` | registra o plugin, `confirm()`/`alert()` em português, fundo escuro, sem "elástico" |
+| ícone e abertura | `mobile/ios/App/App/Assets.xcassets/` | ícone 1024×1024 **sem transparência**, redesenhado nítido (`mobile/gerar-icones-ios.mjs`) |
+| assinatura | `mobile/ios-assinatura.mjs` | cria certificado, perfil e os segredos do GitHub pela API da Apple |
 
-> **Ícone provisório:** `AppIcon-1024.png` foi ampliado do `icon-512.png` (não há arte maior no repositório).
-> Serve para o TestFlight; para a loja, exporte a arte original em 1024×1024, PNG, sem transparência,
-> sem cantos arredondados (o iOS arredonda sozinho) e troque o arquivo com o mesmo nome.
+**GPS no iPhone:** o `navigator.geolocation` do WKWebView pede a permissão duas vezes (a do iOS e outra
+"“localhost” quer usar sua localização" a cada abertura). Por isso, no app do iPhone, o `index.html` troca o
+`navigator.geolocation` pelo GPS nativo do plugin (CoreLocation), no mesmo formato — o resto do app não muda.
 
 ---
 
@@ -26,10 +28,10 @@ O app do iPhone é o **mesmo `index.html`** do site e do Android, embalado pelo 
    sai "A1 ENGENHARIA LTDA", igual à Google Play) a inscrição é de **Organização** e pede o
    **número D-U-N-S** da empresa (gratuito, pedido pela própria Apple/Dun & Bradstreet; pode levar alguns dias).
    Precisa também de um Apple ID com autenticação de dois fatores e de quem tenha poder legal de assinar pela empresa.
-2. **Um Mac** com **Xcode 26 ou mais novo** (desde abril de 2026 a Apple só aceita envios feitos com o SDK do iOS 26)
-   e Node 20+. Sem Mac próprio: Mac alugado na nuvem (ex.: MacinCloud) ou, mais tarde, um workflow do GitHub
-   Actions em `macos-latest` com chave da API do App Store Connect (`xcodebuild -allowProvisioningUpdates`).
-   A 1ª vez é bem mais simples num Mac com tela.
+2. **Mac: não precisa.** A compilação roda num Mac do GitHub (Xcode 26, exigido pela Apple desde abril de 2026).
+   Precisa, sim, de uma **chave de API do App Store Connect** (Usuários e acesso › Integrações › Chave de API da
+   equipe, papel **Admin**): o arquivo `AuthKey_XXXX.p8` (baixa uma vez só) + Key ID + Issuer ID. Guardar em
+   `D:\KMCheck-chaves\ios\`.
 3. **Um iPhone** para testar pelo TestFlight antes de mandar para revisão.
 4. **Aceitar os contratos** no App Store Connect (app gratuito: só o "Free Apps Agreement", sem dados bancários).
 5. **Atualizar a política de privacidade** (`https://kmcheck.com.br/privacidade/`) — ver seção 3.3.
@@ -233,100 +235,33 @@ Novo:
 
 ---
 
-## 3. Antes de gerar o app
-
-### 3.1 `mobile/capacitor.config.json`
-Acrescentar um bloco `ios` (ao lado do `android`):
-```json
-  "ios": {
-    "allowsLinkPreview": false,
-    "contentInset": "never"
-  },
-```
-(`allowsLinkPreview:false`: segurar o dedo numa foto/link não abre a "prévia" do Safari.)
-
-### 3.2 `mobile/package.json`
-O `npm i @capacitor/ios@8.5.3` do passo 4 acrescenta a dependência e atualiza o `package-lock.json`; comitar os
-dois a partir do Mac. Sugestão de scripts (ao lado dos que já existem):
-```json
-    "sync:ios": "node copiar-app.mjs && npx cap sync ios",
-    "abrir:ios": "npx cap open ios"
-```
-Não foi acrescentado agora de propósito: sem o `npm install` correspondente o `package-lock.json` ficaria
-diferente do `package.json` e o `npm ci` do Android quebraria.
-
-### 3.3 Política de privacidade (`privacidade/index.html`)
-A Apple confere se a política bate com o "App Privacy". Acrescentar no item do identificador:
-> "Na versão da App Store (iPhone), ele é calculado a partir do identificador que o iOS fornece a cada
-> desenvolvedor (identifierForVendor) e vai embaralhado. Ele muda se você apagar o app."
-
-E deixar claro: dados de uso só com "Permitir"; finalidade estatística; sem rastreamento nem anúncios; como pedir
-exclusão (o "Código do aparelho" fica nos ajustes do próprio app).
+## 3. Antes de gerar o app — feito
+`capacitor.config.json` com o bloco `ios`, `@capacitor/ios@8.5.3` instalado, script `npm run sync:ios`, e a
+política de privacidade atualizada.
 
 ---
 
-## 4. Passo a passo no Mac
+## 4. Passo a passo (sem Mac)
 
-```bash
-# 0) uma vez: Xcode 26+ (App Store do Mac), abrir o Xcode uma vez para instalar os componentes;
-#    Node 20+ (nodejs.org). CocoaPods NÃO é necessário: o Capacitor 8 usa Swift Package Manager.
-git clone https://github.com/wagnerxm/kmcheck.git
-cd kmcheck/mobile
-npm ci
-npm i --save-exact @capacitor/ios@8.5.3
-
-# 1) copia o app (index.html etc.) para mobile/www e cria o projeto do iPhone em mobile/ios
-node copiar-app.mjs
-npx cap add ios
-
-# 2) arquivos desta pasta
-cp ios-preparo/Info.plist              ios/App/App/Info.plist
-cp ios-preparo/PrivacyInfo.xcprivacy   ios/App/App/PrivacyInfo.xcprivacy
-cp ios-preparo/App/SceneDelegate.swift ios/App/App/SceneDelegate.swift
-cp ios-preparo/App/MainViewController.swift ios-preparo/App/KMCheckNativoPlugin.swift ios/App/App/
-rm -rf ios/App/App/Assets.xcassets/AppIcon.appiconset ios/App/App/Assets.xcassets/Splash.imageset
-cp -R ios-preparo/Assets.xcassets/AppIcon.appiconset ios-preparo/Assets.xcassets/Splash.imageset ios/App/App/Assets.xcassets/
-
-# 3) sincroniza e abre no Xcode
-npx cap sync ios
-npx cap open ios
-```
-
-### 4.1 No Xcode (projeto `App`, alvo `App`)
-1. **Incluir os arquivos novos no projeto**: o projeto do Capacitor lista os arquivos um a um, então copiar para a
-   pasta não basta. No navegador de arquivos à esquerda, botão direito na pasta amarela **App** → *Add Files to "App"…*
-   → selecione `MainViewController.swift`, `KMCheckNativoPlugin.swift` e `PrivacyInfo.xcprivacy` → marque
-   **Target: App** → *Add*. (O `SceneDelegate.swift`, o `Info.plist` e os ícones já estavam no projeto e só foram trocados.)
-2. **General**
-   - *Supported Destinations*: deixe **só iPhone** (remova iPad, Mac "Designed for iPad" e Apple Vision).
-   - *Minimum Deployments*: iOS 15.0 (padrão do Capacitor 8).
-   - *Identity*: Display Name `KM Check`, Bundle Identifier **`br.com.kmcheck.app`** (o `cap add` já põe o `appId`;
-     confira), **Version** `1.0.0` (= `VERSAO_APP` do `sw.js`), **Build** = número do cache do `sw.js`
-     (ex.: `kmcheck-v330` → `330`). Cada envio precisa de Build maior que o anterior.
-   - *Deployment Info*: iPhone Orientation **só Portrait**.
-3. **Signing & Capabilities**: *Automatically manage signing* ligado; *Team* = a equipe da A1 ENGENHARIA
-   (aparece depois de entrar com o Apple ID em Xcode › Settings › Accounts). Não acrescentar nenhuma Capability
-   (nem Background Modes, nem Push).
-4. **Project › Info › Localizations**: acrescente *Portuguese (Brazil)* e deixe-o como *Development Language*.
-5. Rodar num iPhone de verdade (cabo ou Wi-Fi, *Product › Run*) e passar o roteiro da seção 9.
-
-### 4.2 Registrar o app e enviar
-1. **Certificados/identificadores**: com a assinatura automática o Xcode cria sozinho o App ID `br.com.kmcheck.app`.
-2. **App Store Connect** (appstoreconnect.apple.com) › Apps › **+** › Novo app: Plataforma iOS; Nome `KM Check`;
+### 4.1 Uma vez: assinatura
+1. No App Store Connect (com o seu Apple ID convidado como **Administrador** pela conta da A1/André, com acesso a
+   *Certificados, Identificadores e Perfis*), crie a **chave de API** (seção 1, item 2).
+2. Em `mobile/`: `node ios-assinatura.mjs --key-id XXXXXXXXXX --issuer-id xxxxxxxx-... --github`
+   Registra `br.com.kmcheck.app`, cria o certificado **Apple Distribution** e o perfil **KM Check App Store**,
+   guarda tudo em `D:\KMCheck-chaves\ios\` e grava os segredos no GitHub (IOS_P12_BASE64, IOS_P12_SENHA,
+   IOS_PERFIL_BASE64, IOS_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8). Faça cópia de segurança da pasta.
+3. **App Store Connect** › Apps › **+** › Novo app: iOS; Nome `KM Check` (se estiver em uso: `KM Check Rodovias`);
    Idioma principal Português (Brasil); Bundle ID `br.com.kmcheck.app`; SKU `kmcheck-ios`; Acesso total.
-3. No Xcode: destino **Any iOS Device (arm64)** › *Product › Archive*. Na janela *Organizer* › *Distribute App* ›
-   **App Store Connect** › *Upload*. (Alternativa: *Export* e enviar o `.ipa` pelo app **Transporter** da Apple.)
-4. Em 5–30 min o build aparece em **TestFlight**. Responder a conformidade de exportação não será pedido (o
-   `ITSAppUsesNonExemptEncryption = false` já está no Info.plist). Instalar pelo app TestFlight no iPhone e testar.
-5. Preencher a ficha (seções 5–8), escolher o build na versão 1.0.0 e **Enviar para revisão**.
-   A revisão da Apple costuma levar de 1 a 3 dias.
+
+### 4.2 Gerar e enviar ao TestFlight
+GitHub › Actions › **iOS → TestFlight** › *Run workflow* (ou `gh workflow run ios-testflight.yml`).
+Leva ~10–20 min: compila com o Xcode 26, assina e envia. Em 5–30 min o build aparece no **TestFlight**.
+Versão = `VERSAO_APP` do `sw.js`; Build = número do cache (`kmcheck-v330` → 330), igual ao Android.
+Sem os segredos (ou desmarcando "enviar") ele só **compila sem assinar** — serve para conferir o projeto.
 
 ### 4.3 Atualizações futuras
-`cd mobile` › `npm run sync:ios` (ou `node copiar-app.mjs && npx cap sync ios`) › no Xcode subir o **Build**
-(= novo número do cache) › Archive › Upload › no App Store Connect criar a versão nova (se a `VERSAO_APP` mudou)
-ou só trocar o build. Os arquivos desta pasta já ficam dentro de `mobile/ios` e não precisam ser copiados de novo
-(o `cap sync` não mexe neles). Comitar `mobile/ios` (o `.gitignore` do Capacitor já ignora `App/App/public`,
-`build`, `DerivedData`, `xcuserdata` e os arquivos de configuração gerados).
+Mudou o app (e subiu o cache do `sw.js`)? Rode o workflow de novo. Os arquivos de `mobile/ios` não precisam
+ser mexidos (o `cap sync ios` do workflow copia o `index.html` novo para dentro).
 
 ---
 

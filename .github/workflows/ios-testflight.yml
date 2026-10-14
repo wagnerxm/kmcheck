@@ -1,0 +1,149 @@
+# App de iPhone: compila num Mac do GitHub e (com os segredos da Apple) manda para o TestFlight.
+# Sem os segredos (ou com "enviar" desligado) só compila sem assinatura — serve para conferir que o
+# projeto iOS está certo antes de ter a conta da Apple.
+# Segredos (gravados por mobile/ios-assinatura.mjs --github): IOS_P12_BASE64, IOS_P12_SENHA,
+# IOS_PERFIL_BASE64, IOS_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8.
+name: iOS → TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      enviar:
+        description: 'Assinar e enviar para o TestFlight'
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      ENVIAR: ${{ inputs.enviar && secrets.IOS_P12_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # versão para a loja = VERSAO_APP do sw.js; número interno = o do cache (kmcheck-v324 → 324), igual ao Android
+      - name: Versão
+        id: v
+        run: |
+          BUILD=$(grep -oE "kmcheck-v[0-9]+" sw.js | head -1 | sed 's/kmcheck-v//')
+          VER=$(grep -oE "VERSAO_APP *= *'[0-9.]+'" sw.js | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          echo "KM Check $VER ($BUILD)"
+
+      # a Apple exige o SDK do iOS 26 (Xcode 26) para enviar à App Store: usa o Xcode 26 mais novo do Mac
+      - name: Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -z "$X" ] && X=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+
+      - name: App web → projeto iOS
+        working-directory: mobile
+        run: |
+          npm ci
+          node copiar-app.mjs
+          npx cap sync ios
+
+      - name: Certificado e perfil
+        if: env.ENVIAR == 'true'
+        env:
+          IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
+          IOS_P12_SENHA: ${{ secrets.IOS_P12_SENHA }}
+          IOS_PERFIL_BASE64: ${{ secrets.IOS_PERFIL_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          KC="$RUNNER_TEMP/kmcheck.keychain-db"; KCP=$(openssl rand -hex 16)
+          security create-keychain -p "$KCP" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCP" "$KC"
+          echo "$IOS_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$IOS_P12_SENHA" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCP" "$KC" > /dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          # o Xcode 16+ procura os perfis em UserData; os mais antigos em MobileDevice — grava nos dois
+          for D in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+            mkdir -p "$D"; echo "$IOS_PERFIL_BASE64" | base64 --decode > "$D/kmcheck.mobileprovision"
+          done
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "$ASC_KEY_P8" > "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          security find-identity -v -p codesigning "$KC"
+
+      - name: Compilar (sem assinatura, só conferência)
+        if: env.ENVIAR != 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -project mobile/ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CURRENT_PROJECT_VERSION=${{ steps.v.outputs.build }} MARKETING_VERSION=${{ steps.v.outputs.ver }} \
+            build | tail -40
+
+      - name: Arquivar (assinado)
+        if: env.ENVIAR == 'true'
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -project mobile/ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$IOS_TEAM_ID" \
+            CURRENT_PROJECT_VERSION=${{ steps.v.outputs.build }} MARKETING_VERSION=${{ steps.v.outputs.ver }} \
+            archive | tail -60
+
+      - name: Gerar o .ipa
+        if: env.ENVIAR == 'true'
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>teamID</key><string>$IOS_TEAM_ID</string>
+            <key>provisioningProfiles</key><dict><key>br.com.kmcheck.app</key><string>KM Check App Store</string></dict>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          set -o pipefail
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/ipa" | tail -30
+          ls -la "$RUNNER_TEMP/ipa"
+
+      - name: Enviar para o TestFlight
+        if: env.ENVIAR == 'true'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app --type ios --file "$RUNNER_TEMP/ipa/App.ipa" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --output-format normal
+
+      - name: Guardar o .ipa
+        if: env.ENVIAR == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: KM-Check-iOS-${{ steps.v.outputs.ver }}-${{ steps.v.outputs.build }}
+          path: ${{ runner.temp }}/ipa/App.ipa
+          retention-days: 30
+
+      - name: Limpar chaves do Mac
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/kmcheck.keychain-db" 2>/dev/null || true
+          rm -rf "$HOME/private_keys" "$RUNNER_TEMP/dist.p12"

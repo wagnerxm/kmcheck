@@ -36,15 +36,36 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "abrirAjustesLocalizacao", returnType: CAPPluginReturnPromise),
         /* só no iPhone (o index.html chama só quando NATIVO.ios): */
         CAPPluginMethod(name: "infoAparelho", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "vibrar", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "vibrar", returnType: CAPPluginReturnPromise),
+        /* GPS nativo: o index.html troca o navigator.geolocation por estes no iPhone (ver GpsNativo abaixo) */
+        CAPPluginMethod(name: "gpsVigiar", returnType: CAPPluginReturnCallback),
+        CAPPluginMethod(name: "gpsParar", returnType: CAPPluginReturnPromise)
     ]
+
+    private lazy var gps = GpsNativo(plugin: self)
+
+    /** Começa a mandar posições para o index.html (mesmo formato do navigator.geolocation). Chamada viva. */
+    @objc func gpsVigiar(_ call: CAPPluginCall) {
+        call.keepAlive = true
+        DispatchQueue.main.async { self.gps.vigiar(call) }
+    }
+
+    @objc func gpsParar(_ call: CAPPluginCall) {
+        let id = call.getString("id", "")
+        DispatchQueue.main.async {
+            self.gps.parar(id)
+            call.resolve()
+        }
+    }
+
+    fileprivate func solta(_ call: CAPPluginCall) { bridge?.releaseCall(call) }
 
     private static let pasta = "KM Check"
     private static let semFotos = "Sem permissão para salvar no Fotos. Ajustes › Apps › KM Check › Fotos › Adicionar Fotos."
 
     /** o pedido de "tela acesa" do JS; reaplicado quando o app volta para a frente */
     private var querTelaAcesa = false
-    /** só para ler o estado da permissão de localização (quem pede e usa o GPS é o WebView) */
+    /** só para ler o estado da permissão de localização (as posições vêm do GpsNativo, no fim deste arquivo) */
     private var gerenteLocal: CLLocationManager?
 
     @objc override public func load() {
@@ -300,6 +321,80 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
             if !fm.fileExists(atPath: candidato.path) { return candidato }
             n += 1
         }
+    }
+}
+
+/**
+ * GPS pelo CoreLocation. O navigator.geolocation do WKWebView pede a permissão DUAS vezes (a do iOS e, a cada
+ * abertura do app, outra "“localhost” quer usar sua localização") — a Apple reprova e o usuário estranha.
+ * Daqui sai uma posição por leitura para cada "vigia" aberta pelo index.html, no formato do navegador; erros vão
+ * como { erro: 1 } (permissão negada) ou { erro: 2 } (sem sinal) sem encerrar a vigia, para voltar a funcionar
+ * sozinho quando a pessoa libera nos Ajustes.
+ */
+private final class GpsNativo: NSObject, CLLocationManagerDelegate {
+    private weak var plugin: KMCheckNativoPlugin?
+    private var gerente: CLLocationManager?
+    private var vigias: [String: CAPPluginCall] = [:]
+
+    init(plugin: KMCheckNativoPlugin) {
+        self.plugin = plugin
+        super.init()
+    }
+
+    func vigiar(_ call: CAPPluginCall) {
+        vigias[call.callbackId] = call
+        let g = gerente ?? {
+            let novo = CLLocationManager()
+            novo.delegate = self
+            novo.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+            novo.distanceFilter = kCLDistanceFilterNone
+            novo.activityType = .automotiveNavigation
+            novo.pausesLocationUpdatesAutomatically = false
+            gerente = novo
+            return novo
+        }()
+        aplica(g)
+    }
+
+    func parar(_ id: String) {
+        if let v = vigias.removeValue(forKey: id) { plugin?.solta(v) }
+        if vigias.isEmpty { gerente?.stopUpdatingLocation() }
+    }
+
+    private func aplica(_ g: CLLocationManager) {
+        switch g.authorizationStatus {
+        case .notDetermined: g.requestWhenInUseAuthorization()   // o iOS mostra o pedido com o NSLocationWhenInUseUsageDescription
+        case .denied, .restricted: avisa(1, "Sem permissão de localização.")
+        default: g.startUpdatingLocation()
+        }
+    }
+
+    func locationManagerDidChangeAuthorization(_ g: CLLocationManager) {
+        if !vigias.isEmpty { aplica(g) }
+    }
+
+    func locationManager(_ g: CLLocationManager, didUpdateLocations locais: [CLLocation]) {
+        guard let p = locais.last, p.horizontalAccuracy >= 0 else { return }
+        /* valores negativos = "não disponível" no CoreLocation; no navegador viriam como null */
+        let r: [String: Any] = [
+            "lat": p.coordinate.latitude, "lon": p.coordinate.longitude, "acc": p.horizontalAccuracy,
+            "alt": p.verticalAccuracy >= 0 ? p.altitude : NSNull(),
+            "altAcc": p.verticalAccuracy >= 0 ? p.verticalAccuracy : NSNull(),
+            "spd": p.speed >= 0 ? p.speed : NSNull(),
+            "head": p.course >= 0 ? p.course : NSNull(),
+            "ts": p.timestamp.timeIntervalSince1970 * 1000
+        ]
+        for v in vigias.values { v.resolve(r) }
+    }
+
+    func locationManager(_ g: CLLocationManager, didFailWithError erro: Error) {
+        let codigo = (erro as? CLError)?.code
+        if codigo == .locationUnknown { return }   // temporário: o GPS continua tentando sozinho
+        if codigo == .denied { avisa(1, "Sem permissão de localização.") } else { avisa(2, erro.localizedDescription) }
+    }
+
+    private func avisa(_ codigo: Int, _ msg: String) {
+        for v in vigias.values { v.resolve(["erro": codigo, "msg": msg]) }
     }
 }
 
