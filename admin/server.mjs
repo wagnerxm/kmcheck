@@ -699,6 +699,14 @@ app.get('/api/admin/agora', auth, (req, res) => {
   });
 });
 
+/* Geometria enxuta das rodovias com KM (rodovia e KM de cada aparelho no painel). Gerada por gerar-malha.mjs.
+   ~8 MB (menos de 3 MB comprimida) no lugar dos 363 arquivos completos, que travavam o Safari do iPhone. */
+app.get('/api/admin/snv-leve.json', (req, res) => {
+  const f = join(__dirname, 'snv-leve.json');
+  if (!existsSync(f)) return res.status(404).json({ error: 'snv-leve.json ausente' });
+  res.set('Cache-Control', 'public, max-age=86400').type('json').send(readFileSync(f));
+});
+
 /* Malha das rodovias federais (desenho simplificado para o mapa do painel). Gerada por gerar-malha.mjs. */
 app.get('/api/admin/malha.js', (req, res) => {
   const f = join(__dirname, 'malha.js');
