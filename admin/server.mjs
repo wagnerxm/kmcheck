@@ -500,6 +500,8 @@ app.get('/api/admin/devices/:id', auth, (req, res) => {
   }));
   res.json({
     device: d,
+    vias: viasDosDias(d.uso),
+    fix: d.location ? rodoviaDe(d.location.lat, d.location.lon) : null,
     days,
     total_days: days.length,
     all_ips: allIps,
@@ -546,6 +548,60 @@ function agrupaAparelhos(lista) {
   }
   const tamanho = new Map(cabecas.map(g => [g.id, g.n]));
   return { grupos, tamanho };
+}
+
+/* ── Rodovia e KM de cada região (feito aqui no servidor) ──
+   O painel no celular demorava porque baixava as rodovias e fazia a conta no próprio aparelho.
+   Agora o servidor carrega a geometria enxuta (snv-leve.json) uma vez, guarda os trechos numa grade
+   de 0,1° (só olha os quadrados em volta do ponto) e manda a rodovia e o KM já prontos. */
+let SNV = null; const GRADE = new Map(), _viaMemo = new Map();
+function carregaSnv() {
+  try {
+    const f = join(__dirname, 'snv-leve.json'); if (!existsSync(f)) return;
+    SNV = JSON.parse(readFileSync(f, 'utf8')).rodovias; GRADE.clear(); _viaMemo.clear();
+    SNV.forEach((r, bi) => {
+      for (let i = 0; i < r.la.length - 1; i++) {
+        const x0 = Math.floor(Math.min(r.lo[i], r.lo[i + 1]) * 10), x1 = Math.floor(Math.max(r.lo[i], r.lo[i + 1]) * 10);
+        const y0 = Math.floor(Math.min(r.la[i], r.la[i + 1]) * 10), y1 = Math.floor(Math.max(r.la[i], r.la[i + 1]) * 10);
+        if (x1 - x0 > 3 || y1 - y0 > 3) continue;   // salto entre segmentos distantes da mesma BR (não é estrada)
+        for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+          const k = x + ',' + y; let c = GRADE.get(k); if (!c) GRADE.set(k, c = []); c.push(bi * 1e6 + i);
+        }
+      }
+    });
+    console.log(`Rodovias para o painel: ${SNV.length} BRs, ${GRADE.size} quadrados na grade`);
+  } catch (e) { console.error('Erro ao carregar snv-leve.json:', e.message); SNV = null }
+}
+carregaSnv();
+/* rodovia mais próxima de uma região (até 5 km); null se longe de rodovia federal */
+function rodoviaDe(lat, lon) {
+  if (!SNV || !isFinite(lat) || !isFinite(lon)) return null;
+  const chave = lat + ',' + lon; if (_viaMemo.has(chave)) return _viaMemo.get(chave);
+  const cos = Math.cos(lat * Math.PI / 180), gx = Math.floor(lon * 10), gy = Math.floor(lat * 10);
+  let best = null;
+  for (let x = gx - 1; x <= gx + 1; x++) for (let y = gy - 1; y <= gy + 1; y++) for (const cod of GRADE.get(x + ',' + y) || []) {
+    const bi = Math.floor(cod / 1e6), i = cod % 1e6, r = SNV[bi];
+    const ax = r.lo[i], ay = r.la[i], dx = (r.lo[i + 1] - ax) * cos, dy = r.la[i + 1] - ay, ex = (lon - ax) * cos, ey = lat - ay, L2 = dx * dx + dy * dy;
+    if (!L2) continue;
+    let u = (ex * dx + ey * dy) / L2; u = u < 0 ? 0 : u > 1 ? 1 : u;
+    const d2 = (ex - u * dx) ** 2 + (ey - u * dy) ** 2;
+    if (!best || d2 < best.d2) best = { d2, u, i, r };
+  }
+  let v = null;
+  if (best) {
+    const dist = Math.sqrt(best.d2) * Math.PI / 180 * 6371000;
+    if (dist <= 5000) { const { u, i, r } = best; v = { id: r.br + '/' + r.uf, br: r.br, uf: r.uf, km: +(r.km[i] + u * (r.km[i + 1] - r.km[i])).toFixed(3), dist: Math.round(dist) } }
+  }
+  if (_viaMemo.size > 50000) _viaMemo.clear();
+  _viaMemo.set(chave, v); return v;
+}
+/* mapa "lat,lon" → [rodovia, km] de todas as regiões de uma lista de dias de uso */
+function viasDosDias(dias, alvo = {}) {
+  for (const u of Object.values(dias || {})) for (const [la, lo] of u.l || []) {
+    const k = la + ',' + lo; if (k in alvo) continue;
+    const v = rodoviaDe(la, lo); alvo[k] = v ? [v.id, v.km] : 0;
+  }
+  return alvo;
 }
 
 /* Lista de dispositivos com modelo/marca corrigidos, categoria e grupo (reinstalações juntas).
@@ -596,7 +652,7 @@ function montaLista() {
    Preenche campos detectáveis retroativamente (dispositivos que pingaram antes da v175). */
 app.get('/api/admin/devices', auth, (req, res) => {
   /* sem o resumo por dia (vai pela rota /uso), para a lista não ficar pesada */
-  const devices = montaLista().map(({ uso, ...d }) => d);
+  const devices = montaLista().map(({ uso, ...d }) => ({ ...d, fix: d.location ? rodoviaDe(d.location.lat, d.location.lon) : null }));
   /* aparelhos reais: um por grupo, com o último uso do grupo */
   const ap = new Map();
   for (const d of devices) {
@@ -675,10 +731,12 @@ app.get('/api/admin/uso', auth, (req, res) => {
       if (u.v) a.v = u.v;
     }
   }
-  const s = lista;
+  const s = lista, vias = {};
+  for (const g of grupos.values()) viasDosDias(g.dias, vias);
   res.json({
     agora: new Date().toISOString(),
     aparelhos: [...grupos.values()],
+    vias,
     fora: { computadores: s.filter(d => d.categoria === 'computador').length, testes: s.filter(d => d.categoria === 'teste').length,
             reinstalacoes: s.filter(d => d.categoria === 'celular').length - grupos.size }
   });
@@ -690,7 +748,7 @@ app.get('/api/admin/agora', auth, (req, res) => {
   const meiaHora = new Date(Date.now() - 30 * 60000).toISOString();
   const eventos = [];
   for (const d of lista) for (const p of (d.ping_history || []).slice(-10))
-    eventos.push({ ts: p.ts, did: d.device_id, grupo: d.grupo, modelo: d.model || d.platform, plat: d.platform, nick: d.nickname || null, loc: p.location || null });
+    eventos.push({ ts: p.ts, did: d.device_id, grupo: d.grupo, modelo: d.model || d.platform, plat: d.platform, nick: d.nickname || null, loc: p.location || null, via: p.location ? rodoviaDe(p.location.lat, p.location.lon) : null });
   eventos.sort((a, b) => b.ts.localeCompare(a.ts));
   res.json({
     agora: new Date().toISOString(),

@@ -713,7 +713,6 @@ function showDash(){
   let ini='resumo'; try{ ini=localStorage.getItem('kca-aba')||'resumo' }catch(e){}
   abre(document.getElementById('a-'+ini)?ini:'resumo');
   loadUso(); loadAgora(); loadDevices();
-  loadSnvGeometry(); /* geometria das rodovias: coluna Rodovia/KM e rodovias do mapa */
 }
 
 $('#lg-btn').onclick = async () => {
@@ -784,18 +783,17 @@ function escondeDica(){ dica.classList.remove('on') }
 async function loadUso(){
   try{
     const r = await api('/api/admin/uso');
+    Object.assign(VIAS, r.vias||{});
     USO = r.aparelhos||[]; AGORA_MS = Date.parse(r.agora)||Date.now(); FORA = r.fora||FORA;
     desenha();
   }catch(e){ toast('Erro ao carregar o uso: '+e.message) }
 }
 
 /* rodovia de um ponto (lat/lon com ~1 km) — usa a geometria do SNV quando ela termina de carregar */
-const _viaCache = new Map();
+/* o servidor já manda a rodovia e o KM de cada região ("lat,lon" → [rodovia, km]); o celular não faz conta */
+const VIAS = {};
 function viaDe(lat,lon){
-  if(!_snvReady) return null;
-  const k=lat+','+lon; if(_viaCache.has(k)) return _viaCache.get(k);
-  const f=findKm(lat,lon), v=f&&f.dist<=5000?{id:f.br+'/'+f.uf,km:f.km}:null;
-  _viaCache.set(k,v); return v;
+  const v=VIAS[lat+','+lon]; return v?{id:v[0],km:v[1]}:null;
 }
 
 /* ── contas do período ── */
@@ -904,7 +902,6 @@ $$('.zoom button').forEach(b=>b.onclick=()=>{ $$('.zoom button').forEach(x=>x.cl
 function mapa(r){
   if(!M) return;
   const raio=vb[2]/170, usadas=Object.keys(r.vias);
-  $('#mapa-msg').textContent=_snvReady?'':'Carregando as rodovias…';
   $('#ativas').innerHTML=M.vias.filter(v=>usadas.includes(v.id)&&(!FILTRO||v.id===FILTRO)).map(v=>`<path d="${v.d}"/>`).join('');
   const lista=r.ativos.filter(a=>!FILTRO||r.viasDe.get(a).has(FILTRO)).map(a=>({a,u:r.ultLoc(a)})).filter(x=>x.u);
   $('#pts').innerHTML=lista.map(({a,u},i)=>{ const [x,y]=proj(u.p[1],u.p[0]), c=a.plat==='iOS'?'ios':'';
@@ -924,7 +921,7 @@ function barras(r){
   const cx=$('#barras'), top=Object.entries(r.vias).sort((a,b)=>b[1]-a[1]).slice(0,12), max=top[0]?top[0][1]:1;
   const antes=new Map(Object.entries(barraEl).map(([k,el])=>[k,el.getBoundingClientRect().top]));
   for(const k in barraEl) if(!top.some(t=>t[0]===k)){ barraEl[k].remove(); delete barraEl[k] }
-  if(!top.length) cx.innerHTML=`<p class="aviso">${_snvReady?'Nenhum uso perto de rodovias federais no período.':'Carregando as rodovias…'}</p>`;
+  if(!top.length) cx.innerHTML=`<p class="aviso">Nenhum uso perto de rodovias federais no período.</p>`;
   else{ const p=cx.querySelector('.aviso'); if(p) p.remove() }
   top.forEach(([via,n])=>{
     let el=barraEl[via];
@@ -1049,7 +1046,7 @@ $$('[data-lista]').forEach(el=>el.addEventListener('click',()=>{ if(ULT) mostraL
 let _vistos=null;
 function evento(e,novo){
   const el=document.createElement('div'); el.className='ev vidro'; el.dataset.ts=e.ts; el.dataset.did=e.did;
-  const a=USO.find(x=>x.ids&&x.ids.includes(e.did)), v=e.loc&&viaDe(e.loc.lat,e.loc.lon);
+  const a=USO.find(x=>x.ids&&x.ids.includes(e.did)), v=e.via;
   el.innerHTML=`${icPlat(e.plat)}<span style="min-width:0"><b>${esc(e.nick||(a&&a.nick)||e.modelo||'Celular')}</b> abriu o app<small>${v?v.id+' · km '+fmt(Math.round(v.km*10)/10):esc(e.modelo||'')}</small></span><time>${quando(e.ts)}</time>`;
   const f=$('#feed'); if(novo) f.prepend(el); else f.appendChild(el); while(f.children.length>8) f.lastChild.remove();
   if(novo&&e.loc&&M){   /* acende o ponto no mapa */
@@ -1113,67 +1110,9 @@ function fmtLoc(loc){
   return `<a href="https://maps.google.com/?q=${loc.lat},${loc.lon}" target="_blank" title="Precisão: ${loc.acc||'?'}m">${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}</a>`;
 }
 
-/* ── Geometria SNV para interpolar Rodovia/KM a partir da localização ── */
-const D2R = Math.PI/180, R_EARTH = 6371000;
-let _snvBases = []; /* arrays planas {br, uf, lat[], lon[], km[], box} — mesma estrutura do app */
-let _snvLoading = false, _snvReady = false;
-
-async function loadSnvGeometry(){
-  if(_snvLoading||_snvReady) return;
-  _snvLoading = true;
-  try {
-    /* versão enxuta, montada no servidor (um ponto a cada ~300 m, com o KM certo em cada ponto).
-       Antes eram os 363 arquivos completos (~137 MB): no iPhone a página travava por falta de memória. */
-    const r = await fetch('/api/admin/snv-leve.json').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json() });
-    for(const v of r.rodovias||[]){
-      const lat=v.la, lon=v.lo, km=v.km; if(!lat.length) continue;
-      /* caixa da rodovia: a busca do KM pula as rodovias longe do ponto (fica muito mais rápida) */
-      let a=90,b=-90,c=180,d=-180; for(let j=0;j<lat.length;j++){ if(lat[j]<a)a=lat[j]; if(lat[j]>b)b=lat[j]; if(lon[j]<c)c=lon[j]; if(lon[j]>d)d=lon[j] }
-      _snvBases.push({br:v.br, uf:v.uf, lat, lon, km, box:[a-.06,b+.06,c-.06,d+.06]});
-    }
-    _snvReady = true;
-    _kmCache.clear(); _viaCache.clear();
-    if(_devData.length) renderDevices();
-    if(USO.length) desenha();
-  } catch(e){
-    console.warn('Erro ao carregar geometria SNV:', e);
-  } finally { _snvLoading = false; }
-}
-
-/* Encontra a rodovia e KM mais próximos de uma coordenada GPS (só olha as rodovias cuja caixa contém o ponto) */
-function findKm(lat, lon){
-  if(!_snvReady||!_snvBases.length) return null;
-  let best = null;
-  const cos = Math.cos(lat*D2R), px = lon, py = lat;
-  for(const b of _snvBases){
-    if(lat<b.box[0]||lat>b.box[1]||lon<b.box[2]||lon>b.box[3]) continue;
-    for(let i=0; i<b.lat.length-1; i++){
-      const ax=b.lon[i], ay=b.lat[i], bx=b.lon[i+1], by=b.lat[i+1];
-      const dx=(bx-ax)*cos, dy=by-ay, ex=(px-ax)*cos, ey=py-ay;
-      const L2=dx*dx+dy*dy; if(L2===0) continue;
-      let t=(ex*dx+ey*dy)/L2; t=t<0?0:(t>1?1:t);
-      const fx=ex-t*dx, fy=ey-t*dy;
-      const d2=fx*fx+fy*fy;
-      if(!best||d2<best.d2) best={d2, t, i, b};
-    }
-  }
-  if(!best) return null;
-  const {t,i,b}=best;
-  const km=b.km[i]+t*(b.km[i+1]-b.km[i]);
-  const dist=Math.sqrt(best.d2)*D2R*R_EARTH;
-  return {km, dist, br:b.br, uf:b.uf};
-}
-
-/* Cache de findKm por device_id para não recalcular a cada re-render */
-const _kmCache = new Map();
-function getDevFix(d){
-  if(!d.location||!d.location.lat) return null;
-  const key = d.device_id+'|'+d.location.lat+'|'+d.location.lon;
-  if(_kmCache.has(key)) return _kmCache.get(key);
-  const fix = findKm(d.location.lat, d.location.lon);
-  _kmCache.set(key, fix);
-  return fix;
-}
+/* rodovia/KM da última região de cada aparelho: calculado no servidor (campo fix) */
+const _snvReady = true;
+function getDevFix(d){ return d.fix || null }
 function fmtRoad(d){
   if(!_snvReady) return '<span class="muted">…</span>';
   const fix = getDevFix(d);
@@ -1416,6 +1355,7 @@ async function openDevDetail(id){
 
 function renderDevDetail(r){
   const d = r.device, days = r.days || [], ips = r.all_ips || [];
+  Object.assign(VIAS, r.vias || {});
   let html = '<div class="dev-info">';
   if (d.nickname) html += infoItem('Usuário', esc(d.nickname));
   html += infoItem('Device ID', '<span class="mono">'+esc(d.device_id)+'</span>');
@@ -1447,8 +1387,7 @@ function renderDevDetail(r){
     x.dias.add(dia); x.min = Math.min(x.min, v.km); x.max = Math.max(x.max, v.km); porVia.set(v.id, x);
   }
   html += '<div class="section-title">Rodovias por onde passou</div>';
-  if (!_snvReady) html += '<p class="aviso">Carregando as rodovias…</p>';
-  else if (!porVia.size) html += '<p class="aviso">Nenhum uso perto de rodovias federais.</p>';
+  if (!porVia.size) html += '<p class="aviso">Nenhum uso perto de rodovias federais.</p>';
   else html += '<div class="vias-lista">' + [...porVia.entries()].sort((a, b) => b[1].dias.size - a[1].dias.size).map(([id, x]) =>
     `<span class="via-tag" title="km ${fmt(Math.round(x.min))} a ${fmt(Math.round(x.max))}">${id}<small>${x.dias.size} ${x.dias.size === 1 ? 'dia' : 'dias'}</small></span>`).join('') + '</div>';
 
