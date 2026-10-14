@@ -14,8 +14,7 @@
 :root{--tinta:#0b0c0d;--lima:#b7d92d;--lima-esc:#1d2606;--vidro:rgba(255,255,255,.2)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--tinta);background:#fff;-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-html{scroll-behavior:smooth}
+body{font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--tinta);background:#0b0c0d;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 img{display:block}
 
@@ -39,7 +38,11 @@ nav .links a:hover{color:#6f8a0e}
 .cta:hover{transform:scale(1.05)}
 
 /* ===== seções ===== */
-section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;padding:8px 20px;overflow:hidden}
+section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;padding:8px 20px;overflow:hidden;background:#fff;
+  /* pilha de seções (j01): cada seção gruda no topo e a próxima sobe por cima; a de baixo encolhe e escurece */
+  position:sticky;top:0;transform-origin:50% 30%;will-change:transform,filter}
+#s2,#s3{border-radius:28px 28px 0 0;box-shadow:0 -24px 60px rgba(0,0,0,.28)}
+#s1{z-index:1}#s2{z-index:2}#s3{z-index:3}
 #s1{height:100vh;padding-top:84px}
 #s2,#s3{height:100vh;padding-top:72px}
 .mc{position:relative;overflow:hidden;border-radius:16px;background-repeat:no-repeat;background-color:#dfe3e6}
@@ -53,7 +56,7 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
 .hero{flex:1;min-height:0}
 .hero .t1{position:absolute;top:28px;left:28px;max-width:300px;font-size:14px;font-weight:700;line-height:20px}
 .hero .bl{position:absolute;left:16px;bottom:30px}
-.hero .bl span{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+.hero .bl>span{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
 .hero h1{font-size:clamp(3rem,7.4vw,9rem);font-weight:800;line-height:.86;letter-spacing:-.04em}
 .hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--lima) 62% 92%,transparent 92%)}
 .hero .br{position:absolute;right:28px;bottom:32px;display:flex;flex-direction:column;align-items:flex-end;gap:14px;font-size:14px;font-weight:700}
@@ -111,17 +114,38 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
 .rodape{position:absolute;top:16px;right:20px;z-index:3;display:flex;gap:18px;background:rgba(18,20,23,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
 .rodape a:hover{text-decoration:underline}
 
+
+/* ===== movimento ===== */
+/* palavra por palavra (j16): cada palavra sobe de dentro de uma máscara */
+.pw{display:inline-block;overflow:hidden;padding-bottom:.14em;margin-bottom:-.14em;vertical-align:top}
+.pw>.palavra{display:inline-block;transform:translateY(105%);transition:transform .9s cubic-bezier(.16,1,.3,1)}
+.vis .pw>.palavra,.palavras-ok .pw>.palavra{transform:none}
+/* luz que segue o mouse (j12): brilho lima nos cartões de vidro */
+.luz{position:relative}
+.luz::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .3s;border-radius:inherit;
+  background:radial-gradient(260px circle at var(--x,50%) var(--y,50%),rgba(183,217,45,.34),transparent 70%)}
+.luz:hover::before{opacity:1}
+.luz>*{position:relative;z-index:1}
+/* cursor com peso (j09): o ponto vai na hora, o anel chega depois */
+.cur-ponto,.cur-anel{position:fixed;top:0;left:0;z-index:200;pointer-events:none;opacity:0;border-radius:50%;transition:opacity .25s,width .25s,height .25s,margin .25s,background .25s,border-color .25s}
+.cur-ponto{width:8px;height:8px;margin:-4px 0 0 -4px;background:#fff;mix-blend-mode:difference}
+.cur-anel{width:38px;height:38px;margin:-19px 0 0 -19px;border:1.5px solid var(--lima)}
+.cur-anel.sobre{width:64px;height:64px;margin:-32px 0 0 -32px;background:rgba(183,217,45,.22)}
+.cur-on .cur-ponto,.cur-on .cur-anel{opacity:1}
+.com-cursor,.com-cursor *{cursor:none!important}
+.elastico{will-change:transform}
+
 /* telas estreitas: empilha (quem cair aqui no celular vai para o app, mas fica correto) */
 @media (max-width:900px){
   nav .links a:not(.btn){display:none}
-  section,#s1,#s2,#s3{height:auto;min-height:100vh}
+  section,#s1,#s2,#s3{height:auto;min-height:100vh;position:relative;border-radius:0;box-shadow:none}
   .g2,.g3{display:flex;flex-direction:column}
   .g2>.mc{min-height:260px}.recs{position:relative;flex-wrap:wrap}.g2>.mc.sub{min-height:420px}
   .faixa{flex-basis:56px}.hero{min-height:420px}
   .passos{position:static;padding:0 20px 20px;margin-top:70px}
   .alto{min-height:420px}.ov a{height:150px}.dupla{min-height:260px}
 }
-@media (prefers-reduced-motion:reduce){.rev{transition:none}.leg .cur{animation:none}}
+@media (prefers-reduced-motion:reduce){.pw>.palavra{transform:none;transition:none}.rev{transition:none}.leg .cur{animation:none}}
 </style>
 </head>
 <body>
@@ -134,7 +158,7 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
     <a href="#s2">Recursos</a>
     <a href="../manual/">Manual</a>
     <a href="mailto:suporte@kmcheck.com.br">Suporte</a>
-    <a class="btn lima" href="#s3">Baixar app</a>
+    <a class="btn lima elastico" href="#s3">Baixar app</a>
   </div>
 </nav>
 
@@ -145,8 +169,8 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
   <div class="mc faixa rev" style="--i:2"><i></i>Funciona sem internet</div>
   <div class="mc hero rev" style="--i:3">
     <div class="t1">Desenvolvido para obras e fiscalização<br>de rodovias federais, estaduais e municipais</div>
-    <div class="bl"><span>Rodovia, KM e estaca em cada foto</span><h1>O <em>KM</em> certo,<br>em cada foto.</h1></div>
-    <div class="br"><span>Grátis · Android e iPhone</span><a class="btn lima cta" href="#s3">Baixe grátis</a></div>
+    <div class="bl"><span>Rodovia, KM e estaca em cada foto</span><h1 id="h1">O <em>KM</em> certo,<br>em cada foto.</h1></div>
+    <div class="br"><span>Grátis · Android e iPhone</span><a class="btn lima cta elastico" href="#s3">Baixe grátis</a></div>
   </div>
 </section>
 
@@ -156,9 +180,9 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
     <div class="mc sombra rev" style="--i:0">
       <div class="tt">Como funciona</div>
       <div class="passos">
-        <div class="passo"><b>01</b>Baixe a rodovia do SNV/DNIT</div>
-        <div class="passo"><b>02</b>O GPS acha o KM exato</div>
-        <div class="passo"><b>03</b>A foto sai com a legenda gravada</div>
+        <div class="passo luz"><b>01</b>Baixe a rodovia do SNV/DNIT</div>
+        <div class="passo luz"><b>02</b>O GPS acha o KM exato</div>
+        <div class="passo luz"><b>03</b>A foto sai com a legenda gravada</div>
       </div>
     </div>
     <div class="mc sombra rev" style="--i:1;grid-row:span 2">
@@ -175,10 +199,10 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
     </div>
     <div class="mc rev" style="--i:3;grid-column:1/-1">
       <div class="recs">
-        <div class="rec on"><div><h3>Câmera</h3><p>Foto 1:1, 4:3 ou 16:9 com legenda gravada.</p></div><span class="n">01</span></div>
-        <div class="rec"><div><h3>Modo Carro</h3><p>Painel grande do KM, que escurece à noite.</p></div><span class="n">02</span></div>
-        <div class="rec"><div><h3>Importar KMZ e Shapefile</h3><p>Qualquer rodovia: federal, estadual ou municipal.</p></div><span class="n">03</span></div>
-        <div class="rec"><div><h3>Consulta</h3><p>Coordenada em KM e KM em coordenada.</p></div></div>
+        <div class="rec on luz"><div><h3>Câmera</h3><p>Foto 1:1, 4:3 ou 16:9 com legenda gravada.</p></div><span class="n">01</span></div>
+        <div class="rec luz"><div><h3>Modo Carro</h3><p>Painel grande do KM, que escurece à noite.</p></div><span class="n">02</span></div>
+        <div class="rec luz"><div><h3>Importar KMZ e Shapefile</h3><p>Qualquer rodovia: federal, estadual ou municipal.</p></div><span class="n">03</span></div>
+        <div class="rec luz"><div><h3>Consulta</h3><p>Coordenada em KM e KM em coordenada.</p></div></div>
       </div>
     </div>
   </div>
@@ -193,8 +217,8 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
       <div class="card c-app rev" style="--i:2">
         <div class="tx"><p>Baixe o app</p><h3>Gratuito para<br>Android e iPhone</h3>
           <div class="lojas">
-            <a class="btn" href="https://play.google.com/store/apps/details?id=br.com.kmcheck.app">Google Play</a>
-            <a class="btn" href="#">App Store</a>
+            <a class="btn elastico" href="https://play.google.com/store/apps/details?id=br.com.kmcheck.app">Google Play</a>
+            <a class="btn elastico" href="#">App Store</a>
           </div></div>
         <div class="qr"><img src="img/qr.svg" alt="QR code para abrir o KM Check no celular"></div>
       </div>
@@ -203,8 +227,8 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
       <div class="rodape"><a href="../privacidade/">Política de privacidade</a><a href="../?app=1">Abrir o app no navegador</a></div>
       <img src="img/rodovia.webp" alt="Rodovia com o app KM Check em dois celulares" loading="lazy">
       <div class="ov">
-        <a class="b" href="../manual/"><h4>Manual<br>do usuário<small>Passo a passo ilustrado</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
-        <a class="v" href="mailto:suporte@kmcheck.com.br"><h4>Suporte<small>suporte@kmcheck.com.br</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+        <a class="b luz" href="../manual/"><h4>Manual<br>do usuário<small>Passo a passo ilustrado</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+        <a class="v luz" href="mailto:suporte@kmcheck.com.br"><h4>Suporte<small>suporte@kmcheck.com.br</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
       </div>
     </div>
   </div>
@@ -221,12 +245,12 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
     var fx=parseFloat(sec.dataset.fx||.5);
     function pinta(){
       if(!img.naturalWidth) return;
-      var s=sec.getBoundingClientRect(), sw=s.width, sh=s.height;
+      var s=sec.getBoundingClientRect(), k=sec.offsetWidth/(s.width||1), sw=sec.offsetWidth, sh=sec.offsetHeight;
       var esc=Math.max(sh/img.naturalHeight, sw/img.naturalWidth);
       var rw=img.naturalWidth*esc, rh=img.naturalHeight*esc;
       var ox=(rw-sw)*fx, oy=(rh-sh)*.5;
       sec.querySelectorAll('.mc').forEach(function(c){
-        var r=c.getBoundingClientRect(), x=r.left-s.left, y=r.top-s.top;
+        var r=c.getBoundingClientRect(), x=(r.left-s.left)*k, y=(r.top-s.top)*k;
         c.style.backgroundImage='url('+sec.dataset.bg+')';
         c.style.backgroundSize=rw+'px '+rh+'px';
         c.style.backgroundPosition=(-(x+ox))+'px '+(-(y+oy))+'px';
@@ -238,6 +262,124 @@ section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;p
     sec.addEventListener('transitionend',pinta);
   });
 })();
+
+
+/* ===== movimento (referências: naocodei.com/free-code) ===== */
+var reduz=matchMedia('(prefers-reduced-motion:reduce)').matches;
+var desk=matchMedia('(min-width:901px)').matches;
+var lerp=function(a,b,t){return a+(b-a)*t}, limitar=function(v,a,b){return Math.max(a,Math.min(b,v))};
+var secoes=[].slice.call(document.querySelectorAll('section'));
+
+/* j16 · palavra por palavra: cada palavra sobe de uma máscara, com atraso em cascata */
+function quebra(el){
+  var n=0;
+  (function anda(no){
+    [].slice.call(no.childNodes).forEach(function(c){
+      if(c.nodeType===3){
+        var frag=document.createDocumentFragment();
+        c.textContent.split(/(\s+)/).forEach(function(t){
+          if(!t) return;
+          if(/^\s+$/.test(t)){frag.appendChild(document.createTextNode(' '));return}
+          var m=document.createElement('span');m.className='pw';
+          var w=document.createElement('span');w.className='palavra';w.textContent=t;
+          w.style.transitionDelay=(n++*90)+'ms';m.appendChild(w);frag.appendChild(m);
+        });
+        no.replaceChild(frag,c);
+      }else if(c.nodeType===1&&c.tagName!=='BR') anda(c);
+    });
+  })(el);
+}
+var h1=document.getElementById('h1'); quebra(h1);
+function abreHero(){
+  document.getElementById('s1').classList.add('vis');
+  setTimeout(function(){h1.classList.add('palavras-ok')},350);
+}
+
+if(!reduz&&desk){
+  /* j10 · rolagem com inércia: o scroll persegue o alvo em vez de saltar até ele.
+     Mantém a barra de rolagem nativa (e o sticky da pilha) porque só chama scrollTo. */
+  var alvo=scrollY, atual=scrollY, rodando=false;
+  var maxScroll=function(){return document.documentElement.scrollHeight-innerHeight};
+  function passo(){
+    atual=lerp(atual,alvo,.085);
+    if(Math.abs(alvo-atual)<.4){atual=alvo;rodando=false}
+    scrollTo(0,atual);
+    if(rodando) requestAnimationFrame(passo);
+  }
+  function vai(y){alvo=limitar(y,0,maxScroll()); if(!rodando){rodando=true;atual=scrollY;requestAnimationFrame(passo)}}
+  addEventListener('wheel',function(ev){
+    if(ev.ctrlKey) return;               /* zoom do navegador passa direto */
+    ev.preventDefault();
+    var d=ev.deltaMode===1?ev.deltaY*32:ev.deltaY;
+    vai((rodando?alvo:scrollY)+d);
+  },{passive:false});
+  /* rolagem que não é nossa (barra, teclado): ressincroniza para não brigar */
+  addEventListener('scroll',function(){if(!rodando){alvo=atual=scrollY}},{passive:true});
+  /* links de âncora deslizam até a seção (cada seção ocupa uma tela) */
+  document.querySelectorAll('a[href^="#s"]').forEach(function(a){
+    a.addEventListener('click',function(ev){
+      var i=secoes.indexOf(document.querySelector(a.getAttribute('href')));
+      if(i<0) return; ev.preventDefault(); vai(i*innerHeight);
+    });
+  });
+
+  /* j01 · pilha de seções: enquanto a próxima sobe por cima, a de baixo encolhe e escurece */
+  function pilha(){
+    secoes.forEach(function(sec,i){
+      var prox=secoes[i+1]; if(!prox) return;
+      var p=limitar(1-prox.getBoundingClientRect().top/innerHeight,0,1);
+      sec.style.transform=p>0?'scale('+(1-p*.07)+')':'';
+      sec.style.filter=p>0?'brightness('+(1-p*.5)+')':'';
+    });
+  }
+  addEventListener('scroll',pilha,{passive:true}); addEventListener('resize',pilha); pilha();
+
+  /* j09 · cursor: ponto na hora, anel com atraso; o anel cresce sobre links e botões */
+  if(matchMedia('(hover:hover) and (pointer:fine)').matches){
+    var pt=document.createElement('div'),an=document.createElement('div');
+    pt.className='cur-ponto';an.className='cur-anel';document.body.append(pt,an);
+    document.documentElement.classList.add('com-cursor');
+    var m={x:0,y:0},a2={x:0,y:0},ligado=false;
+    addEventListener('mousemove',function(ev){
+      m.x=ev.clientX;m.y=ev.clientY;
+      if(!ligado){ligado=true;a2.x=m.x;a2.y=m.y;document.documentElement.classList.add('cur-on')}
+      an.classList.toggle('sobre',!!ev.target.closest('a,button'));
+    });
+    document.addEventListener('mouseleave',function(){ligado=false;document.documentElement.classList.remove('cur-on')});
+    (function laco(){
+      pt.style.transform='translate('+m.x+'px,'+m.y+'px)';
+      a2.x=lerp(a2.x,m.x,.14);a2.y=lerp(a2.y,m.y,.14);
+      an.style.transform='translate('+a2.x+'px,'+a2.y+'px)';
+      requestAnimationFrame(laco);
+    })();
+  }
+
+  /* j14 · botão elástico: mola com velocidade e amortecimento (oscila e assenta sozinha) */
+  var mols=[].slice.call(document.querySelectorAll('.elastico')).map(function(b){
+    var o={b:b,e:1,v:0,t:1};
+    b.addEventListener('mouseenter',function(){o.t=1.08});
+    b.addEventListener('mouseleave',function(){o.t=1});
+    b.addEventListener('mousedown',function(){o.t=.94});
+    b.addEventListener('mouseup',function(){o.t=1.08});
+    return o;
+  });
+  (function molas(){
+    mols.forEach(function(o){
+      if(Math.abs(o.t-o.e)<.0005&&Math.abs(o.v)<.0005) return;
+      o.v=(o.v+(o.t-o.e)*.22)*.72; o.e+=o.v;
+      o.b.style.transform='scale('+o.e+')';
+    });
+    requestAnimationFrame(molas);
+  })();
+}
+
+/* j12 · luz que segue o mouse: o JS só escreve a posição, o brilho é um gradiente do CSS */
+if(!reduz) document.querySelectorAll('.luz').forEach(function(el){
+  el.addEventListener('mousemove',function(ev){
+    var r=el.getBoundingClientRect();
+    el.style.setProperty('--x',(ev.clientX-r.left)+'px');el.style.setProperty('--y',(ev.clientY-r.top)+'px');
+  });
+});
 
 /* ===== entrada em cascata ao rolar ===== */
 var legTocou=false;
@@ -257,14 +399,14 @@ function digita(){
 var io=new IntersectionObserver(function(es){es.forEach(function(e){
   if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);if(e.target.id==='s2')setTimeout(digita,500)}
 })},{threshold:.15});
-document.querySelectorAll('section').forEach(function(s){io.observe(s)});
+document.querySelectorAll('section:not(#s1)').forEach(function(s){io.observe(s)});
 
 /* ===== abertura: odômetro KM 000 → 100 em 2 s ===== */
 (function(){
   var sp=document.getElementById('splash'), od=document.getElementById('odo'), n=0;
-  function fim(){sp.classList.add('sai');setTimeout(function(){sp.remove()},700)}
+  function fim(){sp.classList.add('sai');setTimeout(function(){sp.remove()},700);abreHero()}
   var visto=false; try{visto=sessionStorage.getItem('kc-site-splash')}catch(e){}
-  if(visto||matchMedia('(prefers-reduced-motion:reduce)').matches){sp.remove();return}
+  if(visto||matchMedia('(prefers-reduced-motion:reduce)').matches){sp.remove();abreHero();return}
   try{sessionStorage.setItem('kc-site-splash','1')}catch(e){}
   var t=setInterval(function(){
     n++; od.textContent=('00'+n).slice(-3);
