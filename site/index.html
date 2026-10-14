@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KM Check — O KM certo, em cada foto</title>
+<meta name="description" content="App de campo para documentação fotográfica de rodovias: rodovia, KM, estaca, coordenadas e data gravados dentro de cada foto. Funciona sem internet.">
+<link rel="icon" href="img/logo.png">
+<style>
+/* Inter hospedada aqui mesmo (sem fonte de terceiros: mais rápido e sem dúvida de licença) */
+@font-face{font-family:Inter;font-weight:500;font-display:swap;src:url(img/Inter-Medium.woff2) format('woff2')}
+@font-face{font-family:Inter;font-weight:700;font-display:swap;src:url(img/Inter-Bold.woff2) format('woff2')}
+@font-face{font-family:Inter;font-weight:800;font-display:swap;src:url(img/Inter-ExtraBold.woff2) format('woff2')}
+:root{--tinta:#0b0c0d;--lima:#b7d92d;--lima-esc:#1d2606;--vidro:rgba(255,255,255,.2)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--tinta);background:#fff;-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+html{scroll-behavior:smooth}
+a{color:inherit;text-decoration:none}
+img{display:block}
+
+/* ===== abertura: odômetro ===== */
+#splash{position:fixed;inset:0;z-index:100;background:#fff;display:flex;align-items:flex-end;transition:opacity .7s}
+#splash.sai{opacity:0;pointer-events:none}
+#splash .od{padding:clamp(24px,3vw,40px);display:flex;align-items:baseline;gap:.35em;line-height:1;font-weight:800;font-size:clamp(4rem,9vw,9rem);font-variant-numeric:tabular-nums}
+#splash .od small{font-size:.28em;letter-spacing:.3em;color:#6f8a0e}
+
+/* ===== topo fixo ===== */
+nav{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:10px clamp(16px,2vw,24px);background:rgba(255,255,255,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+nav .logo img{height:38px;width:auto}
+nav .links{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:700}
+nav .links a:hover{color:#6f8a0e}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:999px;font:700 14px Inter,sans-serif;border:1px solid var(--tinta);background:#fff;transition:background .2s,color .2s,transform .2s;cursor:pointer}
+.btn:hover{background:var(--tinta);color:#fff}
+.btn.lima{background:var(--lima);border-color:var(--lima);color:var(--lima-esc)}
+.btn.lima:hover{background:var(--tinta);border-color:var(--tinta);color:var(--lima)}
+.cta{padding:18px 32px;font-size:18px;background:#fff;border:0}
+.cta.lima{background:var(--lima)}
+.cta:hover{transform:scale(1.05)}
+
+/* ===== seções ===== */
+section{width:100%;min-height:100vh;display:flex;flex-direction:column;gap:8px;padding:8px 20px;overflow:hidden}
+#s1{height:100vh;padding-top:84px}
+#s2,#s3{height:100vh;padding-top:72px}
+.mc{position:relative;overflow:hidden;border-radius:16px;background-repeat:no-repeat;background-color:#dfe3e6}
+.mc>*{position:relative;z-index:2}
+.rev{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1) calc(var(--i)*120ms),transform .6s cubic-bezier(.16,1,.3,1) calc(var(--i)*120ms)}
+.vis .rev{opacity:1;transform:none}
+
+/* seção 1 */
+.faixa{flex:0 0 80px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(1.3rem,2.1vw,1.9rem);text-align:center}
+.faixa i{width:11px;height:11px;border-radius:50%;background:var(--lima);margin-right:14px;box-shadow:0 0 0 4px rgba(183,217,45,.3)}
+.hero{flex:1;min-height:0}
+.hero .t1{position:absolute;top:28px;left:28px;max-width:300px;font-size:14px;font-weight:700;line-height:20px}
+.hero .bl{position:absolute;left:16px;bottom:30px}
+.hero .bl span{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+.hero h1{font-size:clamp(3rem,7.4vw,9rem);font-weight:800;line-height:.86;letter-spacing:-.04em}
+.hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--lima) 62% 92%,transparent 92%)}
+.hero .br{position:absolute;right:28px;bottom:32px;display:flex;flex-direction:column;align-items:flex-end;gap:14px;font-size:14px;font-weight:700}
+
+/* seção 2 */
+.g2{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr .8fr;gap:8px}
+.mc h2{font-size:clamp(1.6rem,2.2vw,2rem);font-weight:800;color:#fff}
+.sombra::after{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.05) 55%,rgba(0,0,0,.5))}
+.passos{position:absolute;left:28px;bottom:24px;right:28px;display:flex;gap:12px}
+.passo{flex:1;background:var(--vidro);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:14px;padding:12px 14px;color:#fff;font-size:13px;font-weight:700;line-height:1.3}
+.passo b{display:block;color:var(--lima);font-size:12px;letter-spacing:.2em;margin-bottom:4px}
+.leg{position:absolute;left:24px;bottom:24px;width:min(560px,calc(100% - 48px));background:rgba(20,22,25,.82);border-radius:12px;padding:16px 20px;color:#fff;font-weight:700;font-size:clamp(15px,1.55vw,22px);line-height:1.45;min-height:5.9em}
+.leg .l{display:block;white-space:nowrap;overflow:hidden;width:0}
+.leg .cur{display:inline-block;width:.5ch;background:var(--lima);height:1em;vertical-align:-.12em;animation:pisca 1s steps(1) infinite}
+@keyframes pisca{50%{opacity:0}}
+.mc .tt{position:absolute;top:24px;left:28px;color:#fff;font-weight:800;font-size:clamp(1.6rem,2.2vw,2.2rem);line-height:1.05}
+.mc .st{position:absolute;top:24px;right:28px;color:#fff;font-size:13px;font-weight:700;opacity:.9}
+.big{position:absolute;top:24px;left:28px;color:#fff;font-weight:800;font-size:clamp(2.6rem,5.2vw,5.4rem);line-height:.92;letter-spacing:-.03em}
+.big small{display:block;margin-top:14px;font-size:14px;letter-spacing:0;font-weight:700;opacity:.92;line-height:1.4}
+.recs{position:absolute;inset:0;display:flex;gap:8px;padding:10px}
+.rec{flex:1;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;justify-content:space-between;background:var(--vidro);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);color:#fff}
+.rec.on{background:rgba(255,255,255,.9);color:var(--tinta)}
+.rec h3{font-size:clamp(1.2rem,2vw,2rem);font-weight:800;line-height:1.05;letter-spacing:-.01em}
+.rec p{font-size:12.5px;font-weight:500;line-height:1.35;opacity:.85;margin-top:8px}
+.rec .n{align-self:flex-end;width:42px;height:42px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+
+/* seção 3 */
+.g3{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.col{display:flex;flex-direction:column;gap:8px;min-height:0}
+.card{border-radius:16px;overflow:hidden;min-height:0}
+.c-tit{background:#fafaf9;padding:28px;display:flex;flex-direction:column;justify-content:space-between;flex:1.1}
+.c-tit h2{font-size:clamp(3rem,6.2vw,6.2rem);font-weight:800;line-height:.95;letter-spacing:-.04em}
+.c-tit p{font-size:14px;font-weight:700}
+.dupla{display:flex;gap:8px;flex:1.5;min-height:0}
+.dupla div{flex:1;border-radius:16px;overflow:hidden;background:#e4e7ea}
+.dupla img{width:100%;height:100%;object-fit:cover;object-position:top}
+.c-app{background:#e4e4e7;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex:.9}
+.c-app .tx p{font-size:14px;font-weight:700;margin-bottom:10px}
+.c-app h3{font-size:clamp(1.4rem,2.2vw,2.1rem);font-weight:800;line-height:1.1}
+.lojas{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.lojas .btn{justify-content:center;padding:12px 22px}
+.qr{background:#fff;padding:10px;border-radius:14px;height:min(150px,100%);aspect-ratio:1}
+.qr img{width:100%;height:100%}
+.alto{position:relative;background:#cfd6da}
+.alto>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:78% 50%}
+.alto .ov{position:absolute;left:20px;right:20px;bottom:20px;display:flex;gap:8px}
+.ov a{flex:1;height:200px;border-radius:16px;padding:20px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .25s}
+.ov a:hover{transform:translateY(-4px)}
+.ov .b{background:#fff}
+.ov .v{background:rgba(18,20,23,.6);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);color:#fff}
+.ov h4{font-size:clamp(1.2rem,1.7vw,1.7rem);font-weight:800;line-height:1.15}
+.ov small{display:block;margin-top:6px;font-size:12px;font-weight:500;opacity:.85}
+.ov .ar{align-self:flex-end;width:46px;height:46px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center}
+.ov .ar svg{transform:rotate(-45deg)}
+.rodape{position:absolute;top:16px;right:20px;z-index:3;display:flex;gap:18px;background:rgba(18,20,23,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
+.rodape a:hover{text-decoration:underline}
+
+/* telas estreitas: empilha (quem cair aqui no celular vai para o app, mas fica correto) */
+@media (max-width:900px){
+  nav .links a:not(.btn){display:none}
+  section,#s1,#s2,#s3{height:auto;min-height:100vh}
+  .g2,.g3{display:flex;flex-direction:column}
+  .g2>.mc{min-height:260px}.recs{position:relative;flex-wrap:wrap}.g2>.mc.sub{min-height:420px}
+  .faixa{flex-basis:56px}.hero{min-height:420px}
+  .passos{position:static;padding:0 20px 20px;margin-top:70px}
+  .alto{min-height:420px}.ov a{height:150px}.dupla{min-height:260px}
+}
+@media (prefers-reduced-motion:reduce){.rev{transition:none}.leg .cur{animation:none}}
+</style>
+</head>
+<body>
+
+<div id="splash" aria-hidden="true"><div class="od"><small>KM</small><span id="odo">000</span></div></div>
+
+<nav>
+  <a class="logo" href="#s1" aria-label="KM Check"><img src="img/logo.png" alt="KM Check"></a>
+  <div class="links">
+    <a href="#s2">Recursos</a>
+    <a href="../manual/">Manual</a>
+    <a href="mailto:suporte@kmcheck.com.br">Suporte</a>
+    <a class="btn lima" href="#s3">Baixar app</a>
+  </div>
+</nav>
+
+<!-- 1 · ABERTURA -->
+<section id="s1" data-bg="img/rodovia.webp" data-fx=".8">
+  <div class="mc faixa rev" style="--i:0"><i></i>KM pelo GPS</div>
+  <div class="mc faixa rev" style="--i:1"><i></i>Legenda gravada na foto</div>
+  <div class="mc faixa rev" style="--i:2"><i></i>Funciona sem internet</div>
+  <div class="mc hero rev" style="--i:3">
+    <div class="t1">Desenvolvido para obras e fiscalização<br>de rodovias federais, estaduais e municipais</div>
+    <div class="bl"><span>Rodovia, KM e estaca em cada foto</span><h1>O <em>KM</em> certo,<br>em cada foto.</h1></div>
+    <div class="br"><span>Grátis · Android e iPhone</span><a class="btn lima cta" href="#s3">Baixe grátis</a></div>
+  </div>
+</section>
+
+<!-- 2 · COMO FUNCIONA -->
+<section id="s2" data-bg="img/foto.webp" data-fx=".5">
+  <div class="g2">
+    <div class="mc sombra rev" style="--i:0">
+      <div class="tt">Como funciona</div>
+      <div class="passos">
+        <div class="passo"><b>01</b>Baixe a rodovia do SNV/DNIT</div>
+        <div class="passo"><b>02</b>O GPS acha o KM exato</div>
+        <div class="passo"><b>03</b>A foto sai com a legenda gravada</div>
+      </div>
+    </div>
+    <div class="mc sombra rev" style="--i:1;grid-row:span 2">
+      <div class="st">Exemplo de legenda real</div>
+      <div class="leg" id="leg">
+        <span class="l">BR-226/RN - KM 326,040 LD · Est. 16302+0</span>
+        <span class="l">14 00515/2024 - Aplicação de CBUQ</span>
+        <span class="l">-6,077504, -37,537466</span>
+        <span class="l">09/10/2026 · SNV Jul/26<span class="cur"></span></span>
+      </div>
+    </div>
+    <div class="mc sombra rev" style="--i:2">
+      <div class="big">Sem sinal,<br>sem problema.<small>Rodovias salvas no aparelho.<br>O KM sai pelo GPS, em qualquer estrada.</small></div>
+    </div>
+    <div class="mc rev" style="--i:3;grid-column:1/-1">
+      <div class="recs">
+        <div class="rec on"><div><h3>Câmera</h3><p>Foto 1:1, 4:3 ou 16:9 com legenda gravada.</p></div><span class="n">01</span></div>
+        <div class="rec"><div><h3>Modo Carro</h3><p>Painel grande do KM, que escurece à noite.</p></div><span class="n">02</span></div>
+        <div class="rec"><div><h3>Importar KMZ e Shapefile</h3><p>Qualquer rodovia: federal, estadual ou municipal.</p></div><span class="n">03</span></div>
+        <div class="rec"><div><h3>Consulta</h3><p>Coordenada em KM e KM em coordenada.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · GESTÃO DE EIXO + DOWNLOAD -->
+<section id="s3">
+  <div class="g3">
+    <div class="col">
+      <div class="card c-tit rev" style="--i:0"><h2>Gestão<br>de Eixo</h2><p>Baixe do SNV ou importe o seu traçado</p></div>
+      <div class="dupla rev" style="--i:1"><div><img src="img/tela-4.webp" alt="Importação de rodovia no app" loading="lazy"></div><div><img src="img/tela-6.webp" alt="Consulta de coordenada e KM no app" loading="lazy"></div></div>
+      <div class="card c-app rev" style="--i:2">
+        <div class="tx"><p>Baixe o app</p><h3>Gratuito para<br>Android e iPhone</h3>
+          <div class="lojas">
+            <a class="btn" href="https://play.google.com/store/apps/details?id=br.com.kmcheck.app">Google Play</a>
+            <a class="btn" href="#">App Store</a>
+          </div></div>
+        <div class="qr"><img src="img/qr.svg" alt="QR code para abrir o KM Check no celular"></div>
+      </div>
+    </div>
+    <div class="card alto rev" style="--i:3">
+      <div class="rodape"><a href="../privacidade/">Política de privacidade</a><a href="../?app=1">Abrir o app no navegador</a></div>
+      <img src="img/rodovia.webp" alt="Rodovia com o app KM Check em dois celulares" loading="lazy">
+      <div class="ov">
+        <a class="b" href="../manual/"><h4>Manual<br>do usuário<small>Passo a passo ilustrado</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+        <a class="v" href="mailto:suporte@kmcheck.com.br"><h4>Suporte<small>suporte@kmcheck.com.br</small></h4><span class="ar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12m0 0L8 2m5 5L8 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ===== cartões em mosaico =====
+   Cada .mc de uma seção com data-bg mostra uma "janela" da MESMA imagem: a imagem é escalada para
+   cobrir a seção inteira e cada cartão desloca o fundo pela sua posição dentro dela. */
+(function(){
+  var secs=[].slice.call(document.querySelectorAll('section[data-bg]'));
+  secs.forEach(function(sec){
+    var img=new Image(); img.src=sec.dataset.bg;
+    var fx=parseFloat(sec.dataset.fx||.5);
+    function pinta(){
+      if(!img.naturalWidth) return;
+      var s=sec.getBoundingClientRect(), sw=s.width, sh=s.height;
+      var esc=Math.max(sh/img.naturalHeight, sw/img.naturalWidth);
+      var rw=img.naturalWidth*esc, rh=img.naturalHeight*esc;
+      var ox=(rw-sw)*fx, oy=(rh-sh)*.5;
+      sec.querySelectorAll('.mc').forEach(function(c){
+        var r=c.getBoundingClientRect(), x=r.left-s.left, y=r.top-s.top;
+        c.style.backgroundImage='url('+sec.dataset.bg+')';
+        c.style.backgroundSize=rw+'px '+rh+'px';
+        c.style.backgroundPosition=(-(x+ox))+'px '+(-(y+oy))+'px';
+      });
+    }
+    img.onload=pinta; if(img.complete) pinta();
+    new ResizeObserver(pinta).observe(sec);
+    /* a posição dos cartões muda durante a animação de entrada: repinta ao terminar */
+    sec.addEventListener('transitionend',pinta);
+  });
+})();
+
+/* ===== entrada em cascata ao rolar ===== */
+var legTocou=false;
+function digita(){
+  if(legTocou) return; legTocou=true;
+  var ls=[].slice.call(document.querySelectorAll('#leg .l'));
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches){ls.forEach(function(l){l.style.width='auto'});return}
+  var i=0;
+  (function prox(){
+    if(i>=ls.length) return;
+    var l=ls[i++], w=l.scrollWidth||400; l.style.width='auto'; var full=l.scrollWidth; l.style.width='0';
+    l.style.transition='width '+(full*2.5)+'ms steps('+Math.max(8,Math.round(full/11))+')';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){l.style.width=full+'px';setTimeout(function(){l.style.width='auto'},full*2.5)})});
+    setTimeout(prox,full*2.5+160);
+  })();
+}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){
+  if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target);if(e.target.id==='s2')setTimeout(digita,500)}
+})},{threshold:.15});
+document.querySelectorAll('section').forEach(function(s){io.observe(s)});
+
+/* ===== abertura: odômetro KM 000 → 100 em 2 s ===== */
+(function(){
+  var sp=document.getElementById('splash'), od=document.getElementById('odo'), n=0;
+  function fim(){sp.classList.add('sai');setTimeout(function(){sp.remove()},700)}
+  var visto=false; try{visto=sessionStorage.getItem('kc-site-splash')}catch(e){}
+  if(visto||matchMedia('(prefers-reduced-motion:reduce)').matches){sp.remove();return}
+  try{sessionStorage.setItem('kc-site-splash','1')}catch(e){}
+  var t=setInterval(function(){
+    n++; od.textContent=('00'+n).slice(-3);
+    if(n>=100){clearInterval(t);setTimeout(fim,200)}
+  },20);
+})();
+</script>
+</body>
+</html>
