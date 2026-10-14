@@ -5,12 +5,16 @@
   "backgroundColor": "#0a0c0e",
   "android": {
     "allowMixedContent": false,
-    "captureInput": false
+    "captureInput": false,
+    "minWebViewVersion": 105
   },
   "plugins": {
     "SystemBars": {
       "insetsHandling": "native",
       "initialViewportFitValueHint": "cover"
     }
+  },
+  "server": {
+    "errorPath": "webview-antiga.html"
   }
 }

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- largeHeap: a foto vai do JS para o Java em base64 (vários MB copiados algumas vezes); em celular de
+    <!-- allowBackup=false: o backup automático do Android levava o banco do app (fotos e rodovias, >25 MB) e
+         parava inteiro, ou restaurava consentimento e código do aparelho em outro celular.
+         largeHeap: a foto vai do JS para o Java em base64 (vários MB copiados algumas vezes); em celular de
          entrada a memória padrão podia acabar e o app fechar. fontScale (na activity): mudar o tamanho da letra
          do sistema não recria a tela (recriar recarregava a página e perdia câmera ou download em andamento). -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:largeHeap="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -44,6 +46,8 @@
          internet (baixar rodovias). Armazenamento só até o Android 9 (do 10 em diante a galeria não pede). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- vibração ao tirar a foto (o WebView exige; é permissão comum, sem pergunta ao usuário) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />

@@ -1,6 +1,8 @@
 package br.com.kmcheck.app;
 
+import android.app.AlertDialog;
 import android.graphics.Bitmap;
+import android.webkit.JsResult;
 import android.os.Bundle;
 import android.webkit.WebView;
 
@@ -29,6 +31,30 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public Bitmap getDefaultVideoPoster() {
                     return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+                }
+
+                /* confirm() (excluir foto, rodovia, contrato…): o do Capacitor tem "OK"/"Cancel" fixos em inglês */
+                @Override
+                public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                    if (isFinishing()) { result.cancel(); return true; }
+                    new AlertDialog.Builder(view.getContext())
+                        .setMessage(message)
+                        .setPositiveButton("Confirmar", (d, w) -> result.confirm())
+                        .setNegativeButton("Cancelar", (d, w) -> result.cancel())
+                        .setOnCancelListener(d -> result.cancel())
+                        .show();
+                    return true;
+                }
+
+                @Override
+                public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                    if (isFinishing()) { result.confirm(); return true; }
+                    new AlertDialog.Builder(view.getContext())
+                        .setMessage(message)
+                        .setPositiveButton("OK", (d, w) -> result.confirm())
+                        .setOnCancelListener(d -> result.confirm())
+                        .show();
+                    return true;
                 }
             });
         }

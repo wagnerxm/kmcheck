@@ -3,6 +3,10 @@ package br.com.kmcheck.app;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
+import android.location.LocationManager;
+import android.provider.Settings;
+import androidx.core.location.LocationManagerCompat;
 import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -206,6 +210,29 @@ public class KMCheckNativoPlugin extends Plugin {
             call.resolve(r);
         } catch (Exception e) {
             call.reject("indisponível");
+        }
+    }
+
+    /** A Localização do celular está ligada? O WebView não mostra o "Ativar localização" do sistema como o
+        Chrome: com ela desligada o GPS só ficava mudo. Devolve { ligada }. */
+    @PluginMethod
+    public void localizacao(PluginCall call) {
+        LocationManager lm = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+        JSObject r = new JSObject();
+        r.put("ligada", lm != null && LocationManagerCompat.isLocationEnabled(lm));
+        call.resolve(r);
+    }
+
+    /** Abre a tela de Localização do Android para a pessoa ligar. */
+    @PluginMethod
+    public void abrirAjustesLocalizacao(PluginCall call) {
+        try {
+            Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getActivity().startActivity(i);
+            call.resolve();
+        } catch (Throwable e) {
+            call.reject("Não consegui abrir os ajustes.");
         }
     }
 

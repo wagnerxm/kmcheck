@@ -329,6 +329,7 @@ html.kc-teste #app-ver::after{content:' · TESTE';color:#c4e24a;font-weight:700}
 /* ---------- navegação: dock flutuante ---------- */
 /* sem área segura embaixo (Android com barra de gestos fora do app) o botão descia até o rodapé
    "Desenvolvido por" e os dois se sobrepunham: no mínimo 18 px de folga para o crédito */
+html.teclado nav,html.teclado .dev-credit{display:none!important}   /* app da loja: o teclado encolhe a tela e o menu subia por cima do campo */
 nav{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px, calc(4px + env(safe-area-inset-bottom)));display:flex;gap:4px;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 55%), rgba(24,26,28,.68);
   backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);
@@ -617,6 +618,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
    dos cartões. Sem esses efeitos o visual é o mesmo, com fundo sólido e sombra comum. */
 [data-android] #search-toggle,[data-android] #sobre-btn,[data-android] .herocar{backdrop-filter:none;-webkit-backdrop-filter:none}
 [data-android] .kmsign{filter:none}
+[data-nativo] body{-webkit-user-select:none;user-select:none}
+[data-nativo] input,[data-nativo] textarea,[data-nativo] [contenteditable]{-webkit-user-select:text;user-select:text}
+[data-android] #bv,[data-android] #uso,[data-android] #manual-ov{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,10,12,.72)}
+[data-android] #camzoom{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(0,0,0,.72)}
+[data-android] #camlogo,[data-android] #car-plate,[data-android] #car-km{filter:none}
 [data-android] .card,[data-android] .gcard{transform:translateZ(0)}   /* cada cartão numa camada própria: redesenha inteiro, sem sobras */
 /* #camframe (legenda/logo) é a CAMADA que gira junto com o aparelho — só a interface, não o
    vídeo. O JS troca largura<->altura e rotaciona por uiTilt, dentro da mesma área útil. */
@@ -714,6 +720,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #gal-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 #gal-track{position:absolute;inset:0;will-change:transform}
 .gal-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:var(--galpad) 0;box-sizing:border-box}
+.gal-slide.danificada::after{content:'Não foi possível abrir esta foto no app.A Se ela foi salva no celular, está na galeria do aparelho.';white-space:pre-line;text-align:center;color:#9aa3b2;font-size:14px;line-height:1.5;padding:0 28px;position:absolute}
 .gal-slide img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;transform-origin:center center;will-change:transform}
 /* barra no estilo do menu da tela inicial: vidro escuro, cantos redondos, ícone + texto */
 #gal-bar{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;
@@ -1918,6 +1925,13 @@ const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ 
    Dentro do app Android (Capacitor) a página é a mesma; só o que o navegador fazia com truques passa
    para a peça nativa KMCheckNativo: gravar foto na galeria, compartilhar e manter a tela acesa.
    Fora do app (site/PWA) NATIVO fica null e nada muda. */
+/* copiar texto: navigator.clipboard pode ser recusado (WebView do app da loja, navegador sem permissão);
+   aí usa o método antigo de selecionar um campo escondido e copiar */
+async function copiaTexto(txt){
+  try{ await navigator.clipboard.writeText(txt); return true }catch(e){}
+  try{ const ta=document.createElement('textarea'); ta.value=txt; ta.readOnly=true; ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return ok }catch(e){ return false }
+}
 const NATIVO=(()=>{ try{ const C=window.Capacitor;
   if(C && C.isNativePlatform && C.isNativePlatform() && C.nativePromise) return { chama:(m,o)=>C.nativePromise('KMCheckNativo', m, o||{}) };
 }catch(e){} return null })();
@@ -1927,6 +1941,21 @@ const DADOS = NATIVO ? 'https://kmcheck.com.br/' : '';
    ele não conhece (.shp, .dbf, .prj, .geojson…) — esses arquivos apareciam cinza e não dava para importar.
    Sem filtro mostra tudo; o próprio importador já recusa o que não for de rodovia. */
 if(NATIVO){ const fi=document.getElementById('filein'); if(fi) fi.removeAttribute('accept') }
+if(NATIVO){
+  document.documentElement.setAttribute('data-nativo','');
+  /* teclado: some o menu flutuante enquanto um campo de texto está em foco */
+  const ehCampo=el=>el && (el.tagName==='TEXTAREA' || (el.tagName==='INPUT' && !/^(checkbox|radio|range|file|button|submit)$/i.test(el.type)));
+  document.addEventListener('focusin', e=>{ if(ehCampo(e.target)) document.documentElement.classList.add('teclado') });
+  document.addEventListener('focusout', ()=>setTimeout(()=>{ if(!ehCampo(document.activeElement)) document.documentElement.classList.remove('teclado') }, 50));
+  /* ícones da barra de status/navegação: claros sobre fundo escuro, escuros sobre claro. O WebView ignora o
+     theme-color, então acompanha a cor que o app já põe no <meta theme-color> (tema, câmera, Modo Carro) */
+  const mt=document.getElementById('meta-theme');
+  const barras=()=>{ let h=String(mt.content||'#000').replace('#',''); if(h.length===3) h=h.replace(/./g,'$&$&');
+    const n=parseInt(h,16); if(!isFinite(n)) return;
+    const l=(.299*(n>>16&255)+.587*(n>>8&255)+.114*(n&255))/255;
+    try{ window.Capacitor.nativePromise('SystemBars','setStyle',{style:l>.6?'LIGHT':'DARK'}).catch(()=>{}) }catch(e){} };
+  if(mt){ new MutationObserver(barras).observe(mt,{attributes:true,attributeFilter:['content']}); barras() }
+}
 function blobB64(blob){ return new Promise((ok,erro)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=()=>erro(r.error); r.readAsDataURL(blob) }) }
 
 const S = {
@@ -1989,12 +2018,43 @@ function idb(){
 /* Transação em 'bases'. No iOS, depois de um tempo em 2º plano, a conexão cai sem disparar onclose
    ("Connection to Indexed Database server lost") e d.transaction() LANÇA — o singleton ficava
    apontando para uma conexão morta até fechar o app. Zera e reabre 1x antes de desistir. */
+/* Gravação "strict": só dá como gravado depois que o dado chegou ao disco. No padrão (relaxed) o Chrome/WebView
+   confirma antes — se o app é fechado à força logo depois de baixar uma rodovia (ou a bateria acaba), o conteúdo
+   grande dela se perdia e sobrava só o nome (erro "Failed to read large IndexedDB value" ao abrir). */
+const _ESCRITA={durability:'strict'};
+function _tx(d, store, mode){ return mode==='readwrite' ? d.transaction(store,mode,_ESCRITA) : d.transaction(store,mode) }
 async function _basesTx(mode){
   const d=await idb();
-  try{ return d.transaction('bases',mode) }
-  catch(e){ if(_db===d) _db=null; return (await idb()).transaction('bases',mode) }
+  try{ return _tx(d,'bases',mode) }
+  catch(e){ if(_db===d) _db=null; return _tx(await idb(),'bases',mode) }
 }
-async function dbAll(){ const tx=await _basesTx('readonly'); return new Promise((res,rej)=>{ const t=tx.objectStore('bases').getAll(); t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) })}
+/* Lê rodovia por rodovia: antes um getAll() falhava inteiro se UMA estivesse danificada e o app ficava sem
+   nenhuma ("Não consegui ler as rodovias salvas"). As danificadas vão para dbAll.quebradas (ver o boot). */
+async function dbAll(){
+  dbAll.quebradas=[];
+  const tx=await _basesTx('readonly');
+  const ids=await new Promise((res,rej)=>{ const q=tx.objectStore('bases').getAllKeys(); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error) });
+  const out=[];
+  for(const id of ids){
+    const tx2=await _basesTx('readonly');
+    const b=await new Promise(res=>{ const q=tx2.objectStore('bases').get(id); q.onsuccess=()=>res(q.result); q.onerror=e=>{ e.preventDefault(); res(null) } });
+    if(b && b.lat && b.lat.length) out.push(b); else dbAll.quebradas.push(id);
+  }
+  return out;
+}
+/* Rodovia danificada: apaga o registro e, se for uma BR do SNV, baixa de novo sozinho (com internet).
+   Importadas (KMZ, Shapefile…) não dá para refazer — avisa para importar de novo. */
+async function consertaBases(ids){
+  for(const id of ids){
+    try{ await dbDel(id) }catch(e){}
+    const m=/^BR-(\d{3})\/([A-Z]{2})$/.exec(id);
+    if(m && navigator.onLine!==false){
+      try{ const b=await downloadRoadWfs(m[1], m[2], null); await dbPut(b); S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b); renderBases();
+        toast(`A ${id} estava danificada no aparelho\ne foi baixada de novo.`, 5000); continue }catch(e){}
+    }
+    toast(`A ${id} estava danificada no aparelho.\nBaixe ou importe de novo.`, 6000);
+  }
+}
 /* Escrita só vale quando a TRANSAÇÃO completa: o onsuccess do pedido vem antes do commit, e um
    QuotaExceededError (disco cheio) aborta depois dele — a rodovia "instalava" e sumia ao reabrir. */
 function _txDone(tx, req){ return new Promise((res,rej)=>{
@@ -2313,7 +2373,7 @@ function mostraCodigo(msg){ let id=null; try{ id=localStorage.getItem('kc-device
 mostraCodigo();
 document.getElementById('cfg-did').addEventListener('click', async()=>{
   let id=null; try{ id=localStorage.getItem('kc-device-id') }catch(e){} if(!id) return;
-  try{ await navigator.clipboard.writeText(id); mostraCodigo('Copiado: '+id) }catch(e){ mostraCodigo(id) }
+  if(await copiaTexto(id)) mostraCodigo('Copiado: '+id); else mostraCodigo(id);
   setTimeout(()=>mostraCodigo(),2500);
 });
 /* aparece ao abrir o app, mas só DEPOIS da pergunta de localização do celular (as duas juntas se atropelam):
@@ -2323,6 +2383,7 @@ document.getElementById('cfg-did').addEventListener('click', async()=>{
   const t0=Date.now();
   const pronto=async()=>{
     if(S.pos && isFinite(S.pos.lat)) return true;
+    if(NATIVO) return S.gpsErr!=null || S.gpsDenied;   // WebView: a consulta de permissão não é confiável
     try{ const st=await navigator.permissions.query({name:'geolocation'}); return st.state!=='prompt' }catch(e){ return true }
   };
   const tenta=async()=>{
@@ -2753,7 +2814,7 @@ async function downloadRoadWfs(br, uf, onStatus, kmi, kmf){
   const file=`BR-${br}-${uf}.json`;
   try{
     if(onStatus) onStatus('Buscando dados pré-processados…');
-    const r=await fetch((DADOS||'./')+'data/rodovias/'+file);
+    const r=await fetch((DADOS||'./')+'data/rodovias/'+file, {signal:AbortSignal.timeout(45000)});   // app da loja não tem o SW que cortava em 4 s: com sinal fraco ficava minutos esperando
     if(r.ok){
       const data=await r.json();
       if(data.segments&&data.segments.length){
@@ -3593,9 +3654,14 @@ function startGps(){
     /* Rejeita (0,0) — "Null Island": alguns Androids (Samsung, Xiaomi, Motorola) retornam
        lat=0 lon=0 como posição padrão antes do GPS travar o fix real. */
     if(_la===0&&_lo===0) return;
+    /* hora REAL da leitura (p.timestamp), não a da chegada: no app da loja (WebView) o Android reentrega a
+       "última posição conhecida" — de horas atrás — a cada novo watch, e a foto sairia com KM/coordenada
+       antigos como se fossem atuais. Leitura com mais de 2 min é descartada. */
+    const _ts=Math.min(Date.now(), p.timestamp||Date.now());
+    if(Date.now()-_ts>120000) return;
     S.gpsDenied=false; _gpsGotFix=true; S.gpsErr=null;
     S.pos={lat:_la, lon:_lo, acc:p.coords.accuracy, alt:p.coords.altitude,
-           spd:p.coords.speed, head:p.coords.heading, t:Date.now()};
+           spd:p.coords.speed, head:p.coords.heading, t:_ts};
     try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
     autoContract();   // dentro de um trecho vinculado, puxa o contrato sozinho
@@ -3684,7 +3750,10 @@ function paintGpsBanner(){
 }
 /* a leitura envelhece sem evento nenhum (o watch só chama quando chega leitura ou erro): repinta sozinho */
 setInterval(paintGpsBanner, 5000);
-document.getElementById('gps-banner').onclick=()=>{
+document.getElementById('gps-banner').onclick=async()=>{
+  /* app da loja: o WebView não mostra o "Ativar localização" do sistema — se ela estiver desligada no
+     celular, o toque abre direto a tela de Localização do Android */
+  if(NATIVO && !S.gpsDenied){ try{ const r=await NATIVO.chama('localizacao'); if(r && r.ligada===false){ toast('A localização do celular está desligada.\nLigue e volte para o app.', 5000); NATIVO.chama('abrirAjustesLocalizacao').catch(()=>{}); return } }catch(e){} }
   if(S.gpsDenied) showGpsDeniedDialog();
   else restartGps();   // watch ativo mas mudo: startGps() não fazia nada (já tinha watchId)
 };
@@ -3693,7 +3762,9 @@ document.getElementById('gps-banner').onclick=()=>{
 function initGpsPermWatch(){
   /* navigator.permissions.query NÃO funciona para geolocation no Safari/iOS —
      envolvemos em try/catch para não quebrar silenciosamente. */
-  if(navigator.permissions && navigator.permissions.query){
+  /* app da loja: no WebView a consulta de permissão responde "prompt"/"denied" mesmo com a permissão dada e
+     nunca avisa mudança — a fonte da verdade lá é o próprio watch (sucesso/erro 1) */
+  if(!NATIVO && navigator.permissions && navigator.permissions.query){
     try{
       navigator.permissions.query({name:'geolocation'}).then(perm=>{
         if(perm.state==='denied'){
@@ -3719,7 +3790,7 @@ function initGpsPermWatch(){
   document.addEventListener('visibilitychange', async()=>{
     if(!document.hidden && S.gpsDenied){
       /* Se a API de permissões existe, checa antes de resetar */
-      if(navigator.permissions&&navigator.permissions.query){
+      if(!NATIVO && navigator.permissions&&navigator.permissions.query){
         try{
           const p=await navigator.permissions.query({name:'geolocation'});
           if(p.state==='denied') return;
@@ -4578,6 +4649,7 @@ function onCamResize(){
    nunca aparece. Não dá pra ATIVAR o bloqueio via web (é config do sistema iOS) — só orientar. */
 let _rotLockShown=false;
 function maybeRotLockHint(){
+  if(!_isIOS) return;   // a dica é do bloqueio de rotação do iPhone (no Android 16 em tablet a página também gira)
   if(_rotLockShown) return;
   if(localStorage.getItem('kc-rotlock-never')==='1') return;
   const dlg=document.getElementById('dlg-rotlock');
@@ -4867,10 +4939,10 @@ async function openCam(){
   /* Garante que o GPS esteja rodando ao abrir a câmera.
      Se a permissão foi negada antes, tenta novamente (o usuário pode ter ativado nos ajustes). */
   if(S.gpsDenied){ S.gpsDenied=false; }
-  startGps();
-  /* Se GPS estiver negado, mostra o diálogo de instruções após 600ms (tempo para o
-     error callback do watchPosition disparar). Só na câmera — não no boot. */
-  setTimeout(()=>{ if(S.gpsDenied && !S.pos) showGpsDeniedDialog() }, 600);
+  /* app da loja: o Capacitor tem UM pedido de permissão por vez — câmera e GPS juntos se atropelavam (câmera
+     preta para sempre ou o app fechava). Lá o GPS só é ligado depois que a câmera responder (abaixo). */
+  const ligaGps=()=>{ startGps(); setTimeout(()=>{ if(S.gpsDenied && !S.pos) showGpsDeniedDialog() }, 600) };
+  if(!NATIVO) ligaGps();
 
   /* ── UI aparece IMEDIATAMENTE — fundo preto é natural pra câmera ── */
   document.querySelector('nav').style.display='none';
@@ -4892,6 +4964,7 @@ async function openCam(){
     const stream=await navigator.mediaDevices.getUserMedia(camConstraints());
     if(gen!==_camGen){ stream.getTracks().forEach(t=>t.stop()); return; }
     S.stream=stream;
+    if(NATIVO) ligaGps();
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
     if(gen!==_camGen) return;
@@ -4931,7 +5004,10 @@ async function openCam(){
     document.body.style.backgroundColor=_bg;
     document.getElementById('meta-theme').content=_bg;
     disableTiltSensor();   // o sensor ligado no início (iOS) ficava rodando a 15 Hz com a câmera fechada
-    toast('Câmera negada ou indisponível.');
+    if(NATIVO) startGps();
+    /* app da loja: depois de "não perguntar de novo" o Android nega na hora — ensina onde liberar */
+    if(NATIVO && e && /NotAllowed|Security|Permission/i.test(e.name||'')) toast('Câmera sem permissão.\nConfigurações → Apps → KM Check → Permissões → Câmera.', 6000);
+    else toast('Câmera negada ou indisponível.');
     return false;   // o flip usa isso para voltar à câmera anterior
   }
   /* Ativa (ou reativa) o sensor de inclinação.
@@ -5076,7 +5152,9 @@ document.getElementById('shutter').onclick=async()=>{
     return;
   }
   if(S.pos.acc!=null && S.pos.acc>500){
-    toast(`⚠ GPS impreciso (±${Math.round(S.pos.acc)} m).\nAguarde o sinal melhorar.`);
+    toast(NATIVO && S.pos.acc>1000
+      ? `⚠ Localização aproximada (±${Math.round(S.pos.acc)} m).\nConfigurações → Apps → KM Check → Permissões → Localização → ligue "Usar local exato".`
+      : `⚠ GPS impreciso (±${Math.round(S.pos.acc)} m).\nAguarde o sinal melhorar.`, NATIVO && S.pos.acc>1000 ? 7000 : undefined);
     return;
   }
   // FLASH ARMADO: dispara só agora, na captura (antes o botão só deixava a lanterna acesa).
@@ -5347,8 +5425,8 @@ const shutterBtn=document.getElementById('shutter');
    por ele. Fotos de versões anteriores não têm a marca e contam como "só no app" (seguro). */
 async function savePhotoToGallery(blob, name){
   const d=await idb();
-  return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now(), saved:false});
-    t.onsuccess=()=>res(t.result); t.onerror=()=>rej(t.error) });
+  return new Promise((res,rej)=>{ const t=_tx(d,'photos','readwrite').objectStore('photos').add({name, blob, ts:Date.now(), saved:false});
+    t.onsuccess=()=>{ const id=t.result; t.transaction.oncomplete=()=>res(id) }; t.onerror=()=>rej(t.error) });   /* só conta depois de gravada no disco */
 }
 /* via='share': saiu pelo Compartilhar (WhatsApp, e-mail, "Salvar imagem"…). O app não sabe se foi para a
    galeria do celular, então ela NÃO conta como salva: o "Limpar galeria" pergunta antes, como as antigas. */
@@ -5408,7 +5486,9 @@ async function galFill(slide, i){
   if(i<0 || i>=galMetas.length){ img.removeAttribute('src'); img.style.visibility='hidden'; return }
   const u=await galUrl(galMetas[i].id);
   if(+slide.dataset.i!==i) return;   // o slide foi reaproveitado enquanto a foto carregava
-  if(u){ img.src=u; img.style.visibility='' } else { img.removeAttribute('src'); img.style.visibility='hidden' }
+  slide.classList.remove('danificada');
+  if(u){ img.onerror=()=>{ if(+slide.dataset.i===i){ img.style.visibility='hidden'; slide.classList.add('danificada') } }; img.src=u; img.style.visibility='' }
+  else { img.removeAttribute('src'); img.style.visibility='hidden'; slide.classList.add('danificada') }
 }
 function galPrune(){
   const keep=new Set([galIdx-1,galIdx,galIdx+1].filter(i=>i>=0 && i<galMetas.length).map(i=>galMetas[i].id));
@@ -6187,8 +6267,7 @@ document.getElementById('q-copy').onclick=async()=>{
   const tsv='LAT\tLONG\tBR\tKM\tDIST_M\n'+qres.map(r=>[
     fc(r.lat), fc(r.lon), r.f?`${r.f.br}/${r.f.uf}`:'', r.f?fkm(r.f.km):'', r.f?Math.round(r.f.dist):''
   ].join('\t')).join('\n');
-  try{ await navigator.clipboard.writeText(tsv) }
-  catch(e){ toast('Não consegui copiar automaticamente.') }
+  if(!(await copiaTexto(tsv))) toast('Não consegui copiar automaticamente.');
 };
 document.getElementById('q-gps').onclick=()=>{
   /* só usa leitura recente — a posição restaurada da sessão anterior pode ser de outro lugar */
@@ -6404,6 +6483,7 @@ function showInstallPrompt(){
      tinha sumido e o usuário baixava de novo por cima */
   try{ S.bases=await dbAll() }catch(e){ S.bases=[]; S.basesErr=true; toast('Não consegui ler as rodovias salvas.\nFeche e abra o app de novo.', 6000) }
   renderBases();
+  if(dbAll.quebradas && dbAll.quebradas.length) consertaBases(dbAll.quebradas);
   renderContracts();
   renderServices();
   paintTags();
