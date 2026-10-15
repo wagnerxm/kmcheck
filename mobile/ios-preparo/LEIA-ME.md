@@ -384,9 +384,9 @@ Files app. Highway geometry is stored locally (IndexedDB) and interpolated on de
 
 1. 1ª abertura: pedido de localização com o texto em português → "Ajude a melhorar o app" → boas-vindas.
 2. Baixar uma rodovia (confere o CORS do `kmcheck.com.br` para `capacitor://localhost`).
-3. Abrir a câmera: pedido de câmera em português; **contar quantos pedidos de localização aparecem**. Se aparecer
-   um segundo aviso do tipo "“localhost” deseja usar a sua localização" (é do WKWebView), anotar: a correção é
-   passar o GPS para o plugin oficial `@capacitor/geolocation@8` no app do iPhone (mudança no `startGps`).
+3. Abrir a câmera: pedido de câmera em português; **deve aparecer UM só pedido de localização** (o do iOS). O GPS
+   do app do iPhone já vem do plugin nativo (gpsVigiar), justamente para não aparecer o segundo aviso
+   "“localhost” deseja usar a sua localização" do WKWebView.
 4. Tirar foto com "Envio automático" ligado: 1º pedido "Adicionar Fotos" → a foto aparece no Fotos, com o nome
    original no "Informações". Negar a permissão e tirar outra: deve aparecer o aviso "A foto não foi salva…".
 5. Galeria do app › Compartilhar: folha do iOS abre; cancelar não dá erro.
