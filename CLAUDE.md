@@ -73,6 +73,33 @@ serviços, tema, boot.
   `index.html`.
 - Não edite `data/rodovias/*` à mão — é saída do pipeline do SNV.
 
+## App de iPhone — gerar e enviar no Mac (App Store)
+
+O app de iPhone é o mesmo `index.html`, embalado pelo Capacitor 8.5.3 em **`mobile/ios`** (projeto pronto e
+testado: compila no Xcode 26.3 e abre no simulador; só iPhone, só retrato, assinatura **automática**,
+Version `1.0.0`, Build = número do cache do `sw.js`). Conta Apple Developer: a do André (time dele no Xcode).
+Material da loja: textos em `mobile/loja/ios/textos-app-store.txt` (copiar e colar) e as 6 capturas 1290×2796
+em `mobile/loja/ios/tela-1..6.png`. Detalhes, riscos de rejeição e roteiro de teste: `mobile/ios-preparo/LEIA-ME.md`.
+
+**Roteiro no Mac** (Xcode 26+, Node 22+, Apple ID do André já em Xcode › Settings › Accounts — login e senha
+são da pessoa, nunca do Claude):
+1. `cd mobile && npm ci && npm run sync:ios` (copia o app para `ios/App/App/public` e ajusta os pacotes).
+2. Arquivar: `xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' -archivePath build/App.xcarchive -allowProvisioningUpdates DEVELOPMENT_TEAM=<time do André> archive`
+   (o Team ID aparece em Xcode › Settings › Accounts, ou em developer.apple.com › Membership). Alternativa:
+   `npx cap open ios`, escolher o Team em Signing & Capabilities e Product › Archive.
+3. App Store Connect › Apps › **+** › Novo app: iOS, nome `KM Check` (se em uso: `KM Check Rodovias`),
+   Português (Brasil), ID do pacote `br.com.kmcheck.app`, SKU `kmcheck-ios`.
+4. Enviar: `xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/ipa -allowProvisioningUpdates -exportOptionsPlist <plist com method=app-store-connect, destination=upload, teamID, signingStyle=automatic>`
+   (ou Organizer › Distribute App › App Store Connect). Em 5–30 min o build aparece no TestFlight.
+5. TestFlight interno no iPhone → testar o roteiro da seção 9 do LEIA-ME.
+6. Preencher a ficha com `textos-app-store.txt` e as capturas; escolher o build; **enviar para revisão só com o
+   OK explícito do André ou do Wagner**.
+
+**Limites para quem trabalha no Mac:** não alterar o código do app (`index.html`, `sw.js`, `mobile/ios/**`) nem
+dar push — o repositório é do Wagner (`wagnerxm/kmcheck`). Se algo precisar mudar no app, descreva o erro e a
+correção proposta para o Wagner fazer. Não criar contas, não digitar senhas, não aceitar contratos nem enviar
+para revisão sem o OK da pessoa.
+
 ## Domínios com skill dedicada (`.claude/skills/`)
 
 - **kmcheck-master** — visão geral e como trabalhar no projeto.

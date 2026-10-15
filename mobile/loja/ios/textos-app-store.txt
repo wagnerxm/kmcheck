@@ -1,0 +1,102 @@
+KM CHECK — TEXTOS PARA O APP STORE CONNECT (copiar e colar)
+=============================================================
+
+---------- AO CRIAR O APP (Apps › + › Novo app) ----------
+Plataforma:          iOS
+Nome:                KM Check
+                     (se disser que o nome já está em uso: KM Check Rodovias)
+Idioma principal:    Português (Brasil)
+ID do pacote:        br.com.kmcheck.app
+SKU:                 kmcheck-ios
+Acesso de usuário:   Acesso total
+
+
+---------- INFORMAÇÕES DO APP ----------
+Subtítulo (até 30):
+Foto com KM, estaca e GPS
+
+Categoria principal:   Utilitários
+Categoria secundária:  Produtividade
+
+Classificação etária:  responder Não / Nenhum em tudo  → resultado 4+
+
+Direitos autorais (Copyright):
+2026 A1 ENGENHARIA LTDA
+
+
+---------- PREÇO E DISPONIBILIDADE ----------
+Preço: Grátis
+Disponibilidade: Brasil
+Desmarcar: "disponível em Mac com Apple Silicon" e "Apple Vision Pro"
+
+
+---------- VERSÃO 1.0.0 (página "Distribuição do app" da versão) ----------
+Capturas de tela: iPhone 6,9" → arrastar tela-1.png até tela-6.png (pasta "imagens-app-store"), nessa ordem.
+
+Texto promocional (até 170):
+Legenda gravada na foto com rodovia, KM, estaca, coordenadas, data e hora. Funciona offline depois de baixar a rodovia.
+
+Descrição:
+O KM Check é a ferramenta de registro fotográfico para quem trabalha em rodovias.
+
+Cada foto sai com a legenda gravada na própria imagem: rodovia e UF, KM com metros, lado da pista, estaca, contrato, serviço, coordenadas, data e hora. Sem anotar nada e sem depender de internet no campo.
+
+COMO FUNCIONA
+• Baixe a rodovia uma vez, com internet. Depois o app funciona offline.
+• O GPS mostra em que rodovia e em que KM você está, com a estaca do ponto.
+• Tire a foto. A legenda vai gravada na imagem e a foto vai para o app Fotos do iPhone.
+
+RECURSOS
+• Rodovias federais com o traçado oficial do SNV/DNIT, inclusive versões anteriores do SNV.
+• Rodovias estaduais e municipais: importe KMZ, KML, GPX, Shapefile ou planilha (inclusive UTM).
+• Estaca automática ou com zero próprio por lote.
+• Contratos vinculados ao trecho: entram sozinhos na legenda quando você chega nele.
+• Modo Carro: painel grande com o KM, para acompanhar a viagem com o celular no suporte, que escurece à noite.
+• Consulta: converta uma lista de coordenadas em KM, ou um KM em coordenada.
+• Legenda e logo configuráveis: posição, tamanho, cor, fundo e o que aparece.
+• Nome do arquivo com rodovia, KM, lado, data e hora.
+
+Suas fotos ficam no seu iPhone. O app não envia fotos para nenhum servidor.
+
+Palavras-chave (até 100):
+rodovia,estrada,quilometro,dnit,snv,coordenadas,legenda,fiscalização,obra,engenharia,oae,laudo,br
+
+URL de suporte:                 https://kmcheck.com.br
+URL de marketing:               https://kmcheck.com.br
+URL da política de privacidade: https://kmcheck.com.br/privacidade/
+
+Novidades desta versão:
+Primeira versão para iPhone.
+
+
+---------- PRIVACIDADE DO APP ----------
+"Você ou seus parceiros coletam dados deste app?"  →  Sim
+
+Marcar estes 5 tipos. Para CADA um:
+  Finalidade = Análise   |   Vinculado à identidade = Sim   |   Usado para rastreamento = Não
+
+  • Localização › Localização aproximada
+  • Identificadores › ID do dispositivo
+  • Dados de uso › Interação com o produto
+  • Diagnóstico › Dados de desempenho
+  • Diagnóstico › Outros dados de diagnóstico
+
+NÃO marcar: Fotos ou vídeos, Localização precisa, Informações de contato, Identificador de publicidade.
+
+
+---------- INFORMAÇÕES PARA A REVISÃO DO APP ----------
+"É necessário fazer login": DESMARCAR
+Contato: nome, telefone e e-mail de quem responde à Apple (suporte@kmcheck.com.br)
+Anexo (ajuda muito): vídeo curto (1–2 min) gravado na rodovia, mostrando o KM mudando e a foto saindo com a legenda.
+
+Notas (em inglês, copiar tudo):
+KM Check is a field tool for highway engineers and inspectors in Brazil. Each photo gets a caption burned into the image: highway, kilometer marker (interpolated from the official DNIT/SNV road network), stake, GPS coordinates, date and time. It works offline after a highway is downloaded.
+
+No login is required. The "Help improve the app" dialog on first launch is optional (opt-in analytics); choose either option.
+
+Because the reviewer is outside Brazil, the live kilometer on the home screen will show that you are away from any highway. To see the core features without being on a Brazilian highway:
+1. Home > "Gestão de Eixo" > download highway "BR-040" / "DF" - requires internet once.
+2. "Consulta" (search button at the top of the home screen): paste the coordinate -16.01193, -47.98237 to get its highway and KM (BR-040/DF, km 4.000), or type a KM to get its coordinate.
+3. Camera button (bottom center): take a photo. The caption is drawn on the image and the photo is saved to the Photos app (only "Add Photos" permission is requested). The attached video shows the app on a real highway.
+
+Native features (not a website wrapper): all app files are bundled and the app runs fully offline; photos are saved through PhotoKit; native GPS through Core Location; native share sheet; keeps the screen awake while in use (car mode); native haptics on the shutter; location-services status check and deep link to the app's Settings page; exports saved to the Files app. Highway geometry is stored locally (IndexedDB) and interpolated on device.
