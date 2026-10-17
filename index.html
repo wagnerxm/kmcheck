@@ -174,6 +174,10 @@ header.top .sub{margin-left:auto;font-size:9px;color:var(--mut);letter-spacing:.
 #dlg-sobre .listrow{border-bottom-color:#eceef1;color:#1c2333}
 #dlg-sobre .ltext b,#dlg-sobre #cfg-manual b{color:#1c2333}
 #dlg-sobre .ltext i,#dlg-sobre #cfg-manual small{color:#5c6678!important}
+.sobre-fonte{margin:0;padding:12px 14px 10px;font-size:12.5px;line-height:1.5;color:#3b4559;border-bottom:1px solid #eceef1}
+.sobre-fonte b{color:#1c2333}
+.dl-fonte{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:11px;line-height:1.5;color:var(--mut)}
+.dl-fonte a{color:var(--gold);text-decoration:underline;text-underline-offset:2px}
 #dlg-sobre .lbadge,#dlg-sobre .gbadge{background:#eef3dc;border:0;color:#5d7410}
 #dlg-sobre .lbadge svg,#dlg-sobre .gbadge svg{stroke:#5d7410}
 #dlg-sobre input[type=checkbox]{accent-color:#8fb31a}
@@ -1129,6 +1133,8 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     </div>
     <button class="btn gold" id="dl-go" style="margin-top:14px">Baixar rodovia</button>
     <p class="hint" id="dl-status">Deixe em branco para baixar a rodovia inteira.<br>Precisa de internet só agora.<br>Depois funciona offline.</p>
+    <!-- fonte oficial + aviso de que o app não é do governo (política de declarações enganosas da Google Play) -->
+    <p class="dl-fonte">Dados oficiais do SNV, publicados pelo DNIT: <a href="https://www.gov.br/dnit/pt-br/assuntos/atlas-e-mapas/pnv-e-snv" target="_blank" rel="noopener">gov.br/dnit</a>. O KM Check é independente e não é um app do governo.</p>
   </div>
   <h2 class="sec">Importe um arquivo</h2>
   <div class="card impsect">
@@ -1875,6 +1881,23 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <a class="listrow" href="https://kmcheck.com.br/privacidade/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;border-bottom:0">
       <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/></svg></span>
       <span class="ltext"><b>Política de privacidade</b><i>O que o app coleta e por quê</i></span>
+    </a>
+  </div>
+
+  <!-- exigência da Google Play (política de declarações enganosas): app que usa dados do governo precisa mostrar o
+       link da fonte oficial (.gov.br) e deixar claro que NÃO é do governo -->
+  <h2 class="sec">Fonte dos dados</h2>
+  <div class="card listcard">
+    <p class="sobre-fonte">O KM Check é um app <b>independente</b>. <b>Não é um app do governo</b> e não tem vínculo com o
+      DNIT nem com outro órgão público. As rodovias federais vêm do <b>Sistema Nacional de Viação (SNV)</b>, publicado
+      pelo DNIT; o KM é calculado no próprio celular a partir desses dados e não substitui documentos oficiais.</p>
+    <a class="listrow" href="https://www.gov.br/dnit/pt-br/assuntos/atlas-e-mapas/pnv-e-snv" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M2 10l10-6 10 6"/></svg></span>
+      <span class="ltext"><b>SNV no site do DNIT</b><i>gov.br/dnit · fonte oficial das rodovias federais</i></span>
+    </a>
+    <a class="listrow" href="https://inde.gov.br" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;border-bottom:0">
+      <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg></span>
+      <span class="ltext"><b>INDE — mapas do governo</b><i>inde.gov.br · serviço de onde o traçado é baixado</i></span>
     </a>
   </div>
 
