@@ -39,6 +39,8 @@ Legenda gravada na foto com rodovia, KM, estaca, coordenadas, data e hora. Funci
 Descrição:
 O KM Check é a ferramenta de registro fotográfico para quem trabalha em rodovias.
 
+AVISO: o KM Check é um app independente. Não é um app do governo e não representa nem tem vínculo com o DNIT ou com qualquer órgão público.
+
 Cada foto sai com a legenda gravada na própria imagem: rodovia e UF, KM com metros, lado da pista, estaca, contrato, serviço, coordenadas, data e hora. Sem anotar nada e sem depender de internet no campo.
 
 COMO FUNCIONA
@@ -47,7 +49,7 @@ COMO FUNCIONA
 • Tire a foto. A legenda vai gravada na imagem e a foto vai para o app Fotos do iPhone.
 
 RECURSOS
-• Rodovias federais com o traçado oficial do SNV/DNIT, inclusive versões anteriores do SNV.
+• Rodovias federais com o traçado do SNV, inclusive versões anteriores do SNV.
 • Rodovias estaduais e municipais: importe KMZ, KML, GPX, Shapefile ou planilha (inclusive UTM).
 • Estaca automática ou com zero próprio por lote.
 • Contratos vinculados ao trecho: entram sozinhos na legenda quando você chega nele.
@@ -55,6 +57,13 @@ RECURSOS
 • Consulta: converta uma lista de coordenadas em KM, ou um KM em coordenada.
 • Legenda e logo configuráveis: posição, tamanho, cor, fundo e o que aparece.
 • Nome do arquivo com rodovia, KM, lado, data e hora.
+
+FONTE DOS DADOS
+O traçado das rodovias federais vem dos dados abertos do Sistema Nacional de Viação (SNV), publicados pelo DNIT:
+https://www.gov.br/dnit/pt-br/assuntos/atlas-e-mapas/pnv-e-snv
+e distribuídos pela Infraestrutura Nacional de Dados Espaciais (INDE):
+https://inde.gov.br
+O KM é calculado no próprio celular a partir desses dados e não substitui documentos oficiais.
 
 Suas fotos ficam no seu iPhone. O app não envia fotos para nenhum servidor.
 
@@ -90,7 +99,7 @@ Contato: nome, telefone e e-mail de quem responde à Apple (suporte@kmcheck.com.
 Anexo (ajuda muito): vídeo curto (1–2 min) gravado na rodovia, mostrando o KM mudando e a foto saindo com a legenda.
 
 Notas (em inglês, copiar tudo):
-KM Check is a field tool for highway engineers and inspectors in Brazil. Each photo gets a caption burned into the image: highway, kilometer marker (interpolated from the official DNIT/SNV road network), stake, GPS coordinates, date and time. It works offline after a highway is downloaded.
+KM Check is a field tool for highway engineers and inspectors in Brazil. Each photo gets a caption burned into the image: highway, kilometer marker (interpolated from the public DNIT/SNV road network data). KM Check is an independent app: it is not a government app and is not affiliated with DNIT or any government agency; the data sources are listed in the app (About > Data source) and in the description, stake, GPS coordinates, date and time. It works offline after a highway is downloaded.
 
 No login is required. The "Help improve the app" dialog on first launch is optional (opt-in analytics); choose either option.
 
