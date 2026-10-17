@@ -1009,6 +1009,7 @@ dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
   padding:7px 14px;text-align:center;cursor:pointer;gap:6px;align-items:center;justify-content:center;
   letter-spacing:.02em}
 #gps-banner.on{display:flex}
+#gps-banner.reserva{background:rgba(176,112,10,.92)}   /* âmbar: sem sinal, mas a foto sai com a posição de reserva */
 /* paisagem: a faixa atravessava a tela e cobria o LE e o ponto do GPS — vira uma etiqueta no canto */
 @media (orientation:landscape){#camwrap.on #gps-banner{top:8px;left:64px;right:auto;max-width:calc(100% - 304px);border-radius:10px}}
 /* tela inicial em paisagem (celular deitado): o botão flutuante ia para o meio e cobria latitude/longitude */
@@ -3837,6 +3838,37 @@ document.getElementById('gps-retry').onclick=()=>{
   S.gpsDenied=false;
   startGps();
 };
+/* ===== posição de reserva (GPS sem sinal: debaixo de ponte, túnel, galpão) =====
+   Debaixo da ponte o GPS para de dar leitura e o obturador bloqueava ("GPS desatualizado") — o serviço feito
+   lá embaixo ficava sem foto. Em vez de bloquear, usa a ÚLTIMA leitura boa (≤ 50 m), só se a pessoa estava
+   parada ou a pé (de carro, uma leitura de alguns segundos atrás já ficaria para trás no KM):
+   - perto de uma ponte/viaduto da lista do SNV (OAES): a posição EM CIMA da ponte — o ponto do eixo no KM da
+     última leitura, preso dentro do trecho da OAE —, valendo até 60 min;
+   - fora de OAE: a própria última leitura, até 10 min.
+   A foto sai igual (sem marca na imagem); o EXIF guarda a hora real da leitura e o método (ver buildExifApp1).
+   Com GPS ao vivo nada disso entra: só é chamada quando a leitura está velha demais. */
+function posReserva(){
+  const p=S.pos;
+  if(!p || !_validGps(p.lat,p.lon) || !p.t || p.acc==null || p.acc>50) return null;
+  if(p.spd!=null && p.spd>3) return null;   // > ~10 km/h: estava de carro
+  const idade=Date.now()-p.t;
+  const f=S.bases.length ? findKm(p.lat,p.lon) : null;
+  if(f && f.km!=null && !(f.dist>CFG.maxdist) && idade<=3600000){
+    const o=findOae(f.br,f.uf,f.km);
+    const meia=o ? o.o.ext/2000 : 0;
+    if(o && o.d<=meia+0.3){
+      const base=S.bases.find(b=>b.id===f.id);
+      const km=Math.min(o.o.km+meia, Math.max(o.o.km-meia, f.km));   // dentro do trecho da ponte
+      const c=base && kmToCoord(base, km);
+      if(c && _validGps(c.lat,c.lon))
+        return { tipo:'oae', nome:o.o.nome, t:p.t,
+          gps:{ lat:c.lat, lon:c.lon, acc:p.acc, alt:null, spd:null, head:null, t:p.t },
+          fix:{ br:f.br, uf:f.uf, km, dist:0, fonte:f.fonte, id:f.id } };
+    }
+  }
+  if(idade<=600000) return { tipo:'ultima', t:p.t, gps:p, fix:S.fix };
+  return null;
+}
 /* Banner vermelho na câmera quando GPS está desativado */
 function paintGpsBanner(){
   const b=document.getElementById('gps-banner'); if(!b) return;
@@ -3846,7 +3878,11 @@ function paintGpsBanner(){
   const velho=hasGps && gpsStale(60000);
   b.classList.toggle('on', !hasGps || velho);
   const porque={1:'sem permissão', 2:'sem sinal', 3:'sem resposta'}[S.gpsErr];
+  /* sem sinal mas com reserva (ver posReserva): a foto ainda sai — o aviso fica âmbar e diz de onde vem a posição */
+  const res=velho && !S.gpsDenied && gpsStale(120000) ? posReserva() : null;
+  b.classList.toggle('reserva', !!res);
   const html=!hasGps||S.gpsDenied ? 'GPS desligado.<br>Toque para ativar'
+    : res ? (res.tipo==='oae' ? 'Sem sinal de GPS.<br>A foto usa a posição da ponte' : 'Sem sinal de GPS.<br>A foto usa a última posição')
     : velho ? 'GPS desatualizado'+(porque?' ('+porque+')':'')+'.<br>Toque para tentar de novo' : '';
   const sp=b.querySelector('span'); if(html && sp && sp.innerHTML!==html) sp.innerHTML=html;
 }
@@ -4001,9 +4037,15 @@ function paintGps(){
   lp.classList.toggle('bold', CFG.legbold);
 }
 /* monta as informações da legenda (fonte: GPS ao vivo) */
-function buildInfo(){
+function buildInfo(reserva){
   const t=now();
   const info={data:t.data, hora:t.hora, dt:t.d, src:'gps'};
+  if(reserva){   // GPS sem sinal: posição de reserva (ver posReserva) — a legenda sai normal, sem marca
+    const g=reserva.gps, f=reserva.fix;
+    info.lat=g.lat; info.lon=g.lon; info.acc=g.acc; info.gps=g; info.reserva=reserva;
+    if(f){ info.br=f.br; info.uf=f.uf; info.km=f.km; info.dist=f.dist; info.fonte=f.fonte; info.baseId=f.id }
+    return info;
+  }
   /* info.gps guarda a MESMA leitura usada na legenda — o EXIF lê daqui, e não do S.pos, que pode
      ter mudado durante o processamento da foto (toBlob é assíncrono; no carro isso dá metros) */
   if(S.pos){ info.lat=S.pos.lat; info.lon=S.pos.lon; info.acc=S.pos.acc; info.gps=S.pos }
@@ -5265,7 +5307,9 @@ document.getElementById('shutter').onclick=async()=>{
      Precisão pior que 500 m = posição por antena/Wi-Fi, não GPS: o KM sairia sem sentido. */
   const _posAge=S.pos?.t ? Date.now()-S.pos.t : Infinity;
   const _maxAge=(S.pos && S.pos.spd>3) ? 15000 : 120000;
-  if(!S.pos || !_validGps(S.pos.lat, S.pos.lon) || _posAge>_maxAge){
+  const _reserva=(S.pos && _posAge>_maxAge && !S.gpsDenied) ? posReserva() : null;   // debaixo da ponte etc.
+  if(_reserva) restartGps();   // continua tentando: assim que o sinal voltar, a próxima foto já sai com o GPS ao vivo
+  if(!_reserva && (!S.pos || !_validGps(S.pos.lat, S.pos.lon) || _posAge>_maxAge)){
     toast(S.pos && _posAge>_maxAge ? '⚠ GPS desatualizado.\nAguarde uma nova leitura.' : '⚠ Ative a localização para tirar fotos.');
     if(S.gpsDenied) showGpsDeniedDialog();
     else restartGps();   // reinicia o watch se ele congelou (startGps sozinho não fazia nada)
@@ -5329,7 +5373,7 @@ document.getElementById('shutter').onclick=async()=>{
     ctx.drawImage(video, sx, sy, sw, sh, -sw/2, -sh/2, sw, sh);
     ctx.setTransform(1,0,0,1,0,0);
   }
-  const info=buildInfo(); S.lastInfo=info;
+  const info=buildInfo(_reserva); S.lastInfo=info;
   // 3) imagem já está em pé -> legenda queimada na horizontal (canto padrão do formato)
   burnLegend(ctx,W,H,info,0);
   /* toBlob é assíncrono e não gera string base64 gigante na memória (ao contrário de toDataURL) */
@@ -6130,8 +6174,11 @@ function buildExifApp1(m){
     if(m.acc!=null&&isFinite(m.acc)) gps.push(ratE(0x001F,[[Math.round(m.acc*100),100]])); // GPSHPositioningError
   }
   if(hasGps){
-    gps.push(ratE(0x0007,[[dt.getUTCHours(),1],[dt.getUTCMinutes(),1],[dt.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
-    gps.push(ascii(0x001D,dt.getUTCFullYear()+':'+String(dt.getUTCMonth()+1).padStart(2,'0')+':'+String(dt.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
+    const gd=m.gpsDt||dt;   // posição de reserva: hora da leitura real, não a da foto
+    gps.push(ratE(0x0007,[[gd.getUTCHours(),1],[gd.getUTCMinutes(),1],[gd.getUTCSeconds(),1]])); // GPSTimeStamp (UTC)
+    gps.push(ascii(0x001D,gd.getUTCFullYear()+':'+String(gd.getUTCMonth()+1).padStart(2,'0')+':'+String(gd.getUTCDate()).padStart(2,'0'))); // GPSDateStamp
+    /* GPSProcessingMethod (tipo UNDEFINED, prefixo de 8 bytes "ASCII\0\0\0"): de onde veio a posição */
+    if(m.metodo){ const tx=new TextEncoder().encode(m.metodo), b=new Uint8Array(8+tx.length); b.set([65,83,67,73,73,0,0,0]); b.set(tx,8); gps.push(E(0x001B,7,b.length,b)) }
     gps.sort((a,b)=>a.tag-b.tag);
   }
   ifd0.sort((a,b)=>a.tag-b.tag);
@@ -6223,7 +6270,14 @@ function buildCaptureMeta(info, imgW, imgH, captureDate){
     tzM=String(Math.abs(tzOff)%60).padStart(2,'0'),
     tz=tzSign+tzH+':'+tzM;
   let desc=''; try{ const {L}=legendLines(info||{}); desc=toAscii((L||[]).join(' | ')); }catch(e){}
-  return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0, ms, tz};
+  /* reserva (GPS sem sinal): no EXIF a hora do GPS é a da leitura real (padrão do EXIF) e o método diz de onde
+     veio a posição — nada disso aparece na imagem */
+  const rs=info&&info.reserva;
+  const gpsDt=rs ? new Date(rs.t) : null;
+  const metodo=rs ? toAscii('Sem sinal de GPS: ultima leitura '
+    + gpsDt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + (acc!=null?' (+-'+Math.round(acc)+' m)':'')
+    + (rs.tipo==='oae' ? ', projetada no eixo da OAE '+(rs.nome||'') : '')) : null;
+  return {dt, lat, lon, alt, acc, spd, head, desc, imgW: imgW||0, imgH: imgH||0, ms, tz, gpsDt, metodo};
 }
 /* Salva a foto no dispositivo E na galeria interna do app.
    PRECISA ser chamado DENTRO do toque do obturador (por isso a foto é gerada de forma síncrona,
