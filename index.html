@@ -746,6 +746,17 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   .pk-list .ctx .ib.ph{display:none}
 }
 .ct-item.svc .num{font-family:var(--sans);font-size:14px;font-weight:500}
+/* serviço no diálogo "i": o mesmo × em pílula do contrato no lugar do "remover" — a linha cai de ~68 para
+   ~44px (altura do toque), e cabem 5 serviços à vista */
+.pk-list .ct-item.ctx.svc{min-height:0;padding:0}
+/* diálogo "i" (serviço + contrato): a altura das listas é do ajustarListasSvc() (5 serviços e 3 contratos à
+   vista). Sem folga sobrando no iPhone padrão, os respiros entre as partes ficam mais curtos e o diálogo não
+   passa por baixo da ilha/notch nem da barra de início (centrado: mesma margem em cima e embaixo). */
+#dlg-svc{max-height:calc(100dvh - 2 * max(env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), 12px) - 8px);padding-block:14px}
+#dlg-svc h2.sec{margin-bottom:8px}
+#dlg-svc .ctaddrow{margin-top:8px!important;padding-top:8px}
+#dlg-svc .ctautorow{padding:8px 0 0}
+#dlg-svc #svc-close{margin-top:8px!important;padding-block:12px}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
 #gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:51;display:none;flex-direction:column;
@@ -1675,7 +1686,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button class="btn small gold" id="svc-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
 
-  <h2 class="sec" style="margin-top:22px">Contrato</h2>
+  <h2 class="sec" style="margin-top:14px">Contrato</h2>
   <div class="pk-list" id="ctlist2"></div>
   <div class="row ctaddrow">
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
@@ -5457,13 +5468,13 @@ function renderSvcGrid(){
   // lista única, em ordem alfabética (rolável) — padrões apagados ficam de fora
   const all=[...new Set([...SVC_PADRAO.filter(s=>!removed.includes(s)), ...custom])].sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
   const sel=getSvcSel();
-  g.innerHTML=all.map(s=>`<div class="ct-item svc ${s===sel?'sel':''}" data-s="${_esc(s)}">
+  g.innerHTML=all.map(s=>`<div class="ct-item ctx svc ${s===sel?'sel':''}" data-s="${_esc(s)}"><div class="ct-top">
       <span class="dot"></span><span class="num">${_esc(s)}</span>
-      <button class="del">remover</button>
-    </div>`).join('');
+      <button class="ib pill del" aria-label="Remover serviço ${_esc(s)}" title="Remover"><span class="pl">${_IC_X}</span></button>
+    </div></div>`).join('');
   g.querySelectorAll('.ct-item').forEach(item=>{
     item.onclick=e=>{
-      if(e.target.classList.contains('del')) return;
+      if(e.target.closest('.del')) return;   // o toque cai no <svg>/<span> de dentro do botão
       const s=item.dataset.s;
       localStorage.setItem('kc-svcsel', s===getSvcSel()?'':s);
       renderSvcGrid(); paintTags(); paintGps();
@@ -5477,8 +5488,27 @@ function renderSvcGrid(){
       renderSvcGrid(); renderServices(); paintTags(); paintGps();
     };
   });
+  if(document.getElementById('dlg-svc').open) ajustarListasSvc();   // adicionou/removeu com o diálogo aberto
 }
-document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); showDlg(document.getElementById('dlg-svc')) };
+/* 5 serviços e 3 contratos à vista antes de rolar. A altura vem dos itens medidos (muda com o tamanho de
+   letra do aparelho e com contrato de 1 ou 2 linhas). Em tela baixa (iPhone SE, Android pequeno) as duas
+   listas encolhem até o diálogo caber sem rolar — campos, Automático e Fechar ficam sempre à vista —, mas
+   nunca abaixo de ~2,5 itens: o item cortado ao meio mostra que a lista rola. */
+function ajustarListasSvc(){
+  const dlg=document.getElementById('dlg-svc');
+  const L=[[document.getElementById('svc-grid'),5],[document.getElementById('ctlist2'),3]];
+  const alt=(el,n)=>{ const it=[...el.children]; let h=0; for(let i=0;i<Math.min(n,it.length);i++) h+=it[i].offsetHeight; return h };
+  const cheio=L.map(([el,n])=>{ el.style.maxHeight='none'; return el.children.length>n ? alt(el,n)+2 : 0 });
+  L.forEach(([el],i)=>{ if(cheio[i]) el.style.maxHeight=cheio[i]+'px' });
+  const sobra=dlg.scrollHeight-dlg.clientHeight;
+  if(sobra<=0) return;
+  /* tira das duas na proporção do que cada uma pode ceder (uma não some enquanto a outra fica inteira) */
+  const folga=L.map(([el])=>{ if(el.children.length<=2) return 0;
+    return Math.max(0, el.offsetHeight-(alt(el,2)+el.children[2].offsetHeight/2+2)) });
+  const tot=folga[0]+folga[1]; if(!tot) return;
+  L.forEach(([el],i)=>{ if(folga[i]) el.style.maxHeight=(el.offsetHeight-Math.min(folga[i], Math.ceil(sobra*folga[i]/tot)))+'px' });
+}
+document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); showDlg(document.getElementById('dlg-svc')); ajustarListasSvc() };
 document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
 document.getElementById('rotlock-ok').onclick=()=>document.getElementById('dlg-rotlock').close();
 document.getElementById('rotlock-never').onclick=()=>{ localStorage.setItem('kc-rotlock-never','1'); document.getElementById('dlg-rotlock').close(); };
@@ -5503,6 +5533,7 @@ function renderContracts2(){
     wireCtItems(el);
   }
   renderCtMode();
+  if(document.getElementById('dlg-svc').open) ajustarListasSvc();
 }
 document.getElementById('ct-add2').onclick=()=>addContract(document.getElementById('ct-new2'));
 
