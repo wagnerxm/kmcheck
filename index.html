@@ -914,6 +914,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .gg-ft .sv{position:absolute;top:6px;left:6px;max-width:calc(100% - 12px);padding:3px 8px;border-radius:999px;background:rgba(183,217,45,.92);
   font:800 9px var(--sans);letter-spacing:.02em;color:#0d0f08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gg-vazio{padding:48px 28px;text-align:center;color:#8791a3;font-size:13px;line-height:1.5}
+.gg-carregando{display:flex;align-items:center;justify-content:center;gap:10px;padding:56px 20px;color:#8791a3;font:600 13px var(--sans)}
+.gg-giro{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.18);border-top-color:#b7d92d;animation:ggGiro .8s linear infinite}
+@keyframes ggGiro{to{transform:rotate(360deg)}}
 /* ---- seleção de várias fotos (Selecionar → marcar → Compartilhar) ----
    verde-limão fixo (como o carrossel): a grade é preta nos dois temas e o --gold do tema claro é cinza-azulado */
 #gg-sel{flex:0 0 auto;height:40px;padding:0 13px;border-radius:999px;cursor:pointer;font:600 12.5px var(--sans);
@@ -1474,6 +1477,11 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></svg></span>
         <span class="ltext"><b>Envio automático para a galeria</b><i>Salvar a foto automaticamente</i></span>
         <input type="checkbox" id="cfg-autosave" checked>
+      </label>
+      <label class="listrow">
+        <span class="lbadge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="m4 17 5-5 4 4 2.5-2.5L20 17"/></svg></span>
+        <span class="ltext"><b>Guardar só as 300 mais recentes</b><i>Fotos mais antigas que já estão no celular saem do app sozinhas. As que estão só no app nunca são apagadas.</i></span>
+        <input type="checkbox" id="cfg-galmax" checked>
       </label>
     </div>
 
@@ -2290,7 +2298,7 @@ const CFG = {
   get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 },
   get estaca(){ return ls('estaca', true) }, get snv(){ return ls('snv', true) },
   get autosave(){ return ls('autosave', true) },
-  get kmline(){ return ls('kmline', true) },
+  get kmline(){ return ls('kmline', true) }, get galmax(){ return ls('galmax', true) },
   get res(){ return localStorage.getItem('kc-res') || 'max' },
   get qual(){ return +localStorage.getItem('kc-qual') || 0.92 },
   get logopos(){ return localStorage.getItem('kc-logopos') || 'tl' },
@@ -5902,6 +5910,13 @@ async function markPhotoSaved(id, via){
 /* getAllPhotos carregava TODOS os blobs na RAM de uma vez — OOM após 50-100 fotos.
    Agora: getPhotoMetas() traz só metadados (cursor), getPhotoBlob(id) busca sob demanda. */
 async function getPhotoMetas(){
+  /* 1º tenta ler tudo de uma vez (rápido: com centenas de fotos, uma leitura por foto levava segundos no
+     celular fraco). Só a referência da imagem vem junto, não a imagem. Se falhar, cai no foto por foto. */
+  try{
+    const tx0=await _storeTx('photos','readonly');
+    const tudo=await new Promise((res,rej)=>{ const q=tx0.objectStore('photos').getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=e=>{ e.preventDefault(); rej(q.error) } });
+    return tudo.map(v=>{ const comp=v.via==='share'; return {id:v.id, name:v.name, ts:v.ts, saved:!!v.saved && !comp, comp, legacy:v.saved===undefined} }).sort((a,b)=>b.ts-a.ts);
+  }catch(e){}
   /* foto por foto (como o dbAll): com o cursor, UM registro ilegível ("Failed to read large IndexedDB value")
      derrubava a leitura inteira e a galeria não abria — nenhuma foto ficava acessível */
   const tx=await _storeTx('photos','readonly');
@@ -6181,6 +6196,30 @@ function fichaDaFoto(info){
   if(info.lat!=null){ m.lat=info.lat; m.lon=info.lon }
   return m;
 }
+/* ---- limite de fotos guardadas no app ----
+   Cada foto tem 3–5 MB: sem limite, a galeria do app crescia até encher o celular (e a foto nova falhava ao
+   salvar). Ficam as 300 mais recentes; das mais antigas que isso, saem SÓ as que o app sabe que estão salvas
+   na galeria do celular (a cópia lá continua). Foto só no app (ou que saiu pelo Compartilhar) nunca é apagada
+   sozinha. Desliga em Ajustes › Câmera ("Guardar só as 300 mais recentes"). */
+const GAL_MAX=300;
+let _galLimRodando=false, _galLimAvisou=false;
+async function galLimite(metas){
+  if(!CFG.galmax || _galLimRodando) return metas;
+  _galLimRodando=true;
+  try{
+    if(!metas) metas=await getPhotoMetas();
+    if(metas.length<=GAL_MAX) return metas;
+    const sai=metas.slice(GAL_MAX).filter(m=>m.saved);   // já vem da mais nova para a mais antiga
+    for(const m of sai){ try{ await deletePhoto(m.id) }catch(e){} }
+    const resto=metas.filter(m=>!sai.includes(m));
+    if(resto.length>GAL_MAX+20 && !_galLimAvisou){
+      _galLimAvisou=true;
+      toast('Há '+resto.length+' fotos guardadas no app.\nAs que não estão no celular não saem sozinhas: salve-as no celular para liberar espaço.', 6000);
+    }
+    return resto;
+  }catch(e){ return metas||[] }
+  finally{ _galLimRodando=false }
+}
 async function salvarFicha(f){
   try{ const tx=await _storeTx('fichas','readwrite'), rq=tx.objectStore('fichas').put(f); await _txDone(tx, rq) }
   catch(e){ console.warn('[KMCheck] ficha da foto não gravada:', e) }
@@ -6243,27 +6282,45 @@ async function lerFichas(){
     return new Map(a.map(f=>[f.id,f]));
   }catch(e){ return new Map() }
 }
+/* a grade abre NA HORA com "Abrindo fotos…" (antes a tela ficava parada uns segundos com muitas fotos e a pessoa
+   tocava de novo achando que travou). Foto antiga sem ficha entra já com o que o nome do arquivo diz (rodovia, KM,
+   pista, lado) e o contrato/serviço do EXIF é lido por trás, uma por vez, sem segurar a tela. */
+let _ggAbrindo=false;
 async function openGrade(){
-  const metas=await getPhotoMetas();
-  if(!metas.length){ toast('Nenhuma foto registrada ainda.'); return }
-  const fichas=await lerFichas();
-  for(const m of metas){
-    let f=fichas.get(m.id);
-    if(!f || !f.m){   // foto sem ficha (de versão antiga): monta uma vez e guarda
-      const mm=fichaDoNome(m.name);
-      try{ const b=await getPhotoBlob(m.id); if(b) fichaDaDesc(await descDaFoto(b), mm) }catch(e){}
-      f=Object.assign(f||{id:m.id}, {m:mm}); salvarFicha(f);
+  if(_ggAbrindo) return; _ggAbrindo=true;
+  const g=document.getElementById('galgrid'), L=document.getElementById('gg-lista');
+  galTodas=[]; galFiltradas=[];
+  document.getElementById('gg-total').textContent=''; document.getElementById('gg-res').hidden=true;
+  L.innerHTML='<div class="gg-carregando"><span class="gg-giro" aria-hidden="true"></span>Abrindo fotos…</div>';
+  g.classList.add('on');
+  try{
+    let metas=await getPhotoMetas();
+    metas=await galLimite(metas);
+    if(!g.classList.contains('on')) return;   // fechou enquanto carregava
+    if(!metas.length){ fechaGrade(); toast('Nenhuma foto registrada ainda.'); return }
+    const fichas=await lerFichas(), faltam=[];
+    for(const m of metas){
+      const f=fichas.get(m.id);
+      if(f && f.m){ m.f=f.m; m.th=f.th||null } else { m.f=fichaDoNome(m.name); m.th=null; faltam.push(m) }
     }
-    m.f=f.m; m.th=f.th||null;
+    galTodas=metas;
+    ggRender(true);
+    if(faltam.length) ggCompletaFichas(faltam);
+  }catch(e){ fechaGrade(); throw e }
+  finally{ _ggAbrindo=false }
+}
+async function ggCompletaFichas(lista){
+  for(const m of lista){
+    if(!document.getElementById('galgrid').classList.contains('on')) return;   // fechou: o resto fica para a próxima vez
+    try{ const b=await getPhotoBlob(m.id); if(b) fichaDaDesc(await descDaFoto(b), m.f) }catch(e){}
+    await salvarFicha({id:m.id, m:m.f, th:m.th||null});
   }
-  galTodas=metas;
-  document.getElementById('galgrid').classList.add('on');
-  ggRender(true);
 }
 function fechaGrade(){
   ggModoSel(false);
   document.getElementById('galgrid').classList.remove('on');
-  ggObs && ggObs.disconnect();
+  if(ggObs){ ggObs.disconnect(); ggObs=null }
+  if(_ggMaisObs){ _ggMaisObs.disconnect(); _ggMaisObs=null }
   for(const u of _ggUrls.values()) URL.revokeObjectURL(u);
   _ggUrls.clear(); _ggFila.length=0;
   document.getElementById('gg-lista').textContent='';
@@ -6309,24 +6366,50 @@ function ggRender(rolarTopo){
   res.innerHTML = (galF.q||ativos.length) ? '<b>'+n+(n===1?' foto':' fotos')+'</b>'+(ativos.length?' · '+_esc(ativos.join(' · ')):'') : '';
   res.hidden=!res.innerHTML;
   const L=document.getElementById('gg-lista');
-  ggObs && ggObs.disconnect(); _ggFila.length=0;
-  if(!n){ L.innerHTML='<p class="gg-vazio">Nenhuma foto com esses filtros.<br>Tente tirar um filtro ou mudar a busca.</p>'; return }
-  let h='', dia='';
-  const porDia=new Map(); for(const m of galFiltradas){ const d=_diaDe(m.ts); porDia.set(d,(porDia.get(d)||0)+1) }
-  galFiltradas.forEach((m,i)=>{
-    const d=_diaDe(m.ts), f=m.f||{};
-    if(d!==dia){ if(dia) h+='</div>'; dia=d; const q=porDia.get(d);
-      h+='<div class="gg-dia"><span>'+_esc(_diaNome(d))+'</span><em>'+q+(q===1?' foto':' fotos')+'</em></div><div class="gg-g">' }
-    const hora=new Date(m.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    const pl=[f.pista,f.lado].filter(Boolean).join(' ');
-    const rot=f.km!=null ? _kmTxt(f) : hora;
-    h+='<button class="gg-ft'+(ggSel.has(m.id)?' marcada':'')+'" data-i="'+i+'" data-id="'+m.id+'" aria-label="'+_esc((rot+(pl?' '+pl:'')+(f.svc?', '+f.svc:'')+', '+hora))+'"><img alt="">'+
-      /* etiqueta verde do canto: a rodovia (BR-304/RN) — pedido do Wagner; o serviço continua na busca e no filtro */
-      (f.br?'<span class="sv">'+_esc(_rod(f))+'</span>':'')+'<span class="km"><b>'+_esc(rot)+'</b>'+(pl?'<i>'+_esc(pl)+'</i>':'')+'</span><span class="ck" aria-hidden="true"></span></button>';
-  });
-  L.innerHTML=h+'</div>';
+  const jaTinha=rolarTopo ? 0 : _ggFeitas;   // redesenho sem voltar ao topo (excluiu uma foto): mantém o que já estava na tela
+  if(ggObs){ ggObs.disconnect(); ggObs=null }
+  if(_ggMaisObs){ _ggMaisObs.disconnect(); _ggMaisObs=null }
+  _ggFila.length=0; _ggFeitas=0; _ggDia=''; _ggGrupo=null;
+  L.textContent='';
+  if(!n){ L.innerHTML='<p class="gg-vazio">Nenhuma foto com esses filtros.<br>Tente tirar um filtro ou mudar a busca.</p>'; ggSelPinta(); return }
+  _ggPorDia=new Map(); for(const m of galFiltradas){ const d=_diaDe(m.ts); _ggPorDia.set(d,(_ggPorDia.get(d)||0)+1) }
+  /* em lotes: só as primeiras ~90 vão para a tela; as próximas entram quando a rolagem chega perto do fim.
+     Com centenas de fotos, redesenhar tudo a cada letra da busca deixava o celular fraco engasgando. */
+  do ggAnexa(); while(_ggFeitas<Math.min(jaTinha, n));
   if(rolarTopo) L.scrollTop=0;
-  ggObserva(); ggSelPinta();
+  if(_ggFeitas<n && 'IntersectionObserver' in window){
+    _ggMaisObs=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting)) ggAnexa() }, {root:L, rootMargin:'0px 0px 700px 0px'});
+    _ggMaisObs.observe(_ggFim);
+  }
+  ggSelPinta();
+}
+const GG_LOTE=90;
+let _ggFeitas=0, _ggDia='', _ggGrupo=null, _ggPorDia=null, _ggMaisObs=null;
+const _ggFim=document.createElement('div');   // marcador no fim da grade: quando aparece, entra o próximo lote
+function _ggTile(m, i){
+  const f=m.f||{}, hora=new Date(m.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const pl=[f.pista,f.lado].filter(Boolean).join(' '), rot=f.km!=null ? _kmTxt(f) : hora;
+  return '<button class="gg-ft'+(ggSel.has(m.id)?' marcada':'')+'" data-i="'+i+'" data-id="'+m.id+'" aria-label="'+_esc((rot+(pl?' '+pl:'')+(f.svc?', '+f.svc:'')+', '+hora))+'"><img alt="">'+
+    /* etiqueta verde do canto: a rodovia (BR-304/RN) — pedido do Wagner; o serviço continua na busca e no filtro */
+    (f.br?'<span class="sv">'+_esc(_rod(f))+'</span>':'')+'<span class="km"><b>'+_esc(rot)+'</b>'+(pl?'<i>'+_esc(pl)+'</i>':'')+'</span><span class="ck" aria-hidden="true"></span></button>';
+}
+function ggAnexa(){
+  const L=document.getElementById('gg-lista'), fim=Math.min(galFiltradas.length, _ggFeitas+GG_LOTE);
+  if(_ggFeitas>=fim) return;
+  const novos=[];
+  for(let i=_ggFeitas;i<fim;i++){
+    const m=galFiltradas[i], d=_diaDe(m.ts);
+    if(d!==_ggDia){
+      _ggDia=d; const q=_ggPorDia.get(d), cab=document.createElement('div');
+      cab.className='gg-dia'; cab.innerHTML='<span>'+_esc(_diaNome(d))+'</span><em>'+q+(q===1?' foto':' fotos')+'</em>';
+      _ggGrupo=document.createElement('div'); _ggGrupo.className='gg-g';
+      L.insertBefore(cab, _ggFim.parentNode===L?_ggFim:null); L.insertBefore(_ggGrupo, _ggFim.parentNode===L?_ggFim:null);
+    }
+    _ggGrupo.insertAdjacentHTML('beforeend', _ggTile(m,i)); novos.push(_ggGrupo.lastElementChild);
+  }
+  _ggFeitas=fim;
+  if(_ggFeitas<galFiltradas.length) L.appendChild(_ggFim); else _ggFim.remove();
+  ggObserva(novos);
 }
 /* clique na grade: abre o carrossel naquela foto */
 document.getElementById('gg-lista').onclick=e=>{
@@ -6347,7 +6430,7 @@ function ggModoSel(on){
 }
 function ggMarca(b, forca){
   const id=+b.dataset.id, on=forca!=null ? forca : !ggSel.has(id);
-  if(on){ ggSel.add(id); if(!NATIVO) ggPreLe(id) } else { ggSel.delete(id); _ggArq.delete(id) }
+  if(on){ ggSel.add(id); if(!NATIVO && ggSel.size<=20) ggPreLe(id) } else { ggSel.delete(id); _ggArq.delete(id) }   // pré-lê só as primeiras 20 (memória)
   b.classList.toggle('marcada', on); ggSelPinta();
 }
 function ggSelPinta(){
@@ -6366,7 +6449,9 @@ async function ggPreLe(id){
 document.getElementById('gg-sel').onclick=()=>ggModoSel(!ggSelOn);
 document.getElementById('gg-todas').onclick=()=>{
   const todas=galFiltradas.every(m=>ggSel.has(m.id));
-  document.querySelectorAll('#gg-lista .gg-ft').forEach(b=>ggMarca(b, !todas));
+  for(const m of galFiltradas){ if(todas){ ggSel.delete(m.id); _ggArq.delete(m.id) } else ggSel.add(m.id) }   // sem pré-ler: centenas de fotos na memória de uma vez
+  document.querySelectorAll('#gg-lista .gg-ft').forEach(b=>b.classList.toggle('marcada', ggSel.has(+b.dataset.id)));
+  ggSelPinta();
 };
 /* segurar o dedo ~0,5 s numa foto liga a seleção já com ela marcada (como na galeria do celular) */
 (function(){
@@ -6415,12 +6500,12 @@ document.getElementById('gg-comp').onclick=async()=>{
    não aguenta abrir dezenas juntas). A miniatura fica guardada na ficha: na próxima vez abre na hora. ---- */
 const _ggUrls=new Map(), _ggFila=[]; let ggObs=null, _ggRodando=false;
 function ggSoltaThumb(id){ const u=_ggUrls.get(id); if(u){ URL.revokeObjectURL(u); _ggUrls.delete(id) } }
-function ggObserva(){
+function ggObserva(bts){
   const L=document.getElementById('gg-lista');
-  if(!('IntersectionObserver' in window)){ L.querySelectorAll('.gg-ft').forEach(b=>_ggFila.push(b)); return ggProx() }
-  ggObs=new IntersectionObserver(es=>{ for(const e of es) if(e.isIntersecting){ ggObs.unobserve(e.target); _ggFila.push(e.target) } ggProx() },
+  if(!('IntersectionObserver' in window)){ bts.forEach(b=>_ggFila.push(b)); return ggProx() }
+  if(!ggObs) ggObs=new IntersectionObserver(es=>{ for(const e of es) if(e.isIntersecting){ ggObs.unobserve(e.target); _ggFila.push(e.target) } ggProx() },
     {root:L, rootMargin:'300px 0px'});
-  L.querySelectorAll('.gg-ft').forEach(b=>ggObs.observe(b));
+  bts.forEach(b=>ggObs.observe(b));
 }
 async function ggProx(){
   if(_ggRodando) return; _ggRodando=true;
@@ -7053,6 +7138,7 @@ function _downloadDirect(blob, name){
     return false;
   }
 }
+let _fotosSessao=0;
 function saveAndShare(blob){
   const name=photoName(S.lastInfo||{});
   const ficha=fichaDaFoto(S.lastInfo||{});   // agora, antes de qualquer espera: a pessoa pode trocar pista/serviço logo em seguida
@@ -7064,6 +7150,7 @@ function saveAndShare(blob){
     return null;
   });
   idP.then(id=>{ if(id!=null) salvarFicha({id, m:ficha}) });
+  if(++_fotosSessao%20===0) setTimeout(()=>galLimite(), 6000);   // a cada 20 fotos confere o limite (fora do disparo)
   /* marca a foto como "já salva no celular" quando o envio para o aparelho deu certo */
   const saida=()=>{ idP.then(id=>markPhotoSaved(id)) };
   const compartilhada=()=>{ idP.then(id=>markPhotoSaved(id,'share')) };   // foi para algum destino do Compartilhar
@@ -7176,7 +7263,7 @@ document.querySelectorAll('select.lsel').forEach(el=>{
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-date',true],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
-                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true],['cfg-kmline',true]]){
+                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true],['cfg-kmline',true],['cfg-galmax',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
@@ -7368,6 +7455,7 @@ function showInstallPrompt(){
   /* Armazenamento PERSISTENTE: sem isso, com o aparelho cheio o sistema pode apagar TODOS os dados
      do app (rodovias baixadas, fotos da galeria, configurações) sem aviso. App instalado costuma
      receber a permissão automaticamente; se negar, segue como antes. */
+  setTimeout(()=>galLimite(), 8000);
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p=>{ if(!p) navigator.storage.persist() }).catch(()=>{}) }catch(e){}
   if('serviceWorker' in navigator && location.protocol.startsWith('http') && !NATIVO){   // no app da loja os arquivos já vêm dentro do APK
     navigator.serviceWorker.register('sw.js').then(reg=>{
