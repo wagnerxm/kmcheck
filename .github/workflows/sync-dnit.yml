@@ -1,8 +1,8 @@
 name: Sincronizar DNIT -> Supabase
 
+# Agendamento mensal desligado em 2026-10-19: grava em pontos_rodovia (Supabase), que o app não usa mais
+# (as rodovias vêm de data/rodovias e da API própria). O mesmo projeto Supabase é do NO.BLIND — não mexer nele.
 on:
-  schedule:
-    - cron: '0 6 1 * *'   # dia 1 de cada mês, 06:00 UTC (~03:00 no horário do Brasil)
   workflow_dispatch: {}    # permite rodar manualmente pela aba "Actions" do GitHub
 
 jobs:
