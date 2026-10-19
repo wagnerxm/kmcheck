@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      so_duplicadas:
+        description: 'Refazer só os trechos de pista dupla (data/rodovias/duplicadas.json), mesmo sem SNV novo'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -27,6 +32,7 @@ jobs:
         timeout-minutes: 45
         env:
           WEBDAV_SHARE_TOKEN: ${{ secrets.WEBDAV_SHARE_TOKEN }}
+          SO_DUPLICADAS: ${{ inputs.so_duplicadas && '1' || '' }}
 
       - name: Commit and push
         run: |

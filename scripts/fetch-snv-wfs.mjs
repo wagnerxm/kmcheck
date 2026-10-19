@@ -164,7 +164,8 @@ async function main() {
   const indexPath = join(DATA_DIR, 'index.json');
   if (existsSync(indexPath)) {
     const cur = JSON.parse(readFileSync(indexPath, 'utf8'));
-    if (cur.snv === snv) {
+    // SO_DUPLICADAS=1: refaz só o data/rodovias/duplicadas.json (pista dupla), mesmo sem SNV novo
+    if (cur.snv === snv && process.env.SO_DUPLICADAS !== '1') {
       console.log('Already up to date. Skipping.');
       rmSync(TMP, { recursive: true, force: true });
       return;
@@ -191,6 +192,30 @@ async function main() {
   console.log('Parsing SHP...');
   const geoms = readShp(readFileSync(join(TMP, shpFile)));
   console.log(`${geoms.length} geometries`);
+
+  /* trechos de PISTA DUPLA (ds_sup_fed = 'DUP') num arquivo pequeno à parte: o app avisa na câmera para marcar
+     PC/PD e tira a marcação ao sair da pista dupla. À parte das rodovias porque vale para as que já estão
+     instaladas nos celulares (ver scripts/duplicadas-wfs.mjs, que faz o mesmo pelo GeoServer). */
+  if (recs.length && 'ds_sup_fed' in recs[0]) {
+    const por = {};
+    for (const r of recs) {
+      if (r.sg_tipo_tr !== 'B' || r.ds_sup_fed !== 'DUP' || r.vl_km_inic == null || r.vl_km_fina == null) continue;
+      const k = String(r.vl_br).padStart(3, '0') + '-' + r.sg_uf;
+      (por[k] = por[k] || []).push([Math.min(r.vl_km_inic, r.vl_km_fina), Math.max(r.vl_km_inic, r.vl_km_fina)]);
+    }
+    const roads = {};
+    for (const k of Object.keys(por).sort()) {
+      const out = [];
+      for (const [a, b] of por[k].sort((x, y) => x[0] - y[0])) {
+        const u = out[out.length - 1];
+        if (u && a <= u[1] + 0.05) u[1] = Math.max(u[1], b); else out.push([a, b]);
+      }
+      roads[k] = out.map(([a, b]) => [Math.round(a * 1000) / 1000, Math.round(b * 1000) / 1000]);
+    }
+    writeFileSync(join(DATA_DIR, 'duplicadas.json'), JSON.stringify({ snv, roads, updated: new Date().toISOString().slice(0, 10) }));
+    console.log(`Pista dupla: ${Object.keys(roads).length} rodovias`);
+  } else console.log('⚠  O SHP não tem o campo ds_sup_fed: duplicadas.json não foi refeito.');
+  if (process.env.SO_DUPLICADAS === '1') { rmSync(TMP, { recursive: true, force: true }); return; }
 
   const roadMap = {};
   let skipped = 0;

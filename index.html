@@ -749,8 +749,12 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #cam-balao i{font-style:normal;font:600 11px var(--sans);color:#ffcf66;white-space:nowrap}
 #cam-balao .bt{display:flex;gap:5px;flex:0 0 auto}
 #cam-balao button{height:34px;min-width:46px;padding:0 12px;border-radius:999px;border:0;font:800 12.5px var(--sans);cursor:pointer}
-#cam-bsim{background:#ffb81c;color:#1c1405}
-#cam-btroca{background:rgba(255,255,255,.1);color:#fff}
+#cam-balao .b1{background:#ffb81c;color:#1c1405}
+#cam-balao .b2{background:rgba(255,255,255,.1);color:#fff}
+#cam-balao .b3{min-width:34px;width:34px;padding:0;background:none;color:#cfd5de;font-size:20px;font-weight:600}
+/* "Fim da pista dupla": só informa — borda verde em vez de âmbar */
+#cam-balao.info,#cam-balao.info::after{border-color:#b7d92d}
+#cam-balao.info i{color:#d9ec9a}
 /* GPS fraco: faixa no alto da foto, mesmo estilo; some sozinha quando a precisão melhora */
 #cam-gpsfraco{display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:25;max-width:calc(100% - 24px);
   align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:#1b1f22;border:1.5px solid #ffb81c;color:#fff;
@@ -1858,7 +1862,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
   <!-- aviso de pista/lado esquecidos (ver confereTags) -->
   <div id="cam-balao" role="alertdialog" aria-labelledby="cam-btit"><span class="tx"><b id="cam-btit"></b><i id="cam-bsub"></i></span>
-    <span class="bt"><button id="cam-bsim">Sim</button><button id="cam-btroca">Trocar</button></span></div>
+    <span class="bt" id="cam-bbts"></span></div>
   <!-- máscara preta que cobre o rearranjo durante o giro da tela (fica invisível o "ajeitando") -->
   <div id="cammask"></div>
 </div>
@@ -5728,7 +5732,8 @@ document.getElementById('cam-pd').onclick=()=>{
    foi feita (kc-tagpos) e, com a câmera aberta, a 500 m dali pergunta "Ainda no LD?" num balão junto aos botões.
    Sim = confirma e conta de novo dali; Trocar = inverte o que está marcado (LD↔LE, PC↔PD: quem passa para a
    outra pista troca os dois). Só decide com leitura de GPS boa (≤ 50 m e recente). */
-var _balaoOn=false;
+var _balaoTipo='';   // '' | 'esq' (marcação esquecida) | 'dup' (entrou em pista dupla) | 'fim' (saiu dela)
+var _dupAtual=null, _balaoTm=0;
 function _tagMarcas(){ return [getPista(), getSide()].filter(Boolean) }
 function _tagAncora(){ try{ return JSON.parse(localStorage.getItem('kc-tagpos')||'null') }catch(e){ return null } }
 function _tagNovaAncora(){
@@ -5736,39 +5741,98 @@ function _tagNovaAncora(){
   try{ if(p && _validGps(p.lat,p.lon) && p.acc!=null && p.acc<=50 && !gpsStale(60000)) localStorage.setItem('kc-tagpos', JSON.stringify({lat:p.lat, lon:p.lon}));
        else localStorage.removeItem('kc-tagpos') }catch(e){}   // sem GPS bom agora: a âncora sai na 1ª leitura boa
 }
-function _tagMudou(){ _tagNovaAncora(); balao(false) }
+function _tagMudou(){ _tagNovaAncora(); balao('') }
 const _distM=(a,b)=>{ const c=Math.cos(a.lat*D2R), dx=(b.lon-a.lon)*c, dy=b.lat-a.lat; return Math.sqrt(dx*dx+dy*dy)*D2R*R };
 const _fmtDist=d=>d<1000 ? Math.round(d/10)*10+' m' : (d/1000).toFixed(1).replace('.',',')+' km';
+/* ---- trechos de pista dupla do SNV (data/rodovias/duplicadas.json, ~6 KB, gerado pelo scripts/duplicadas-wfs.mjs) ----
+   Arquivo à parte das rodovias: vale para qualquer rodovia já instalada, venha ela do site, da API ou do DNIT.
+   Guardado no aparelho (kc-dup) para funcionar sem internet; renovado no máximo 1x por dia. */
+let _dup=null;
+try{ _dup=JSON.parse(localStorage.getItem('kc-dup')||'null') }catch(e){}
+async function carregaDup(){
+  try{
+    if(_dup && _dup.em && Date.now()-_dup.em<864e5) return;
+    const r=await fetch(DADOS+'data/rodovias/duplicadas.json', {signal:AbortSignal.timeout(15000)});
+    if(!r.ok) return;
+    const j=await r.json(); if(!j || !j.roads) return;
+    _dup={roads:j.roads, snv:j.snv, em:Date.now()};
+    try{ localStorage.setItem('kc-dup', JSON.stringify(_dup)) }catch(e){}
+  }catch(e){}
+}
+/* margem: para ENTRAR o KM precisa estar 50 m dentro do trecho; para SAIR, 100 m fora — assim o aviso não
+   fica indo e vindo quando o GPS oscila bem na divisa */
+function emPistaDupla(f, entrando){
+  if(!_dup || !f || f.km==null || !f.br || f.dist>CFG.maxdist) return false;
+  const m=/^BR-?(\d+)/i.exec(f.br); if(!m) return false;
+  const iv=_dup.roads[m[1].padStart(3,'0')+'-'+f.uf]; if(!iv) return false;
+  const mg=entrando ? -0.05 : 0.1;
+  return iv.some(([a,b])=>f.km>=a-mg && f.km<=b+mg);
+}
 function confereTags(){
-  if(!_tagMarcas().length){ if(_balaoOn) balao(false); return }
   const p=S.pos;
-  if(!p || !_validGps(p.lat,p.lon) || p.acc==null || p.acc>50 || gpsStale(60000)) return;
+  if(!p || !_validGps(p.lat,p.lon) || p.acc==null || p.acc>50 || gpsStale(60000)){ if(_balaoTipo==='esq') balao(''); return }
+  /* 1º a pista dupla: entrou sem PC/PD marcado → pede; saiu com PC/PD marcado → tira (e deixa desfazer) */
+  const dup=emPistaDupla(S.fix, _dupAtual!==true), antes=_dupAtual; _dupAtual=dup;
+  if(dup && !getPista()){ if(_balaoTipo!=='dup') balao('dup'); else balaoPosiciona(); return }
+  if(_balaoTipo==='dup') balao('');
+  if(antes===true && !dup && getPista()){
+    const pt=getPista(); try{ localStorage.setItem('kc-pista','') }catch(e){}
+    paintTags(); paintGps(); balao('fim', pt); return
+  }
+  if(_balaoTipo==='fim') return;
+  /* depois a marcação esquecida: 500 m de onde PD/PC/LE/LD foi marcado */
+  if(!_tagMarcas().length){ if(_balaoTipo==='esq') balao(''); return }
   const a=_tagAncora();
   if(!a){ _tagNovaAncora(); return }
   const d=_distM(a,p);
-  if(d>=500) balao(true, d);
+  if(d>=500) balao('esq', d); else if(_balaoTipo==='esq') balao('');
 }
-function balao(on, d){
-  const b=document.getElementById('cam-balao');
+function balao(tipo, dado){
+  const b=document.getElementById('cam-balao'), bt=document.getElementById('cam-bbts');
+  clearTimeout(_balaoTm);
   document.querySelectorAll('#cam-lados .cbtn.confere').forEach(x=>x.classList.remove('confere'));
-  _balaoOn=on; b.classList.toggle('on', on);
-  if(!on) return;
-  const tg=_tagMarcas();
-  document.getElementById('cam-btit').textContent = tg.length>1 ? 'Ainda em '+tg.join(' · ')+'?' : (/^L/.test(tg[0]) ? 'Ainda no ' : 'Ainda na ')+tg[0]+'?';
-  document.getElementById('cam-bsub').textContent='marcado há '+_fmtDist(d);
-  for(const x of tg) document.getElementById('cam-'+x.toLowerCase()).classList.add('confere');
-  /* posição: em pé, por cima da linha do formato com a setinha no botão (o do lado, se houver); deitado, no alto */
+  _balaoTipo=tipo; b.classList.toggle('on', !!tipo); b.classList.toggle('info', tipo==='fim');
+  if(!tipo) return;
+  const tit=document.getElementById('cam-btit'), sub=document.getElementById('cam-bsub');
+  let pulsa=[];
+  if(tipo==='esq'){
+    const tg=_tagMarcas(); pulsa=tg;
+    tit.textContent = tg.length>1 ? 'Ainda em '+tg.join(' · ')+'?' : (/^L/.test(tg[0]) ? 'Ainda no ' : 'Ainda na ')+tg[0]+'?';
+    sub.textContent='marcado há '+_fmtDist(dado);
+    bt.innerHTML='<button class="b1" data-a="sim">Sim</button><button class="b2" data-a="troca">Trocar</button>';
+  } else if(tipo==='dup'){
+    pulsa=['PD','PC'];
+    tit.textContent='Trecho de pista dupla'; sub.textContent='Marque a pista: PD ou PC';
+    bt.innerHTML='<button class="b1" data-a="PD">PD</button><button class="b1" data-a="PC">PC</button><button class="b3" data-a="x" aria-label="Fechar">×</button>';
+  } else {   // fim
+    tit.textContent='Fim da pista dupla'; sub.textContent=dado+' tirado da legenda';
+    bt.innerHTML='<button class="b2" data-a="desfaz" data-p="'+dado+'">Desfazer</button>';
+    _balaoTm=setTimeout(()=>{ if(_balaoTipo==='fim') balao('') }, 7000);
+  }
+  for(const x of pulsa) document.getElementById('cam-'+x.toLowerCase()).classList.add('confere');
+  b.dataset.alvo = tipo==='esq' ? _tagMarcas().slice(-1)[0] : 'PC';
+  balaoPosiciona();
+}
+/* posição: em pé, por cima da linha do formato com a setinha no botão; deitado, no alto do meio da foto */
+function balaoPosiciona(){
+  const b=document.getElementById('cam-balao'); if(!_balaoTipo) return;
   const w=camwrap.getBoundingClientRect();
-  if(paginaDeitada()){ const st=camstage.getBoundingClientRect(); b.classList.add('deitado'); b.style.left=Math.round((st.left+st.right)/2-w.left)+'px'; b.style.transform='translateX(-50%)'; b.style.top='10px'; return }   // no meio da área da foto
+  if(paginaDeitada()){ const st=camstage.getBoundingClientRect(); b.classList.add('deitado'); b.style.left=Math.round((st.left+st.right)/2-w.left)+'px'; b.style.transform='translateX(-50%)'; b.style.top='10px'; return }
   b.classList.remove('deitado'); b.style.left='10px'; b.style.transform='';
-  const bar=document.getElementById('camratio').getBoundingClientRect(), alvo=document.getElementById('cam-'+tg[tg.length-1].toLowerCase()).getBoundingClientRect();
+  const bar=document.getElementById('camratio').getBoundingClientRect(), alvo=document.getElementById('cam-'+(b.dataset.alvo||'pc').toLowerCase()).getBoundingClientRect();
   b.style.top=Math.round(bar.bottom-w.top-b.offsetHeight+2)+'px';
   b.style.setProperty('--seta', Math.round(alvo.left+alvo.width/2-w.left-10-8)+'px');
 }
-document.getElementById('cam-bsim').onclick=()=>_tagMudou();
-document.getElementById('cam-btroca').onclick=()=>{
-  const troca={LD:'LE', LE:'LD', PC:'PD', PD:'PC'}, sd=getSide(), pt=getPista();
-  try{ if(sd) localStorage.setItem('kc-side', troca[sd]); if(pt) localStorage.setItem('kc-pista', troca[pt]) }catch(e){}
+document.getElementById('cam-bbts').onclick=e=>{
+  const a=e.target.closest('button'); if(!a) return;
+  const ac=a.dataset.a;
+  if(ac==='sim') return _tagMudou();
+  if(ac==='x') return balao('');
+  if(ac==='troca'){
+    const troca={LD:'LE', LE:'LD', PC:'PD', PD:'PC'}, sd=getSide(), pt=getPista();
+    try{ if(sd) localStorage.setItem('kc-side', troca[sd]); if(pt) localStorage.setItem('kc-pista', troca[pt]) }catch(e){}
+  } else if(ac==='PD' || ac==='PC'){ try{ localStorage.setItem('kc-pista', ac) }catch(e){} }
+  else if(ac==='desfaz'){ try{ localStorage.setItem('kc-pista', a.dataset.p) }catch(e){} }
   _tagMudou(); paintTags(); paintGps();
 };
 /* ===== GPS fraco (precisão pior que 15 m) =====
@@ -7574,6 +7638,7 @@ function showInstallPrompt(){
      do app (rodovias baixadas, fotos da galeria, configurações) sem aviso. App instalado costuma
      receber a permissão automaticamente; se negar, segue como antes. */
   setTimeout(()=>galLimite(null, true), 8000);
+  setTimeout(carregaDup, 5000);
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p=>{ if(!p) navigator.storage.persist() }).catch(()=>{}) }catch(e){}
   if('serviceWorker' in navigator && location.protocol.startsWith('http') && !NATIVO){   // no app da loja os arquivos já vêm dentro do APK
     navigator.serviceWorker.register('sw.js').then(reg=>{
