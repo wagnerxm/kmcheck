@@ -1,0 +1,42 @@
+[
+ {
+  "id": "rdo",
+  "versao": 1,
+  "ativo": true
+ },
+ {
+  "id": "cbuq",
+  "versao": 1,
+  "ativo": true
+ },
+ {
+  "id": "tapa-buraco",
+  "versao": 1,
+  "ativo": true
+ },
+ {
+  "id": "defeitos",
+  "versao": 1,
+  "ativo": true
+ },
+ {
+  "id": "rocada",
+  "versao": 1,
+  "ativo": true
+ },
+ {
+  "id": "drenagem",
+  "versao": 1,
+  "ativo": true
+ },
+ {
+  "id": "seguranca",
+  "versao": 1,
+  "ativo": false
+ },
+ {
+  "id": "sinalizacao",
+  "versao": 1,
+  "ativo": false
+ }
+]

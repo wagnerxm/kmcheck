@@ -1,0 +1,100 @@
+{
+ "id": "defeitos",
+ "versao": 1,
+ "nome": "Levantamento de defeitos",
+ "icone": "scan",
+ "local": "trecho",
+ "ativo": true,
+ "norma": "Códigos da DNIT 005/2003-TER. Leitura por segmento, no espírito da DNIT 008/2003-PRO.",
+ "campos": [
+  {
+   "id": "lado",
+   "tipo": "opcoes",
+   "rotulo": "Lado",
+   "opcoes": [
+    "LD",
+    "LE",
+    "Ambos"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "trincas",
+   "tipo": "grupo-fixo",
+   "rotulo": "Trincas",
+   "itens": [
+    "FI",
+    "TTC",
+    "TTL",
+    "TLC",
+    "TLL",
+    "TRR",
+    "J",
+    "JE",
+    "TB",
+    "TBE"
+   ],
+   "campo": {
+    "tipo": "contador"
+   }
+  },
+  {
+   "id": "classe_trincas",
+   "tipo": "opcoes",
+   "rotulo": "Classe predominante das trincas",
+   "opcoes": [
+    "FC-1",
+    "FC-2",
+    "FC-3",
+    "Sem trincas"
+   ]
+  },
+  {
+   "id": "afundamentos",
+   "tipo": "grupo-fixo",
+   "rotulo": "Afundamentos",
+   "itens": [
+    "ALP",
+    "ATP",
+    "ALC",
+    "ATC"
+   ],
+   "campo": {
+    "tipo": "contador"
+   }
+  },
+  {
+   "id": "outros",
+   "tipo": "grupo-fixo",
+   "rotulo": "Outros defeitos",
+   "itens": [
+    "O",
+    "P",
+    "EX",
+    "D",
+    "R"
+   ],
+   "campo": {
+    "tipo": "contador"
+   }
+  },
+  {
+   "id": "condicao",
+   "tipo": "escala",
+   "rotulo": "Condição geral do segmento",
+   "opcoes": [
+    "Boa",
+    "Regular",
+    "Ruim",
+    "Péssima"
+   ],
+   "nc_a_partir": 2
+  },
+  {
+   "id": "obs",
+   "tipo": "texto",
+   "rotulo": "Observação",
+   "voz": true
+  }
+ ]
+}

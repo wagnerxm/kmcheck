@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-demo="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Ficha Check · Demonstração</title>
+<meta name="description" content="Fichas de campo de rodovia: KM pelo GPS, preenchimento por toques, funciona sem sinal.">
+<meta name="theme-color" content="#eceef0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ficha Check">
+<style>
+/* Visual do protótipo aprovado: fundo grafite claro, cartões de vidro, ações em azul-marinho.
+   Só tema claro: o app é usado no sol, na beira da pista. */
+:root{
+  --navy:#10264d; --navy2:#e8edf6; --gr:#4b515a; --gr2:#eceef0; --gr3:#c9cdd3;
+  --ink:#262b33; --mut:#6b717b; --line:#dcdfe3; --warn:#c98a14; --err:#d14b4b; --ok:#2f7a3d;
+  --sans:-apple-system,'SF Pro Display','SF Pro Text',Inter,Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}   /* .btn{display:flex} vencia o atributo hidden */
+html,body{height:100%}
+body{font-family:var(--sans);color:var(--ink);background:#eceef0;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+/* manchas suaves atrás dos cartões de vidro (sem elas o vidro não aparece) */
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(60% 28% at 85% 18%,rgba(16,38,77,.14),transparent 70%),radial-gradient(55% 30% at 10% 60%,rgba(75,81,90,.16),transparent 70%),radial-gradient(50% 24% at 90% 90%,rgba(16,38,77,.10),transparent 70%),linear-gradient(180deg,#f3f4f5,#eceef0)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.screen{display:none;min-height:100%;flex-direction:column;
+  padding:calc(10px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));gap:12px;max-width:560px;margin-inline:auto}
+.screen.on{display:flex}
+.hd{display:flex;align-items:center;gap:10px;padding:4px 2px 2px}
+.logo{width:32px;height:32px;border-radius:10px;background:var(--navy);display:grid;place-items:center;flex:none}
+.logo svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.hd .t{font-weight:700;font-size:16px;letter-spacing:-.01em;line-height:1.1}
+.hd .t small{display:block;font-weight:500;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin-top:3px}
+.sync{margin-left:auto;font-size:11px;font-weight:600;padding:6px 10px;border-radius:99px;background:var(--gr2);color:var(--gr);display:flex;align-items:center;gap:6px;border:0}
+.sync::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--navy)}
+.sync.fila::before{background:var(--warn)}.sync.off::before{background:var(--gr3)}
+.back{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mut);font-weight:600;background:none;border:0;padding:6px 0}
+.back svg,.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ttl{font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.sub{font-size:12.5px;color:var(--mut)}
+.row{display:flex;align-items:center;gap:10px}.sp{margin-left:auto}
+.glass{background:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.2) 55%),rgba(110,118,129,.17);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid rgba(255,255,255,.7);box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 10px 22px -16px rgba(38,43,51,.4);border-radius:22px;padding:14px 16px}
+/* Android: o blur custa caro em aparelho simples; o fundo fica sólido e a cara é a mesma */
+[data-android] .glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.45) 55%),#e2e4e7}
+.lbl{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.kmbig{font-size:26px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.05}
+.kmbig em{font-style:normal;color:var(--navy)}
+.pill{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--navy2);color:var(--navy)}.pill.wa{background:#f8eed6;color:#8a5f08}.pill.er{background:#f9e0e0;color:#a42d2d}.pill.mu{background:var(--gr2);color:var(--gr)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:99px;padding:15px 18px;font-size:15px;font-weight:700;border:1px solid var(--navy);background:var(--navy);color:#fff;width:100%}
+.btn:active{filter:brightness(1.2)}
+.btn.ghost{background:transparent;color:var(--gr);border-color:var(--gr3)}
+.btn.sm{width:auto;padding:10px 14px;font-size:13px}
+.btn:disabled{opacity:.45}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.list{display:flex;flex-direction:column;border-radius:20px;background:#fff;border:1px solid var(--line);overflow:hidden}
+.li{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%}
+.li:last-child{border-bottom:0}
+.ico{width:36px;height:36px;border-radius:11px;background:var(--gr2);display:grid;place-items:center;flex:none}
+.ico svg{width:19px;height:19px;stroke:var(--gr);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.li .a{font-size:14px;font-weight:600;line-height:1.2}
+.li .b{font-size:11.5px;color:var(--mut);margin-top:2px;font-variant-numeric:tabular-nums}
+.h3{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);font-weight:600;padding:4px 4px 0}
+.vazio{font-size:13px;color:var(--mut);padding:18px 14px;text-align:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;flex-direction:column;gap:20px;text-align:left;color:var(--ink)}
+.tile svg{width:26px;height:26px;stroke:var(--gr);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tile b{font-size:14px;line-height:1.2;display:block}
+.tile small{display:block;font-size:10.5px;color:var(--mut);margin-top:3px;line-height:1.3}
+.tile:active{background:var(--navy);color:#fff;border-color:var(--navy)}.tile:active svg{stroke:#fff}
+/* campos */
+.fld{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.fld .q{font-size:14px;font-weight:600;line-height:1.25}
+.fld .q small{font-weight:500;color:var(--mut)}
+.fld.erro{border-color:var(--err)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:6px}
+.opts button{font-size:13px;font-weight:600;padding:12px 6px;border-radius:12px;border:1px solid var(--gr2);background:var(--gr2);color:#3b4559;line-height:1.15}
+.opts button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.opts button.on.nc{background:var(--err);border-color:var(--err)}
+.opts button.on.na{background:var(--gr);border-color:var(--gr)}
+.step{display:flex;align-items:center;gap:12px}
+.step button{width:46px;height:46px;border-radius:50%;border:0;background:var(--gr2);font-size:23px;font-weight:600;color:#3b4559}
+.step output{font-size:28px;font-weight:700;min-width:54px;text-align:center;font-variant-numeric:tabular-nums}
+.step span{font-size:12px;color:var(--mut);margin-left:auto}
+.cnt{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.cnt .c1{display:flex;align-items:center;gap:6px;background:var(--gr2);border-radius:12px;padding:6px 8px}
+.cnt .c1 b{font-size:12.5px;flex:1}
+.cnt .c1 button{width:32px;height:32px;border-radius:50%;border:0;background:#fff;font-size:18px;font-weight:600;color:#3b4559}
+.cnt .c1 output{min-width:22px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.num{display:flex;align-items:center;gap:8px}
+.num input,.txt{flex:1;min-width:0;font-size:20px;font-weight:600;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:#f7f8f9;font-variant-numeric:tabular-nums}
+.txt{font-size:15px;font-weight:500;resize:vertical;min-height:70px}
+.num span{font-size:13px;color:var(--mut);min-width:34px}
+.aviso{font-size:12px;font-weight:600;color:#8a5f08}
+.aviso.er{color:#a42d2d}
+.calc{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.calc b{font-size:22px;letter-spacing:-.02em}
+.calc span{font-size:12px;color:var(--mut)}
+.grp{display:flex;flex-direction:column;gap:8px}
+.item{border:1px dashed var(--gr3);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.item .row b{font-size:12.5px}
+.item .fld{border:0;padding:4px 0;border-radius:0}
+.kmpair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kmbox{border-radius:16px;background:var(--gr);color:#fff;padding:10px 12px;border:0;text-align:left}
+.kmbox .lbl{color:#c9cdd3}
+.kmbox b{display:block;font-size:21px;letter-spacing:-.02em;margin-top:3px;font-variant-numeric:tabular-nums}
+.kmbox small{font-size:10.5px;color:#c9cdd3}
+.kmbox.vazio-km b{color:#c9cdd3}
+.prog{display:flex;gap:5px}
+.prog i{flex:1;height:4px;border-radius:4px;background:var(--gr3)}.prog i.on{background:var(--navy)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:13.5px}
+.kv span{color:var(--mut)}.kv b{font-weight:600;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.sign{position:relative;height:120px;border-radius:14px;border:1.5px dashed var(--gr3);background:#fff;touch-action:none}
+.sign canvas{position:absolute;inset:0;width:100%;height:100%}
+.sign span{position:absolute;inset:0;display:grid;place-items:center;color:var(--mut);font-size:12px;pointer-events:none}
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:12px max(16px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:linear-gradient(180deg,transparent,#eceef0 35%);display:none}
+.foot.on{display:flex;gap:8px}
+.foot>div{display:flex;gap:8px;width:100%;max-width:528px;margin-inline:auto}
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:6px;background:var(--gr);border-radius:99px;padding:6px;z-index:20;box-shadow:0 12px 26px -12px rgba(38,43,51,.55)}
+nav button{background:none;border:0;color:#d3d6db;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:99px}
+nav button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{background:#fff;color:var(--navy)}
+nav .go{width:56px;height:56px;padding:0;background:var(--navy);color:#fff;justify-content:center;border:1px solid rgba(255,255,255,.35)}
+nav .go svg{width:26px;height:26px;stroke-width:2.2}
+body.form nav{display:none}
+.login{justify-content:center;gap:16px;padding-top:calc(40px + env(safe-area-inset-top))}
+.login input{width:100%;font-size:17px;padding:14px 14px;border-radius:14px;border:1px solid var(--line);background:#fff}
+.msg{font-size:13px;color:#a42d2d;min-height:18px}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--gr);color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:99px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+dialog{margin:auto;border:0;border-radius:22px;padding:18px;width:min(92vw,420px);color:var(--ink);background:#fff}
+dialog::backdrop{background:rgba(38,43,51,.4)}
+dialog .q{font-size:16px;font-weight:700;margin-bottom:6px}
+dialog p{font-size:13.5px;color:var(--mut);line-height:1.45;margin-bottom:14px;white-space:pre-line;max-height:60vh;overflow-y:auto}
+@media (prefers-reduced-motion:no-preference){.opts button,.step button,.cnt button{transition:background .12s,transform .08s}.step button:active,.cnt button:active{transform:scale(.92)}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15M5 19c3-5 6-8 10-10"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 01-12 0c0-4.5 6-11 6-11z"/></symbol>
+  <symbol id="i-sign" viewBox="0 0 24 24"><path d="M12 3l9 9-9 9-9-9z"/><path d="M9 12h6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-patch" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="10" rx="1.5"/><path d="M8 7v10M16 7v10"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11M9 8h6"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 00-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+</svg>
+
+<!-- ===== login ===== -->
+<section class="screen login" id="scr-login">
+  <div class="row"><div class="logo"><svg><use href="#i-check"/></svg></div><div class="ttl">Ficha Check</div></div>
+  <p class="sub">Entre com o login que o engenheiro do contrato criou para você.</p>
+  <form id="f-login" class="grp" autocomplete="on">
+    <input id="lg-login" name="username" autocomplete="username" placeholder="Login" autocapitalize="none" required>
+    <input id="lg-senha" name="password" type="password" autocomplete="current-password" placeholder="Senha" required>
+    <div class="msg" id="lg-msg"></div>
+    <button class="btn" type="submit" id="lg-btn">Entrar</button>
+  </form>
+</section>
+
+<!-- ===== meu dia ===== -->
+<section class="screen" id="scr-inicio">
+  <div class="hd"><div class="logo"><svg><use href="#i-check"/></svg></div><div class="t">Ficha Check<small id="ini-contrato">Meu dia</small></div><button class="sync" id="sync1" type="button">…</button></div>
+  <div class="glass">
+    <div class="row"><span class="lbl">Você está em</span><span class="pill mu sp" id="gps-prec">GPS…</span></div>
+    <div class="kmbig" id="gps-km" style="margin-top:10px">Procurando sinal</div>
+    <div class="sub" id="gps-sub" style="margin-top:8px">Liberar a localização para o KM aparecer</div>
+  </div>
+  <button class="btn" type="button" onclick="abreServicos()"><svg><use href="#i-plus"/></svg>Nova ficha</button>
+  <button class="btn ghost" type="button" id="btn-rascunho" hidden onclick="retomaRascunho()">Continuar ficha em andamento</button>
+  <div class="h3" id="hoje-h">Hoje</div>
+  <div class="list" id="hoje-lista"></div>
+</section>
+
+<!-- ===== serviços ===== -->
+<section class="screen" id="scr-servicos">
+  <div class="hd"><button class="back" type="button" onclick="vai('inicio')"><svg class="ic"><use href="#i-back"/></svg>Início</button></div>
+  <div><div class="ttl">Qual serviço?</div><div class="sub" id="srv-sub"></div></div>
+  <div class="grid2" id="srv-tiles"></div>
+</section>
+
+<!-- ===== ficha ===== -->
+<section class="screen" id="scr-ficha">
+  <div class="hd"><button class="back" type="button" onclick="saiDaFicha()"><svg class="ic"><use href="#i-back"/></svg>Serviços</button><span class="pill mu sp">Rascunho salvo</span></div>
+  <div><div class="ttl" id="fx-nome"></div><div class="sub" id="fx-norma" style="margin-top:3px"></div></div>
+  <div class="prog"><i class="on"></i><i class="on"></i><i></i></div>
+  <div id="fx-local"></div>
+  <div class="grp" id="fx-campos" style="gap:10px"></div>
+</section>
+
+<!-- ===== confirmar ===== -->
+<section class="screen" id="scr-confirmar">
+  <div class="hd"><button class="back" type="button" onclick="vai('ficha')"><svg class="ic"><use href="#i-back"/></svg>Voltar</button></div>
+  <div class="row"><div class="ttl">Confirmar</div><span class="sp sub">Passo 3 de 3</span></div>
+  <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+  <div class="glass" id="cf-resumo"></div>
+  <div class="fld" id="cf-grav" hidden><div class="q">Gravidade da não conformidade</div>
+    <div class="opts" id="cf-grav-op"></div></div>
+  <div class="fld"><div class="row"><div class="q">Assinatura de quem preencheu</div><button class="btn ghost sm sp" type="button" onclick="limpaAss()">Limpar</button></div>
+    <div class="sign" id="ass"><canvas></canvas><span>Assine com o dedo</span></div></div>
+  <div class="sub" style="text-align:center" id="cf-rede"></div>
+</section>
+
+<!-- ===== fichas ===== -->
+<section class="screen" id="scr-lista">
+  <div class="hd"><div class="logo"><svg><use href="#i-list"/></svg></div><div class="t">Minhas fichas<small>Últimos 30 dias</small></div><button class="sync" id="sync2" type="button">…</button></div>
+  <div class="list" id="todas-lista"></div>
+</section>
+
+<!-- ===== conta ===== -->
+<section class="screen" id="scr-conta">
+  <div class="hd"><div class="logo"><svg><use href="#i-user"/></svg></div><div class="t" id="ct-nome">Conta<small></small></div></div>
+  <div class="h3">Contrato</div>
+  <div class="list" id="ct-contratos"></div>
+  <div class="h3">Aparelho</div>
+  <div class="glass"><div class="kv" id="ct-aparelho"></div></div>
+  <button class="btn ghost" type="button" onclick="atualizaDados(true)">Atualizar modelos e contrato</button>
+  <div class="fld" id="ct-demo" hidden><div class="q">Rodovia para testar</div><div class="sub">Demonstração: escolha a rodovia onde você está. As fichas ficam só neste aparelho.</div>
+    <select id="ct-rod" class="txt" style="min-height:0;font-size:16px"></select>
+    <button class="btn ghost" type="button" onclick="apagaTestes()">Apagar as fichas de teste</button></div>
+  <button class="btn ghost" type="button" id="btn-sair" onclick="sair()">Sair desta conta</button>
+</section>
+
+<div class="foot" id="foot"><div id="foot-in"></div></div>
+<nav id="nav">
+  <button type="button" data-scr="inicio" class="on"><svg><use href="#i-home"/></svg>Início</button>
+  <button type="button" class="go" aria-label="Nova ficha" onclick="abreServicos()"><svg><use href="#i-plus"/></svg></button>
+  <button type="button" data-scr="lista"><svg><use href="#i-list"/></svg>Fichas</button>
+  <button type="button" data-scr="conta"><svg><use href="#i-user"/></svg>Conta</button>
+</nav>
+<div class="toast" id="toast"></div>
+<dialog id="dlg"><div class="q" id="dlg-q"></div><p id="dlg-p"></p><div class="row" id="dlg-b"></div></dialog>
+
+<script>
+'use strict';
+/* ===== constantes e estado ===== */
+const VERSAO = '0.1.0';   // versão para a pessoa; o número do cache fica no sw.js
+const API = '/api';
+/* MODO DEMONSTRAÇÃO (cópia publicada no GitHub Pages com <html data-demo="1">): roda sem servidor.
+   Contrato e modelos vêm junto com a página, o traçado vem da base do KM Check no mesmo site e as fichas
+   ficam só no aparelho. Serve para testar no campo o GPS, o KM e o preenchimento antes do servidor existir. */
+const DEMO = document.documentElement.dataset.demo === '1';
+/* geometria das rodovias vem da API do KM Check (mesma base SNV/DNIT, KM por ponto) */
+const KMCHECK_API = 'https://api.kmcheck.com.br/api/rodovias';
+const LS = { token:'fc-token', eu:'fc-eu', contrato:'fc-contrato', rascunho:'fc-rascunho' };
+const S = { eu:null, contrato:null, pos:null, local:null, bases:[], ficha:null, modelo:null, online:navigator.onLine, enviando:false };
+const ICONES = { book:'i-book', layers:'i-layers', patch:'i-patch', scan:'i-scan', leaf:'i-leaf', drop:'i-drop', shield:'i-shield', sign:'i-sign' };
+if (/Android/i.test(navigator.userAgent)) document.documentElement.setAttribute('data-android','');
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls = { get(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }, set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch{} }, del(k){ try{ localStorage.removeItem(k) }catch{} } };
+function toast(t){ const e=$('#toast'); e.textContent=t; e.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>e.classList.remove('on'),2600) }
+/* KM no formato do KM Check: 324,100 */
+const fmtKm = k => k==null||!isFinite(k) ? '—' : (Math.floor(k+1e-9)+','+String(Math.round((k-Math.floor(k+1e-9))*1000)).padStart(3,'0'));
+const fmtN = (v,c=0) => v==null||!isFinite(v) ? '—' : (+v).toLocaleString('pt-BR',{minimumFractionDigits:c,maximumFractionDigits:c});
+const hora = d => new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+const diaLocal = d => { const x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0') };
+
+/* aviso sem alert(): o iPhone instalado às vezes engole alert/confirm */
+function pergunta(q, p, botoes){
+  return new Promise(ok=>{
+    $('#dlg-q').textContent=q; $('#dlg-p').textContent=p;
+    const b=$('#dlg-b'); b.innerHTML='';
+    botoes.forEach(([t,v,cls])=>{ const e=document.createElement('button'); e.type='button'; e.className='btn '+(cls||''); e.textContent=t; e.onclick=()=>{ $('#dlg').close(); ok(v) }; b.appendChild(e) });
+    $('#dlg').showModal();
+  });
+}
+
+/* ===== IndexedDB: fila de envio, fichas do aparelho e rodovias ===== */
+let _db;
+function db(){
+  return _db ||= new Promise((ok,erro)=>{
+    const r=indexedDB.open('fichacheck',1);
+    r.onupgradeneeded=()=>{ const d=r.result;
+      d.createObjectStore('fichas',{keyPath:'uuid'});      // todas as fichas feitas neste aparelho
+      d.createObjectStore('fila',{keyPath:'uuid'});        // as que ainda não chegaram no servidor
+      d.createObjectStore('rodovias',{keyPath:'id'}) };
+    r.onsuccess=()=>ok(r.result); r.onerror=()=>erro(r.error);
+  });
+}
+async function tx(store, modo, fn){
+  const d=await db();
+  return new Promise((ok,erro)=>{ const t=d.transaction(store,modo), s=t.objectStore(store); let res; const r=fn(s);
+    if(r) r.onsuccess=()=>{ res=r.result }; t.oncomplete=()=>ok(res); t.onerror=()=>erro(t.error) });
+}
+const idb = { all:s=>tx(s,'readonly',o=>o.getAll()), get:(s,k)=>tx(s,'readonly',o=>o.get(k)), put:(s,v)=>tx(s,'readwrite',o=>o.put(v)), del:(s,k)=>tx(s,'readwrite',o=>o.delete(k)) };
+
+/* ===== rede ===== */
+async function req(caminho, opt={}){
+  if(DEMO) return reqDemo(caminho);
+  const token=ls.get(LS.token);
+  const r=await fetch(API+caminho,{...opt, headers:{'content-type':'application/json', ...(token?{authorization:'Bearer '+token}:{}), ...(opt.headers||{})}});
+  if(r.status===401 && caminho!=='/login'){ sessaoExpirou(); throw new Error('sessão') }
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error||('Erro '+r.status));
+  return d;
+}
+async function reqDemo(caminho){
+  if(caminho==='/eu'){
+    const idx=await (await fetch('modelos/index.json')).json();
+    const modelos=await Promise.all(idx.filter(m=>m.ativo).map(async m=>(await fetch(`modelos/${m.id}.json`)).json()));
+    return { usuario:{id:0, nome:'Demonstração', papel:'fiscal'}, modelos,
+      contratos:[{ id:1, numero:'14 00515/2024', orgao:'DNIT', descricao:'Manutenção (demonstração)', rodovias:[ls.get('fc-demo-rod')||'BR-226/RN'],
+        parametros:{ espessura_projeto_cm:5, densidade_cbuq_t_m3:2.4, largura_faixa_m:3.6 },
+        equipamentos:['Vibroacabadora','Rolo de pneus','Rolo liso','Caminhão basculante','Caminhão espargidor','Retroescavadeira','Roçadeira'],
+        modelos:[], equipes:[{id:1, nome:'Equipe 1'}], minha_equipe:1 }] };
+  }
+  return [];   // sem servidor: listas vazias, nada é enviado
+}
+function sessaoExpirou(){
+  /* a fila NÃO é apagada: depois do novo login ela sobe normalmente */
+  ls.del(LS.token); vai('login'); toast('Sua sessão expirou. Entre de novo; as fichas guardadas continuam aqui.');
+}
+
+/* ===== navegação ===== */
+function vai(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  $('#scr-'+id).classList.add('on');
+  document.body.classList.toggle('form', ['ficha','confirmar','servicos','login'].includes(id));
+  document.querySelectorAll('nav button[data-scr]').forEach(b=>b.classList.toggle('on', b.dataset.scr===id));
+  $('#nav').hidden = id==='login';
+  rodape(id);
+  scrollTo(0,0);
+  if(id==='inicio') desenhaHoje();
+  if(id==='lista') desenhaTodas();
+  if(id==='conta') desenhaConta();
+  if(id==='confirmar') desenhaConfirmar();
+}
+document.querySelectorAll('nav button[data-scr]').forEach(b=>b.onclick=()=>vai(b.dataset.scr));
+function rodape(id){
+  const f=$('#foot'), i=$('#foot-in');
+  if(id==='ficha'){ i.innerHTML='<button class="btn" type="button" onclick="paraConfirmar()">Continuar</button>' }
+  else if(id==='confirmar'){ i.innerHTML='<button class="btn" type="button" id="btn-salvar" onclick="salvaFicha()"><svg><use href="#i-check"/></svg>Salvar e enviar</button>' }
+  else { f.classList.remove('on'); return }
+  f.classList.add('on');
+}
+
+/* ===== login e dados do contrato ===== */
+$('#f-login').onsubmit=async e=>{
+  e.preventDefault();
+  $('#lg-msg').textContent=''; $('#lg-btn').disabled=true;
+  try{
+    const d=await req('/login',{method:'POST', body:JSON.stringify({login:$('#lg-login').value.trim(), senha:$('#lg-senha').value})});
+    ls.set(LS.token,d.token); $('#lg-senha').value='';
+    await atualizaDados(); vai('inicio'); iniciaGps(); enviaFila();
+  }catch(err){ $('#lg-msg').textContent = navigator.onLine ? err.message : 'Sem internet. O primeiro login precisa de sinal.' }
+  finally{ $('#lg-btn').disabled=false }
+};
+async function atualizaDados(avisa){
+  try{
+    const eu=await req('/eu'); S.eu=eu; ls.set(LS.eu,eu);
+    if(!eu.contratos.find(c=>c.id===ls.get(LS.contrato))) ls.set(LS.contrato, eu.contratos[0]?.id ?? null);
+    escolheContrato(ls.get(LS.contrato));
+    if(avisa) toast('Modelos e contrato atualizados');
+  }catch(e){ if(avisa) toast(navigator.onLine ? e.message : 'Sem internet agora. Tente de novo com sinal.') }
+}
+function escolheContrato(id){
+  S.contrato = S.eu?.contratos.find(c=>c.id===id) || S.eu?.contratos[0] || null;
+  ls.set(LS.contrato, S.contrato?.id ?? null);
+  $('#ini-contrato').textContent = S.contrato ? 'Contrato '+S.contrato.numero : 'Sem contrato';
+  carregaRodovias();
+}
+function sair(){
+  pergunta('Sair desta conta?','As fichas ainda não enviadas continuam guardadas no aparelho e sobem no próximo login.',[['Cancelar',0,'ghost'],['Sair',1]])
+    .then(v=>{ if(!v) return; ls.del(LS.token); ls.del(LS.eu); S.eu=null; vai('login') });
+}
+
+/* ===== rodovias e KM (mesma conta do KM Check: projeção no eixo do SNV) ===== */
+/* a abertura chama isto mais de uma vez quase junto (contrato salvo + dados novos do servidor): cada chamada
+   monta a própria lista e só a última vale. Antes as três empurravam na mesma lista e a rodovia ficava triplicada */
+let _seqRod=0;
+async function carregaRodovias(){
+  const seq=++_seqRod, bases=[];
+  for(const rod of S.contrato?.rodovias||[]){
+    const m=/BR-?(\d+)\/?([A-Z]{2})/i.exec(rod); if(!m) continue;
+    const id=m[1].padStart(3,'0')+'-'+m[2].toUpperCase();
+    let b=await idb.get('rodovias',id).catch(()=>null);
+    /* baixa de novo a cada 15 dias (o SNV muda pouco); sem sinal, fica com a que tem */
+    if(!b || Date.now()-b.baixada>15*86400000){
+      try{
+        if(DEMO){ const g=await baixaDoKmCheck(m[1].padStart(3,'0'), m[2].toUpperCase()); if(g){ b={id, ...g, baixada:Date.now()}; await idb.put('rodovias',b) } throw 0 }
+        const r=await fetch(`${KMCHECK_API}/${m[1].padStart(3,'0')}/${m[2].toUpperCase()}`);
+        if(r.ok){ const g=await r.json(); const x=Array.isArray(g)?g[0]:g;
+          if(x?.lat?.length){ b={id, br:m[1].padStart(3,'0'), uf:m[2].toUpperCase(), lat:x.lat.map(Number), lon:x.lon.map(Number), km:x.km.map(Number), baixada:Date.now()}; await idb.put('rodovias',b) } }
+      }catch{}
+    }
+    if(b) bases.push(b);
+  }
+  if(seq!==_seqRod) return;
+  S.bases=bases; atualizaLocal();
+}
+const R=6371008.8, D2R=Math.PI/180;
+/* demonstração: o JSON do KM Check traz trechos com KM inicial/final e coordenadas; o KM de cada ponto
+   sai da distância percorrida dentro do trecho (proporcional), como no próprio KM Check */
+async function baixaDoKmCheck(br, uf){
+  const r=await fetch(`../data/rodovias/BR-${br}-${uf}.json`); if(!r.ok) return null;
+  const j=await r.json(), lat=[], lon=[], km=[];
+  const d=(a,b)=>{ const x=(b[0]-a[0])*D2R*Math.cos((a[1]+b[1])/2*D2R), y=(b[1]-a[1])*D2R; return Math.sqrt(x*x+y*y)*R };
+  for(const s of j.segments){ let t=0; const ac=[0]; for(let i=1;i<s.c.length;i++){ t+=d(s.c[i-1],s.c[i]); ac.push(t) }
+    s.c.forEach((p,i)=>{ lon.push(p[0]); lat.push(p[1]); km.push(s.ki+(t?ac[i]/t:0)*(s.kf-s.ki)) }) }
+  return { br, uf, lat, lon, km };
+}
+function achaKm(lat,lon){
+  let best=null; const cos=Math.cos(lat*D2R);
+  for(const b of S.bases) for(let i=0;i<b.lat.length-1;i++){
+    const ax=b.lon[i],ay=b.lat[i],dx=(b.lon[i+1]-ax)*cos,dy=b.lat[i+1]-ay,ex=(lon-ax)*cos,ey=lat-ay,L2=dx*dx+dy*dy;
+    if(!L2) continue;
+    /* ligação entre trechos do SNV desenhada como reta que não existe na estrada (ver basePhantom no KM Check) */
+    const len=Math.sqrt(L2)*D2R*R; if(len>1500 && len>3*Math.abs(b.km[i+1]-b.km[i])*1000) continue;
+    let t=(ex*dx+ey*dy)/L2; t=t<0?0:t>1?1:t;
+    const fx=ex-t*dx, fy=ey-t*dy, d2=fx*fx+fy*fy;
+    if(!best||d2<best.d2) best={d2,b,i,t};
+  }
+  if(!best) return null;
+  const {b,i,t}=best;
+  return { rodovia:`BR-${b.br}/${b.uf}`, km:b.km[i]+t*(b.km[i+1]-b.km[i]), dist:Math.sqrt(best.d2)*D2R*R };
+}
+function iniciaGps(){
+  if(!navigator.geolocation){ $('#gps-sub').textContent='Este aparelho não tem GPS disponível no navegador.'; return }
+  navigator.geolocation.watchPosition(p=>{ S.pos={lat:p.coords.latitude, lon:p.coords.longitude, prec:p.coords.accuracy, em:Date.now()}; atualizaLocal() },
+    e=>{ $('#gps-sub').textContent = e.code===1 ? 'Localização bloqueada. Libere nas configurações do navegador.' : 'Sem sinal de GPS agora.' },
+    {enableHighAccuracy:true, maximumAge:5000, timeout:20000});
+}
+function atualizaLocal(){
+  if(!S.pos) return;
+  S.local=achaKm(S.pos.lat,S.pos.lon);
+  const longe = S.local && S.local.dist>300;   // mesma distância de alerta padrão do KM Check
+  $('#gps-prec').textContent='GPS ±'+Math.round(S.pos.prec)+' m';
+  $('#gps-prec').className='pill sp '+(S.pos.prec<=15?'ok':S.pos.prec<=50?'wa':'er');
+  if(S.local){
+    $('#gps-km').innerHTML=`${esc(S.local.rodovia)} <em>KM ${fmtKm(S.local.km)}</em>`;
+    $('#gps-sub').textContent = longe ? `Você está a ${fmtN(S.local.dist/1000,1)} km do eixo da rodovia` : `${S.contrato?'Contrato '+S.contrato.numero:''} · ${fmtN(S.local.dist)} m do eixo`;
+  } else {
+    $('#gps-km').textContent = S.bases.length ? 'Fora das rodovias do contrato' : 'Rodovia ainda não baixada';
+    $('#gps-sub').textContent = S.bases.length ? '' : 'Abra o app com internet uma vez para baixar o traçado.';
+  }
+}
+
+/* ===== serviços ===== */
+function modelosDoContrato(){
+  const ms=S.eu?.modelos||[], lib=S.contrato?.modelos||[];
+  return ms.filter(m=>!lib.length||lib.includes(m.id));
+}
+function abreServicos(){
+  if(!S.contrato){ toast('Você ainda não está em nenhum contrato. Fale com o engenheiro.'); return }
+  $('#srv-sub').textContent = S.local ? `${S.local.rodovia} · KM ${fmtKm(S.local.km)} já preenchido` : 'O KM entra quando o GPS achar a rodovia';
+  $('#srv-tiles').innerHTML = modelosDoContrato().map(m=>`<button type="button" class="glass tile" onclick="novaFicha('${esc(m.id)}')">
+    <svg><use href="#${ICONES[m.icone]||'i-check'}"/></svg><div><b>${esc(m.nome)}</b><small>${esc((m.norma||'').split('.')[0])}</small></div></button>`).join('');
+  vai('servicos');
+}
+
+/* ===== ficha: estado e rascunho ===== */
+function novaFicha(id){
+  const m=modelosDoContrato().find(x=>x.id===id); if(!m) return;
+  const agora=S.local&&S.pos ? {km:+S.local.km.toFixed(3), lat:S.pos.lat, lon:S.pos.lon, prec:S.pos.prec, rodovia:S.local.rodovia} : null;
+  S.modelo=m;
+  S.ficha={ uuid:crypto.randomUUID(), modelo_id:m.id, modelo_versao:m.versao, contrato:S.contrato.id, equipe:S.contrato.minha_equipe??null,
+    rodovia:agora?.rodovia||S.contrato.rodovias?.[0]||'', km_ini:agora?.km??null, km_fim:m.local==='trecho'?null:(agora?.km??null),
+    lat:agora?.lat??null, lon:agora?.lon??null, gps_precisao:agora?.prec??null, iniciada_em:new Date().toISOString(), respostas:{}, gravidade:null, assinatura:null };
+  /* valores padrão vindos do contrato (ex.: largura da faixa) */
+  for(const c of m.campos) if(c.padrao){ const v=valorContrato(c.padrao); if(v!=null) S.ficha.respostas[c.id]=v }
+  guardaRascunho(); desenhaFicha(); vai('ficha');
+}
+function guardaRascunho(){ if(S.ficha) ls.set(LS.rascunho,{ficha:S.ficha}) }
+function retomaRascunho(){
+  const r=ls.get(LS.rascunho); if(!r) return;
+  const m=(S.eu?.modelos||[]).find(x=>x.id===r.ficha.modelo_id); if(!m){ ls.del(LS.rascunho); return }
+  S.ficha=r.ficha; S.modelo=m; desenhaFicha(); vai('ficha');
+}
+function saiDaFicha(){
+  pergunta('Sair desta ficha?','Ela fica guardada como rascunho e você continua depois pela tela inicial.',[['Descartar','d','ghost'],['Guardar',1]])
+    .then(v=>{ if(v==='d'){ ls.del(LS.rascunho); S.ficha=null } abreServicos() });
+}
+const valorContrato = ref => { const k=String(ref).replace(/^contrato\./,''); const v=S.contrato?.parametros?.[k]; return v==null?null:v };
+
+/* ===== fórmulas dos campos calculados =====
+   Linguagem mínima dos modelos: + - * / ( ), nomes de campo, contrato.parâmetro e soma(grupo.campo ...).
+   Os modelos vêm do nosso servidor; mesmo assim só passam caracteres de conta (nada de chamar função). */
+const _formulas=new Map();
+function compila(f){
+  if(_formulas.has(f)) return _formulas.get(f);
+  let fn=()=>null;
+  if(/^[\w\s.+\-*/()]*$/.test(f)){
+    let js=f.replace(/soma\(((?:[^()]|\([^()]*\))*)\)/g,(m,expr)=>{ let g='x';
+      const e=expr.replace(/\b([a-z_]\w*)\.([a-z_]\w*)\b/gi,(mm,a,b)=>{ if(a==='contrato') return mm; g=a; return 'it.'+b });
+      return `__soma(V.${g},it=>(${e}))` });
+    /* sem lookbehind no regex: Safari antigo do iPhone não entende */
+    js=js.replace(/([A-Za-z_]\w*)((?:\.[A-Za-z_]\w*)?)/g,(m,a,b,o,t)=>(o>0&&/[.\w]/.test(t[o-1]))||['it','__soma','V'].includes(a)?m:(a==='contrato'?'C'+b:'V.'+a+b));
+    try{ const g=new Function('V','C','__soma','"use strict";return ('+js+')');
+      fn=(V,C)=>{ try{ const r=g(V,C,(arr,h)=>(arr||[]).reduce((s,it)=>s+((+h(it))||0),0)); return isFinite(r)?r:null }catch{ return null } } }catch{}
+  }
+  _formulas.set(f,fn); return fn;
+}
+/* variáveis que toda fórmula enxerga além dos campos */
+function contexto(){
+  const f=S.ficha, r=f.respostas, V={...r};
+  V.extensao_m = f.km_ini!=null&&f.km_fim!=null ? Math.abs(f.km_fim-f.km_ini)*1000 : null;
+  V.lados = r.lado==='Ambos' ? 2 : 1;
+  /* números nos grupos */
+  for(const c of S.modelo.campos) if(c.tipo==='grupo') V[c.id]=(r[c.id]||[]).map(it=>{ const o={}; for(const k in it) o[k]=isFinite(+it[k])&&it[k]!==''?+it[k]:it[k]; return o });
+  return V;
+}
+function recalcula(){
+  const C=S.contrato?.parametros||{};
+  /* em ordem: um calculado pode usar o anterior (área → consumo → espessura) */
+  for(const c of S.modelo.campos) if(c.tipo==='calc' && c.formula!=='fichas_do_dia'){
+    const v=compila(c.formula)(contexto(),C); S.ficha.respostas[c.id]= v==null?null:+v.toFixed(c.casas??2);
+  }
+}
+
+/* ===== ficha: desenho dos campos ===== */
+const visivel = c => {
+  if(!c.mostra_se) return true;
+  return Object.entries(c.mostra_se).every(([k,v])=>{
+    if(k==='_tem_nc') return contaRespostas().nc>0===v;
+    const r=S.ficha.respostas[k]; return String(v).startsWith('!') ? r!=null && r!==String(v).slice(1) : r===v });
+};
+function desenhaFicha(){
+  const m=S.modelo, f=S.ficha;
+  $('#fx-nome').textContent=m.nome; $('#fx-norma').textContent=m.norma||'';
+  desenhaLocal();
+  recalcula();
+  $('#fx-campos').innerHTML=m.campos.map(c=>visivel(c)?campoHtml(c, f.respostas[c.id], c.id):'').join('');
+}
+function desenhaLocal(){
+  const m=S.modelo, f=S.ficha, el=$('#fx-local');
+  const caixa=(rot,km,acao,dica)=>`<button type="button" class="kmbox ${km==null?'vazio-km':''}" onclick="${acao}"><div class="lbl">${rot}</div><b>${km==null?'Toque para marcar':fmtKm(km)}</b><small>${dica}</small></button>`;
+  const rod=`<div class="sub" style="margin:0 2px 6px">${esc(f.rodovia||'Rodovia não identificada')}${f.gps_precisao?` · GPS ±${Math.round(f.gps_precisao)} m`:''}</div>`;
+  if(m.local==='trecho') el.innerHTML=rod+`<div class="kmpair">${caixa('KM inicial',f.km_ini,"marcaKm('km_ini')",'GPS no início · toque p/ ajustar')}${caixa('KM final',f.km_fim,"marcaKm('km_fim')",f.km_fim==null?'Marcar ao terminar':'Toque p/ ajustar')}</div>`;
+  else el.innerHTML=rod+`<div class="kmpair" style="grid-template-columns:1fr">${caixa(m.local==='frente'?'KM da frente':'KM do ponto',f.km_ini,"marcaKm('km_ini')",'Pelo GPS · toque para ajustar')}</div>`;
+}
+/* KM: pega do GPS; se não houver, ou se a pessoa quiser, digita */
+async function marcaKm(qual){
+  const gps = S.local && S.pos && (Date.now()-S.pos.em)<60000 ? +S.local.km.toFixed(3) : null;
+  const v=await pergunta(qual==='km_fim'?'KM final':'KM', gps!=null?`O GPS marca KM ${fmtKm(gps)} agora (${S.local.rodovia}).`:'GPS sem rodovia agora. Digite o KM.',
+    [...(gps!=null?[['Usar GPS','gps']]:[]),['Digitar','dig','ghost']]);
+  let km=null;
+  if(v==='gps'){ km=gps; if(qual==='km_ini'||S.modelo.local!=='trecho'){ Object.assign(S.ficha,{lat:S.pos.lat,lon:S.pos.lon,gps_precisao:S.pos.prec,rodovia:S.local.rodovia}) } }
+  else if(v==='dig'){ km=await digitaKm(S.ficha[qual]) }
+  if(km==null) return;
+  S.ficha[qual]=km; if(S.modelo.local!=='trecho') S.ficha.km_fim=km;
+  guardaRascunho(); desenhaFicha();
+}
+function digitaKm(atual){
+  return new Promise(ok=>{
+    $('#dlg-q').textContent='Digite o KM'; $('#dlg-p').innerHTML='Use vírgula para os metros, ex.: 324,100';
+    const b=$('#dlg-b'); b.innerHTML=`<div class="num" style="width:100%"><input id="dlg-km" inputmode="decimal" value="${atual!=null?fmtKm(atual):''}"><button class="btn sm" type="button" id="dlg-ok">OK</button></div>`;
+    $('#dlg').showModal(); $('#dlg-km').focus();
+    $('#dlg-ok').onclick=()=>{ const v=parseFloat($('#dlg-km').value.replace(/\s/g,'').replace(',','.')); $('#dlg').close(); ok(isFinite(v)?v:null) };
+  });
+}
+
+function campoHtml(c, v, cam){
+  const q=`<div class="q">${esc(c.rotulo)}</div>`;   // obrigatórios são cobrados no Continuar
+  const dc=`data-cam="${esc(cam)}"`;
+  switch(c.tipo){
+    case 'cnc': return `<div class="fld">${q}<div class="opts" ${dc}>${[['C','Conforme',''],['NC','Não conf.','nc'],['NA','N/A','na']].map(([k,t,cl])=>`<button type="button" class="${cl} ${v===k?'on':''}" data-v="${k}">${t}</button>`).join('')}</div></div>`;
+    case 'opcoes': {
+      const ops=c.opcoes_de ? (valorListaContrato(c.opcoes_de)) : c.opcoes;
+      if(!ops?.length) return `<div class="fld">${q}<div class="sub">Lista não cadastrada no contrato.</div></div>`;
+      return `<div class="fld">${q}<div class="opts" ${dc}>${ops.map(o=>`<button type="button" class="${(c.nc_se||[]).includes(o)?'nc':''} ${v===o?'on':''}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>` }
+    case 'escala': return `<div class="fld">${q}<div class="opts" ${dc} style="grid-template-columns:repeat(${c.opcoes.length},1fr)">${c.opcoes.map((o,i)=>`<button type="button" class="${c.nc_a_partir!=null&&i>=c.nc_a_partir?'nc':''} ${v===o?'on':''}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;
+    case 'gravidade': return `<div class="fld">${q}<div class="opts" ${dc}>${['leve','media','grave'].map(o=>`<button type="button" class="${o==='grave'?'nc':''} ${v===o?'on':''}" data-v="${o}">${{leve:'Leve',media:'Média',grave:'Grave'}[o]}</button>`).join('')}</div></div>`;
+    case 'contador': return `<div class="fld">${q}<div class="step" ${dc} data-tipo="contador"><button type="button" data-d="-1" aria-label="Menos">−</button><output>${v??0}</output><button type="button" data-d="1" aria-label="Mais">+</button><span>${esc(c.unidade||'')}</span></div></div>`;
+    case 'numero': {
+      const un = c.unidade_de ? (c.unidade_de[S.ficha.respostas.dispositivo]||c.unidade_de['*']) : c.unidade;
+      return `<div class="fld">${q}<div class="num"><input ${dc} data-tipo="numero" inputmode="decimal" value="${v==null?'':String(v).replace('.',',')}" placeholder="0"><span>${esc(un||'')}</span></div><div data-av="${esc(cam)}">${avisoFaixa(c,v)}</div></div>` }
+    case 'hora': return `<div class="fld">${q}<div class="num"><input ${dc} data-tipo="texto" type="time" value="${esc(v||'')}"><button type="button" class="btn sm ghost" onclick="agoraEm('${esc(cam)}')">Agora</button></div></div>`;
+    case 'texto': return `<div class="fld">${q}<textarea class="txt" ${dc} data-tipo="texto" placeholder="${c.voz?'Toque no microfone do teclado para ditar':''}">${esc(v||'')}</textarea></div>`;
+    case 'calc': {
+      if(c.formula==='fichas_do_dia') return `<div class="fld">${q}<div class="sub" id="calc-fichas-dia">${esc(resumoDoDia())}</div></div>`;
+      return `<div class="fld" data-calc="${esc(c.id)}"><div class="lbl">${esc(c.rotulo)}</div><div class="calc"><b>${v==null?'—':fmtN(v,c.casas??2)}</b><span>${esc(c.unidade||'')}</span>${confere(c,v)}</div></div>` }
+    case 'assinatura': return `<div class="fld">${q}<div class="sub">Assinatura no passo final.</div></div>`;
+    case 'grupo-fixo': {
+      const o=v||{};
+      return `<div class="fld">${q}<div class="cnt">${c.itens.map(it=>`<div class="c1" data-cam="${esc(cam)}" data-item="${esc(it)}" data-tipo="contador-fixo"><b>${esc(it)}</b><button type="button" data-d="-1" aria-label="Menos ${esc(it)}">−</button><output>${o[it]||0}</output><button type="button" data-d="1" aria-label="Mais ${esc(it)}">+</button></div>`).join('')}</div></div>` }
+    case 'grupo': {
+      const itens=v||[];
+      return `<div class="fld">${q}<div class="grp">${itens.map((it,i)=>`<div class="item"><div class="row"><b>${i+1}${it._km!=null?' · KM '+fmtKm(it._km):''}</b><button type="button" class="back sp" onclick="tiraItem('${esc(cam)}',${i})" aria-label="Remover"><svg class="ic"><use href="#i-trash"/></svg></button></div>
+        ${c.campos.map(sc=>campoHtml(sc,it[sc.id],cam+'.'+i+'.'+sc.id)).join('')}</div>`).join('')}
+        <button type="button" class="btn ghost" onclick="poeItem('${esc(cam)}')"><svg><use href="#i-plus"/></svg>Adicionar${c.gps_por_item?' (marca o KM pelo GPS)':''}</button></div></div>` }
+  }
+  return '';
+}
+const valorListaContrato = ref => S.contrato?.[String(ref).replace(/^contrato\./,'')] || [];
+function avisoFaixa(c,v){
+  if(!c.faixa||v==null||v==='') return '';
+  const [a,b]=c.faixa.map(valorContrato);
+  if(a!=null&&+v<a) return `<div class="aviso er">Abaixo do mínimo do projeto (${fmtN(a)} ${esc(c.unidade||'')})</div>`;
+  if(b!=null&&+v>b) return `<div class="aviso er">Acima do máximo do projeto (${fmtN(b)} ${esc(c.unidade||'')})</div>`;
+  if(a==null&&b==null) return '<div class="sub">Faixa do projeto ainda não cadastrada no contrato.</div>';
+  return '';
+}
+function confere(c,v){
+  if(!c.confere) return '';
+  const alvo=valorContrato(c.confere.alvo);
+  if(alvo==null) return '<span class="pill mu sp">Sem valor de projeto</span>';
+  if(v==null) return '';
+  const ok=Math.abs(v-alvo)<=alvo*c.confere.tolerancia;
+  return `<span class="pill ${ok?'ok':'er'} sp">${ok?'Dentro':'Fora'} de ±${Math.round(c.confere.tolerancia*100)}% (projeto ${fmtN(alvo,c.casas??1)})</span>`;
+}
+function resumoDoDia(){
+  const h=diaLocal(Date.now()), n={};
+  for(const f of _cacheFichas) if(diaLocal(f.feita_em)===h && f.modelo_id!=='rdo') n[f.nome]=(n[f.nome]||0)+1;
+  const t=Object.entries(n).map(([k,v])=>`${k}: ${v}`).join(' · ');
+  return t||'Nenhuma ficha de serviço hoje neste aparelho.';
+}
+
+/* um só ouvinte para todos os campos: os campos são redesenhados a cada mudança */
+function caminho(cam){ const p=cam.split('.'); return {raiz:p[0], i:p.length>1?+p[1]:null, sub:p[2]} }
+function grava(cam, v){
+  const {raiz,i,sub}=caminho(cam), r=S.ficha.respostas;
+  if(i==null) r[raiz]=v; else { r[raiz]=r[raiz]||[]; r[raiz][i][sub]=v }
+  guardaRascunho();
+}
+function le(cam){ const {raiz,i,sub}=caminho(cam), r=S.ficha.respostas; return i==null?r[raiz]:r[raiz]?.[i]?.[sub] }
+$('#fx-campos').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const op=b.closest('.opts');
+  if(op){ const cam=op.dataset.cam; grava(cam, le(cam)===b.dataset.v?null:b.dataset.v); return redesenha() }
+  const st=b.closest('[data-tipo="contador"]');
+  if(st){ const cam=st.dataset.cam; grava(cam, Math.max(0,(+le(cam)||0)+(+b.dataset.d))); return redesenha() }
+  const cf=b.closest('[data-tipo="contador-fixo"]');
+  if(cf){ const cam=cf.dataset.cam, o={...(le(cam)||{})}; o[cf.dataset.item]=Math.max(0,(o[cf.dataset.item]||0)+(+b.dataset.d)); grava(cam,o); return redesenha() }
+});
+/* digitação: grava sem redesenhar (senão o teclado fecha); recalcula ao sair do campo */
+$('#fx-campos').addEventListener('input',e=>{
+  const el=e.target; if(!el.dataset.cam) return;
+  if(el.dataset.tipo==='numero'){ const t=el.value.replace(/\s/g,'').replace(',','.'); grava(el.dataset.cam, t===''?null:(isFinite(+t)?+t:le(el.dataset.cam))) }
+  else grava(el.dataset.cam, el.value);
+});
+/* ao sair de um número: atualiza só os calculados e o aviso daquele campo. Redesenhar tudo aqui tirava o
+   foco do campo seguinte (o teclado fechava e o que a pessoa digitava em seguida se perdia) */
+$('#fx-campos').addEventListener('change',e=>{
+  const el=e.target; if(el.dataset.tipo!=='numero') return;
+  recalcula();
+  for(const box of document.querySelectorAll('#fx-campos [data-calc]')){ const c=S.modelo.campos.find(x=>x.id===box.dataset.calc); if(c) box.outerHTML=campoHtml(c,S.ficha.respostas[c.id],c.id) }
+  const av=document.querySelector(`#fx-campos [data-av="${CSS.escape(el.dataset.cam)}"]`), {raiz,sub}=caminho(el.dataset.cam);
+  const c=S.modelo.campos.find(x=>x.id===raiz), cc=sub?c?.campos?.find(x=>x.id===sub):c;
+  if(av&&cc) av.innerHTML=avisoFaixa(cc,le(el.dataset.cam));
+});
+function redesenha(){ const y=scrollY; desenhaFicha(); scrollTo(0,y) }
+function poeItem(cam){
+  const r=S.ficha.respostas; r[cam]=r[cam]||[];
+  const it={}; const c=S.modelo.campos.find(x=>x.id===cam);
+  if(c?.gps_por_item){ it._km = S.local&&S.pos ? +S.local.km.toFixed(3) : null; it._lat=S.pos?.lat??null; it._lon=S.pos?.lon??null }
+  r[cam].push(it); guardaRascunho(); redesenha();
+}
+function tiraItem(cam,i){ S.ficha.respostas[cam].splice(i,1); guardaRascunho(); redesenha() }
+function agoraEm(cam){ const d=new Date(); grava(cam, String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); redesenha() }
+
+/* ===== conferência e confirmação ===== */
+function percorre(campos, resp, fn){
+  for(const c of campos){
+    if(c.tipo==='grupo') (resp[c.id]||[]).forEach(it=>percorre(c.campos,it,fn));
+    else fn(c, resp[c.id]);
+  }
+}
+function contaRespostas(){
+  let c=0,nc=0;
+  percorre(S.modelo.campos, S.ficha.respostas, (cp,v)=>{
+    if(cp.tipo==='cnc'){ if(v==='C') c++; else if(v==='NC') nc++ }
+    else if(cp.tipo==='opcoes' && cp.nc_se?.length && v){ cp.nc_se.includes(v)?nc++:c++ }
+    else if(cp.tipo==='escala' && cp.nc_a_partir!=null && v){ cp.opcoes.indexOf(v)>=cp.nc_a_partir?nc++:c++ }
+  });
+  /* espessura estimada fora da tolerância conta como não conformidade */
+  for(const cp of S.modelo.campos) if(cp.confere){ const v=S.ficha.respostas[cp.id], a=valorContrato(cp.confere.alvo);
+    if(v!=null&&a!=null) Math.abs(v-a)<=a*cp.confere.tolerancia?c++:nc++ }
+  return {c,nc};
+}
+function faltando(){
+  const f=S.ficha, m=S.modelo, falta=[];
+  if(f.km_ini==null) falta.push(m.local==='trecho'?'KM inicial':'KM');
+  if(m.local==='trecho' && f.km_fim==null) falta.push('KM final');
+  for(const c of m.campos) if(c.obrig && visivel(c)){ const v=f.respostas[c.id]; if(v==null||v==='') falta.push(c.rotulo) }
+  return falta;
+}
+function paraConfirmar(){
+  recalcula();
+  const falta=faltando();
+  if(falta.length){ pergunta('Falta preencher', falta.join(' · '), [['Voltar à ficha',1]]); return }
+  vai('confirmar');
+}
+function desenhaConfirmar(){
+  const f=S.ficha, m=S.modelo, {c,nc}=contaRespostas(), med=medicao();
+  const trecho = m.local==='trecho' ? `${fmtKm(f.km_ini)} → ${fmtKm(f.km_fim)}` : fmtKm(f.km_ini);
+  $('#cf-resumo').innerHTML=`<div class="row" style="margin-bottom:12px"><span class="lbl">${esc(m.nome)}</span><span class="pill ${nc?'er':'ok'} sp">${nc?nc+' não conforme'+(nc>1?'s':''):'Sem não conformidade'}</span></div>
+    <div class="kv"><span>Rodovia</span><b>${esc(f.rodovia||'—')}</b><span>${m.local==='trecho'?'Trecho':'KM'}</span><b>${trecho}</b>
+    ${med?`<span>Quantidade</span><b>${fmtN(med.v,2)} ${esc(med.u)}</b>`:''}
+    <span>Respostas</span><b>${c} conformes · ${nc} não conf.</b><span>Data e hora</span><b>${new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</b>
+    <span>GPS</span><b>${f.lat!=null?fmtN(f.lat,5)+' · '+fmtN(f.lon,5):'sem GPS'}</b><span>Contrato</span><b>${esc(S.contrato.numero)}</b></div>`;
+  $('#cf-grav').hidden=!nc;
+  if(nc && !f.gravidade) f.gravidade = f.respostas.gravidade || null;
+  $('#cf-grav-op').innerHTML=['leve','media','grave'].map(o=>`<button type="button" class="${o==='grave'?'nc':''} ${f.gravidade===o?'on':''}" data-v="${o}">${{leve:'Leve',media:'Média',grave:'Grave'}[o]}</button>`).join('');
+  $('#cf-rede').textContent = navigator.onLine ? 'A ficha sobe para o engenheiro assim que você salvar.' : 'Sem sinal. A ficha fica salva e envia sozinha quando o sinal voltar.';
+  iniciaAss();
+}
+$('#cf-grav-op').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; S.ficha.gravidade=b.dataset.v; guardaRascunho();
+  document.querySelectorAll('#cf-grav-op button').forEach(x=>x.classList.toggle('on',x===b)) });
+function medicao(){
+  const md=S.modelo.medicao; if(!md) return null;
+  const v=S.ficha.respostas[md.campo]; if(v==null||!isFinite(v)) return null;
+  let u=md.unidade;
+  if(u==='conforme dispositivo'){ const c=S.modelo.campos.find(x=>x.id===md.campo); u=c?.unidade_de?.[S.ficha.respostas.dispositivo]||c?.unidade_de?.['*']||'' }
+  return {v:+v, u};
+}
+
+/* assinatura: traço em canvas, guardada como PNG pequeno */
+let _ass=null;
+function iniciaAss(){
+  const box=$('#ass'), cv=box.querySelector('canvas'), r=box.getBoundingClientRect(), dpr=Math.min(2,devicePixelRatio||1);
+  cv.width=r.width*dpr; cv.height=r.height*dpr;
+  const g=cv.getContext('2d'); g.scale(dpr,dpr); g.lineWidth=2.2; g.lineCap='round'; g.lineJoin='round'; g.strokeStyle='#262b33';
+  _ass={cv,g,usado:false};
+  if(S.ficha.assinatura){ const im=new Image(); im.onload=()=>g.drawImage(im,0,0,r.width,r.height); im.src=S.ficha.assinatura; _ass.usado=true }
+  box.querySelector('span').hidden=!!S.ficha.assinatura;
+  let desenhando=false;
+  const pt=e=>{ const b=cv.getBoundingClientRect(); return [e.clientX-b.left, e.clientY-b.top] };
+  cv.onpointerdown=e=>{ desenhando=true; cv.setPointerCapture(e.pointerId); const [x,y]=pt(e); g.beginPath(); g.moveTo(x,y); box.querySelector('span').hidden=true };
+  cv.onpointermove=e=>{ if(!desenhando) return; const [x,y]=pt(e); g.lineTo(x,y); g.stroke(); _ass.usado=true };
+  cv.onpointerup=cv.onpointercancel=()=>{ if(!desenhando) return; desenhando=false; if(_ass.usado){ S.ficha.assinatura=reduzAss(cv); guardaRascunho() } };
+}
+function reduzAss(cv){ const c=document.createElement('canvas'); c.width=360; c.height=Math.round(360*cv.height/cv.width); c.getContext('2d').drawImage(cv,0,0,c.width,c.height); return c.toDataURL('image/png') }
+function limpaAss(){ S.ficha.assinatura=null; guardaRascunho(); iniciaAss(); _ass.g.clearRect(0,0,9999,9999); $('#ass span').hidden=false }
+
+async function salvaFicha(){
+  const f=S.ficha, m=S.modelo, {c,nc}=contaRespostas();
+  if(nc && !f.gravidade){ toast('Escolha a gravidade da não conformidade'); $('#cf-grav').classList.add('erro'); return }
+  if(!f.assinatura){ toast('Assine para confirmar'); return }
+  $('#btn-salvar').disabled=true;
+  const med=medicao();
+  const pronta={ uuid:f.uuid, contrato:f.contrato, modelo_id:f.modelo_id, modelo_versao:f.modelo_versao, equipe:f.equipe, rodovia:f.rodovia,
+    km_ini:f.km_ini, km_fim:f.km_fim, lat:f.lat, lon:f.lon, gps_precisao:f.gps_precisao, feita_em:new Date().toISOString(),
+    respostas:{...f.respostas, _assinatura:f.assinatura, _iniciada_em:f.iniciada_em}, conformes:c, nao_conformes:nc, gravidade:nc?f.gravidade:null,
+    medicao:med?.v??null, medicao_unidade:med?.u??null };
+  await idb.put('fichas',{...pronta, nome:m.nome, estado:DEMO?'aparelho':'fila'});
+  if(!DEMO) await idb.put('fila',pronta);
+  ls.del(LS.rascunho); S.ficha=null;
+  toast('Ficha salva'); vai('inicio'); enviaFila();
+}
+
+/* ===== envio da fila ===== */
+async function enviaFila(){
+  if(DEMO) return statusFila();
+  if(S.enviando || !ls.get(LS.token)) return statusFila();
+  S.enviando=true;
+  try{
+    const fila=await idb.all('fila');
+    for(let i=0;i<fila.length;i+=50){
+      const d=await req('/fichas/lote',{method:'POST', body:JSON.stringify({fichas:fila.slice(i,i+50)})});
+      for(const u of d.aceitas){ await idb.del('fila',u); const f=await idb.get('fichas',u); if(f){ f.estado='enviada'; await idb.put('fichas',f) } }
+      for(const r of d.recusadas){ const f=await idb.get('fichas',r.uuid); if(f){ f.estado='recusada'; f.erro=r.erro; await idb.put('fichas',f) } }
+    }
+  }catch{}
+  S.enviando=false; await statusFila();
+  if($('#scr-inicio').classList.contains('on')) desenhaHoje();
+}
+async function statusFila(){
+  if(DEMO){ for(const el of [$('#sync1'),$('#sync2')]){ el.className='sync off'; el.textContent='Demonstração' } return }
+  const n=(await idb.all('fila').catch(()=>[])).length;
+  for(const el of [$('#sync1'),$('#sync2')]){
+    el.className='sync '+(!navigator.onLine?'off':n?'fila':'');
+    el.textContent=!navigator.onLine?(n?`${n} guardada${n>1?'s':''} · sem sinal`:'Sem sinal'):n?`${n} na fila`:'Tudo enviado';
+  }
+}
+[$('#sync1'),$('#sync2')].forEach(b=>b.onclick=()=>{ if(DEMO) return toast('Demonstração: as fichas ficam só neste aparelho'); enviaFila(); toast(navigator.onLine?'Enviando…':'Sem sinal. Envia sozinho quando voltar.') });
+addEventListener('online',()=>{ enviaFila(); atualizaDados() });
+addEventListener('offline',statusFila);
+setInterval(enviaFila,60000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) enviaFila() });
+
+/* ===== listas ===== */
+let _cacheFichas=[];
+async function carregaFichas(){
+  const corte=Date.now()-30*86400000;
+  const todas=(await idb.all('fichas').catch(()=>[]));
+  for(const f of todas) if(new Date(f.feita_em)<corte && f.estado!=='fila') idb.del('fichas',f.uuid);   // aparelho não guarda para sempre
+  _cacheFichas=todas.filter(f=>new Date(f.feita_em)>=corte).sort((a,b)=>b.feita_em.localeCompare(a.feita_em));
+  return _cacheFichas;
+}
+/* o status de aprovação vem do servidor; sem sinal, fica o último conhecido */
+async function sincronizaStatus(){
+  if(!navigator.onLine||!ls.get(LS.token)) return;
+  try{
+    const de=diaLocal(Date.now()-30*86400000);
+    const rs=await req('/fichas?de='+de);
+    for(const r of rs){ const f=await idb.get('fichas',r.uuid); if(f && f.estado!=='fila' && f.estado!==r.status){ f.estado=r.status; await idb.put('fichas',f) } }
+  }catch{}
+}
+const EST={ aparelho:['mu','No aparelho'], fila:['wa','Na fila'], enviada:['ok','Enviada'], aprovada:['ok','Aprovada'], devolvida:['er','Devolvida'], recusada:['er','Recusada'] };
+function linhaFicha(f){
+  const m=(S.eu?.modelos||[]).find(x=>x.id===f.modelo_id), [cl,t]=EST[f.estado]||['mu',f.estado];
+  const trecho=f.km_fim!=null&&f.km_fim!==f.km_ini?`KM ${fmtKm(f.km_ini)} → ${fmtKm(f.km_fim)}`:`KM ${fmtKm(f.km_ini)}`;
+  return `<button type="button" class="li" onclick="abreFicha('${f.uuid}')"><div class="ico"><svg><use href="#${ICONES[m?.icone]||'i-check'}"/></svg></div><div style="min-width:0"><div class="a">${esc(f.nome)}${f.nao_conformes?` <span class="pill er">${f.nao_conformes} NC</span>`:''}</div><div class="b">${trecho} · ${hora(f.feita_em)}</div></div><span class="pill ${cl} sp">${t}</span></button>`;
+}
+async function desenhaHoje(){
+  const r=ls.get(LS.rascunho); $('#btn-rascunho').hidden=!r;
+  if(r) $('#btn-rascunho').textContent='Continuar ficha em andamento';
+  const h=diaLocal(Date.now()), fs=(await carregaFichas()).filter(f=>diaLocal(f.feita_em)===h);
+  $('#hoje-h').textContent=`Hoje · ${fs.length} ficha${fs.length===1?'':'s'}`;
+  $('#hoje-lista').innerHTML=fs.length?fs.map(linhaFicha).join(''):'<div class="vazio">Nenhuma ficha hoje. Toque em Nova ficha para começar.</div>';
+}
+async function desenhaTodas(){
+  await sincronizaStatus();
+  const fs=await carregaFichas();
+  $('#todas-lista').innerHTML=fs.length?fs.map(linhaFicha).join(''):'<div class="vazio">As fichas feitas neste aparelho aparecem aqui.</div>';
+}
+async function abreFicha(uuid){
+  const f=await idb.get('fichas',uuid); if(!f) return;
+  if(f.estado==='devolvida'){
+    let motivo='Veja com o engenheiro o que corrigir.';
+    try{ const d=await req('/fichas/'+uuid); const ev=d.eventos.filter(e=>e.acao==='devolver').pop(); if(ev?.nota) motivo=`${ev.nome}: “${ev.nota}”` }catch{}
+    const v=await pergunta('Ficha devolvida', motivo, [['Fechar',0,'ghost'],['Corrigir',1]]);
+    if(v) corrige(f);
+    return;
+  }
+  if(DEMO){ mostraRespostas(f); return }
+  if(f.estado==='recusada'){ pergunta('O servidor recusou esta ficha', f.erro||'', [['Fechar',0]]); return }
+  pergunta(f.nome, `${f.rodovia} · KM ${fmtKm(f.km_ini)}${f.km_fim!=null&&f.km_fim!==f.km_ini?' → '+fmtKm(f.km_fim):''} · ${new Date(f.feita_em).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})} · ${f.conformes} conformes, ${f.nao_conformes} não conformes.`, [['Fechar',0]]);
+}
+function mostraRespostas(f){
+  const m=(S.eu?.modelos||[]).find(x=>x.id===f.modelo_id), r=f.respostas||{}, linhas=[];
+  const txt=(c,v)=>c.tipo==='cnc'?({C:'Conforme',NC:'Não conforme',NA:'N/A'}[v]||'—'):c.tipo==='grupo-fixo'?(Object.entries(v||{}).filter(([,n])=>n).map(([k,n])=>k+': '+n).join(', ')||'—'):v==null||v===''?'—':(typeof v==='number'?fmtN(v,c.casas??2)+(c.unidade?' '+c.unidade:''):String(v));
+  const vai_=(campos,o,pre)=>{ for(const c of campos){ if(c.tipo==='assinatura') continue;
+    if(c.tipo==='grupo'){ (o[c.id]||[]).forEach((it,i)=>vai_(c.campos,it,`${c.rotulo} ${i+1} · `)); continue }
+    if(o[c.id]!=null) linhas.push(pre+c.rotulo+': '+txt(c,o[c.id])) } };
+  if(m) vai_(m.campos,r,'');
+  pergunta(f.nome, `${f.rodovia} · KM ${fmtKm(f.km_ini)}${f.km_fim!=null&&f.km_fim!==f.km_ini?' → '+fmtKm(f.km_fim):''} · ${new Date(f.feita_em).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}\n\n${linhas.join('\n')}`, [['Fechar',0]]);
+}
+/* corrigir reabre a MESMA ficha (mesmo uuid): o servidor substitui a versão devolvida */
+function corrige(f){
+  const m=(S.eu?.modelos||[]).find(x=>x.id===f.modelo_id && x.versao===f.modelo_versao)||(S.eu?.modelos||[]).find(x=>x.id===f.modelo_id);
+  if(!m) return toast('Modelo desta ficha não está mais no aparelho');
+  const {_assinatura,_iniciada_em,...resp}=f.respostas;
+  S.modelo=m; S.ficha={ uuid:f.uuid, modelo_id:f.modelo_id, modelo_versao:f.modelo_versao, contrato:f.contrato, equipe:f.equipe, rodovia:f.rodovia,
+    km_ini:f.km_ini, km_fim:f.km_fim, lat:f.lat, lon:f.lon, gps_precisao:f.gps_precisao, iniciada_em:_iniciada_em, respostas:resp, gravidade:f.gravidade, assinatura:null };
+  guardaRascunho(); desenhaFicha(); vai('ficha');
+}
+
+/* ===== conta ===== */
+function desenhaConta(){
+  $('#ct-nome').innerHTML=`${esc(S.eu?.usuario.nome||'Conta')}<small>${esc(S.eu?.usuario.papel||'')}</small>`;
+  $('#ct-contratos').innerHTML=(S.eu?.contratos||[]).map(c=>`<button type="button" class="li" onclick="escolheContrato(${c.id});desenhaConta()"><div style="min-width:0"><div class="a">${esc(c.numero)}</div><div class="b">${esc(c.descricao)} · ${esc(c.rodovias.join(', '))}</div></div>${S.contrato?.id===c.id?'<span class="pill ok sp">Em uso</span>':''}</button>`).join('')||'<div class="vazio">Nenhum contrato liberado para você.</div>';
+  if(DEMO) desenhaDemo();
+  $('#ct-aparelho').innerHTML=`<span>Rodovias baixadas</span><b>${S.bases.map(b=>'BR-'+b.br+'/'+b.uf).join(', ')||'nenhuma'}</b><span>Modelos de ficha</span><b>${modelosDoContrato().length}</b><span>Versão</span><b>${VERSAO}</b>`;
+}
+
+async function desenhaDemo(){
+  $('#ct-demo').hidden=false; $('#btn-sair').hidden=true;
+  const sel=$('#ct-rod'), atual=S.contrato?.rodovias?.[0]||'BR-226/RN';
+  if(!sel.options.length){
+    try{ const j=await (await fetch('../data/rodovias/index.json')).json();
+      sel.innerHTML=j.roads.map(r=>{ const n=`BR-${r.br}/${r.uf}`; return `<option value="${n}">${n} · ${fmtN(r.km,1)} km</option>` }).join('') }
+    catch{ sel.innerHTML=`<option>${atual}</option>` }
+    sel.onchange=async()=>{ ls.set('fc-demo-rod',sel.value); await atualizaDados(); toast('Rodovia trocada para '+sel.value) };
+  }
+  sel.value=atual;
+}
+async function apagaTestes(){
+  const v=await pergunta('Apagar as fichas de teste?','Todas as fichas feitas neste aparelho somem.',[['Cancelar',0,'ghost'],['Apagar',1]]);
+  if(!v) return;
+  for(const f of await idb.all('fichas')) await idb.del('fichas',f.uuid);
+  ls.del(LS.rascunho); toast('Fichas de teste apagadas');
+}
+
+/* ===== início ===== */
+(async function boot(){
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  S.eu=ls.get(LS.eu);
+  if(DEMO && (!ls.get(LS.token)||!S.eu)){ ls.set(LS.token,'demo'); await atualizaDados() }
+  if(!ls.get(LS.token)||!S.eu){ vai('login'); return }
+  escolheContrato(ls.get(LS.contrato));
+  vai('inicio'); iniciaGps(); statusFila();
+  atualizaDados(); enviaFila();
+})();
+</script>
+</body>
+</html>

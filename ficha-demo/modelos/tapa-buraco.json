@@ -1,0 +1,104 @@
+{
+ "id": "tapa-buraco",
+ "versao": 1,
+ "nome": "Tapa-buraco e remendo",
+ "icone": "patch",
+ "local": "trecho",
+ "ativo": true,
+ "norma": "Reparo localizado do revestimento. Uma linha por buraco, cada uma com seu KM.",
+ "medicao": {
+  "unidade": "m²",
+  "campo": "area_total"
+ },
+ "campos": [
+  {
+   "id": "reparos",
+   "tipo": "grupo",
+   "rotulo": "Reparos",
+   "gps_por_item": true,
+   "campos": [
+    {
+     "id": "tipo",
+     "tipo": "opcoes",
+     "rotulo": "Tipo",
+     "opcoes": [
+      "Tapa-buraco superficial",
+      "Remendo profundo"
+     ]
+    },
+    {
+     "id": "comp",
+     "tipo": "numero",
+     "rotulo": "Comprimento",
+     "unidade": "cm",
+     "min": 0,
+     "max": 2000,
+     "casas": 0
+    },
+    {
+     "id": "larg",
+     "tipo": "numero",
+     "rotulo": "Largura",
+     "unidade": "cm",
+     "min": 0,
+     "max": 2000,
+     "casas": 0
+    },
+    {
+     "id": "prof",
+     "tipo": "numero",
+     "rotulo": "Profundidade",
+     "unidade": "cm",
+     "min": 0,
+     "max": 60,
+     "casas": 0
+    },
+    {
+     "id": "corte",
+     "tipo": "cnc",
+     "rotulo": "Corte retangular, paredes verticais"
+    },
+    {
+     "id": "limpeza",
+     "tipo": "cnc",
+     "rotulo": "Fundo limpo e sem água"
+    },
+    {
+     "id": "pintura",
+     "tipo": "cnc",
+     "rotulo": "Pintura de ligação nas paredes e no fundo"
+    },
+    {
+     "id": "compactado",
+     "tipo": "cnc",
+     "rotulo": "Compactado e nivelado com a pista"
+    }
+   ]
+  },
+  {
+   "id": "area_total",
+   "tipo": "calc",
+   "rotulo": "Área reparada",
+   "unidade": "m²",
+   "formula": "soma(reparos.comp * reparos.larg) / 10000",
+   "casas": 2
+  },
+  {
+   "id": "volume_total",
+   "tipo": "calc",
+   "rotulo": "Volume",
+   "unidade": "m³",
+   "formula": "soma(reparos.comp * reparos.larg * reparos.prof) / 1000000",
+   "casas": 3
+  },
+  {
+   "id": "massa",
+   "tipo": "numero",
+   "rotulo": "Massa utilizada",
+   "unidade": "t",
+   "min": 0,
+   "max": 100,
+   "casas": 2
+  }
+ ]
+}

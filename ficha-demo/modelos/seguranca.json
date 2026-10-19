@@ -1,0 +1,54 @@
+{
+ "id": "seguranca",
+ "versao": 1,
+ "nome": "Segurança da frente",
+ "icone": "shield",
+ "local": "frente",
+ "ativo": false,
+ "norma": "Antes de começar: diálogo diário de segurança e sinalização de obra.",
+ "campos": [
+  {
+   "id": "dds",
+   "tipo": "cnc",
+   "rotulo": "Diálogo diário de segurança feito"
+  },
+  {
+   "id": "tema",
+   "tipo": "opcoes",
+   "rotulo": "Tema",
+   "opcoes": [
+    "Trabalho na pista",
+    "Calor e hidratação",
+    "Máquinas pesadas",
+    "Material quente",
+    "EPI",
+    "Outro"
+   ]
+  },
+  {
+   "id": "participantes",
+   "tipo": "contador",
+   "rotulo": "Participantes"
+  },
+  {
+   "id": "epi",
+   "tipo": "cnc",
+   "rotulo": "EPI completo da equipe"
+  },
+  {
+   "id": "sinal_obra",
+   "tipo": "cnc",
+   "rotulo": "Sinalização provisória conforme o manual do DNIT"
+  },
+  {
+   "id": "pare_siga",
+   "tipo": "cnc",
+   "rotulo": "Pare e siga ou desvio operando"
+  },
+  {
+   "id": "giroflex",
+   "tipo": "cnc",
+   "rotulo": "Veículos com sinal luminoso ligado"
+  }
+ ]
+}

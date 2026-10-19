@@ -1,0 +1,2 @@
+Pasta GERADA pelo repositório wagnerxm/fichacheck (scripts/gera-demo.mjs). Não editar aqui.
+Modo demonstração do Ficha Check: roda sem servidor, as fichas ficam só no aparelho.

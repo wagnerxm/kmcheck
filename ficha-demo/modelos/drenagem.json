@@ -1,0 +1,88 @@
+{
+ "id": "drenagem",
+ "versao": 1,
+ "nome": "Limpeza de drenagem",
+ "icone": "drop",
+ "local": "ponto",
+ "ativo": true,
+ "norma": "Sarjeta, valeta, meio-fio, descida d’água, caixa coletora e bueiro.",
+ "medicao": {
+  "unidade": "conforme dispositivo",
+  "campo": "quantidade"
+ },
+ "campos": [
+  {
+   "id": "dispositivo",
+   "tipo": "opcoes",
+   "rotulo": "Dispositivo",
+   "opcoes": [
+    "Sarjeta",
+    "Valeta",
+    "Meio-fio",
+    "Descida d’água",
+    "Caixa coletora",
+    "Bueiro"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "lado",
+   "tipo": "opcoes",
+   "rotulo": "Lado",
+   "opcoes": [
+    "LD",
+    "LE",
+    "Transversal"
+   ]
+  },
+  {
+   "id": "quantidade",
+   "tipo": "numero",
+   "rotulo": "Quantidade",
+   "unidade_de": {
+    "Caixa coletora": "un",
+    "Bueiro": "un",
+    "*": "m"
+   },
+   "min": 0,
+   "max": 5000,
+   "casas": 1,
+   "obrig": true
+  },
+  {
+   "id": "obstrucao",
+   "tipo": "escala",
+   "rotulo": "Obstrução antes da limpeza",
+   "opcoes": [
+    "0%",
+    "25%",
+    "50%",
+    "75%",
+    "100%"
+   ]
+  },
+  {
+   "id": "escoamento",
+   "tipo": "cnc",
+   "rotulo": "Escoamento livre depois da limpeza"
+  },
+  {
+   "id": "estrutura",
+   "tipo": "cnc",
+   "rotulo": "Estrutura sem erosão nem trinca"
+  },
+  {
+   "id": "bota_fora",
+   "tipo": "cnc",
+   "rotulo": "Material levado para bota-fora autorizado"
+  },
+  {
+   "id": "gravidade",
+   "tipo": "gravidade",
+   "rotulo": "Gravidade do problema",
+   "mostra_se": {
+    "_tem_nc": true
+   }
+  }
+ ]
+}

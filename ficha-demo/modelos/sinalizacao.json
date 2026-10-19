@@ -1,0 +1,47 @@
+{
+ "id": "sinalizacao",
+ "versao": 1,
+ "nome": "Sinalização e defensas",
+ "icone": "sign",
+ "local": "ponto",
+ "ativo": false,
+ "norma": "Inventário e estado de conservação.",
+ "campos": [
+  {
+   "id": "placa",
+   "tipo": "opcoes",
+   "rotulo": "Placa",
+   "opcoes": [
+    "Legível",
+    "Danificada",
+    "Encoberta",
+    "Faltando",
+    "Sem placa no ponto"
+   ],
+   "nc_se": [
+    "Danificada",
+    "Encoberta",
+    "Faltando"
+   ]
+  },
+  {
+   "id": "faixas",
+   "tipo": "cnc",
+   "rotulo": "Faixas pintadas visíveis à noite (visual)"
+  },
+  {
+   "id": "tachas",
+   "tipo": "contador",
+   "rotulo": "Tachas faltando em 100 m"
+  },
+  {
+   "id": "defensa",
+   "tipo": "numero",
+   "rotulo": "Defensa danificada",
+   "unidade": "m",
+   "min": 0,
+   "max": 1000,
+   "casas": 0
+  }
+ ]
+}

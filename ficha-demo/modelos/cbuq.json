@@ -1,0 +1,162 @@
+{
+ "id": "cbuq",
+ "versao": 1,
+ "nome": "Aplicação de CBUQ",
+ "icone": "layers",
+ "local": "trecho",
+ "ativo": true,
+ "norma": "DNIT 031/2006-ES. Espessura média tolerada: ±5% do projeto (item 7.3).",
+ "medicao": {
+  "unidade": "t",
+  "campo": "massa_total"
+ },
+ "campos": [
+  {
+   "id": "lado",
+   "tipo": "opcoes",
+   "rotulo": "Lado",
+   "opcoes": [
+    "LD",
+    "LE",
+    "Ambos"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "largura",
+   "tipo": "numero",
+   "rotulo": "Largura aplicada",
+   "unidade": "m",
+   "min": 0.5,
+   "max": 15,
+   "casas": 2,
+   "padrao": "contrato.largura_faixa_m",
+   "obrig": true
+  },
+  {
+   "id": "area",
+   "tipo": "calc",
+   "rotulo": "Área",
+   "unidade": "m²",
+   "formula": "extensao_m * largura",
+   "casas": 0
+  },
+  {
+   "id": "superficie",
+   "tipo": "cnc",
+   "rotulo": "Superfície limpa e seca"
+  },
+  {
+   "id": "pintura",
+   "tipo": "cnc",
+   "rotulo": "Pintura de ligação executada e curada"
+  },
+  {
+   "id": "sem_chuva",
+   "tipo": "cnc",
+   "rotulo": "Sem chuva no momento da aplicação"
+  },
+  {
+   "id": "cargas",
+   "tipo": "grupo",
+   "rotulo": "Cargas recebidas",
+   "campos": [
+    {
+     "id": "ticket",
+     "tipo": "numero",
+     "rotulo": "Nº do ticket da usina",
+     "casas": 0
+    },
+    {
+     "id": "toneladas",
+     "tipo": "numero",
+     "rotulo": "Massa",
+     "unidade": "t",
+     "min": 0,
+     "max": 40,
+     "casas": 2
+    },
+    {
+     "id": "temp_chegada",
+     "tipo": "numero",
+     "rotulo": "Temperatura na chegada",
+     "unidade": "°C",
+     "min": 0,
+     "max": 250,
+     "casas": 0,
+     "faixa": [
+      "contrato.temp_massa_min",
+      "contrato.temp_massa_max"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "temp_compactacao",
+   "tipo": "numero",
+   "rotulo": "Temperatura no início da compactação",
+   "unidade": "°C",
+   "min": 0,
+   "max": 250,
+   "casas": 0,
+   "faixa": [
+    "contrato.temp_compactacao_min",
+    "contrato.temp_compactacao_max"
+   ]
+  },
+  {
+   "id": "passadas_pneu",
+   "tipo": "contador",
+   "rotulo": "Passadas do rolo de pneus"
+  },
+  {
+   "id": "passadas_liso",
+   "tipo": "contador",
+   "rotulo": "Passadas do rolo liso"
+  },
+  {
+   "id": "acabamento",
+   "tipo": "cnc",
+   "rotulo": "Juntas, acabamento e nivelamento com a pista"
+  },
+  {
+   "id": "cps",
+   "tipo": "contador",
+   "rotulo": "Corpos de prova extraídos"
+  },
+  {
+   "id": "massa_total",
+   "tipo": "calc",
+   "rotulo": "Massa aplicada",
+   "unidade": "t",
+   "formula": "soma(cargas.toneladas)",
+   "casas": 2
+  },
+  {
+   "id": "consumo",
+   "tipo": "calc",
+   "rotulo": "Consumo",
+   "unidade": "kg/m²",
+   "formula": "massa_total * 1000 / area",
+   "casas": 0
+  },
+  {
+   "id": "espessura_est",
+   "tipo": "calc",
+   "rotulo": "Espessura estimada pela massa",
+   "unidade": "cm",
+   "formula": "consumo / (contrato.densidade_cbuq_t_m3 * 10)",
+   "casas": 1,
+   "confere": {
+    "alvo": "contrato.espessura_projeto_cm",
+    "tolerancia": 0.05,
+    "mensagem": "Espessura estimada fora de ±5% do projeto"
+   }
+  },
+  {
+   "id": "liberacao",
+   "tipo": "hora",
+   "rotulo": "Liberação ao tráfego"
+  }
+ ]
+}

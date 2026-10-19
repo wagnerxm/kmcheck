@@ -1,0 +1,76 @@
+{
+ "id": "rocada",
+ "versao": 1,
+ "nome": "Roçada e capina",
+ "icone": "leaf",
+ "local": "trecho",
+ "ativo": true,
+ "norma": "Faixa de domínio e canteiros. Medida em área.",
+ "medicao": {
+  "unidade": "ha",
+  "campo": "area_ha"
+ },
+ "campos": [
+  {
+   "id": "servico",
+   "tipo": "opcoes",
+   "rotulo": "Serviço",
+   "opcoes": [
+    "Roçada manual",
+    "Roçada mecanizada",
+    "Capina"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "lado",
+   "tipo": "opcoes",
+   "rotulo": "Lado",
+   "opcoes": [
+    "LD",
+    "LE",
+    "Canteiro",
+    "Ambos"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "largura",
+   "tipo": "numero",
+   "rotulo": "Largura média",
+   "unidade": "m",
+   "min": 0,
+   "max": 60,
+   "casas": 1,
+   "obrig": true
+  },
+  {
+   "id": "area_ha",
+   "tipo": "calc",
+   "rotulo": "Área",
+   "unidade": "ha",
+   "formula": "extensao_m * largura * lados / 10000",
+   "casas": 3
+  },
+  {
+   "id": "altura",
+   "tipo": "cnc",
+   "rotulo": "Altura remanescente dentro do especificado"
+  },
+  {
+   "id": "dispositivos",
+   "tipo": "cnc",
+   "rotulo": "Placas, marcos, defensas e drenagem liberados"
+  },
+  {
+   "id": "residuos",
+   "tipo": "cnc",
+   "rotulo": "Resíduos retirados da pista, acostamento e drenagem"
+  },
+  {
+   "id": "sinalizacao",
+   "tipo": "cnc",
+   "rotulo": "Sinalização provisória montada durante o serviço"
+  }
+ ]
+}

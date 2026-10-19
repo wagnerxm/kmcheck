@@ -1,0 +1,123 @@
+{
+ "id": "rdo",
+ "versao": 1,
+ "nome": "Diário de obra (RDO)",
+ "icone": "book",
+ "local": "frente",
+ "ativo": true,
+ "norma": "Um por frente, por dia. Base para medição e para pleitos de prazo.",
+ "campos": [
+  {
+   "id": "tempo_manha",
+   "tipo": "opcoes",
+   "rotulo": "Tempo de manhã",
+   "opcoes": [
+    "Bom",
+    "Nublado",
+    "Chuva",
+    "Impraticável"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "tempo_tarde",
+   "tipo": "opcoes",
+   "rotulo": "Tempo à tarde",
+   "opcoes": [
+    "Bom",
+    "Nublado",
+    "Chuva",
+    "Impraticável"
+   ],
+   "obrig": true
+  },
+  {
+   "id": "efetivo",
+   "tipo": "grupo-fixo",
+   "rotulo": "Efetivo",
+   "itens": [
+    "Encarregado",
+    "Operador",
+    "Motorista",
+    "Rasteleiro",
+    "Servente",
+    "Outros"
+   ],
+   "campo": {
+    "tipo": "contador",
+    "unidade": "pessoas"
+   }
+  },
+  {
+   "id": "equipamentos",
+   "tipo": "grupo",
+   "rotulo": "Equipamentos",
+   "campos": [
+    {
+     "id": "equipamento",
+     "tipo": "opcoes",
+     "rotulo": "Equipamento",
+     "opcoes_de": "contrato.equipamentos"
+    },
+    {
+     "id": "situacao",
+     "tipo": "opcoes",
+     "rotulo": "Situação",
+     "opcoes": [
+      "Em operação",
+      "Parado",
+      "Em manutenção"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "paralisacao",
+   "tipo": "opcoes",
+   "rotulo": "Houve paralisação?",
+   "opcoes": [
+    "Não",
+    "Chuva",
+    "Falta de material",
+    "Tráfego",
+    "Quebra de equipamento",
+    "Outro"
+   ],
+   "nc_se": []
+  },
+  {
+   "id": "horas_paradas",
+   "tipo": "numero",
+   "rotulo": "Horas paradas",
+   "unidade": "h",
+   "min": 0,
+   "max": 24,
+   "casas": 1,
+   "mostra_se": {
+    "paralisacao": "!Não"
+   }
+  },
+  {
+   "id": "servicos",
+   "tipo": "calc",
+   "rotulo": "Serviços do dia",
+   "formula": "fichas_do_dia"
+  },
+  {
+   "id": "ocorrencias",
+   "tipo": "texto",
+   "rotulo": "Ocorrências e pedidos da fiscalização",
+   "voz": true
+  },
+  {
+   "id": "ass_encarregado",
+   "tipo": "assinatura",
+   "rotulo": "Encarregado"
+  },
+  {
+   "id": "ass_fiscal",
+   "tipo": "assinatura",
+   "rotulo": "Fiscal"
+  }
+ ]
+}
