@@ -757,6 +757,23 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #dlg-svc .ctaddrow{margin-top:8px!important;padding-top:8px}
 #dlg-svc .ctautorow{padding:8px 0 0}
 #dlg-svc #svc-close{margin-top:8px!important;padding-block:12px}
+/* contratos minimizáveis (seta): na maioria das vezes o contrato já entra sozinho pelo automático, então a
+   pessoa recolhe a parte dos contratos e a lista de serviços ganha o espaço. Recolhido, fica uma linha com o
+   contrato em uso; tocar nela ou na seta abre de novo. A escolha fica guardada (kc-ct-min). */
+.ctsec{display:flex;align-items:center;gap:10px;margin:10px 0 5px;min-height:30px}
+#dlg-svc #svc-grid+.row{margin-top:8px!important}
+#dlg-svc .ctsec h2.sec{margin:0;flex:0 0 auto}
+.ctresumo{display:none;flex:1;min-width:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font:600 13px var(--mono);color:var(--gold2);cursor:pointer}
+.ctresumo.vazio{font-family:var(--sans);font-weight:500;color:var(--mut)}
+.ctminbtn{margin-left:auto;flex:0 0 auto;width:44px;height:30px;border-radius:999px;border:1px solid var(--line);background:none;
+  color:var(--text);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ctminbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+#dlg-svc.ctmin-on .ctminbtn svg{transform:rotate(180deg)}   /* recolhido: seta para cima = abrir */
+#dlg-svc.ctmin-on #ct-corpo{display:none}
+#dlg-svc.ctmin-on .ctsec{margin-bottom:0}
+#dlg-svc.ctmin-on .ctresumo{display:block}
+#dlg-svc.ctmin-on .ctresumo~.ctminbtn{margin-left:0}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
 #gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:51;display:none;flex-direction:column;
@@ -1686,13 +1703,19 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button class="btn small gold" id="svc-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
 
-  <h2 class="sec" style="margin-top:14px">Contrato</h2>
+  <div class="ctsec">
+    <h2 class="sec">Contrato</h2>
+    <span class="ctresumo" id="ct-resumo"></span>
+    <button class="ctminbtn" id="ct-min" aria-expanded="true" aria-controls="ct-corpo" aria-label="Minimizar contratos" title="Minimizar contratos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+  </div>
+  <div id="ct-corpo">
   <div class="pk-list" id="ctlist2"></div>
   <div class="row ctaddrow">
     <input type="text" id="ct-new2" placeholder="ex.: 14 00546/2026" aria-label="Novo contrato" style="flex:1">
     <button class="btn small gold" id="ct-add2" style="flex:0 0 auto">Adicionar</button>
   </div>
   <label class="listrow ctautorow" style="display:none" title="Ligada: os contratos vinculados entram sozinhos.&#10;Desligada: nenhum entra sozinho.&#10;Escolher um contrato à mão desliga esta chave."><span class="ltext"><b>Automático</b><i>Deixa todos os contratos vinculados no automático.</i></span><input type="checkbox" class="ctauto-cb" aria-label="Automático geral. Ligada: os contratos vinculados entram sozinhos. Desligada: nenhum entra sozinho. Escolher um contrato à mão desliga esta chave."></label>
+  </div>
 
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
 </dialog>
@@ -5496,7 +5519,9 @@ function renderSvcGrid(){
    nunca abaixo de ~2,5 itens: o item cortado ao meio mostra que a lista rola. */
 function ajustarListasSvc(){
   const dlg=document.getElementById('dlg-svc');
-  const L=[[document.getElementById('svc-grid'),5],[document.getElementById('ctlist2'),3]];
+  /* contratos recolhidos: os serviços ocupam todo o espaço que sobrar (sem limite de 5) */
+  const L=ctMin() ? [[document.getElementById('svc-grid'),Infinity]]
+    : [[document.getElementById('svc-grid'),5],[document.getElementById('ctlist2'),3]];
   const alt=(el,n)=>{ const it=[...el.children]; let h=0; for(let i=0;i<Math.min(n,it.length);i++) h+=it[i].offsetHeight; return h };
   const cheio=L.map(([el,n])=>{ el.style.maxHeight='none'; return el.children.length>n ? alt(el,n)+2 : 0 });
   L.forEach(([el],i)=>{ if(cheio[i]) el.style.maxHeight=cheio[i]+'px' });
@@ -5505,10 +5530,28 @@ function ajustarListasSvc(){
   /* tira das duas na proporção do que cada uma pode ceder (uma não some enquanto a outra fica inteira) */
   const folga=L.map(([el])=>{ if(el.children.length<=2) return 0;
     return Math.max(0, el.offsetHeight-(alt(el,2)+el.children[2].offsetHeight/2+2)) });
-  const tot=folga[0]+folga[1]; if(!tot) return;
+  const tot=folga.reduce((a,b)=>a+b,0); if(!tot) return;
   L.forEach(([el],i)=>{ if(folga[i]) el.style.maxHeight=(el.offsetHeight-Math.min(folga[i], Math.ceil(sobra*folga[i]/tot)))+'px' });
 }
-document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); showDlg(document.getElementById('dlg-svc')); ajustarListasSvc() };
+/* contratos recolhidos (seta) — ver .ctsec no CSS */
+function ctMin(){ return localStorage.getItem('kc-ct-min')==='1' }
+function paintCtMin(){
+  const dlg=document.getElementById('dlg-svc'), m=ctMin(), b=document.getElementById('ct-min'), r=document.getElementById('ct-resumo');
+  dlg.classList.toggle('ctmin-on', m);
+  b.setAttribute('aria-expanded', String(!m));
+  b.setAttribute('aria-label', m?'Mostrar contratos':'Minimizar contratos'); b.title=b.getAttribute('aria-label');
+  /* recolhido: mostra o contrato em uso (e se entrou pelo automático) para conferir sem abrir */
+  const c=getContract(), auto=c && ctAutoOn() && ctAutoFor(c) && (getCtLinks()[c]||[]).length;
+  r.textContent=c ? c+(auto?' · AUTO':'') : 'nenhum';
+  r.classList.toggle('vazio', !c);
+}
+function toggleCtMin(){
+  try{ localStorage.setItem('kc-ct-min', ctMin()?'0':'1') }catch(e){}
+  paintCtMin(); ajustarListasSvc();
+}
+document.getElementById('ct-min').onclick=toggleCtMin;
+document.getElementById('ct-resumo').onclick=toggleCtMin;
+document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContracts2(); paintCtMin(); showDlg(document.getElementById('dlg-svc')); ajustarListasSvc() };
 document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
 document.getElementById('rotlock-ok').onclick=()=>document.getElementById('dlg-rotlock').close();
 document.getElementById('rotlock-never').onclick=()=>{ localStorage.setItem('kc-rotlock-never','1'); document.getElementById('dlg-rotlock').close(); };
@@ -5533,7 +5576,7 @@ function renderContracts2(){
     wireCtItems(el);
   }
   renderCtMode();
-  if(document.getElementById('dlg-svc').open) ajustarListasSvc();
+  if(document.getElementById('dlg-svc').open){ paintCtMin(); ajustarListasSvc() }
 }
 document.getElementById('ct-add2').onclick=()=>addContract(document.getElementById('ct-new2'));
 
