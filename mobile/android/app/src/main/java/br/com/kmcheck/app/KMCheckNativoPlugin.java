@@ -203,6 +203,55 @@ public class KMCheckNativoPlugin extends Plugin {
         }
     }
 
+    /**
+     * Várias fotos de uma vez (seleção na galeria do app). Em duas etapas para não passar todas as fotos pela
+     * ponte JS↔nativo numa chamada só (dezenas de MB em base64 estouravam a memória do celular fraco):
+     * compartilharPreparar grava UMA foto por chamada (primeiro=true limpa as da vez anterior) e
+     * compartilharVarios abre o "Compartilhar" do Android com todas. Fica em compartilhar/varios/, dentro da
+     * pasta que o FileProvider já libera (res/xml), então não abre nada novo do armazenamento.
+     */
+    @PluginMethod
+    public void compartilharPreparar(PluginCall call) {
+        String nome = nomeSeguro(call.getString("nome"), "km-check.jpg");
+        byte[] dados = decodifica(call);
+        if (dados == null) return;
+        try {
+            File dir = new File(new File(getContext().getCacheDir(), "compartilhar"), "varios");
+            if (Boolean.TRUE.equals(call.getBoolean("primeiro", false))) {
+                File[] velhos = dir.listFiles();
+                if (velhos != null) for (File v : velhos) v.delete();
+            }
+            if (!dir.exists()) dir.mkdirs();
+            try (FileOutputStream os = new FileOutputStream(new File(dir, nome))) { os.write(dados); }
+            call.resolve();
+        } catch (Throwable e) {
+            call.reject("Não consegui preparar a foto: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void compartilharVarios(PluginCall call) {
+        String titulo = call.getString("titulo", "Compartilhar");
+        try {
+            File dir = new File(new File(getContext().getCacheDir(), "compartilhar"), "varios");
+            File[] fotos = dir.listFiles();
+            if (fotos == null || fotos.length == 0) { call.reject("Nenhuma foto preparada."); return; }
+            java.util.Arrays.sort(fotos, (a, b) -> a.getName().compareTo(b.getName()));
+            java.util.ArrayList<Uri> uris = new java.util.ArrayList<>();
+            for (File f : fotos) uris.add(FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f));
+            Intent envio = new Intent(Intent.ACTION_SEND_MULTIPLE);
+            envio.setType("image/jpeg");
+            envio.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+            envio.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent escolha = Intent.createChooser(envio, titulo);
+            escolha.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getActivity().startActivity(escolha);
+            call.resolve();
+        } catch (Throwable e) {
+            call.reject("Não consegui compartilhar: " + e.getMessage());
+        }
+    }
+
     /** Mantém a tela acesa enquanto o app está aberto (acompanhar o KM dirigindo). */
     @PluginMethod
     public void telaAcesa(PluginCall call) {

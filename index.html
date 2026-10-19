@@ -888,7 +888,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .gg-dia{padding:12px 13px 6px;font:700 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:#8791a3}
 .gg-g{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
 @media (min-width:600px){ .gg-g{grid-template-columns:repeat(5,1fr)} }
-.gg-ft{position:relative;aspect-ratio:3/4;border-radius:4px;overflow:hidden;background:#15181a;border:0;padding:0;cursor:pointer;display:block;width:100%}
+/* miniatura em 4:3 deitado: mais fotos por tela (a foto aparece inteira ao abrir) */
+.gg-ft{position:relative;aspect-ratio:4/3;border-radius:4px;overflow:hidden;background:#15181a;border:0;padding:0;cursor:pointer;display:block;width:100%}
+.gg-ft{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* segurar o dedo = selecionar, não o menu de imagem do iPhone */
 .gg-ft img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .2s}
 .gg-ft img.ok{opacity:1}
 .gg-ft .km{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 5px;font:700 10px var(--sans);color:#fff;text-align:left;
@@ -896,6 +898,34 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .gg-ft .sv{position:absolute;top:5px;left:5px;max-width:calc(100% - 10px);padding:2px 7px;border-radius:999px;background:rgba(0,0,0,.62);
   font:700 9px var(--sans);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gg-vazio{padding:48px 28px;text-align:center;color:#8791a3;font-size:13px;line-height:1.5}
+/* ---- seleção de várias fotos (Selecionar → marcar → Compartilhar) ----
+   verde-limão fixo (como o carrossel): a grade é preta nos dois temas e o --gold do tema claro é cinza-azulado */
+#gg-sel{flex:0 0 auto;height:40px;padding:0 13px;border-radius:999px;cursor:pointer;font:600 12.5px var(--sans);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;white-space:nowrap}
+#galgrid.sel #gg-sel{background:#b7d92d;border-color:#b7d92d;color:#0d0f08}
+#galgrid.sel #gal-clean{display:none}
+#gg-todas{display:none}
+#galgrid.sel #gg-todas{display:block;flex:0 0 auto;height:40px;padding:0 12px;border-radius:999px;cursor:pointer;font:600 12.5px var(--sans);
+  background:none;border:1px solid rgba(255,255,255,.18);color:#fff;white-space:nowrap}
+/* celular estreito: o "Limpar" fica só com o ícone para caber o "Selecionar" */
+@media (max-width:380px){ #galgrid #gal-clean span{display:none} #galgrid #gal-clean{padding:0 11px}
+  .gg-topo{gap:8px} #gg-sel,#galgrid.sel #gg-todas{padding:0 10px} }
+.gg-ft .ck{display:none;position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;
+  background:rgba(0,0,0,.35);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+#galgrid.sel .gg-ft .ck{display:block}
+.gg-ft.marcada .ck{background:#b7d92d;border-color:#b7d92d}
+.gg-ft.marcada .ck::after{content:'';position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #0d0f08;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.gg-ft.marcada::before{content:'';position:absolute;inset:0;z-index:1;border:3px solid #b7d92d;border-radius:4px;background:rgba(183,217,45,.12);pointer-events:none}
+.gg-ft .ck,.gg-ft .sv,.gg-ft .km{z-index:2}
+/* barra de baixo do modo seleção: aparece com pelo menos uma foto marcada */
+#gg-barra{display:none;position:absolute;left:0;right:0;bottom:0;z-index:3;justify-content:center;
+  padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,rgba(0,0,0,.85) 40%);pointer-events:none}
+#galgrid.sel.tem #gg-barra{display:flex}
+#galgrid.sel.tem #gg-lista{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+#gg-comp{pointer-events:auto;display:flex;align-items:center;gap:8px;height:50px;padding:0 24px;border-radius:999px;border:0;cursor:pointer;
+  background:#b7d92d;color:#0d0f08;font:800 15px var(--sans);box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#gg-comp svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#gg-comp:disabled{opacity:.6}
 /* escolha de um filtro (rodovia, serviço, contrato, dia) ou da faixa de KM */
 #dlg-galf .pk-list{max-height:min(320px,52dvh)}
 #dlg-galf .ct-item .cnt{margin-left:auto;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
@@ -1865,7 +1895,9 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 <div id="galgrid" role="dialog" aria-modal="true" aria-label="Fotos">
   <div class="gg-topo">
     <button id="gg-close" aria-label="Fechar fotos"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
-    <div class="gg-tit"><b>Fotos</b><i id="gg-total"></i></div>
+    <div class="gg-tit"><b id="gg-titulo">Fotos</b><i id="gg-total"></i></div>
+    <button id="gg-todas">Todas</button>
+    <button id="gg-sel" aria-pressed="false">Selecionar</button>
     <button id="gal-clean" aria-label="Limpar galeria: apagar do app as fotos já salvas no celular"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.9 12.1A2 2 0 0 0 9.4 21h5.2a2 2 0 0 0 2-1.9L17.5 7"/></svg><span>Limpar</span></button>
   </div>
   <div class="gg-busca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>
@@ -1874,6 +1906,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div class="gg-chips" id="gg-chips"></div>
   <div class="gg-res" id="gg-res" aria-live="polite"></div>
   <div id="gg-lista"></div>
+  <div id="gg-barra"><button id="gg-comp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg><span id="gg-comp-t">Compartilhar</span></button></div>
 </div>
 <dialog id="dlg-galf" aria-labelledby="galf-tit">
   <h2 class="sec" id="galf-tit" style="margin-top:0"></h2>
@@ -5949,7 +5982,7 @@ document.getElementById('gal-clean').onclick=async()=>{
   if(antigas.length && await askLegacyPhotos(antigas.length, salvas.length>0)) apagar.push(...antigas);
   if(!apagar.length) return;
   try{
-    for(const m of apagar){ await deletePhoto(m.id); ggSoltaThumb(m.id) }
+    for(const m of apagar){ await deletePhoto(m.id); ggSoltaThumb(m.id); ggSel.delete(m.id) }
     galTodas=galTodas.filter(m=>!apagar.includes(m));
     if(!galTodas.length){ fechaGrade(); return }
     ggRender(true);
@@ -6209,6 +6242,7 @@ async function openGrade(){
   ggRender(true);
 }
 function fechaGrade(){
+  ggModoSel(false);
   document.getElementById('galgrid').classList.remove('on');
   ggObs && ggObs.disconnect();
   for(const u of _ggUrls.values()) URL.revokeObjectURL(u);
@@ -6265,15 +6299,96 @@ function ggRender(rolarTopo){
     const hora=new Date(m.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     const pl=[f.pista,f.lado].filter(Boolean).join(' ');
     const rot=f.km!=null ? _kmTxt(f)+(pl?' · '+pl:'') : hora;
-    h+='<button class="gg-ft" data-i="'+i+'" data-id="'+m.id+'" aria-label="'+_esc((rot+(f.svc?', '+f.svc:'')+', '+hora))+'"><img alt="">'+
-      (f.svc?'<span class="sv">'+_esc(f.svc)+'</span>':'')+'<span class="km">'+_esc(rot)+'</span></button>';
+    h+='<button class="gg-ft'+(ggSel.has(m.id)?' marcada':'')+'" data-i="'+i+'" data-id="'+m.id+'" aria-label="'+_esc((rot+(f.svc?', '+f.svc:'')+', '+hora))+'"><img alt="">'+
+      (f.svc?'<span class="sv">'+_esc(f.svc)+'</span>':'')+'<span class="km">'+_esc(rot)+'</span><span class="ck" aria-hidden="true"></span></button>';
   });
   L.innerHTML=h+'</div>';
   if(rolarTopo) L.scrollTop=0;
-  ggObserva();
+  ggObserva(); ggSelPinta();
 }
 /* clique na grade: abre o carrossel naquela foto */
-document.getElementById('gg-lista').onclick=e=>{ const b=e.target.closest('.gg-ft'); if(b) openCarrossel(+b.dataset.i) };
+document.getElementById('gg-lista').onclick=e=>{
+  const b=e.target.closest('.gg-ft'); if(!b) return;
+  if(_ggSegurou){ _ggSegurou=false; return }   // o toque que terminou o "segurar" não abre a foto
+  if(ggSelOn) ggMarca(b); else openCarrossel(+b.dataset.i);
+};
+/* ---- seleção de várias fotos: "Selecionar" no topo ou segurar o dedo numa foto ---- */
+let ggSelOn=false, _ggSegurou=false; const ggSel=new Set();
+const _ggArq=new Map();   // id → File já lido (navegador): o navigator.share precisa sair no próprio toque, sem esperar o banco
+function ggModoSel(on){
+  ggSelOn=on; if(!on){ ggSel.clear(); _ggArq.clear() }
+  document.getElementById('galgrid').classList.toggle('sel', on);
+  document.getElementById('gg-sel').textContent=on?'Cancelar':'Selecionar';
+  document.getElementById('gg-sel').setAttribute('aria-pressed', String(on));
+  document.querySelectorAll('#gg-lista .gg-ft.marcada').forEach(b=>b.classList.remove('marcada'));
+  ggSelPinta();
+}
+function ggMarca(b, forca){
+  const id=+b.dataset.id, on=forca!=null ? forca : !ggSel.has(id);
+  if(on){ ggSel.add(id); if(!NATIVO) ggPreLe(id) } else { ggSel.delete(id); _ggArq.delete(id) }
+  b.classList.toggle('marcada', on); ggSelPinta();
+}
+function ggSelPinta(){
+  const n=ggSel.size, g=document.getElementById('galgrid');
+  g.classList.toggle('tem', ggSelOn && n>0);
+  /* em seleção: o número grande e "selecionadas" embaixo, pequeno ("10 selecionadas" inteiro não cabia em 320 px) */
+  document.getElementById('gg-titulo').textContent = ggSelOn ? String(n) : 'Fotos';
+  document.getElementById('gg-total').textContent = ggSelOn ? (n===1?'selecionada':'selecionadas') : galTodas.length+(galTodas.length===1?' foto no app':' fotos no app');
+  document.getElementById('gg-comp-t').textContent='Compartilhar'+(n>1?' '+n+' fotos':'');
+  const todas=galFiltradas.length && galFiltradas.every(m=>ggSel.has(m.id));
+  document.getElementById('gg-todas').textContent=todas?'Nenhuma':'Todas';
+}
+async function ggPreLe(id){
+  try{ const m=galTodas.find(x=>x.id===id), b=await getPhotoBlob(id); if(b && ggSel.has(id)) _ggArq.set(id, new File([b], m.name, {type:'image/jpeg'})) }catch(e){}
+}
+document.getElementById('gg-sel').onclick=()=>ggModoSel(!ggSelOn);
+document.getElementById('gg-todas').onclick=()=>{
+  const todas=galFiltradas.every(m=>ggSel.has(m.id));
+  document.querySelectorAll('#gg-lista .gg-ft').forEach(b=>ggMarca(b, !todas));
+};
+/* segurar o dedo ~0,5 s numa foto liga a seleção já com ela marcada (como na galeria do celular) */
+(function(){
+  const L=document.getElementById('gg-lista'); let tm=0, x0=0, y0=0;
+  L.addEventListener('pointerdown', e=>{ const b=e.target.closest('.gg-ft'); if(!b || ggSelOn) return; x0=e.clientX; y0=e.clientY;
+    tm=setTimeout(()=>{ tm=0; _ggSegurou=true; ggModoSel(true); ggMarca(b, true); if(NATIVO && NATIVO.ios) NATIVO.chama('vibrar',{}).catch(()=>{}); else if(navigator.vibrate) navigator.vibrate(15) }, 480) });
+  const solta=()=>{ clearTimeout(tm); tm=0 };
+  L.addEventListener('pointermove', e=>{ if(tm && Math.hypot(e.clientX-x0, e.clientY-y0)>10) solta() });
+  L.addEventListener('pointerup', solta); L.addEventListener('pointercancel', solta);
+  L.addEventListener('contextmenu', e=>{ if(e.target.closest('.gg-ft')) e.preventDefault() });   // o menu do "segurar" do navegador
+})();
+/* compartilha as marcadas, na ordem da grade (mais nova primeiro) */
+document.getElementById('gg-comp').onclick=async()=>{
+  const ms=galFiltradas.filter(m=>ggSel.has(m.id)); if(!ms.length) return;
+  const btn=document.getElementById('gg-comp'), txt=document.getElementById('gg-comp-t'); let ok=false;
+  try{
+    if(NATIVO){
+      /* uma foto por chamada (a ponte com o nativo não aguenta dezenas de MB de uma vez) */
+      btn.disabled=true;
+      for(const [i,m] of ms.entries()){
+        txt.textContent='Preparando '+(i+1)+' de '+ms.length+'…';
+        const b=await getPhotoBlob(m.id); if(!b) continue;
+        await NATIVO.chama('compartilharPreparar',{nome:m.name, mime:'image/jpeg', base64:await blobB64(b), primeiro:i===0});
+      }
+      const r=await NATIVO.chama('compartilharVarios',{titulo:'Compartilhar '+ms.length+(ms.length===1?' foto':' fotos')});
+      ok = r && r.concluido===false ? false : 'share';   // iPhone: cancelou = continua como estava (no Android r vem vazio)
+    } else {
+      const files=[];
+      for(const m of ms){ let f=_ggArq.get(m.id); if(!f){ const b=await getPhotoBlob(m.id); if(b) f=new File([b], m.name, {type:'image/jpeg'}) } if(f) files.push(f) }
+      if(navigator.canShare && navigator.canShare({files})){
+        ok=await navigator.share({files}).then(()=>'share', e=>{ if(e.name!=='AbortError') throw e; return false });
+      } else {   // computador: baixa uma por uma
+        for(const f of files){ _downloadDirect(f, f.name); await new Promise(r=>setTimeout(r,350)) }
+        ok='baixou';
+      }
+    }
+    if(ok) for(const m of ms) if(!m.saved){
+      if(ok==='share'){ m.comp=true; m.legacy=false; await markPhotoSaved(m.id,'share') }
+      else { m.saved=true; m.comp=false; m.legacy=false; await markPhotoSaved(m.id) }
+    }
+    if(ok) ggModoSel(false);
+  }catch(e){ console.error('[KMCheck] compartilhar várias:', e); toast('⚠ Não consegui compartilhar as fotos.') }
+  finally{ btn.disabled=false; ggSelPinta() }
+};
 /* ---- miniaturas: só as que aparecem na tela, uma por vez (cada foto inteira tem ~3 MB; o celular fraco
    não aguenta abrir dezenas juntas). A miniatura fica guardada na ficha: na próxima vez abre na hora. ---- */
 const _ggUrls=new Map(), _ggFila=[]; let ggObs=null, _ggRodando=false;
@@ -6433,7 +6548,7 @@ document.getElementById('gal-del').onclick=async()=>{
   try{
     await deletePhoto(m.id);
     galMetas.splice(galIdx,1);
-    galTodas=galTodas.filter(x=>x.id!==m.id); galFiltradas=galFiltradas.filter(x=>x.id!==m.id); ggSoltaThumb(m.id);
+    galTodas=galTodas.filter(x=>x.id!==m.id); galFiltradas=galFiltradas.filter(x=>x.id!==m.id); ggSoltaThumb(m.id); ggSel.delete(m.id);
     if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) }
     if(!galMetas.length){ document.getElementById('gal-close').click(); return }
     if(galIdx>=galMetas.length) galIdx=galMetas.length-1;
@@ -7601,7 +7716,7 @@ function showInstallPrompt(){
     if(aberto.bv()){ fechaBoasVindas(true); return }
     if(aberto.manual()){ fechaManual(); return }
     if(aberto.galeria()){ $id('gal-close').click(); return }
-    if(aberto.grade()){ fechaGrade(); return }
+    if(aberto.grade()){ if(ggSelOn) ggModoSel(false); else fechaGrade(); return }
     if(aberto.carro()){ closeCar(); return }
     if(aberto.camera()){ closeCam(); return }
     if(aberto.tela()){ goToScreen('scr-cam'); return }

@@ -30,6 +30,8 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "salvarImagem", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "salvarArquivo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "compartilhar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "compartilharPreparar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "compartilharVarios", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "telaAcesa", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "idAparelho", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "localizacao", returnType: CAPPluginReturnPromise),
@@ -157,9 +159,46 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Não consegui compartilhar: " + error.localizedDescription)
             return
         }
+        abreFolha(call, [arquivo])
+    }
+
+    /**
+     * Várias fotos de uma vez (seleção na galeria do app), em duas etapas para não passar todas pela ponte
+     * JS↔nativo numa chamada só (dezenas de MB em base64): compartilharPreparar grava UMA foto por chamada
+     * (primeiro=true limpa as da vez anterior) e compartilharVarios abre a folha com todas. Resolve como o
+     * compartilhar: { concluido, destino }.
+     */
+    private static let pastaVarios = "compartilhar-varios"
+
+    @objc func compartilharPreparar(_ call: CAPPluginCall) {
+        guard let dados = decodifica(call) else { return }
+        let nome = nomeSeguro(call.getString("nome", "km-check.jpg"))
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent(Self.pastaVarios, isDirectory: true)
+        do {
+            if call.getBool("primeiro", false) { try? fm.removeItem(at: dir) }
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+            try dados.write(to: dir.appendingPathComponent(nome), options: .atomic)
+            call.resolve()
+        } catch {
+            call.reject("Não consegui preparar a foto: " + error.localizedDescription)
+        }
+    }
+
+    @objc func compartilharVarios(_ call: CAPPluginCall) {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent(Self.pastaVarios, isDirectory: true)
+        let fotos = ((try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        if fotos.isEmpty { call.reject("Nenhuma foto preparada."); return }
+        abreFolha(call, fotos)
+    }
+
+    /** a folha "Compartilhar" do iOS com os arquivos; resolve quando ela fecha */
+    private func abreFolha(_ call: CAPPluginCall, _ itens: [URL]) {
         DispatchQueue.main.async { [weak self] in
             guard let base = self?.bridge?.viewController else { call.reject("Não consegui compartilhar."); return }
-            let folha = UIActivityViewController(activityItems: [arquivo], applicationActivities: nil)
+            let folha = UIActivityViewController(activityItems: itens, applicationActivities: nil)
             /* iPad (e iPhone rodando em iPad): a folha é um popover e precisa de âncora, senão o app fecha */
             if let pop = folha.popoverPresentationController {
                 pop.sourceView = base.view
