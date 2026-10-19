@@ -604,6 +604,31 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   height:30px;padding:0 clamp(7px, calc(3.4vw - 1px), 11px);font-size:11.5px;border:1px solid rgba(255,255,255,.28)}
 #cam-logo.on{border-color:transparent}
 #cam-logo.none{border-style:dashed}
+/* "?" (o que é PD, PC, LE e LD): espelho do LOGO, na borda esquerda da linha do formato, logo acima do PD/LE */
+#cam-ajuda{position:absolute;left:calc(10px + env(safe-area-inset-left, 0px));top:4px;bottom:0;margin:auto 0;
+  width:30px;height:30px;padding:0;font-size:14px;border:1px solid rgba(255,255,255,.28)}
+/* janela "Pista e lado": clara nos dois temas, no visual do "Sobre o KM Check" (cinza-claro e cartões brancos) */
+#dlg-pista{color:#1c2333;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;background:#f1f2f2;
+  padding:16px 16px 14px;max-width:min(calc(100vw - 32px),400px);box-shadow:0 24px 60px -20px rgba(10,14,22,.55)}
+#dlg-pista .pl-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+#dlg-pista h3{margin:0;font-size:17px;font-weight:800;letter-spacing:-.02em;color:#1c2333}
+#dlg-pista .pl-x{width:32px;height:32px;border-radius:50%;border:1px solid #dfe3e8;background:rgba(255,255,255,.85);color:#1c2333;
+  display:grid;place-items:center;cursor:pointer;flex:0 0 auto;box-shadow:0 4px 12px -6px rgba(28,35,51,.35)}
+#dlg-pista .pl-x svg{width:11px;height:11px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+#dlg-pista h2.sec{margin:0 0 4px;color:#6f8a0e;font-size:10px}
+#dlg-pista h2.sec.pl-lado{margin-top:12px}
+#dlg-pista .pl-nota{font-size:11.5px;color:#5c6678;line-height:1.4;margin:0 2px 6px}
+#dlg-pista .pl-nota b{color:#1c2333}
+#dlg-pista .pl-box{background:rgba(255,255,255,.92);border:1px solid #e3e6ea;border-radius:14px;box-shadow:0 12px 28px -20px rgba(28,35,51,.45);overflow:hidden}
+#dlg-pista .pl-it{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid #eceef1}
+#dlg-pista .pl-it:last-child{border-bottom:0}
+#dlg-pista .pl-sg{flex:0 0 auto;width:36px;height:26px;border-radius:8px;background:#1c2333;color:#fff;
+  display:flex;align-items:center;justify-content:center;font:700 11px var(--sans);letter-spacing:.02em}
+#dlg-pista .pl-tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+#dlg-pista .pl-tx b{font-size:13.5px;color:#1c2333}
+#dlg-pista .pl-tx i{font-style:normal;font-size:11.5px;color:#5c6678;line-height:1.3}
+#dlg-pista .pl-dica{font-size:11.5px;color:#3b4559;line-height:1.45;margin:10px 2px 0}
+#dlg-pista .pl-ex{margin-top:6px;padding:7px 10px;border-radius:9px;background:#1c2333;color:#fff;font:700 12px Arial,Helvetica,sans-serif;white-space:pre}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
 #camflashfx{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60}
@@ -697,13 +722,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .cbmini svg{width:17px;height:17px}
 /* 2×2 ao lado do "i", na ordem pedida pelo Wagner: em cima PD PC, embaixo LE LD (o esquerdo à esquerda).
    Ocupa a mesma largura de antes (2 botões + vão) e cada linha cabe na altura do obturador:
-   (--sh − vão) ÷ 2 ≈ 40px no 84 — a barra não cresce e o toque continua confortável. Com a pista
-   desligada nos ajustes, o grupo "some" (display:contents) e ficam só LE LD, redondos. */
+   (--sh − vão) ÷ 2 ≈ 40px no 84 — a barra não cresce e o toque continua confortável. */
 #cam-lados{display:grid;grid-template-columns:auto auto;gap:4px 5px}
 #cam-lados .cbtn{width:var(--cbs,44px);height:calc((var(--sh,84px) - 4px) / 2);border-radius:12px}
-#cam-lados.sempista{display:contents}
-#cam-lados.sempista .cbtn{height:var(--cbs,44px);border-radius:50%}
-#cam-lados.sempista #cam-pc,#cam-lados.sempista #cam-pd{display:none}
 #shutter{width:var(--sh,84px);height:var(--sh,84px);flex:0 0 var(--sh,84px);border-radius:50%;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 35%), rgba(20,20,20,.92);
   border:1px solid rgba(255,255,255,.22);cursor:pointer;
@@ -723,6 +744,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
   /* deitado a linha do formato vira coluna: o LOGO vai para a ponta de baixo dela */
   #camwrap.on #cam-logo{top:auto;bottom:calc(12px + env(safe-area-inset-bottom, 0px));left:0;right:0;margin:0 auto;width:max-content}
+  /* …e o "?" para a ponta de cima */
+  #camwrap.on #cam-ajuda{top:calc(12px + env(safe-area-inset-top, 0px));bottom:auto;left:0;right:0;margin:0 auto}
   /* deitado a barra é vertical: a mesma conta vale para a ALTURA (obturador no meio exato) */
   #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);
     --sh:clamp(64px, calc(100vh - 244px), 84px);
@@ -1476,10 +1499,6 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
         <input type="checkbox" id="cfg-kmline" checked>
       </label>
       <label class="listrow">
-        <span class="ltext"><b>Pista (PC / PD)</b><i>PC = Pista Crescente · PD = Pista Decrescente. Mostra os botões PC e PD na câmera; a pista marcada entra na 1ª linha, antes do lado (LD/LE).</i></span>
-        <input type="checkbox" id="cfg-pistabtn" checked>
-      </label>
-      <label class="listrow">
         <span class="ltext"><b>Exibir estaca</b><i>Estaca correspondente ao KM (20 m)</i></span>
         <input type="checkbox" id="cfg-estaca">
       </label>
@@ -1672,6 +1691,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="ratiobtn" data-fmt="9:16">16:9</button>
     </div>
     <button class="ratiobtn" id="cam-logo" aria-pressed="false">LOGO</button>
+    <button class="ratiobtn" id="cam-ajuda" aria-label="O que é PD, PC, LE e LD" title="O que é PD, PC, LE e LD">?</button>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -1718,6 +1738,26 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   </div>
 
   <button class="btn ghost" id="svc-close" style="margin-top:16px">Fechar</button>
+</dialog>
+
+<!-- diálogo: o que é PD, PC, LE e LD (botão "?" da câmera) -->
+<dialog id="dlg-pista" aria-labelledby="dlg-pista-title">
+  <div class="pl-top"><h3 id="dlg-pista-title">Pista e lado</h3>
+    <button class="pl-x" id="pista-x" aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <h2 class="sec">Pista</h2>
+  <p class="pl-nota">Para <b>pista dupla</b> (rodovia duplicada): diz em qual das duas pistas foi a foto. Em pista simples, deixe desmarcado.</p>
+  <div class="pl-box">
+    <div class="pl-it"><span class="pl-sg">PD</span><span class="pl-tx"><b>Pista Decrescente</b><i>A pista em que o KM diminui.</i></span></div>
+    <div class="pl-it"><span class="pl-sg">PC</span><span class="pl-tx"><b>Pista Crescente</b><i>A pista em que o KM aumenta.</i></span></div>
+  </div>
+  <h2 class="sec pl-lado">Lado</h2>
+  <p class="pl-nota">Sempre olhando a rodovia no sentido crescente do KM.</p>
+  <div class="pl-box">
+    <div class="pl-it"><span class="pl-sg">LE</span><span class="pl-tx"><b>Lado Esquerdo</b><i>À esquerda: o lado da pista decrescente.</i></span></div>
+    <div class="pl-it"><span class="pl-sg">LD</span><span class="pl-tx"><b>Lado Direito</b><i>À direita: o lado da pista crescente.</i></span></div>
+  </div>
+  <p class="pl-dica">Toque para marcar e de novo para desmarcar.<br>O que estiver marcado entra na legenda, logo depois do KM:</p>
+  <div class="pl-ex">BR-304/RN - KM 85,420  PC LD</div>
 </dialog>
 
 <!-- diálogo: vincular contrato a BR(s) baixadas -->
@@ -2119,7 +2159,7 @@ const CFG = {
   get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 },
   get estaca(){ return ls('estaca', true) }, get snv(){ return ls('snv', true) },
   get autosave(){ return ls('autosave', true) },
-  get kmline(){ return ls('kmline', true) }, get pistabtn(){ return ls('pistabtn', true) },
+  get kmline(){ return ls('kmline', true) },
   get res(){ return localStorage.getItem('kc-res') || 'max' },
   get qual(){ return +localStorage.getItem('kc-qual') || 0.92 },
   get logopos(){ return localStorage.getItem('kc-logopos') || 'tl' },
@@ -5458,13 +5498,14 @@ document.getElementById('shutter').onclick=async()=>{
 
 /* ---- PC / PD, LD / LE / Serviço: preenchem a legenda ---- */
 function getSide(){ return localStorage.getItem('kc-side')||'' }
-/* com os botões de pista desligados nos ajustes, a escolha guardada não entra na legenda */
-function getPista(){ return CFG.pistabtn ? (localStorage.getItem('kc-pista')||'') : '' }
+function getPista(){ return localStorage.getItem('kc-pista')||'' }
+/* a chave "Pista (PC / PD)" dos ajustes (v332–v337) saiu: quem tinha desligado não pode ver uma pista
+   esquecida voltar sozinha para a legenda */
+try{ if(localStorage.getItem('kc-pistabtn')==='0') localStorage.removeItem('kc-pista'); localStorage.removeItem('kc-pistabtn') }catch(e){}
 function getSvcSel(){ return localStorage.getItem('kc-svcsel')||'' }
 function paintTags(){
   document.getElementById('cam-ld').classList.toggle('on', getSide()==='LD');
   document.getElementById('cam-le').classList.toggle('on', getSide()==='LE');
-  document.getElementById('cam-lados').classList.toggle('sempista', !CFG.pistabtn);
   document.getElementById('cam-pc').classList.toggle('on', getPista()==='PC');
   document.getElementById('cam-pd').classList.toggle('on', getPista()==='PD');
   document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel() || !!getContract());
@@ -5475,6 +5516,8 @@ document.getElementById('cam-ld').onclick=()=>{
 document.getElementById('cam-le').onclick=()=>{
   localStorage.setItem('kc-side', getSide()==='LE'?'':'LE'); paintTags(); paintGps();
 };
+document.getElementById('cam-ajuda').onclick=()=>showDlg(document.getElementById('dlg-pista'));
+document.getElementById('pista-x').onclick=()=>document.getElementById('dlg-pista').close();
 document.getElementById('cam-pc').onclick=()=>{
   localStorage.setItem('kc-pista', getPista()==='PC'?'':'PC'); paintTags(); paintGps();
 };
@@ -6603,7 +6646,7 @@ document.querySelectorAll('select.lsel').forEach(el=>{
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-date',true],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
-                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true],['cfg-kmline',true],['cfg-pistabtn',true]]){
+                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true],['cfg-kmline',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
@@ -6612,7 +6655,6 @@ for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],[
   if(buddy){ buddy.disabled=!el.checked; syncLsel(buddy) }
   el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0');
     if(buddy){ buddy.disabled=!el.checked; syncLsel(buddy) }
-    if(key==='pistabtn') paintTags();
     paintGps(); refreshLive() };
 }
 
