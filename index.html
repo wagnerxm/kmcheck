@@ -801,7 +801,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #dlg-svc.ctmin-on .ctresumo~.ctminbtn{margin-left:0}
 .ct-item.svc.sel .num{color:var(--gold2);font-weight:700}
 /* ---------- galeria de fotos registradas ---------- */
-#gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:51;display:none;flex-direction:column;
+#gallerywrap{position:fixed;top:0;left:0;right:0;background:#000;z-index:52;display:none;flex-direction:column;
   bottom:calc(-1 * env(safe-area-inset-bottom, 0px));padding-bottom:env(safe-area-inset-bottom, 0px)}
 #gallerywrap.on{display:flex;animation:scrIn .2s ease-out}
 #gal-close{position:absolute;top:calc(14px + env(safe-area-inset-top));left:calc(14px + env(safe-area-inset-left, 0px));z-index:2;
@@ -846,6 +846,59 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 [data-android] #gal-dock{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(24,26,28,.94)}
 /* deitado: pouca altura — a barra passa a flutuar sobre a foto e o nome some */
 @media (orientation:landscape){ #gallerywrap{--galpad:8px} #gal-caption{display:none} }
+/* ---------- fotos em grade: busca e filtros ----------
+   A galeria abre numa GRADE (3 colunas, separada por dia) com busca e filtros por rodovia, KM, serviço,
+   contrato e dia — para achar rápido "a foto da defensa do KM 85". Tocar numa foto abre o carrossel
+   (#gallerywrap, por cima) só com as fotos do filtro. Fundo preto como o carrossel, nos dois temas. */
+#galgrid{position:fixed;inset:0;z-index:51;background:#000;color:#fff;display:none;flex-direction:column;font-family:var(--sans);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
+#galgrid.on{display:flex;animation:scrIn .2s ease-out}
+.gg-topo{display:flex;align-items:center;gap:10px;padding:14px 14px 8px}
+#gg-close{flex:0 0 auto;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff}
+#gg-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.gg-tit{flex:1;min-width:0;display:flex;flex-direction:column}
+.gg-tit b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.gg-tit i{font-style:normal;font-size:11.5px;color:#8791a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* "Limpar galeria" mudou do carrossel para o topo da grade: vale para TODAS as fotos, não só as do filtro */
+#galgrid #gal-clean{position:static;flex:0 0 auto;height:40px;padding:0 13px;font-size:12.5px;background:rgba(255,255,255,.08);
+  backdrop-filter:none;-webkit-backdrop-filter:none}
+.gg-busca{margin:2px 14px 0;display:flex;align-items:center;gap:8px;height:44px;padding:0 4px 0 14px;border-radius:12px;
+  background:#16191b;border:1px solid rgba(255,255,255,.12)}
+.gg-busca svg{width:16px;height:16px;stroke:#8791a3;fill:none;stroke-width:2.2;stroke-linecap:round;flex:0 0 auto}
+/* 16px: abaixo disso o iPhone dá zoom na página ao tocar no campo */
+#gg-q{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:16px var(--sans);-webkit-appearance:none;appearance:none}
+#gg-q::placeholder{color:#6d7686}
+#gg-q::-webkit-search-cancel-button{display:none}
+#gg-qx{flex:0 0 auto;background:none;border:0;color:#8791a3;font:600 12px var(--sans);padding:12px 10px;cursor:pointer}
+.gg-chips{display:flex;gap:6px;padding:10px 14px 4px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto}
+.gg-chips::-webkit-scrollbar{display:none}
+.gg-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;cursor:pointer;
+  font:600 12.5px var(--sans);border:1px solid rgba(255,255,255,.2);background:none;color:rgba(255,255,255,.8);white-space:nowrap}
+.gg-chip.on{background:rgba(183,217,45,.14);border-color:rgba(183,217,45,.55);color:#c9e463}
+.gg-chip .x{font-size:15px;line-height:1;opacity:.85;margin-right:-2px}
+.gg-chip .v{font-size:9px;opacity:.7}
+.gg-res{padding:6px 16px 8px;font-size:11.5px;color:#8791a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
+.gg-res b{color:#fff}
+#gg-lista{flex:1;min-height:0;overflow-y:auto;padding:0 3px calc(16px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
+.gg-dia{padding:12px 13px 6px;font:700 10px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:#8791a3}
+.gg-g{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+@media (min-width:600px){ .gg-g{grid-template-columns:repeat(5,1fr)} }
+.gg-ft{position:relative;aspect-ratio:3/4;border-radius:4px;overflow:hidden;background:#15181a;border:0;padding:0;cursor:pointer;display:block;width:100%}
+.gg-ft img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .2s}
+.gg-ft img.ok{opacity:1}
+.gg-ft .km{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 5px;font:700 10px var(--sans);color:#fff;text-align:left;
+  background:linear-gradient(transparent,rgba(0,0,0,.78));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gg-ft .sv{position:absolute;top:5px;left:5px;max-width:calc(100% - 10px);padding:2px 7px;border-radius:999px;background:rgba(0,0,0,.62);
+  font:700 9px var(--sans);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gg-vazio{padding:48px 28px;text-align:center;color:#8791a3;font-size:13px;line-height:1.5}
+/* escolha de um filtro (rodovia, serviço, contrato, dia) ou da faixa de KM */
+#dlg-galf .pk-list{max-height:min(320px,52dvh)}
+#dlg-galf .ct-item .cnt{margin-left:auto;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+#galf-km{display:flex;gap:8px;align-items:center}
+#galf-km input{flex:1;min-width:0;font-size:16px}
+#galf-km span{color:var(--mut);font-size:13px}
+#galf-km[hidden],#galf-ok[hidden],#galf-lista[hidden]{display:none}   /* o display das regras acima venceria o hidden */
 /* ---------- modo carro: tela de painel (fundo claro com estrada esmaecida + cartões grafite) ----------
    Visual fixo (não segue o tema): é o layout aprovado pelo usuário. Medidas em --u (1% da largura,
    limitado pela altura) para caber igual em qualquer celular sem rolar. --m encolhe só o conteúdo do
@@ -1804,9 +1857,29 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
 </dialog>
 
 <!-- galeria de fotos registradas -->
+<!-- fotos em grade: busca e filtros; tocar numa foto abre o carrossel (#gallerywrap) por cima -->
+<div id="galgrid" role="dialog" aria-modal="true" aria-label="Fotos">
+  <div class="gg-topo">
+    <button id="gg-close" aria-label="Fechar fotos"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
+    <div class="gg-tit"><b>Fotos</b><i id="gg-total"></i></div>
+    <button id="gal-clean" aria-label="Limpar galeria: apagar do app as fotos já salvas no celular"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.9 12.1A2 2 0 0 0 9.4 21h5.2a2 2 0 0 0 2-1.9L17.5 7"/></svg><span>Limpar</span></button>
+  </div>
+  <div class="gg-busca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>
+    <input type="search" id="gg-q" placeholder="Buscar: serviço, KM, contrato…" aria-label="Buscar fotos" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <button id="gg-qx" hidden>limpar</button></div>
+  <div class="gg-chips" id="gg-chips"></div>
+  <div class="gg-res" id="gg-res" aria-live="polite"></div>
+  <div id="gg-lista"></div>
+</div>
+<dialog id="dlg-galf" aria-labelledby="galf-tit">
+  <h2 class="sec" id="galf-tit" style="margin-top:0"></h2>
+  <div class="pk-list" id="galf-lista"></div>
+  <div id="galf-km" hidden><input type="text" inputmode="decimal" id="galf-de" placeholder="de (ex.: 84)" aria-label="KM inicial"><span>a</span><input type="text" inputmode="decimal" id="galf-ate" placeholder="até (ex.: 86)" aria-label="KM final"></div>
+  <div class="row" style="margin-top:14px"><button class="btn ghost" id="galf-limpa" style="flex:1">Tirar filtro</button><button class="btn gold" id="galf-ok" style="flex:1" hidden>Aplicar</button></div>
+</dialog>
+
 <div id="gallerywrap">
-  <button id="gal-close" aria-label="Fechar galeria"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
-  <button id="gal-clean" aria-label="Limpar galeria: apagar do app as fotos já salvas no celular"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l.9 12.1A2 2 0 0 0 9.4 21h5.2a2 2 0 0 0 2-1.9L17.5 7"/></svg><span>Limpar galeria</span></button>
+  <button id="gal-close" aria-label="Voltar para as fotos"><svg viewBox="0 0 24 24"><path d="M15 19 8 12l7-7"/></svg></button>
   <!-- carrossel: 3 posições (esquerda = foto mais antiga, centro = atual, direita = mais nova) -->
   <div id="gal-stage">
     <div id="gal-track">
@@ -2195,10 +2268,13 @@ if(!localStorage.getItem('kc-defaults-v2')){
 let _db=null;
 function idb(){
   if(_db) return Promise.resolve(_db);
-  return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',2);
+  /* v3: "fichas" — os dados de cada foto para a busca da galeria (rodovia, KM, pista/lado, serviço, contrato) e a
+     miniatura. Ficam à parte da foto: regravar o registro da foto copiaria a imagem inteira. */
+  return new Promise((res,rej)=>{ const r=indexedDB.open('kmcheck',3);
     r.onupgradeneeded=()=>{ const d=r.result;
       if(!d.objectStoreNames.contains('bases')) d.createObjectStore('bases',{keyPath:'id'});
       if(!d.objectStoreNames.contains('photos')) d.createObjectStore('photos',{keyPath:'id', autoIncrement:true});
+      if(!d.objectStoreNames.contains('fichas')) d.createObjectStore('fichas',{keyPath:'id'});
     };
     r.onblocked=()=>rej(new Error('O app está aberto em outra aba.\nFeche as outras abas do KM Check.'));
     r.onsuccess=()=>{ _db=r.result; _db.onclose=()=>{_db=null}; _db.onversionchange=()=>{_db.close();_db=null}; res(_db) };
@@ -4180,6 +4256,15 @@ function fmtSnv(fonte){
   const mi=parseInt(m[2],10);
   return 'SNV '+(ms[mi-1]||m[2])+'/'+m[1].slice(2);
 }
+/* serviço que vai na legenda: o escolhido no "i" ou, sem ele, o nome da OAE em que se está em cima */
+function svcDaLegenda(info){
+  let svc=getSvcSel();
+  if(!svc && CFG.oae && info.km!=null && !(info.dist>CFG.maxdist)){   // longe do eixo: a OAE "mais próxima" pode estar a km dali
+    const o=findOae(info.br,info.uf,info.km);
+    if(o && o.mode==='sobre') svc=o.o.nome;
+  }
+  return svc;
+}
 /* completa: o EXIF (descrição) sempre leva a linha do KM, mesmo com ela desligada na imagem */
 function legendLines(info, completa){
   const L=[]; let err=false;
@@ -4193,11 +4278,7 @@ function legendLines(info, completa){
     L.push(l1);
   }
   const ct=getContract();
-  let svc=getSvcSel();
-  if(!svc && CFG.oae && info.km!=null && !(info.dist>CFG.maxdist)){   // longe do eixo: a OAE "mais próxima" pode estar a km dali
-    const o=findOae(info.br,info.uf,info.km);
-    if(o && o.mode==='sobre') svc=o.o.nome;
-  }
+  const svc=svcDaLegenda(info);
   const l2parts=[];
   if(ct) l2parts.push(ct);
   if(svc) l2parts.push(svc);
@@ -5323,7 +5404,7 @@ function closeCam(instant){
 }
 /* app no meio de algo que um recarregamento perderia: câmera, galeria, diálogo aberto ou download */
 function appBusy(){
-  return camwrap.classList.contains('on') || document.getElementById('gallerywrap').classList.contains('on') ||
+  return camwrap.classList.contains('on') || document.getElementById('gallerywrap').classList.contains('on') || document.getElementById('galgrid').classList.contains('on') ||
     !!document.querySelector('dialog[open]') || document.getElementById('dl-go').disabled || _impBusy ||
     gravandoFoto() || document.getElementById('carwrap').classList.contains('on') ||
     !document.getElementById('manual-ov').hidden || !document.getElementById('bv').hidden || !document.getElementById('uso').hidden;
@@ -5850,9 +5931,10 @@ function askLegacyPhotos(n, tambem){
 }
 document.getElementById('gal-clean').onclick=async()=>{
   if(galBusy) return;
-  /* "antigas" aqui = sem confirmação de que estão no celular: as de versões antigas e as que só saíram pelo Compartilhar */
-  const salvas=galMetas.filter(m=>m.saved), antigas=galMetas.filter(m=>m.legacy || m.comp);
-  const soApp=galMetas.length-salvas.length-antigas.length;
+  /* "antigas" aqui = sem confirmação de que estão no celular: as de versões antigas e as que só saíram pelo Compartilhar.
+     Vale para todas as fotos do app, com ou sem filtro na grade. */
+  const salvas=galTodas.filter(m=>m.saved), antigas=galTodas.filter(m=>m.legacy || m.comp);
+  const soApp=galTodas.length-salvas.length-antigas.length;
   if(!salvas.length && !antigas.length){ toast('Nenhuma foto para limpar.\nAs que estão só no app foram mantidas.', 4200); return }
   const apagar=[];
   if(salvas.length){
@@ -5863,13 +5945,10 @@ document.getElementById('gal-clean').onclick=async()=>{
   if(antigas.length && await askLegacyPhotos(antigas.length, salvas.length>0)) apagar.push(...antigas);
   if(!apagar.length) return;
   try{
-    for(const m of apagar){ await deletePhoto(m.id); if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) } }
-    const atual=galMetas[galIdx];
-    galMetas=galMetas.filter(m=>!apagar.includes(m));
-    if(!galMetas.length){ document.getElementById('gal-close').click(); return }
-    const k=atual?galMetas.indexOf(atual):-1;
-    galIdx = k>=0 ? k : Math.min(galIdx, galMetas.length-1);
-    await galRender();
+    for(const m of apagar){ await deletePhoto(m.id); ggSoltaThumb(m.id) }
+    galTodas=galTodas.filter(m=>!apagar.includes(m));
+    if(!galTodas.length){ fechaGrade(); return }
+    ggRender(true);
   }catch(e){ toast('⚠ Não consegui limpar a galeria.') }
 };
 async function galRender(){
@@ -5879,18 +5958,23 @@ async function galRender(){
   galFill(galSlides[0], galIdx+1); galFill(galSlides[2], galIdx-1);
   galPrune();
 }
-async function openGallery(){
-  galMetas=await getPhotoMetas();
-  if(!galMetas.length){ toast('Nenhuma foto registrada ainda.'); return }
-  galIdx=0; galBusy=false; await galRender();
+/* abre a foto i do filtro atual no carrossel, por cima da grade */
+async function openCarrossel(i){
+  galMetas=galFiltradas.slice(); if(!galMetas.length) return;
+  galIdx=Math.max(0, Math.min(i, galMetas.length-1)); galBusy=false; await galRender();
   document.getElementById('gallerywrap').classList.add('on');
 }
-document.getElementById('cam-gallery').onclick=()=>openGallery().catch(()=>toast('⚠ Não consegui abrir a galeria.'));
+document.getElementById('cam-gallery').onclick=()=>openGrade().catch(e=>{ console.error('[KMCheck] galeria:', e); toast('⚠ Não consegui abrir a galeria.') });
+/* fechar o carrossel volta para a grade (com o que mudou lá: foto excluída, salva no celular) */
 document.getElementById('gal-close').onclick=()=>{
   document.getElementById('gallerywrap').classList.remove('on');
   for(const u of _galUrls.values()) URL.revokeObjectURL(u);
   _galUrls.clear();
   galSlides.forEach(s=>s.querySelector('img').removeAttribute('src'));
+  if(document.getElementById('galgrid').classList.contains('on')){
+    if(!galTodas.length){ fechaGrade(); return }
+    ggRender(false);
+  }
 };
 /* roda fn uma vez: no transitionend ou no timer (com "Reduzir Movimento" a transição é zerada e o
    transitionend nunca vem — sem o timer a galeria travava) */
@@ -6023,9 +6107,287 @@ function galToggleZoom(x,y){
 })();
 async function deletePhoto(id){
   const d=await idb();
-  return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').delete(id);
+  await new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite').objectStore('photos').delete(id);
     t.onsuccess=res; t.onerror=()=>rej(t.error) });
+  try{ d.transaction('fichas','readwrite').objectStore('fichas').delete(id) }catch(e){}   // a ficha não importa se falhar
 }
+/* ================= fotos em grade: fichas, busca e filtros ================= */
+let galTodas=[], galFiltradas=[];
+const galF={q:'', br:'', km:null, svc:'', ct:'', dia:''};
+const _semAcento=v=>String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+/* ficha da foto nova: o que estava na legenda no momento da foto */
+function fichaDaFoto(info){
+  const m={};
+  if(info.km!=null && info.br && !(info.dist>CFG.maxdist)){ m.br=info.br; m.uf=info.uf; m.km=Math.round(info.km*1000)/1000 }
+  const p=getPista(), l=getSide(); if(p) m.pista=p; if(l) m.lado=l;
+  const sv=svcDaLegenda(info); if(sv) m.svc=sv;
+  const c=getContract(); if(c) m.ct=c;
+  if(info.lat!=null){ m.lat=info.lat; m.lon=info.lon }
+  return m;
+}
+async function salvarFicha(f){
+  try{ const tx=await _storeTx('fichas','readwrite'), rq=tx.objectStore('fichas').put(f); await _txDone(tx, rq) }
+  catch(e){ console.warn('[KMCheck] ficha da foto não gravada:', e) }
+}
+/* fotos de antes da v341 não têm ficha: o nome do arquivo traz rodovia, KM, pista e lado
+   (BR-304-RN_KM85+420_PC_LD_2026-10-19_14-35-00.jpg) e a descrição do EXIF traz contrato e serviço */
+function fichaDoNome(name){
+  const r=/^(.+)-([A-Z]{2})_KM(\d+)\+(\d{3})((?:_(?:PC|PD|LD|LE))*)_\d{4}-\d{2}-\d{2}_/.exec(name||'');
+  if(!r) return {};
+  const m={br:r[1], uf:r[2], km:+r[3]+(+r[4])/1000};
+  for(const k of r[5].split('_')){ if(k==='PC'||k==='PD') m.pista=k; else if(k==='LD'||k==='LE') m.lado=k }
+  return m;
+}
+/* ImageDescription (0x010E) do EXIF que o próprio app grava logo depois do início do JPEG (ver buildExifApp1) */
+async function descDaFoto(blob){
+  try{
+    const b=new DataView(await blob.slice(0,131072).arrayBuffer());
+    if(b.getUint16(0)!==0xFFD8) return '';
+    let p=2;
+    while(p+10<b.byteLength){
+      const mk=b.getUint16(p), len=b.getUint16(p+2);
+      if((mk&0xFF00)!==0xFF00) break;
+      if(mk===0xFFE1 && b.getUint32(p+4)===0x45786966){
+        const t0=p+10, le=b.getUint16(t0)===0x4949, u16=o=>b.getUint16(t0+o,le), u32=o=>b.getUint32(t0+o,le);
+        const ifd=u32(4), n=u16(ifd);
+        for(let i=0;i<n;i++){ const e=ifd+2+i*12;
+          if(u16(e)!==0x010E) continue;
+          const cnt=u32(e+4), off=cnt>4?u32(e+8):e+8; let txt='';
+          for(let k=0;k<cnt && t0+off+k<b.byteLength;k++){ const c=b.getUint8(t0+off+k); if(!c) break; txt+=String.fromCharCode(c) }
+          return txt;
+        }
+        return '';
+      }
+      p+=2+len;
+    }
+  }catch(e){}
+  return '';
+}
+/* a descrição é a legenda em ASCII, linhas separadas por " | ": acha a linha "contrato - serviço" */
+function fichaDaDesc(desc, m){
+  if(!desc) return;
+  const cts=getContracts().map(c=>[_semAcento(c),c]), svcs=[...SVC_PADRAO, ...getServices()];
+  for(const ln of desc.split(' | ')){
+    if(/ - KM \d/.test(ln)) continue;                                        // 1ª linha (rodovia e KM)
+    if(/\d{2}\/\d{2}\/\d{4}| de [a-z]+ de \d{4}/i.test(ln)) continue;          // data
+    if(/^Lat |^-?\d+[,.]\d{4,}|['"][NSLO]/.test(ln)) continue;                // coordenadas
+    const sv=[];
+    for(const pt of ln.split(' - ')){
+      const n=_semAcento(pt.trim()), c=cts.find(x=>x[0]===n);
+      if(!m.ct && (c || /^\d[\d .\/-]*\d$/.test(pt.trim()))) m.ct=c?c[1]:pt.trim(); else sv.push(pt.trim());
+    }
+    if(sv.length){ const s2=sv.join(' - '), k=svcs.find(x=>_semAcento(x)===_semAcento(s2)); m.svc=k||s2 }   // devolve os acentos que o EXIF perdeu
+    return;
+  }
+}
+async function lerFichas(){
+  try{
+    const tx=await _storeTx('fichas','readonly');
+    const a=await new Promise((res,rej)=>{ const q=tx.objectStore('fichas').getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>rej(q.error) });
+    return new Map(a.map(f=>[f.id,f]));
+  }catch(e){ return new Map() }
+}
+async function openGrade(){
+  const metas=await getPhotoMetas();
+  if(!metas.length){ toast('Nenhuma foto registrada ainda.'); return }
+  const fichas=await lerFichas();
+  for(const m of metas){
+    let f=fichas.get(m.id);
+    if(!f || !f.m){   // foto sem ficha (de versão antiga): monta uma vez e guarda
+      const mm=fichaDoNome(m.name);
+      try{ const b=await getPhotoBlob(m.id); if(b) fichaDaDesc(await descDaFoto(b), mm) }catch(e){}
+      f=Object.assign(f||{id:m.id}, {m:mm}); salvarFicha(f);
+    }
+    m.f=f.m; m.th=f.th||null;
+  }
+  galTodas=metas;
+  document.getElementById('galgrid').classList.add('on');
+  ggRender(true);
+}
+function fechaGrade(){
+  document.getElementById('galgrid').classList.remove('on');
+  ggObs && ggObs.disconnect();
+  for(const u of _ggUrls.values()) URL.revokeObjectURL(u);
+  _ggUrls.clear(); _ggFila.length=0;
+  document.getElementById('gg-lista').textContent='';
+}
+document.getElementById('gg-close').onclick=fechaGrade;
+const _diaDe=ts=>{ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') };
+function _diaNome(dia){
+  const [y,mo,d]=dia.split('-').map(Number), hoje=_diaDe(Date.now()), ontem=_diaDe(Date.now()-864e5);
+  const dm=String(d).padStart(2,'0')+'/'+String(mo).padStart(2,'0');
+  if(dia===hoje) return 'Hoje · '+dm;
+  if(dia===ontem) return 'Ontem · '+dm;
+  const sem=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][new Date(y,mo-1,d).getDay()];
+  return sem+' · '+dm+(y!==new Date().getFullYear()?'/'+y:'');
+}
+const _rod=f=>f.br?f.br+'/'+f.uf:'';
+/* busca: cada palavra precisa bater em algum dado da foto. Número sozinho = KM inteiro (85 → 85,000 a 85,999);
+   com vírgula = perto daquele KM (85,4 → ±50 m); também vale para número da BR e do contrato. */
+function galCasa(m){
+  const x=m.f||{};
+  if(galF.br && _rod(x)!==galF.br) return false;
+  if(galF.km && (x.km==null || x.km<galF.km.a || x.km>galF.km.z+0.0005)) return false;
+  if(galF.svc && x.svc!==galF.svc) return false;
+  if(galF.ct && x.ct!==galF.ct) return false;
+  if(galF.dia && _diaDe(m.ts)!==galF.dia) return false;
+  for(let tk of _semAcento(galF.q).split(/\s+/).filter(Boolean)){
+    tk=tk.replace(/^km/,'');
+    if(!tk) continue;
+    if(/^\d+([.,]\d+)?$/.test(tk)){
+      const n=parseFloat(tk.replace(',','.')), dec=/[.,]/.test(tk);
+      const okKm=x.km!=null && (dec ? Math.abs(x.km-n)<=0.05 : Math.floor(x.km)===n);
+      if(!okKm && !_semAcento(x.br).includes(tk) && !_semAcento(x.ct).includes(tk)) return false;
+    } else if(!_semAcento([x.svc,x.ct,x.br,x.uf,x.pista,x.lado].join(' ')).includes(tk)) return false;
+  }
+  return true;
+}
+function _kmTxt(f){ return f.km==null ? '' : 'KM '+fkm(f.km) }
+function ggRender(rolarTopo){
+  galFiltradas=galTodas.filter(galCasa);
+  document.getElementById('gg-total').textContent=galTodas.length+(galTodas.length===1?' foto no app':' fotos no app');
+  ggChips();
+  const ativos=[galF.q&&('“'+galF.q+'”'), galF.br, galF.km&&galF.km.rot, galF.svc, galF.ct, galF.dia&&_diaNome(galF.dia)].filter(Boolean);
+  const n=galFiltradas.length, res=document.getElementById('gg-res');
+  res.innerHTML = (galF.q||ativos.length) ? '<b>'+n+(n===1?' foto':' fotos')+'</b>'+(ativos.length?' · '+_esc(ativos.join(' · ')):'') : '';
+  res.hidden=!res.innerHTML;
+  const L=document.getElementById('gg-lista');
+  ggObs && ggObs.disconnect(); _ggFila.length=0;
+  if(!n){ L.innerHTML='<p class="gg-vazio">Nenhuma foto com esses filtros.<br>Tente tirar um filtro ou mudar a busca.</p>'; return }
+  let h='', dia='';
+  galFiltradas.forEach((m,i)=>{
+    const d=_diaDe(m.ts), f=m.f||{};
+    if(d!==dia){ if(dia) h+='</div>'; dia=d; h+='<div class="gg-dia">'+_esc(_diaNome(d))+'</div><div class="gg-g">' }
+    const hora=new Date(m.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const pl=[f.pista,f.lado].filter(Boolean).join(' ');
+    const rot=f.km!=null ? _kmTxt(f)+(pl?' · '+pl:'') : hora;
+    h+='<button class="gg-ft" data-i="'+i+'" data-id="'+m.id+'" aria-label="'+_esc((rot+(f.svc?', '+f.svc:'')+', '+hora))+'"><img alt="">'+
+      (f.svc?'<span class="sv">'+_esc(f.svc)+'</span>':'')+'<span class="km">'+_esc(rot)+'</span></button>';
+  });
+  L.innerHTML=h+'</div>';
+  if(rolarTopo) L.scrollTop=0;
+  ggObserva();
+}
+/* clique na grade: abre o carrossel naquela foto */
+document.getElementById('gg-lista').onclick=e=>{ const b=e.target.closest('.gg-ft'); if(b) openCarrossel(+b.dataset.i) };
+/* ---- miniaturas: só as que aparecem na tela, uma por vez (cada foto inteira tem ~3 MB; o celular fraco
+   não aguenta abrir dezenas juntas). A miniatura fica guardada na ficha: na próxima vez abre na hora. ---- */
+const _ggUrls=new Map(), _ggFila=[]; let ggObs=null, _ggRodando=false;
+function ggSoltaThumb(id){ const u=_ggUrls.get(id); if(u){ URL.revokeObjectURL(u); _ggUrls.delete(id) } }
+function ggObserva(){
+  const L=document.getElementById('gg-lista');
+  if(!('IntersectionObserver' in window)){ L.querySelectorAll('.gg-ft').forEach(b=>_ggFila.push(b)); return ggProx() }
+  ggObs=new IntersectionObserver(es=>{ for(const e of es) if(e.isIntersecting){ ggObs.unobserve(e.target); _ggFila.push(e.target) } ggProx() },
+    {root:L, rootMargin:'300px 0px'});
+  L.querySelectorAll('.gg-ft').forEach(b=>ggObs.observe(b));
+}
+async function ggProx(){
+  if(_ggRodando) return; _ggRodando=true;
+  try{
+    while(_ggFila.length){
+      const b=_ggFila.shift(); if(!b.isConnected) continue;
+      const id=+b.dataset.id, m=galTodas.find(x=>x.id===id); if(!m) continue;
+      let u=_ggUrls.get(id);
+      if(!u){
+        if(!m.th){ m.th=await ggFazThumb(id); if(m.th) salvarFicha({id, m:m.f, th:m.th}) }
+        if(!m.th) continue;
+        u=URL.createObjectURL(m.th); _ggUrls.set(id,u);
+      }
+      const img=b.querySelector('img'); img.onload=()=>img.classList.add('ok'); img.src=u;
+    }
+  }finally{ _ggRodando=false }
+}
+async function ggFazThumb(id){
+  try{
+    const blob=await getPhotoBlob(id); if(!blob) return null;
+    const W=240;
+    let src, w, h, fecha=()=>{};
+    if(window.createImageBitmap){
+      try{ src=await createImageBitmap(blob,{resizeWidth:W, resizeQuality:'medium'}) }catch(e){ src=await createImageBitmap(blob) }
+      w=src.width; h=src.height; fecha=()=>src.close&&src.close();
+    } else {
+      const url=URL.createObjectURL(blob); src=new Image(); src.src=url; await src.decode(); w=src.naturalWidth; h=src.naturalHeight; fecha=()=>URL.revokeObjectURL(url);
+    }
+    const k=Math.min(1, W/w), c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k);
+    c.getContext('2d').drawImage(src,0,0,c.width,c.height); fecha();
+    const th=await new Promise(r=>c.toBlob(r,'image/jpeg',.72)); c.width=c.height=0;
+    return th;
+  }catch(e){ return null }
+}
+/* ---- busca ---- */
+(function(){
+  const q=document.getElementById('gg-q'), x=document.getElementById('gg-qx'); let tm=0;
+  q.addEventListener('input', ()=>{ x.hidden=!q.value; clearTimeout(tm); tm=setTimeout(()=>{ galF.q=q.value.trim(); ggRender(true) }, 180) });
+  q.addEventListener('keydown', e=>{ if(e.key==='Enter') q.blur() });
+  x.onclick=()=>{ q.value=''; x.hidden=true; galF.q=''; ggRender(true) };
+})();
+/* ---- filtros: um botão por tipo; ativo mostra o valor e um × para tirar ---- */
+const GG_FILTROS=[
+  {k:'br', nome:'Rodovia', val:m=>_rod(m.f||{})},
+  {k:'km', nome:'KM'},
+  {k:'svc', nome:'Serviço', val:m=>(m.f||{}).svc||''},
+  {k:'ct', nome:'Contrato', val:m=>(m.f||{}).ct||''},
+  {k:'dia', nome:'Data', val:m=>_diaDe(m.ts), rot:_diaNome},
+];
+function ggChips(){
+  const box=document.getElementById('gg-chips');
+  box.innerHTML=GG_FILTROS.map(F=>{
+    const v=galF[F.k];
+    if(!v) return '<button class="gg-chip" data-k="'+F.k+'">'+F.nome+' <span class="v">▾</span></button>';
+    const txt=F.k==='km' ? v.rot : (F.rot?F.rot(v):v);
+    return '<button class="gg-chip on" data-k="'+F.k+'" aria-label="'+_esc(F.nome+': '+txt+'. Tocar no × tira o filtro')+'">'+_esc(txt)+' <span class="x" data-x="1">×</span></button>';
+  }).join('');
+}
+document.getElementById('gg-chips').onclick=e=>{
+  const b=e.target.closest('.gg-chip'); if(!b) return;
+  const k=b.dataset.k;
+  if(e.target.closest('[data-x]')){ galF[k]=k==='km'?null:''; ggRender(true); return }
+  ggEscolhe(k);
+};
+let _galfK='';
+function ggEscolhe(k){
+  const F=GG_FILTROS.find(x=>x.k===k), dlg=document.getElementById('dlg-galf');
+  _galfK=k; document.getElementById('galf-tit').textContent=F.nome;
+  const lista=document.getElementById('galf-lista'), kmBox=document.getElementById('galf-km'), ok=document.getElementById('galf-ok');
+  /* as opções saem das fotos que passam pelos OUTROS filtros (não aparece escolha que daria lista vazia) */
+  const salvo=galF[k]; galF[k]=k==='km'?null:'';
+  const base=galTodas.filter(galCasa); galF[k]=salvo;
+  if(k==='km'){
+    lista.hidden=true; kmBox.hidden=false; ok.hidden=false;
+    const kms=base.map(m=>(m.f||{}).km).filter(v=>v!=null);
+    document.getElementById('galf-de').value=salvo?salvo.de:'';
+    document.getElementById('galf-ate').value=salvo?salvo.ate:'';
+    document.getElementById('galf-de').placeholder=kms.length?'de (ex.: '+Math.floor(Math.min(...kms))+')':'de';
+    document.getElementById('galf-ate').placeholder=kms.length?'até (ex.: '+Math.ceil(Math.max(...kms))+')':'até';
+  } else {
+    lista.hidden=false; kmBox.hidden=true; ok.hidden=true;
+    const cont=new Map(); for(const m of base){ const v=F.val(m); if(v) cont.set(v,(cont.get(v)||0)+1) }
+    let ops=[...cont.entries()];
+    ops.sort(k==='dia' ? (a,b)=>b[0].localeCompare(a[0]) : (a,b)=>a[0].localeCompare(b[0],'pt',{numeric:true,sensitivity:'base'}));
+    lista.innerHTML=ops.length ? ops.map(([v,c])=>'<div class="ct-item svc '+(v===salvo?'sel':'')+'" data-v="'+_esc(v)+'"><span class="dot"></span><span class="num">'+_esc(F.rot?F.rot(v):v)+'</span><span class="cnt">'+c+'</span></div>').join('')
+      : '<p class="empty">Nenhuma foto tem '+F.nome.toLowerCase()+' registrado'+(k==='svc'||k==='ct'?'.':'a.')+'</p>';
+  }
+  showDlg(dlg);
+}
+document.getElementById('galf-lista').onclick=e=>{
+  const it=e.target.closest('.ct-item'); if(!it) return;
+  galF[_galfK]=it.dataset.v; document.getElementById('dlg-galf').close(); ggRender(true);
+};
+document.getElementById('galf-limpa').onclick=()=>{ galF[_galfK]=_galfK==='km'?null:''; document.getElementById('dlg-galf').close(); ggRender(true) };
+document.getElementById('galf-ok').onclick=()=>{
+  const num=id=>{ const v=document.getElementById(id).value.trim().replace(/\s/g,'').replace('+','.').replace(',','.'); return v===''?null:parseFloat(v) };
+  let a=num('galf-de'), z=num('galf-ate');
+  const de=document.getElementById('galf-de').value.trim(), ate=document.getElementById('galf-ate').value.trim();
+  if(a==null && z==null){ galF.km=null }
+  else { if(a==null) a=z; if(z==null) z=a; if(isNaN(a)||isNaN(z)){ toast('Digite o KM em números (ex.: 84 ou 84,5).'); return }
+    let txtA=de||ate, txtZ=ate||de;
+    if(a>z){ [a,z]=[z,a]; [txtA,txtZ]=[txtZ,txtA] }
+    if(z===Math.floor(z) && !/[.,]/.test(txtZ)) z+=0.999;   // "até 86" inclui o KM 86 inteiro
+    /* rótulo como a pessoa digitou ("KM 85", "KM 84 a 86"), não "85 a 85,999" */
+    galF.km={a, z, de:txtA, ate:txtZ, rot:'KM '+(txtA===txtZ?txtA:txtA+' a '+txtZ)} }
+  document.getElementById('dlg-galf').close(); ggRender(true);
+};
+
 /* Compartilhar/salvar a foto aberta na galeria — é a saída para fotos que ficaram só no app
    (share sheet cancelado ou falhou no iPhone, "Envio automático" desligado, etc.) */
 document.getElementById('gal-share').onclick=async()=>{
@@ -6067,6 +6429,7 @@ document.getElementById('gal-del').onclick=async()=>{
   try{
     await deletePhoto(m.id);
     galMetas.splice(galIdx,1);
+    galTodas=galTodas.filter(x=>x.id!==m.id); galFiltradas=galFiltradas.filter(x=>x.id!==m.id); ggSoltaThumb(m.id);
     if(_galUrls.has(m.id)){ URL.revokeObjectURL(_galUrls.get(m.id)); _galUrls.delete(m.id) }
     if(!galMetas.length){ document.getElementById('gal-close').click(); return }
     if(galIdx>=galMetas.length) galIdx=galMetas.length-1;
@@ -6529,6 +6892,7 @@ function _downloadDirect(blob, name){
 }
 function saveAndShare(blob){
   const name=photoName(S.lastInfo||{});
+  const ficha=fichaDaFoto(S.lastInfo||{});   // agora, antes de qualquer espera: a pessoa pode trocar pista/serviço logo em seguida
   const file=new File([blob], name, {type:'image/jpeg'});
   /* 1) salva na galeria interna do app (IndexedDB) — sempre, independente de CFG.autosave */
   const idP=segurando(savePhotoToGallery(blob, name)).catch(e=>{
@@ -6536,6 +6900,7 @@ function saveAndShare(blob){
     toast('⚠ Erro ao salvar foto internamente');
     return null;
   });
+  idP.then(id=>{ if(id!=null) salvarFicha({id, m:ficha}) });
   /* marca a foto como "já salva no celular" quando o envio para o aparelho deu certo */
   const saida=()=>{ idP.then(id=>markPhotoSaved(id)) };
   const compartilhada=()=>{ idP.then(id=>markPhotoSaved(id,'share')) };   // foi para algum destino do Compartilhar
@@ -7217,6 +7582,7 @@ function showInstallPrompt(){
     bv:()=>!$id('bv').hidden,
     manual:()=>!$id('manual-ov').hidden,
     galeria:()=>$id('gallerywrap').classList.contains('on'),
+    grade:()=>$id('galgrid').classList.contains('on'),
     carro:()=>$id('carwrap').classList.contains('on'),
     camera:()=>$id('camwrap').classList.contains('on'),
     tela:()=>{ const on=document.querySelector('.screen.on'); return on && on.id!=='scr-cam' },
@@ -7231,6 +7597,7 @@ function showInstallPrompt(){
     if(aberto.bv()){ fechaBoasVindas(true); return }
     if(aberto.manual()){ fechaManual(); return }
     if(aberto.galeria()){ $id('gal-close').click(); return }
+    if(aberto.grade()){ fechaGrade(); return }
     if(aberto.carro()){ closeCar(); return }
     if(aberto.camera()){ closeCam(); return }
     if(aberto.tela()){ goToScreen('scr-cam'); return }
@@ -7249,7 +7616,7 @@ function showInstallPrompt(){
   /* observa só os elementos que abrem/fecham (não a página inteira) */
   let pend=0; const agenda=()=>{ clearTimeout(pend); pend=setTimeout(arma, 60) };
   const mo=new MutationObserver(agenda);
-  ['uso','bv','manual-ov','gallerywrap','carwrap','camwrap'].forEach(id=>{ const el=$id(id); if(el) mo.observe(el,{attributes:true,attributeFilter:['class','hidden']}) });
+  ['uso','bv','manual-ov','gallerywrap','galgrid','carwrap','camwrap'].forEach(id=>{ const el=$id(id); if(el) mo.observe(el,{attributes:true,attributeFilter:['class','hidden']}) });
   document.querySelectorAll('.screen').forEach(el=>mo.observe(el,{attributes:true,attributeFilter:['class']}));
   document.querySelectorAll('dialog').forEach(el=>mo.observe(el,{attributes:true,attributeFilter:['open']}));
   window.__voltar={ fechaTopo, algoAberto };
