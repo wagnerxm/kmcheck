@@ -911,7 +911,7 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:1px 6px;text-align:left}
 .gg-ft .km b{min-width:0;font:800 11px var(--sans);letter-spacing:-.01em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gg-ft .km i{margin-left:auto;font-style:normal;font:700 9px var(--sans);letter-spacing:.06em;color:#c9e463;white-space:nowrap}
-.gg-ft .sv{position:absolute;top:6px;left:6px;max-width:calc(100% - 40px);padding:3px 8px;border-radius:999px;background:rgba(183,217,45,.92);
+.gg-ft .sv{position:absolute;top:6px;left:6px;max-width:calc(100% - 12px);padding:3px 8px;border-radius:999px;background:rgba(183,217,45,.92);
   font:800 9px var(--sans);letter-spacing:.02em;color:#0d0f08;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gg-vazio{padding:48px 28px;text-align:center;color:#8791a3;font-size:13px;line-height:1.5}
 /* ---- seleção de várias fotos (Selecionar → marcar → Compartilhar) ----
@@ -929,6 +929,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .gg-ft .ck{display:none;position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;
   background:rgba(0,0,0,.35);box-shadow:0 1px 4px rgba(0,0,0,.4)}
 #galgrid.sel .gg-ft .ck{display:block}
+#galgrid.sel .gg-ft .sv{max-width:calc(100% - 36px)}   /* abre espaço para a bolinha de marcar */
+@media (max-width:380px){ #galgrid.sel .gg-ft .sv{padding:3px 5px;font-size:8px;letter-spacing:0} }
 .gg-ft.marcada .ck{background:#b7d92d;border-color:#b7d92d}
 .gg-ft.marcada .ck::after{content:'';position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #0d0f08;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
 .gg-ft.marcada::before{content:'';position:absolute;inset:0;z-index:1;border:3px solid #b7d92d;border-radius:14px;background:rgba(183,217,45,.12);pointer-events:none}
@@ -6319,7 +6321,8 @@ function ggRender(rolarTopo){
     const pl=[f.pista,f.lado].filter(Boolean).join(' ');
     const rot=f.km!=null ? _kmTxt(f) : hora;
     h+='<button class="gg-ft'+(ggSel.has(m.id)?' marcada':'')+'" data-i="'+i+'" data-id="'+m.id+'" aria-label="'+_esc((rot+(pl?' '+pl:'')+(f.svc?', '+f.svc:'')+', '+hora))+'"><img alt="">'+
-      (f.svc?'<span class="sv">'+_esc(f.svc)+'</span>':'')+'<span class="km"><b>'+_esc(rot)+'</b>'+(pl?'<i>'+_esc(pl)+'</i>':'')+'</span><span class="ck" aria-hidden="true"></span></button>';
+      /* etiqueta verde do canto: a rodovia (BR-304/RN) — pedido do Wagner; o serviço continua na busca e no filtro */
+      (f.br?'<span class="sv">'+_esc(_rod(f))+'</span>':'')+'<span class="km"><b>'+_esc(rot)+'</b>'+(pl?'<i>'+_esc(pl)+'</i>':'')+'</span><span class="ck" aria-hidden="true"></span></button>';
   });
   L.innerHTML=h+'</div>';
   if(rolarTopo) L.scrollTop=0;
