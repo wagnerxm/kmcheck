@@ -603,13 +603,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #cam-logo{position:absolute;right:calc(8px + env(safe-area-inset-right, 0px));top:4px;bottom:0;margin:auto 0;
   height:30px;padding:0 clamp(7px, calc(3.4vw - 1px), 11px);font-size:11.5px;border:1px solid rgba(255,255,255,.28)}
 #cam-logo.on{border-color:transparent}
-/* PC | PD (pista crescente/decrescente): espelho do LOGO, na borda esquerda e fora do fluxo — o
-   1:1/4:3/16:9 continua no centro exato e a barra de baixo (LD, LE, i…) não perde tamanho */
-#cam-pista{position:absolute;left:calc(8px + env(safe-area-inset-left, 0px));top:4px;bottom:0;margin:auto 0;
-  height:30px;display:flex;gap:4px}
-#cam-pista .ratiobtn{height:30px;padding:0 clamp(7px, calc(3.4vw - 3px), 10px);font-size:11.5px;border:1px solid rgba(255,255,255,.28)}
-#cam-pista .ratiobtn.on{border-color:transparent}
-#cam-pista[hidden]{display:none}
 #cam-logo.none{border-style:dashed}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
@@ -702,6 +695,15 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
 .cbmini{width:var(--cbs,44px);height:var(--cbs,44px);font-size:11px}
 .cbmini svg{width:17px;height:17px}
+/* PC/PD em cima/embaixo numa coluna e LD/LE na outra, ao lado do "i". Ocupa a mesma largura de antes
+   (2 botões + vão) e cada par cabe na altura do obturador: (--sh − vão) ÷ 2 ≈ 40px no 84 — a barra
+   não cresce e o toque continua confortável. Com a pista desligada nos ajustes, o grupo "some"
+   (display:contents) e o LD/LE voltam a ser os dois botões redondos de sempre. */
+#cam-lados{display:grid;grid-template-rows:auto auto;grid-auto-flow:column;gap:4px 5px}
+#cam-lados .cbtn{width:var(--cbs,44px);height:calc((var(--sh,84px) - 4px) / 2);border-radius:12px}
+#cam-lados.sempista{display:contents}
+#cam-lados.sempista .cbtn{height:var(--cbs,44px);border-radius:50%}
+#cam-lados.sempista #cam-pc,#cam-lados.sempista #cam-pd{display:none}
 #shutter{width:var(--sh,84px);height:var(--sh,84px);flex:0 0 var(--sh,84px);border-radius:50%;
   background:linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 35%), rgba(20,20,20,.92);
   border:1px solid rgba(255,255,255,.22);cursor:pointer;
@@ -721,8 +723,6 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
   /* deitado a linha do formato vira coluna: o LOGO vai para a ponta de baixo dela */
   #camwrap.on #cam-logo{top:auto;bottom:calc(12px + env(safe-area-inset-bottom, 0px));left:0;right:0;margin:0 auto;width:max-content}
-  /* …e o PC/PD para a ponta de cima, um embaixo do outro */
-  #camwrap.on #cam-pista{flex-direction:column;top:calc(12px + env(safe-area-inset-top, 0px));bottom:auto;left:0;right:0;margin:0 auto;width:max-content;height:auto}
   /* deitado a barra é vertical: a mesma conta vale para a ALTURA (obturador no meio exato) */
   #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);
     --sh:clamp(64px, calc(100vh - 244px), 84px);
@@ -1644,15 +1644,15 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="ratiobtn" data-fmt="9:16">16:9</button>
     </div>
     <button class="ratiobtn" id="cam-logo" aria-pressed="false">LOGO</button>
-    <div id="cam-pista" role="group" aria-label="Pista">
-      <button class="ratiobtn" id="cam-pc" aria-label="Pista crescente">PC</button>
-      <button class="ratiobtn" id="cam-pd" aria-label="Pista decrescente">PD</button>
-    </div>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
-      <button class="cbtn cbtag cbmini" id="cam-ld" aria-label="Lado direito">LD</button>
-      <button class="cbtn cbtag cbmini" id="cam-le" aria-label="Lado esquerdo">LE</button>
+      <div id="cam-lados">
+        <button class="cbtn cbtag cbmini" id="cam-pc" aria-label="Pista crescente">PC</button>
+        <button class="cbtn cbtag cbmini" id="cam-pd" aria-label="Pista decrescente">PD</button>
+        <button class="cbtn cbtag cbmini" id="cam-ld" aria-label="Lado direito">LD</button>
+        <button class="cbtn cbtag cbmini" id="cam-le" aria-label="Lado esquerdo">LE</button>
+      </div>
       <button class="cbtn cbtag cbmini" id="cam-svc" aria-label="Serviço e contrato">i</button>
     </div>
     <button id="shutter" aria-label="Tirar foto"></button>
@@ -5430,7 +5430,7 @@ function getSvcSel(){ return localStorage.getItem('kc-svcsel')||'' }
 function paintTags(){
   document.getElementById('cam-ld').classList.toggle('on', getSide()==='LD');
   document.getElementById('cam-le').classList.toggle('on', getSide()==='LE');
-  document.getElementById('cam-pista').hidden=!CFG.pistabtn;
+  document.getElementById('cam-lados').classList.toggle('sempista', !CFG.pistabtn);
   document.getElementById('cam-pc').classList.toggle('on', getPista()==='PC');
   document.getElementById('cam-pd').classList.toggle('on', getPista()==='PD');
   document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel() || !!getContract());
