@@ -603,6 +603,13 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #cam-logo{position:absolute;right:calc(8px + env(safe-area-inset-right, 0px));top:4px;bottom:0;margin:auto 0;
   height:30px;padding:0 clamp(7px, calc(3.4vw - 1px), 11px);font-size:11.5px;border:1px solid rgba(255,255,255,.28)}
 #cam-logo.on{border-color:transparent}
+/* PC | PD (pista crescente/decrescente): espelho do LOGO, na borda esquerda e fora do fluxo — o
+   1:1/4:3/16:9 continua no centro exato e a barra de baixo (LD, LE, i…) não perde tamanho */
+#cam-pista{position:absolute;left:calc(8px + env(safe-area-inset-left, 0px));top:4px;bottom:0;margin:auto 0;
+  height:30px;display:flex;gap:4px}
+#cam-pista .ratiobtn{height:30px;padding:0 clamp(7px, calc(3.4vw - 3px), 10px);font-size:11.5px;border:1px solid rgba(255,255,255,.28)}
+#cam-pista .ratiobtn.on{border-color:transparent}
+#cam-pista[hidden]{display:none}
 #cam-logo.none{border-style:dashed}
 /* "piscada" rápida do obturador: a tela fica preta por um instante e clareia — igual à câmera
    nativa, deixa claro que a foto foi tirada. Bem curto (~180ms) pra não atrapalhar. */
@@ -714,6 +721,8 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
   #camwrap.on #camratio{flex-direction:column;padding:0 5px;gap:8px}
   /* deitado a linha do formato vira coluna: o LOGO vai para a ponta de baixo dela */
   #camwrap.on #cam-logo{top:auto;bottom:calc(12px + env(safe-area-inset-bottom, 0px));left:0;right:0;margin:0 auto;width:max-content}
+  /* …e o PC/PD para a ponta de cima, um embaixo do outro */
+  #camwrap.on #cam-pista{flex-direction:column;top:calc(12px + env(safe-area-inset-top, 0px));bottom:auto;left:0;right:0;margin:0 auto;width:max-content;height:auto}
   /* deitado a barra é vertical: a mesma conta vale para a ALTURA (obturador no meio exato) */
   #camwrap.on #cambar2{grid-template-columns:none;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);
     --sh:clamp(64px, calc(100vh - 244px), 84px);
@@ -1435,6 +1444,14 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <h2 class="sec">Conteúdo</h2>
     <div class="card listcard">
       <label class="listrow">
+        <span class="ltext"><b>Linha do KM</b><i>1ª linha da legenda: rodovia, KM, pista, lado e estaca. Desligada, a foto sai sem o KM.</i></span>
+        <input type="checkbox" id="cfg-kmline" checked>
+      </label>
+      <label class="listrow">
+        <span class="ltext"><b>Pista (PC / PD)</b><i>PC = Pista Crescente · PD = Pista Decrescente. Mostra os botões PC e PD na câmera; a pista marcada entra na 1ª linha, antes do lado (LD/LE).</i></span>
+        <input type="checkbox" id="cfg-pistabtn" checked>
+      </label>
+      <label class="listrow">
         <span class="ltext"><b>Exibir estaca</b><i>Estaca correspondente ao KM (20 m)</i></span>
         <input type="checkbox" id="cfg-estaca">
       </label>
@@ -1551,7 +1568,7 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       </section>
       <section class="bv-pag" aria-roledescription="página" aria-label="4 de 9">
         <div class="bv-vis" style="--cy:84"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/10-camera.webp"><span class="bv-foco" style="left:1.5%;top:86.5%;width:37.5%;height:6.3%"></span></div></div></div>
-        <div class="bv-corpo"><span class="bv-olho">Passo 3</span><h2>Prepare a foto</h2><p>Na câmera, marque o lado da pista, LD ou LE. No botão i, escolha o serviço e o contrato.</p></div>
+        <div class="bv-corpo"><span class="bv-olho">Passo 3</span><h2>Prepare a foto</h2><p>Na câmera, marque a pista, PC (crescente) ou PD (decrescente), e o lado, LD ou LE. No botão i, escolha o serviço e o contrato.</p></div>
       </section>
       <section class="bv-pag" aria-roledescription="página" aria-label="5 de 9">
         <div class="bv-vis" style="--cy:78"><div class="bv-fone"><div class="bv-tela"><img alt="" data-src="manual/tour/10-camera.webp"><span class="bv-foco" style="left:38.5%;top:84%;width:23%;height:11.2%"></span></div></div></div>
@@ -1627,6 +1644,10 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <button class="ratiobtn" data-fmt="9:16">16:9</button>
     </div>
     <button class="ratiobtn" id="cam-logo" aria-pressed="false">LOGO</button>
+    <div id="cam-pista" role="group" aria-label="Pista">
+      <button class="ratiobtn" id="cam-pc" aria-label="Pista crescente">PC</button>
+      <button class="ratiobtn" id="cam-pd" aria-label="Pista decrescente">PD</button>
+    </div>
   </div>
   <div id="cambar2">
     <div class="cbside cbleft">
@@ -2064,6 +2085,7 @@ const CFG = {
   get acc(){ return ls('acc', true) }, get maxdist(){ return +localStorage.getItem('kc-maxdist') || 300 },
   get estaca(){ return ls('estaca', true) }, get snv(){ return ls('snv', true) },
   get autosave(){ return ls('autosave', true) },
+  get kmline(){ return ls('kmline', true) }, get pistabtn(){ return ls('pistabtn', true) },
   get res(){ return localStorage.getItem('kc-res') || 'max' },
   get qual(){ return +localStorage.getItem('kc-qual') || 0.92 },
   get logopos(){ return localStorage.getItem('kc-logopos') || 'tl' },
@@ -4082,12 +4104,13 @@ function fmtSnv(fonte){
   const mi=parseInt(m[2],10);
   return 'SNV '+(ms[mi-1]||m[2])+'/'+m[1].slice(2);
 }
-function legendLines(info){
+/* completa: o EXIF (descrição) sempre leva a linha do KM, mesmo com ela desligada na imagem */
+function legendLines(info, completa){
   const L=[]; let err=false;
-  if(info.km!=null){
+  if(info.km!=null && (CFG.kmline || completa)){
     let l1=`${info.br}/${info.uf} - KM ${fkm(info.km)}`;
-    const side=getSide();
-    if(side) l1+='  '+side;
+    const lado=[getPista(), getSide()].filter(Boolean).join(' ');   // ex.: "PC LD"
+    if(lado) l1+='  '+lado;
     const est=CFG.estaca ? estacaDe(info.km, info.baseId) : '';
     if(est) l1+=' · '+est;
     if(info.dist>CFG.maxdist){ l1+=' ⚠'; err=true }
@@ -5399,12 +5422,17 @@ document.getElementById('shutter').onclick=async()=>{
   }finally{ _capturing=false; endFlash() }
 };
 
-/* ---- LD / LE / Serviço: preenchem a 2ª linha da legenda ---- */
+/* ---- PC / PD, LD / LE / Serviço: preenchem a legenda ---- */
 function getSide(){ return localStorage.getItem('kc-side')||'' }
+/* com os botões de pista desligados nos ajustes, a escolha guardada não entra na legenda */
+function getPista(){ return CFG.pistabtn ? (localStorage.getItem('kc-pista')||'') : '' }
 function getSvcSel(){ return localStorage.getItem('kc-svcsel')||'' }
 function paintTags(){
   document.getElementById('cam-ld').classList.toggle('on', getSide()==='LD');
   document.getElementById('cam-le').classList.toggle('on', getSide()==='LE');
+  document.getElementById('cam-pista').hidden=!CFG.pistabtn;
+  document.getElementById('cam-pc').classList.toggle('on', getPista()==='PC');
+  document.getElementById('cam-pd').classList.toggle('on', getPista()==='PD');
   document.getElementById('cam-svc').classList.toggle('on', !!getSvcSel() || !!getContract());
 }
 document.getElementById('cam-ld').onclick=()=>{
@@ -5412,6 +5440,12 @@ document.getElementById('cam-ld').onclick=()=>{
 };
 document.getElementById('cam-le').onclick=()=>{
   localStorage.setItem('kc-side', getSide()==='LE'?'':'LE'); paintTags(); paintGps();
+};
+document.getElementById('cam-pc').onclick=()=>{
+  localStorage.setItem('kc-pista', getPista()==='PC'?'':'PC'); paintTags(); paintGps();
+};
+document.getElementById('cam-pd').onclick=()=>{
+  localStorage.setItem('kc-pista', getPista()==='PD'?'':'PD'); paintTags(); paintGps();
 };
 const SVC_PADRAO=['Roçada','Limpeza','Placa','Defensa','Pintura','Drenagem','Ponte','Marco quilométrico','Outros'];
 /* padrões que o usuário escolheu remover (podem ser apagados como qualquer outro) */
@@ -6059,7 +6093,7 @@ function burnLegend(ctx,W,H,info,tiltDeg){
   ctx.restore();
 }
 /* Nome do arquivo: curto, legível, sem espaços/vírgulas (que dão problema em e-mail, WhatsApp e Excel)
-   e com a DATA (ordena por dia no computador). Ex.: BR-110-RN_KM47+924_LE_2026-10-06_20-06-13.jpg
+   e com a DATA (ordena por dia no computador). Ex.: BR-110-RN_KM47+924_PC_LE_2026-10-06_20-06-13.jpg
    A estaca não entra no nome — continua gravada na legenda da foto. Duas fotos no mesmo segundo:
    a segunda ganha "-2", a terceira "-3"… */
 let _lastPhotoBase='', _photoSeq=1;
@@ -6072,6 +6106,7 @@ function photoName(info){
     let k=Math.floor(info.km), m=Math.round((info.km-k)*1000);
     if(m>=1000){ k++; m=0 }
     parts.push(`${info.br}-${info.uf}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^\w\-]/g,''), `KM${k}+${String(m).padStart(3,'0')}`);
+    const pista=getPista(); if(pista) parts.push(pista);
     const side=getSide(); if(side) parts.push(side);
   } else parts.push('FOTO');
   parts.push(quando);
@@ -6269,7 +6304,7 @@ function buildCaptureMeta(info, imgW, imgH, captureDate){
     tzH=String(Math.floor(Math.abs(tzOff)/60)).padStart(2,'0'),
     tzM=String(Math.abs(tzOff)%60).padStart(2,'0'),
     tz=tzSign+tzH+':'+tzM;
-  let desc=''; try{ const {L}=legendLines(info||{}); desc=toAscii((L||[]).join(' | ')); }catch(e){}
+  let desc=''; try{ const {L}=legendLines(info||{}, true); desc=toAscii((L||[]).join(' | ')); }catch(e){}
   /* reserva (GPS sem sinal): no EXIF a hora do GPS é a da leitura real (padrão do EXIF) e o método diz de onde
      veio a posição — nada disso aparece na imagem */
   const rs=info&&info.reserva;
@@ -6494,7 +6529,7 @@ document.querySelectorAll('select.lsel').forEach(el=>{
 
 /* interruptores (chave: nome sem o prefixo cfg-) */
 for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],['cfg-date',true],['cfg-legbold',true],['cfg-legbg',true],['cfg-soundalert',true],
-                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true]]){
+                        ['cfg-estaca',true],['cfg-snv',true],['cfg-autosave',true],['cfg-kmline',true],['cfg-pistabtn',true]]){
   const el=document.getElementById(id); if(!el) continue;
   const key=id.replace('cfg-','');
   el.checked=ls(key,def);
@@ -6503,6 +6538,7 @@ for(const [id, def] of [['cfg-oae',false],['cfg-coord',true],['cfg-acc',false],[
   if(buddy){ buddy.disabled=!el.checked; syncLsel(buddy) }
   el.onchange=()=>{ localStorage.setItem('kc-'+key, el.checked?'1':'0');
     if(buddy){ buddy.disabled=!el.checked; syncLsel(buddy) }
+    if(key==='pistabtn') paintTags();
     paintGps(); refreshLive() };
 }
 
