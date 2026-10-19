@@ -871,13 +871,17 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 #gg-q::placeholder{color:#6d7686}
 #gg-q::-webkit-search-cancel-button{display:none}
 #gg-qx{flex:0 0 auto;background:none;border:0;color:#8791a3;font:600 12px var(--sans);padding:12px 10px;cursor:pointer}
-.gg-chips{display:flex;gap:6px;padding:10px 14px 4px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto}
-.gg-chips::-webkit-scrollbar{display:none}
-.gg-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;cursor:pointer;
-  font:600 12.5px var(--sans);border:1px solid rgba(255,255,255,.2);background:none;color:rgba(255,255,255,.8);white-space:nowrap}
-.gg-chip.on{background:rgba(183,217,45,.14);border-color:rgba(183,217,45,.55);color:#c9e463}
-.gg-chip .x{font-size:15px;line-height:1;opacity:.85;margin-right:-2px}
-.gg-chip .v{font-size:9px;opacity:.7}
+/* os 5 filtros sempre à vista, sem rolar para o lado, de 320 px em diante: dividem a largura da tela na proporção
+   do nome ("KM" fica estreito, "Contrato" mais largo). Os que estão sem filtro nunca encolhem; um valor longo
+   escolhido (contrato, data) é o que corta com "…" — o valor inteiro aparece na linha de resultado logo abaixo. */
+.gg-chips{display:flex;gap:4px;padding:10px 14px 4px;flex:0 0 auto}
+.gg-chip{flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:center;gap:3px;height:34px;padding:0 clamp(4px,1.8vw,10px);
+  border-radius:999px;cursor:pointer;font:600 clamp(10.5px,2.9vw,12.5px) var(--sans);border:1px solid rgba(255,255,255,.2);
+  background:none;color:rgba(255,255,255,.8);white-space:nowrap}
+.gg-chip:not(.on){flex-shrink:0}
+.gg-chip .t{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.gg-chip.on{background:rgba(183,217,45,.14);border-color:rgba(183,217,45,.55);color:#c9e463;justify-content:space-between}
+.gg-chip .x{flex:0 0 auto;font-size:15px;line-height:1;opacity:.85;padding:6px 0 6px 2px}
 .gg-res{padding:6px 16px 8px;font-size:11.5px;color:#8791a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
 .gg-res b{color:#fff}
 #gg-lista{flex:1;min-height:0;overflow-y:auto;padding:0 3px calc(16px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
@@ -6333,9 +6337,9 @@ function ggChips(){
   const box=document.getElementById('gg-chips');
   box.innerHTML=GG_FILTROS.map(F=>{
     const v=galF[F.k];
-    if(!v) return '<button class="gg-chip" data-k="'+F.k+'">'+F.nome+' <span class="v">▾</span></button>';
+    if(!v) return '<button class="gg-chip" data-k="'+F.k+'"><span class="t">'+F.nome+'</span></button>';
     const txt=F.k==='km' ? v.rot : (F.rot?F.rot(v):v);
-    return '<button class="gg-chip on" data-k="'+F.k+'" aria-label="'+_esc(F.nome+': '+txt+'. Tocar no × tira o filtro')+'">'+_esc(txt)+' <span class="x" data-x="1">×</span></button>';
+    return '<button class="gg-chip on" data-k="'+F.k+'" aria-label="'+_esc(F.nome+': '+txt+'. Tocar no × tira o filtro')+'"><span class="t">'+_esc(txt)+'</span><span class="x" data-x="1">×</span></button>';
   }).join('');
 }
 document.getElementById('gg-chips').onclick=e=>{
