@@ -695,11 +695,11 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 /* botões laterais bem pequenos e discretos, para o obturador ser o foco */
 .cbmini{width:var(--cbs,44px);height:var(--cbs,44px);font-size:11px}
 .cbmini svg{width:17px;height:17px}
-/* PC/PD em cima/embaixo numa coluna e LD/LE na outra, ao lado do "i". Ocupa a mesma largura de antes
-   (2 botões + vão) e cada par cabe na altura do obturador: (--sh − vão) ÷ 2 ≈ 40px no 84 — a barra
-   não cresce e o toque continua confortável. Com a pista desligada nos ajustes, o grupo "some"
-   (display:contents) e o LD/LE voltam a ser os dois botões redondos de sempre. */
-#cam-lados{display:grid;grid-template-rows:auto auto;grid-auto-flow:column;gap:4px 5px}
+/* 2×2 ao lado do "i", na ordem pedida pelo Wagner: em cima PD PC, embaixo LE LD (o esquerdo à esquerda).
+   Ocupa a mesma largura de antes (2 botões + vão) e cada linha cabe na altura do obturador:
+   (--sh − vão) ÷ 2 ≈ 40px no 84 — a barra não cresce e o toque continua confortável. Com a pista
+   desligada nos ajustes, o grupo "some" (display:contents) e ficam só LE LD, redondos. */
+#cam-lados{display:grid;grid-template-columns:auto auto;gap:4px 5px}
 #cam-lados .cbtn{width:var(--cbs,44px);height:calc((var(--sh,84px) - 4px) / 2);border-radius:12px}
 #cam-lados.sempista{display:contents}
 #cam-lados.sempista .cbtn{height:var(--cbs,44px);border-radius:50%}
@@ -1648,10 +1648,10 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
   <div id="cambar2">
     <div class="cbside cbleft">
       <div id="cam-lados">
-        <button class="cbtn cbtag cbmini" id="cam-pc" aria-label="Pista crescente">PC</button>
         <button class="cbtn cbtag cbmini" id="cam-pd" aria-label="Pista decrescente">PD</button>
-        <button class="cbtn cbtag cbmini" id="cam-ld" aria-label="Lado direito">LD</button>
+        <button class="cbtn cbtag cbmini" id="cam-pc" aria-label="Pista crescente">PC</button>
         <button class="cbtn cbtag cbmini" id="cam-le" aria-label="Lado esquerdo">LE</button>
+        <button class="cbtn cbtag cbmini" id="cam-ld" aria-label="Lado direito">LD</button>
       </div>
       <button class="cbtn cbtag cbmini" id="cam-svc" aria-label="Serviço e contrato">i</button>
     </div>
