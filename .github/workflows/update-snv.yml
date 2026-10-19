@@ -1,8 +1,12 @@
 name: Update SNV Road Data
 
+# Sem agendamento diário: a nuvem do DNIT (servicos.dnit.gov.br) não aceita conexão de fora do Brasil e os
+# computadores do GitHub (e o VPS) ficam nos EUA — toda execução morria em "UND_ERR_CONNECT_TIMEOUT" (81 falhas
+# seguidas até out/2026). A atualização é feita de um computador no Brasil:
+#   WEBDAV_SHARE_TOKEN=... node scripts/fetch-snv-wfs.mjs        (rodovias + pista dupla, quando sai SNV novo)
+#   WEBDAV_SHARE_TOKEN=... SO_DUPLICADAS=1 node scripts/fetch-snv-wfs.mjs   (só a pista dupla)
+# Aqui fica só o disparo manual, para o dia em que o DNIT liberar o acesso de fora.
 on:
-  schedule:
-    - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       so_duplicadas:
