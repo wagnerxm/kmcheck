@@ -1,6 +1,6 @@
 {
  "id": "cbuq",
- "versao": 2,
+ "versao": 3,
  "nome": "Aplicação de CBUQ",
  "icone": "layers",
  "local": "trecho",
@@ -240,6 +240,42 @@
    "id": "passadas_liso",
    "tipo": "contador",
    "rotulo": "Passadas do rolo liso"
+  },
+  {
+   "id": "espessura_solta",
+   "tipo": "numero",
+   "rotulo": "Espessura solta, com empolamento (atrás da acabadora)",
+   "unidade": "cm",
+   "min": 0,
+   "max": 30,
+   "casas": 1,
+   "obrig": true
+  },
+  {
+   "id": "espessura_compactada",
+   "tipo": "numero",
+   "rotulo": "Espessura compactada",
+   "unidade": "cm",
+   "min": 0,
+   "max": 30,
+   "casas": 1,
+   "obrig": true,
+   "regras": [
+    {
+     "min": "contrato.espessura_projeto_cm * 0.95",
+     "max": "contrato.espessura_projeto_cm * 1.05",
+     "ref": "7.3.2: ±5 % da espessura de projeto (a oficial é por corpo de prova)"
+    }
+   ]
+  },
+  {
+   "id": "empolamento",
+   "tipo": "calc",
+   "rotulo": "Empolamento",
+   "unidade": "%",
+   "formula": "(espessura_solta / espessura_compactada - 1) * 100",
+   "casas": 0,
+   "bloco": "verificacoes"
   },
   {
    "id": "juntas",
