@@ -2,7 +2,7 @@
 // Só muda quando sai uma versão nova nas lojas (1.0.0 → 1.0.1 → 1.1.0…).
 // CACHE: número interno, sobe a CADA alteração (é o que faz os aparelhos baixarem a versão nova).
 const VERSAO_APP = '1.0.0';
-const CACHE = 'kmcheck-v350';
+const CACHE = 'kmcheck-v351';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png', 'logo-kmcheck.png', 'fundo-sobre.webp', 'sw.js', 'data/rodovias/index.json'];
 // sw.js: o app lê a versão dele para mostrar no cabeçalho (offline ficava "VERSÃO …"); index.json: a lista de
 // rodovias funciona offline já na 1ª sessão (antes só depois de recarregar com o SW no controle)
@@ -78,6 +78,8 @@ self.addEventListener('fetch', e => {
   // Ficha Check (demonstração) mora no mesmo site e tem SW próprio: sem sinal, o fallback do documento
   // abria o KM Check no lugar dela
   if (url.pathname.includes('/ficha-demo/')) return;
+  // Finance Mind (PWA à parte, em /financemind/) tem SW próprio: sem sinal, o fallback do documento abriria o KM Check no lugar dele
+  if (url.pathname.includes('/financemind/')) return;
   /* ── Download forçado via SW ──
      O app coloca o blob no cache 'kmcheck-dl' e navega um iframe para /__dl/nome.jpg.
      Servimos com Content-Disposition: attachment → Chrome baixa automaticamente,

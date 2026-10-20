@@ -25,6 +25,7 @@ build, bundler, framework nem dependências de runtime no cliente. Editar o app 
 | `.github/workflows/` | `update-snv.yml` (diário 06:00 UTC) e `sync-dnit.yml` (mensal). |
 | `manual/` | Manual do usuário **dentro do app** (`index.html` + `img/`). **Gerado** por `manual-kmcheck/estudio/manual-web.mjs` — não editar à mão. O SW guarda num cache próprio (`kmcheck-manual`), baixado só na 1ª abertura. |
 | `manual-kmcheck/` | Estúdio do manual (prints, textos, geradores, prévias) e a versão web publicada. |
+| `financemind/` | **Finance Mind**, outro app (PWA offline de finanças pessoais) hospedado na subpasta, com `sw.js`/manifest próprios (`financemind-vN`; subir o número a cada alteração). A raiz `sw.js` o ignora. Não faz parte do KM Check. |
 | `.claude/launch.json` | Config de preview (`npx serve` na porta 3456). |
 
 ## Telas (`#scr-*`)

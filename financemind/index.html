@@ -1,0 +1,1633 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Finance Mind</title>
+<meta name="theme-color" content="#0A3D2E">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finance Mind"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png">
+<style>
+/* Equivale ao esqueleto que o Claude Artifacts aplica: respiros das áreas seguras do iPhone e atributo [hidden]. */
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}img{max-width:100%}
+/* Layout: mobile-first, uma coluna com barra inferior; no desktop vira menu lateral + conteúdo central.
+   Identidade: fintech em verde-esmeralda/verde-escuro, receita = esmeralda, despesa = laranja queimado. */
+:root{
+  --bg:#F1F6F3; --surf:#FFFFFF; --surf2:#E7EFEB; --ink:#0C1A15; --muted:#52665D; --line:#D6E1DB;
+  --brand:#0B7F58; --brand-ink:#FFFFFF; --brand-soft:#D3EFE2;
+  --hero:#0A3D2E; --hero-ink:#F1FBF6; --hero-mute:#A9CDBE; --hero-line:rgba(255,255,255,.16);
+  --rec:#0B8C61; --dsp:#D2591F;
+  --ok:#0B7F58; --warn:#8F5600; --warn-soft:#FBEFCF; --bad:#B42318; --bad-soft:#FCE3E0;
+  --bar-ok:#5EE0A4; --bar-warn:#F5B93B; --bar-bad:#FF8A80;
+  --shadow:0 1px 2px rgba(10,50,36,.06),0 8px 28px rgba(10,50,36,.07);
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --f-body:'Figtree','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#07120E; --surf:#0E1C17; --surf2:#162922; --ink:#E6F2EC; --muted:#93ABA0; --line:#20362E;
+  --brand:#3DDC97; --brand-ink:#04251A; --brand-soft:#12392A;
+  --hero:#0E3B2C; --hero-ink:#EFFBF5; --hero-mute:#9CC4B3;
+  --rec:#3DDC97; --dsp:#FF9461;
+  --ok:#3DDC97; --warn:#F5B93B; --warn-soft:#3A2D0B; --bad:#FF8A80; --bad-soft:#431A17;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#07120E; --surf:#0E1C17; --surf2:#162922; --ink:#E6F2EC; --muted:#93ABA0; --line:#20362E;
+  --brand:#3DDC97; --brand-ink:#04251A; --brand-soft:#12392A;
+  --hero:#0E3B2C; --hero-ink:#EFFBF5; --hero-mute:#9CC4B3;
+  --rec:#3DDC97; --dsp:#FF9461;
+  --ok:#3DDC97; --warn:#F5B93B; --warn-soft:#3A2D0B; --bad:#FF8A80; --bad-soft:#431A17;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:auto;min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:60}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:18px;font-weight:700}h3{font-size:15px;font-weight:700}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:8px}
+button{cursor:pointer}
+.mut{color:var(--muted)}.sm{font-size:13px}.xs{font-size:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.app{max-width:1180px;margin:0 auto;display:block;min-height:100vh}
+.side{display:none}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg);display:flex;align-items:center;gap:10px;padding:10px 0}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:-.02em}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--hero);display:grid;place-items:center;flex:none}
+.logo svg{display:block}
+.grow{flex:1;min-width:0}
+.icon-btn{border:0;background:var(--surf);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line);flex:none}
+.icon-btn:hover{background:var(--surf2)}
+main{padding-bottom:110px;min-width:0}
+.page{display:flex;flex-direction:column;gap:14px;animation:in .25s ease both}
+@keyframes in{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.page{animation:none}*{transition:none!important}}
+.ptitle{font-size:26px;font-weight:700;margin:4px 0 2px}
+.psub{color:var(--muted);margin-top:-8px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--surf);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px max(8px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+.nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:11.5px;font-weight:600;color:var(--muted);border-radius:12px}
+.nav button[aria-current="page"]{color:var(--brand)}
+.nav .fab{align-self:start;margin-top:-22px;width:56px;height:56px;border-radius:50%;background:var(--brand);color:var(--brand-ink);justify-self:center;display:grid;place-items:center;
+  box-shadow:0 6px 18px rgba(11,127,88,.45);padding:0}
+.nav .fab:hover{filter:brightness(1.06)}
+
+@media (min-width:900px){
+  .app{display:grid;grid-template-columns:236px minmax(0,1fr);gap:32px;padding-top:16px}
+  .side{display:flex;flex-direction:column;gap:4px;position:sticky;top:16px;align-self:start;height:calc(100vh - 32px);padding-bottom:8px}
+  .side .brand{padding:6px 8px 18px}
+  .side nav{display:flex;flex-direction:column;gap:2px}
+  .side nav button{display:flex;align-items:center;gap:11px;border:0;background:none;padding:10px 12px;border-radius:12px;font-weight:600;color:var(--muted);text-align:left}
+  .side nav button:hover{background:var(--surf2)}
+  .side nav button[aria-current="page"]{background:var(--brand-soft);color:var(--brand)}
+  .side .btn{margin:10px 0}
+  .side .foot{margin-top:auto;font-size:12px;color:var(--muted);padding:8px}
+  .topbar,.nav{display:none}
+  main{padding-bottom:48px;max-width:860px}
+}
+
+.card{background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.card.flat{box-shadow:none}
+.secao{display:flex;flex-direction:column;gap:10px;min-width:0}
+.secao-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.link{border:0;background:none;color:var(--brand);font-weight:600;padding:4px 2px;font-size:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.sb{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:10px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.g3.stk{grid-template-columns:1fr}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surf);padding:11px 16px;border-radius:13px;font-weight:700;min-height:44px}
+.btn:hover{background:var(--surf2)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.big{width:100%;font-size:17px;min-height:54px;border-radius:16px}
+.btn.ghost{background:none}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{min-height:36px;padding:7px 12px;font-size:14px;border-radius:11px}
+.btn[disabled]{opacity:.55;cursor:default}
+
+/* Hero: situação financeira */
+.hero{background:var(--hero);color:var(--hero-ink);border-radius:22px;padding:18px;position:relative;overflow:hidden;
+  background-image:radial-gradient(120% 90% at 100% 0%,rgba(61,220,151,.18),transparent 60%)}
+.hero .lbl{font-size:13px;color:var(--hero-mute);font-weight:600;letter-spacing:.02em}
+.hero .big{font-family:var(--f-display);font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin:2px 0}
+.hero .sub{font-size:13.5px;color:var(--hero-mute)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);color:var(--hero-ink)}
+.orc{margin-top:16px;padding-top:14px;border-top:1px solid var(--hero-line)}
+.orc .v{font-family:var(--f-display);font-size:26px;font-weight:700}
+.bar{height:9px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden;margin:8px 0 6px}
+.bar i{display:block;height:100%;border-radius:9px;background:var(--bar-ok);transition:width .5s}
+.bar i.warn{background:var(--bar-warn)}.bar i.bad{background:var(--bar-bad)}
+.bar.lt{background:var(--surf2)}
+.bar.lt i{background:var(--brand)}
+.bar.lt i.warn{background:#C98A00}.bar.lt i.bad{background:var(--bad)}
+.stat{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:12px 14px;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted);font-weight:600}
+.stat .v{font-family:var(--f-display);font-size:20px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+.stat .s{font-size:12px;color:var(--muted)}
+.v.rec{color:var(--rec)}.v.dsp{color:var(--dsp)}
+
+.acao{border:1.5px solid var(--brand);background:var(--surf);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.acao .k{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.acao h2{font-size:21px}
+.acao p{color:var(--muted)}
+.mentor-card{display:flex;gap:14px;align-items:center;background:var(--brand-soft);border:1px solid transparent;border-radius:18px;padding:14px 16px;width:100%;text-align:left}
+.mentor-card .ic{width:44px;height:44px;border-radius:14px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;flex:none}
+.mentor-card strong{display:block;font-family:var(--f-display);font-size:17px}
+
+/* metas */
+.meta-mini{display:flex;flex-direction:column;gap:6px}
+.meta-mini .t{font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--surf2);color:var(--muted)}
+.badge.ok{background:var(--brand-soft);color:var(--ok)}.badge.warn{background:var(--warn-soft);color:var(--warn)}.badge.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* listas */
+.lista{display:flex;flex-direction:column}
+.item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);min-width:0;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left}
+.item:last-child{border-bottom:0}
+.dot{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;color:#fff}
+.item .mid{flex:1;min-width:0}
+.item .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .d{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.val{font-weight:700;white-space:nowrap}.val.rec{color:var(--rec)}
+.pago{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:none;display:grid;place-items:center;color:transparent;flex:none;padding:0}
+.pago.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.pago.off{border-color:var(--warn)}
+.dia-h{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:capitalize;padding:12px 0 2px;display:flex;justify-content:space-between}
+
+/* formulários */
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>label,.lbl2{font-size:13px;font-weight:700;color:var(--muted)}
+.inp{width:100%;background:var(--surf);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;min-height:46px}
+.inp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+textarea.inp{min-height:84px;resize:vertical}
+.moneywrap{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--line);padding:4px 0}
+.moneywrap:focus-within{border-color:var(--brand)}
+.moneywrap span{font-size:22px;color:var(--muted);font-weight:600}
+.money{border:0;background:none;width:100%;font-family:var(--f-display);font-weight:700;font-size:28px;padding:4px 0;min-width:0}
+.money.grande{font-size:44px}
+.money:focus{outline:none}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;background:var(--surf2);border-radius:13px;padding:3px;gap:3px}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:10px;font-weight:700;color:var(--muted);min-height:38px}
+.seg button[aria-pressed="true"]{background:var(--surf);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg.full{display:flex}.seg.full button{flex:1}
+.seg button.dsp[aria-pressed="true"]{color:var(--dsp)}.seg button.rec[aria-pressed="true"]{color:var(--rec)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--surf);border-radius:99px;padding:7px 13px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;min-height:38px}
+.chip[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--ok)}
+.chip i{width:9px;height:9px;border-radius:50%;display:block}
+.sw{position:relative;display:inline-block;width:46px;height:26px;flex:none}
+.sw input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.sw b{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.2s;pointer-events:none}
+.sw b::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw input:checked+b{background:var(--brand)}.sw input:checked+b::after{left:23px}
+.sw input:focus-visible+b{outline:2.5px solid var(--brand);outline-offset:2px}
+.sw-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:11px;padding:9px 12px;font-weight:600;font-size:14px}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.info{background:var(--brand-soft);color:var(--ok);border-radius:12px;padding:10px 12px;font-size:13.5px}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(4,16,11,.55);display:flex;align-items:flex-end;justify-content:center;z-index:80}
+.sheet{background:var(--surf);width:min(580px,100%);max-height:94%;border-radius:22px 22px 0 0;display:flex;flex-direction:column;box-shadow:var(--shadow);animation:up .22s ease both}
+@keyframes up{from{transform:translateY(24px);opacity:.5}to{transform:none;opacity:1}}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px 20px}
+.sheet-b{overflow-y:auto;padding:8px 20px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+@media (min-width:700px){.sheet-bg{align-items:center}.sheet{border-radius:22px;max-height:90%}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:90;background:var(--ink);color:var(--bg);border-radius:14px;padding:11px 14px;display:flex;gap:14px;align-items:center;max-width:min(92vw,460px);font-weight:600;box-shadow:var(--shadow)}
+.toast button{border:0;background:none;color:var(--brand);font-weight:800;padding:0;filter:brightness(1.25)}
+@media (min-width:900px){.toast{bottom:28px}}
+
+/* gráficos */
+.chart{width:100%;max-width:560px;height:auto;display:block;overflow:visible}
+.chart text{fill:var(--muted);font:600 10.5px var(--f-body)}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .grp{cursor:pointer}
+.chart .grp:hover rect.bg,.chart .grp.sel rect.bg{fill:var(--surf2)}
+.chart .grp.sel text{fill:var(--ink);font-weight:800}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);font-weight:600}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.rank{display:flex;flex-direction:column;gap:11px}
+.rank button{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:5px;width:100%}
+.rank .h{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.rank .bar{margin:0}
+.rank .bar i{background:var(--c)}
+.ring{--p:0;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--brand) calc(var(--p)*1%),var(--surf2) 0);display:grid;place-items:center;flex:none}
+.ring::before{content:"";grid-area:1/1;width:70px;height:70px;border-radius:50%;background:var(--surf)}
+.ring b{grid-area:1/1;font-family:var(--f-display);font-size:20px;z-index:1}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots i{width:14px;height:14px;border-radius:5px;background:var(--surf2);display:block}
+.dots i.on{background:var(--brand)}
+.dots i.hoje{outline:2px solid var(--ink);outline-offset:1px}
+
+/* radar / insights */
+.ins{display:flex;gap:12px;align-items:flex-start}
+.ins .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--brand-soft);color:var(--ok)}
+.ins.atencao .ic{background:var(--warn-soft);color:var(--warn)}
+.ins h3{margin-bottom:2px}
+.ins p{color:var(--muted);font-size:14px}
+.veredito{border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.veredito.ok{background:var(--brand-soft);color:var(--ok)}.veredito.esperar{background:var(--warn-soft);color:var(--warn)}.veredito.evitar{background:var(--bad-soft);color:var(--bad)}
+.veredito h2{font-size:22px}
+.mot{display:flex;flex-direction:column;gap:9px}
+.mot div{display:flex;gap:10px;align-items:flex-start}
+.mot .m{width:20px;height:20px;border-radius:50%;flex:none;margin-top:1px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--muted)}
+.mot .ok .m{background:var(--ok)}.mot .warn .m{background:#C98A00}.mot .bad .m{background:var(--bad)}
+
+/* chat */
+.chat{display:flex;flex-direction:column;gap:12px}
+.msg{max-width:92%;padding:11px 14px;border-radius:16px;overflow-wrap:anywhere}
+.msg.u{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:5px}
+.msg.a{align-self:flex-start;background:var(--surf);border:1px solid var(--line);border-bottom-left-radius:5px}
+.md p+p,.md p+ul,.md ul+p{margin-top:7px}
+.md ul{margin:0;padding-left:20px}.md li{margin:2px 0}
+.composer{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;background:var(--bg);padding:8px 0}
+@media (min-width:900px){.composer{bottom:0}}
+.composer .inp{flex:1}
+.dots3 span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin:0 2px;animation:b 1s infinite}
+.dots3 span:nth-child(2){animation-delay:.15s}.dots3 span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:6px 6px 6px 0}
+.tbl td{padding:9px 6px 9px 0;border-top:1px solid var(--line);vertical-align:middle}
+.tbl td.r,.tbl th.r{text-align:right;padding-right:0}
+.scroll-x{overflow-x:auto}
+.menu-item{display:flex;align-items:center;gap:14px;width:100%;border:0;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
+.menu-item .ic{width:40px;height:40px;border-radius:12px;background:var(--brand-soft);color:var(--ok);display:grid;place-items:center;flex:none}
+.menu-item strong{display:block}
+.empty{text-align:center;padding:24px 12px;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:17px;margin-bottom:4px}
+.demo-banner{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:9px 12px;font-size:13.5px;font-weight:600;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);width:100%;border-left:0;border-right:0;border-top:0;background:none;text-align:left}
+.check:last-child{border-bottom:0}
+.check .pago{margin-top:1px}
+.check.done .tt{text-decoration:line-through;color:var(--muted)}
+pre.out{background:var(--surf2);border-radius:12px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;user-select:all}
+
+</style></head><body>
+<div id="root"></div>
+<noscript>O Finance Mind precisa de JavaScript.</noscript>
+<script src="vendor/react.min.js"></script><script src="vendor/react-dom.min.js"></script><script src="vendor/htm.js"></script>
+<script>
+/* ===== LÓGICA PURA (sem DOM) — valores sempre em centavos inteiros ===== */
+const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmt = c => MOEDA.format((c || 0) / 100);
+const numBR = c => ((c || 0) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const compacto = c => { const r = c / 100; return r >= 1000 ? 'R$ ' + (r / 1000).toFixed(r >= 10000 ? 0 : 1).replace('.', ',') + ' mil' : 'R$ ' + Math.round(r); };
+const soma = (arr, f = x => x) => arr.reduce((a, x) => a + f(x), 0);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const MESC = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const pad = n => String(n).padStart(2, '0');
+const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const hoje = () => isoDate(new Date());
+const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const dataValida = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && isoDate(parseISO(s)) === s;
+const ymOf = s => s.slice(0, 7);
+const addMes = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const diasMes = ym => { const [y, m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+const addDias = (s, n) => { const d = parseISO(s); d.setDate(d.getDate() + n); return isoDate(d); };
+const difDias = (a, b) => Math.round((parseISO(a) - parseISO(b)) / 86400000);
+const segunda = s => { const d = parseISO(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return isoDate(d); };
+const fimMes = ym => `${ym}-${pad(diasMes(ym))}`;
+const fmtData = s => `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}`;
+const fmtDM = s => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+const nomeMes = ym => `${MESES[+ym.slice(5, 7) - 1]} de ${ym.slice(0, 4)}`;
+const mesCurto = ym => MESC[+ym.slice(5, 7) - 1];
+const rotuloDia = (s, h) => s === h ? 'Hoje' : s === addDias(h, -1) ? 'Ontem' : `${DIAS[parseISO(s).getDay()]}, ${fmtDM(s)}`;
+
+// Converte "1.234,56", "R$ 12,5", "12.50" em centavos. NaN quando inválido.
+function parseMoeda(str) {
+  const s = String(str == null ? '' : str).replace(/[R$\s]/g, '');
+  if (!s || !/^[\d.,]+$/.test(s)) return NaN;
+  const v = s.lastIndexOf(','), p = s.lastIndexOf('.');
+  let int = s, dec = '0';
+  if (v > -1 && v > p) { int = s.slice(0, v); dec = s.slice(v + 1); }
+  else if (v === -1 && p > -1 && s.length - p - 1 <= 2) { int = s.slice(0, p); dec = s.slice(p + 1); }
+  int = int.replace(/[.,]/g, '');
+  if (dec.length > 2 || !/^\d*$/.test(int) || !/^\d*$/.test(dec)) return NaN;
+  return parseInt(int || '0', 10) * 100 + parseInt((dec + '00').slice(0, 2), 10);
+}
+// Divide em n parcelas sem perder centavos: as primeiras levam a sobra.
+function dividir(total, n) {
+  const base = Math.floor(total / n), resto = total - base * n;
+  return Array.from({ length: n }, (_, i) => base + (i < resto ? 1 : 0));
+}
+
+/* ----- estado ----- */
+const PALETA = ['#0B9E6E', '#2C8BD6', '#7A5AF0', '#E0527A', '#E8892B', '#C9A227', '#1FA6A0', '#8A9A5B', '#6B7C93', '#B05FD0'];
+const COR = i => PALETA[Math.abs(i | 0) % PALETA.length];
+const PERFIL_PADRAO = [
+  'Confio na minha capacidade de prosperar',
+  'Tenho dificuldade de saber por onde começar a organizar as finanças',
+  'Costumo gastar acima do que gostaria',
+  'Não acompanho as despesas com regularidade',
+  'Tendo a adiar tarefas sem cobrança ou urgência',
+  'Tenho dificuldade de iniciar atividades pouco estimulantes',
+  'Prefiro atividades interessantes às repetitivas',
+  'Esqueço de fazer o acompanhamento financeiro',
+  'Me arrependo quando gasto além do desejado',
+  'Minha motivação para mudar é temporária e depois perco a continuidade',
+  'Acredito que mereço e posso crescer financeiramente'
+];
+const CATS_PADRAO = [
+  { id: 'c_moradia', nome: 'Moradia', tipo: 'despesa', gasto: 'essencial', cor: 0 },
+  { id: 'c_mercado', nome: 'Mercado', tipo: 'despesa', gasto: 'essencial', cor: 7 },
+  { id: 'c_contas', nome: 'Contas e serviços', tipo: 'despesa', gasto: 'essencial', cor: 1 },
+  { id: 'c_transp', nome: 'Transporte', tipo: 'despesa', gasto: 'essencial', cor: 6 },
+  { id: 'c_saude', nome: 'Saúde', tipo: 'despesa', gasto: 'essencial', cor: 3 },
+  { id: 'c_educ', nome: 'Educação', tipo: 'despesa', gasto: 'essencial', cor: 2 },
+  { id: 'c_rest', nome: 'Restaurantes e delivery', tipo: 'despesa', gasto: 'flexivel', cor: 4 },
+  { id: 'c_lazer', nome: 'Lazer', tipo: 'despesa', gasto: 'flexivel', cor: 9 },
+  { id: 'c_compras', nome: 'Compras', tipo: 'despesa', gasto: 'flexivel', cor: 5 },
+  { id: 'c_assin', nome: 'Assinaturas', tipo: 'despesa', gasto: 'flexivel', cor: 8 },
+  { id: 'c_cuid', nome: 'Cuidados pessoais', tipo: 'despesa', gasto: 'flexivel', cor: 3 },
+  { id: 'c_outros', nome: 'Outros', tipo: 'despesa', gasto: 'flexivel', cor: 8, fixa: true },
+  { id: 'c_meta', nome: 'Aportes em metas', tipo: 'despesa', gasto: 'meta', cor: 0, oculta: true, fixa: true },
+  { id: 'r_salario', nome: 'Salário', tipo: 'receita', gasto: 'flexivel', cor: 0 },
+  { id: 'r_extra', nome: 'Renda extra', tipo: 'receita', gasto: 'flexivel', cor: 6 },
+  { id: 'r_outras', nome: 'Outras receitas', tipo: 'receita', gasto: 'flexivel', cor: 8, fixa: true }
+];
+const estadoInicial = () => ({
+  v: 1, criadoEm: hoje(), atualizadoEm: 0,
+  cfg: { tema: 'auto', rendaMensal: 0, saldoInicial: 0, guardarMes: null, orcFlex: null, pequeno: 3000, simples: false, onboard: false },
+  cats: CATS_PADRAO.map(c => ({ ...c, limite: 0 })),
+  tx: [], recs: [], metas: [], espera: [], economizado: 0,
+  hab: { dias: {}, semanas: {}, metasMes: {}, desafio: null, desafiosFeitos: [] },
+  perfil: { tracos: [...PERFIL_PADRAO], notas: '' },
+  mentor: []
+});
+const catMap = S => Object.fromEntries(S.cats.map(c => [c.id, c]));
+const nomeCat = (S, id) => (catMap(S)[id] || {}).nome || 'Sem categoria';
+
+/* ----- importação / validação ----- */
+const inteiroPos = v => Number.isInteger(v) && v > 0 && v < 1e12 ? v : 0;
+function normalizarEstado(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('O arquivo não parece um backup do Finance Mind.');
+  const avisos = [], base = estadoInicial();
+  const S = { ...base, criadoEm: dataValida(raw.criadoEm) ? raw.criadoEm : base.criadoEm, atualizadoEm: Date.now() };
+  const cf = raw.cfg && typeof raw.cfg === 'object' ? raw.cfg : {};
+  S.cfg = {
+    tema: ['auto', 'claro', 'escuro'].includes(cf.tema) ? cf.tema : 'auto',
+    rendaMensal: inteiroPos(cf.rendaMensal), saldoInicial: Number.isInteger(cf.saldoInicial) && Math.abs(cf.saldoInicial) < 1e12 ? cf.saldoInicial : 0,
+    guardarMes: cf.guardarMes == null ? null : (Number.isInteger(cf.guardarMes) && cf.guardarMes >= 0 ? cf.guardarMes : null),
+    orcFlex: cf.orcFlex == null ? null : (Number.isInteger(cf.orcFlex) && cf.orcFlex >= 0 ? cf.orcFlex : null),
+    pequeno: inteiroPos(cf.pequeno) || 3000, simples: !!cf.simples, onboard: !!cf.onboard
+  };
+  if (Array.isArray(raw.cats)) {
+    const vistos = new Set(), cats = [];
+    for (const c of raw.cats) {
+      if (!c || typeof c.id !== 'string' || typeof c.nome !== 'string' || vistos.has(c.id)) continue;
+      if (!['despesa', 'receita'].includes(c.tipo)) continue;
+      vistos.add(c.id);
+      cats.push({ id: c.id, nome: c.nome.slice(0, 40) || 'Categoria', tipo: c.tipo, gasto: ['essencial', 'flexivel', 'meta'].includes(c.gasto) ? c.gasto : 'flexivel', cor: Number.isInteger(c.cor) ? c.cor : 0, limite: inteiroPos(c.limite), oculta: !!c.oculta, fixa: !!c.fixa });
+    }
+    for (const p of CATS_PADRAO) if (p.fixa && !vistos.has(p.id)) cats.push({ ...p, limite: 0 });
+    S.cats = cats;
+  }
+  const cm = catMap(S), ids = new Set();
+  S.tx = [];
+  (Array.isArray(raw.tx) ? raw.tx : []).forEach((t, i) => {
+    if (!t || typeof t !== 'object') return;
+    const valor = inteiroPos(t.valor);
+    if (!['receita', 'despesa'].includes(t.tipo) || !valor || !dataValida(t.data)) { avisos.push(`Lançamento ${i + 1} ignorado (dados inválidos).`); return; }
+    let id = typeof t.id === 'string' && t.id && !ids.has(t.id) ? t.id : uid() + i;
+    ids.add(id);
+    let catId = cm[t.catId] && cm[t.catId].tipo === t.tipo ? t.catId : (t.tipo === 'receita' ? 'r_outras' : 'c_outros');
+    const n = { id, tipo: t.tipo, valor, data: t.data, catId, desc: String(t.desc || '').slice(0, 120), pago: t.pago !== false, planejado: t.planejado !== false };
+    if (typeof t.grupoId === 'string') n.grupoId = t.grupoId;
+    if (t.parc && Number.isInteger(t.parc.n) && Number.isInteger(t.parc.total)) n.parc = { n: t.parc.n, total: t.parc.total };
+    if (typeof t.recId === 'string') n.recId = t.recId;
+    if (dataValida(t.cr)) n.cr = t.cr;
+    S.tx.push(n);
+  });
+  S.recs = (Array.isArray(raw.recs) ? raw.recs : []).filter(r => r && typeof r.id === 'string' && ['receita', 'despesa'].includes(r.tipo) && inteiroPos(r.valor) && cm[r.catId] && Number.isInteger(r.dia) && /^\d{4}-\d{2}$/.test(r.inicio || ''))
+    .map(r => ({ id: r.id, tipo: r.tipo, valor: r.valor, catId: r.catId, desc: String(r.desc || '').slice(0, 120), dia: Math.min(31, Math.max(1, r.dia)), inicio: r.inicio, fim: /^\d{4}-\d{2}$/.test(r.fim || '') ? r.fim : undefined, pulos: Array.isArray(r.pulos) ? r.pulos.filter(x => typeof x === 'string') : [], planejado: r.planejado !== false, pagoPrimeiro: typeof r.pagoPrimeiro === 'boolean' ? r.pagoPrimeiro : null }));
+  const TIPOS_META = ['reserva', 'divida', 'compra', 'projeto', 'invest'];
+  S.metas = (Array.isArray(raw.metas) ? raw.metas : []).filter(m => m && typeof m.id === 'string' && inteiroPos(m.alvo)).map(m => ({
+    id: m.id, tipo: TIPOS_META.includes(m.tipo) ? m.tipo : 'projeto', nome: String(m.nome || 'Meta').slice(0, 50), alvo: m.alvo,
+    atual: Number.isInteger(m.atual) && m.atual >= 0 ? m.atual : 0, prazo: dataValida(m.prazo) ? m.prazo : null, mensal: inteiroPos(m.mensal),
+    aportes: (Array.isArray(m.aportes) ? m.aportes : []).filter(a => a && dataValida(a.data) && inteiroPos(a.valor)).map(a => ({ id: typeof a.id === 'string' ? a.id : uid(), data: a.data, valor: a.valor, txId: typeof a.txId === 'string' ? a.txId : undefined })),
+    concluidaEm: dataValida(m.concluidaEm) ? m.concluidaEm : null
+  }));
+  S.espera = (Array.isArray(raw.espera) ? raw.espera : []).filter(e => e && typeof e.id === 'string' && inteiroPos(e.valor) && dataValida(e.ate)).map(e => ({ id: e.id, valor: e.valor, desc: String(e.desc || '').slice(0, 80), catId: e.catId, ate: e.ate }));
+  S.economizado = inteiroPos(raw.economizado);
+  const h = raw.hab && typeof raw.hab === 'object' ? raw.hab : {};
+  S.hab = { dias: h.dias && typeof h.dias === 'object' ? h.dias : {}, semanas: h.semanas && typeof h.semanas === 'object' ? h.semanas : {}, metasMes: h.metasMes && typeof h.metasMes === 'object' ? h.metasMes : {}, desafio: h.desafio && typeof h.desafio === 'object' && Array.isArray(h.desafio.feitos) ? h.desafio : null, desafiosFeitos: Array.isArray(h.desafiosFeitos) ? h.desafiosFeitos : [] };
+  if (raw.perfil && Array.isArray(raw.perfil.tracos)) S.perfil = { tracos: raw.perfil.tracos.filter(x => typeof x === 'string').slice(0, 30).map(x => x.slice(0, 160)), notas: String(raw.perfil.notas || '').slice(0, 600) };
+  S.mentor = (Array.isArray(raw.mentor) ? raw.mentor : []).filter(m => m && ['u', 'a'].includes(m.r) && typeof m.t === 'string').slice(-30).map(m => ({ r: m.r, t: m.t.slice(0, 4000) }));
+  return { estado: S, avisos };
+}
+// Mescla um backup importado ao estado atual, por id (o importado não sobrescreve o que já existe).
+function mesclar(atual, novo) {
+  const uniao = (a, b) => { const ids = new Set(a.map(x => x.id)); return [...a, ...b.filter(x => !ids.has(x.id))]; };
+  const cats = uniao(atual.cats, novo.cats), cm = Object.fromEntries(cats.map(c => [c.id, c]));
+  return { ...atual, cats, tx: uniao(atual.tx, novo.tx).filter(t => cm[t.catId]), recs: uniao(atual.recs, novo.recs), metas: uniao(atual.metas, novo.metas), espera: uniao(atual.espera, novo.espera) };
+}
+
+/* ----- recorrentes ----- */
+function gerarRecorrentes(S, hojeS) {
+  const ymH = ymOf(hojeS), ymFim = addMes(ymH, 1), novos = [];
+  const tem = new Set(S.tx.filter(t => t.recId).map(t => t.recId + '|' + t.data.slice(0, 7)));
+  for (const r of S.recs) {
+    for (let ym = r.inicio; ym <= ymFim; ym = addMes(ym, 1)) {
+      if (r.fim && ym > r.fim) break;
+      if (tem.has(r.id + '|' + ym) || (r.pulos || []).includes(ym)) continue;
+      const data = `${ym}-${pad(Math.min(r.dia, diasMes(ym)))}`;
+      // Receita recorrente conta como recebida quando a data chega; conta recorrente só vira "paga" quando a pessoa confirma
+      // (por isso aparece em "A pagar"), exceto meses já passados, que presumimos quitados.
+      let pago = ym === r.inicio && r.pagoPrimeiro != null ? r.pagoPrimeiro : r.tipo === 'receita' ? data <= hojeS : ym < ymH;
+      novos.push({ id: `r_${r.id}_${ym}`, tipo: r.tipo, valor: r.valor, data, catId: r.catId, desc: r.desc, pago, planejado: r.planejado !== false, recId: r.id });
+    }
+  }
+  return novos.length ? { ...S, tx: [...S.tx, ...novos] } : S;
+}
+
+/* ----- cálculos financeiros ----- */
+function resumoMes(S, ym) {
+  const cm = catMap(S);
+  const r = { ym, rec: 0, recPrev: 0, dsp: 0, dspPrev: 0, ess: 0, flex: 0, guardado: 0, naoPlan: 0, porCat: {} };
+  for (const t of S.tx) {
+    if (t.data.slice(0, 7) !== ym) continue;
+    if (t.tipo === 'receita') { if (t.pago) r.rec += t.valor; else r.recPrev += t.valor; continue; }
+    const g = (cm[t.catId] || {}).gasto;
+    if (g === 'meta') { r.guardado += t.valor; continue; }
+    if (t.pago) r.dsp += t.valor; else r.dspPrev += t.valor;
+    if (g === 'essencial') r.ess += t.valor; else r.flex += t.valor;
+    if (t.planejado === false) r.naoPlan += t.valor;
+    r.porCat[t.catId] = (r.porCat[t.catId] || 0) + t.valor;
+  }
+  r.recTotal = r.rec + r.recPrev; r.dspTotal = r.dsp + r.dspPrev;
+  return r;
+}
+const saldoAtual = S => S.cfg.saldoInicial + soma(S.tx, t => t.pago ? (t.tipo === 'receita' ? t.valor : -t.valor) : 0);
+function pendentes(S, hojeS) {
+  const fim = fimMes(ymOf(hojeS));
+  return S.tx.filter(t => t.tipo === 'despesa' && !t.pago && t.data <= fim).sort((a, b) => a.data.localeCompare(b.data));
+}
+function metaCalc(m, hojeS) {
+  const rest = Math.max(0, m.alvo - m.atual), pct = Math.min(100, Math.floor(m.atual * 100 / m.alvo));
+  if (rest === 0) return { rest, pct: 100, concluida: true, meses: 0, mensal: 0, eta: null };
+  let meses = null, mensal = 0, eta = null;
+  if (m.prazo) { meses = Math.max(1, Math.ceil(difDias(m.prazo, hojeS) / 30.4375)); mensal = Math.ceil(rest / meses); }
+  else if (m.mensal > 0) { mensal = m.mensal; eta = Math.ceil(rest / m.mensal); }
+  return { rest, pct, concluida: false, meses, mensal, eta, vencida: !!m.prazo && m.prazo < hojeS };
+}
+const metasMensal = (S, hojeS) => soma(S.metas.filter(m => m.atual < m.alvo), m => metaCalc(m, hojeS || hoje()).mensal);
+function orcamento(S, ym, hojeS) {
+  const r = resumoMes(S, ym);
+  const base = Math.max(r.recTotal, S.cfg.rendaMensal || 0);
+  const guardarAuto = Math.min(metasMensal(S, hojeS), Math.max(0, base - r.ess));
+  const guardar = S.cfg.guardarMes != null ? S.cfg.guardarMes : guardarAuto;
+  const auto = Math.max(0, base - r.ess - guardar);
+  const total = S.cfg.orcFlex != null ? S.cfg.orcFlex : auto;
+  const usado = r.flex, disp = total - usado;
+  const pct = total > 0 ? Math.round(usado * 100 / total) : (usado > 0 ? 100 : 0);
+  return { base, ess: r.ess, guardar, guardarAuto, auto, total, usado, disp, pct, definido: total > 0, manual: S.cfg.orcFlex != null };
+}
+const serieMensal = (S, ym, n = 6) => Array.from({ length: n }, (_, i) => resumoMes(S, addMes(ym, i - n + 1)));
+const periodoTx = (S, ini, fim) => S.tx.filter(t => t.data >= ini && t.data <= fim);
+
+/* ----- constância e hábitos (sem punição por falhas) ----- */
+function diasAtivos(S) {
+  const set = new Set();
+  for (const [d, v] of Object.entries(S.hab.dias)) if (v && (v.reg || v.ver || v.contas || v.nada)) set.add(d);
+  for (const t of S.tx) if (t.cr) set.add(t.cr);
+  return set;
+}
+function constancia(S, hojeS) {
+  const set = diasAtivos(S), ini30 = addDias(hojeS, -29);
+  const desde = Math.min(30, Math.max(1, difDias(hojeS, S.criadoEm) + 1));
+  const ativos30 = [...set].filter(d => d >= ini30 && d <= hojeS).length;
+  const ultimo = [...set].sort().pop() || null;
+  const sem4 = Array.from({ length: 4 }, (_, i) => addDias(segunda(hojeS), -7 * i));
+  return { ativos30, base: desde, pct: Math.min(100, Math.round(ativos30 * 100 / desde)), ultimo, diasDesde: ultimo ? difDias(hojeS, ultimo) : null, revisoes4: sem4.filter(s => S.hab.semanas[s] && S.hab.semanas[s].feita).length, ativoHoje: set.has(hojeS), set };
+}
+const revisaoPendente = (S, hojeS) => [5, 6, 0].includes(parseISO(hojeS).getDay()) && !(S.hab.semanas[segunda(hojeS)] || {}).feita;
+const DESAFIOS = [
+  { id: 'd_reg', nome: 'Registrar na hora', desc: 'Anote cada gasto logo depois de fazê-lo.', tarefa: 'Registrei meus gastos de hoje na hora' },
+  { id: 'd_24h', nome: 'Regra das 24 horas', desc: 'Compra não planejada espera um dia na lista de espera.', tarefa: 'Esperei 24h antes de qualquer compra não planejada' },
+  { id: 'd_olhar', nome: 'Olhar o saldo uma vez ao dia', desc: 'Abrir o app e ver quanto ainda pode gastar.', tarefa: 'Olhei quanto ainda posso gastar' },
+  { id: 'd_peq', nome: 'Um dia sem compra pequena', desc: 'Um dia inteiro sem cafezinho, doce ou item por impulso.', tarefa: 'Passei o dia sem compra pequena por impulso' },
+  { id: 'd_contas', nome: 'Conferir as contas da semana', desc: 'Ver o que vence nos próximos 7 dias.', tarefa: 'Conferi as contas dos próximos dias' }
+];
+
+/* ----- radar de gastos invisíveis ----- */
+const normDesc = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+function radar(S, hojeS) {
+  const out = [], cm = catMap(S), ym = ymOf(hojeS), ymP = addMes(ym, -1), dia = +hojeS.slice(8, 10);
+  const O = orcamento(S, ym, hojeS), despesas = S.tx.filter(t => t.tipo === 'despesa' && (cm[t.catId] || {}).gasto !== 'meta');
+  // 1. pequenas despesas que se acumulam
+  const ini30 = addDias(hojeS, -29), peq = despesas.filter(t => t.data >= ini30 && t.data <= hojeS && t.valor <= S.cfg.pequeno && (cm[t.catId] || {}).gasto === 'flexivel');
+  const sPeq = soma(peq, t => t.valor);
+  if (peq.length >= 8 || (O.total > 0 && peq.length >= 4 && sPeq * 10 >= O.total))
+    out.push({ id: 'peq', nivel: 'info', icone: 'spark', titulo: 'Pequenas compras somando', texto: `${peq.length} compras de até ${fmt(S.cfg.pequeno)} nos últimos 30 dias somam ${fmt(sPeq)}${O.total > 0 ? ` (${Math.round(sPeq * 100 / O.total)}% do orçamento flexível do mês)` : ''}. Cada uma é pequena; o conjunto aparece mais.` });
+  // 2. categorias crescendo (mesmo trecho do mês, comparado ao mês anterior)
+  const porCatAte = (m, ate) => { const o = {}; for (const t of despesas) if (t.data.slice(0, 7) === m && +t.data.slice(8, 10) <= ate) o[t.catId] = (o[t.catId] || 0) + t.valor; return o; };
+  const cur = porCatAte(ym, dia), ant = porCatAte(ymP, dia);
+  Object.keys(cur).map(id => ({ id, a: cur[id], b: ant[id] || 0 })).filter(x => x.a - x.b >= 5000 && (x.b === 0 ? x.a >= 10000 : x.a >= x.b * 1.3))
+    .sort((x, y) => (y.a - y.b) - (x.a - x.b)).slice(0, 2).forEach(x => out.push({ id: 'cresc_' + x.id, nivel: 'info', icone: 'chart', titulo: `${nomeCat(S, x.id)} em alta`, texto: `Até o dia ${dia}, ${nomeCat(S, x.id)} soma ${fmt(x.a)} neste mês contra ${fmt(x.b)} no mesmo trecho do mês anterior (${x.b ? '+' + Math.round((x.a - x.b) * 100 / x.b) + '%' : 'sem gasto antes'}).` }));
+  // 3. compras que se repetem sem estar cadastradas como recorrentes
+  const ini90 = addDias(hojeS, -90), grupos = {};
+  for (const t of despesas) if (t.data >= ini90 && t.data <= hojeS && !t.recId && !t.grupoId && (cm[t.catId] || {}).gasto === 'flexivel') { const k = normDesc(t.desc); if (k.length >= 3) (grupos[k] = grupos[k] || []).push(t); }
+  Object.entries(grupos).filter(([, v]) => v.length >= 3 && new Set(v.map(t => t.data.slice(0, 7))).size >= 2).sort((a, b) => soma(b[1], t => t.valor) - soma(a[1], t => t.valor)).slice(0, 2)
+    .forEach(([k, v]) => out.push({ id: 'rep_' + k, nivel: 'info', icone: 'repeat', titulo: `“${v[0].desc.trim()}” se repete`, texto: `${v.length} lançamentos em ${new Set(v.map(t => t.data.slice(0, 7))).size} meses, média de ${fmt(Math.round(soma(v, t => t.valor) / v.length))}, total ${fmt(soma(v, t => t.valor))}. Se for uma cobrança fixa, vale cadastrar como conta recorrente.` }));
+  // 4. proximidade do limite do orçamento
+  if (O.definido) {
+    if (O.pct >= 100) out.push({ id: 'orc', nivel: 'atencao', icone: 'alert', titulo: 'Orçamento flexível ultrapassado', texto: `Foram usados ${fmt(O.usado)} de ${fmt(O.total)} (${O.pct}%). Passou ${fmt(-O.disp)}. Para o resto do mês, o foco é não aumentar essa diferença.` });
+    else if (O.pct >= 80) out.push({ id: 'orc', nivel: 'atencao', icone: 'alert', titulo: 'Perto do limite do orçamento', texto: `${O.pct}% do orçamento flexível já foi usado e restam ${fmt(O.disp)} para ${diasMes(ym) - dia + 1} dia(s).` });
+    else if (dia >= 7) {
+      const proj = Math.round(O.usado / dia * diasMes(ym));
+      if (proj > O.total) out.push({ id: 'ritmo', nivel: 'info', icone: 'chart', titulo: 'Ritmo acima do orçamento', texto: `No ritmo dos primeiros ${dia} dias, o gasto flexível do mês chegaria a cerca de ${fmt(proj)}, acima dos ${fmt(O.total)} previstos. Ainda dá tempo de ajustar.` });
+    }
+  }
+  // 5. limites por categoria
+  const R = resumoMes(S, ym);
+  S.cats.filter(c => c.limite > 0 && R.porCat[c.id]).forEach(c => {
+    const p = Math.round(R.porCat[c.id] * 100 / c.limite);
+    if (p >= 80) out.push({ id: 'lim_' + c.id, nivel: p >= 100 ? 'atencao' : 'info', icone: 'target', titulo: `Limite de ${c.nome}`, texto: `${fmt(R.porCat[c.id])} de ${fmt(c.limite)} (${p}%) no mês.` });
+  });
+  // 6. desvio em relação às metas
+  S.metas.filter(m => m.atual < m.alvo).forEach(m => {
+    const mc = metaCalc(m, hojeS);
+    if (!mc.mensal) return;
+    const aportado = soma(m.aportes.filter(a => a.data.slice(0, 7) === ym), a => a.valor);
+    if (dia >= 15 && aportado < mc.mensal / 2) out.push({ id: 'meta_' + m.id, nivel: 'info', icone: 'target', titulo: `Meta “${m.nome}” abaixo do ritmo`, texto: `Neste mês foram aportados ${fmt(aportado)} de ${fmt(mc.mensal)} necessários. Um aporte pequeno agora já aproxima a meta.` });
+  });
+  // 7. gastos não planejados
+  if (R.naoPlan > 0 && R.flex > 0 && R.naoPlan * 100 / R.flex >= 40) out.push({ id: 'naoplan', nivel: 'info', icone: 'cart', titulo: 'Muitos gastos não planejados', texto: `${fmt(R.naoPlan)} (${Math.round(R.naoPlan * 100 / R.flex)}% do gasto flexível) foram marcados como não planejados neste mês. A lista de espera de 24h costuma ajudar nesses casos.` });
+  return out.sort((a, b) => (a.nivel === 'atencao' ? 0 : 1) - (b.nivel === 'atencao' ? 0 : 1));
+}
+
+/* ----- lembretes e ação do dia ----- */
+function lembretes(S, hojeS) {
+  const out = [], cm = catMap(S), lim = addDias(hojeS, 3), dia = S.hab.dias[hojeS] || {};
+  pendentes(S, hojeS).filter(t => t.data <= lim).slice(0, 3).forEach(t => out.push({ id: 'p' + t.id, icone: 'calendar', texto: `${t.desc || (cm[t.catId] || {}).nome} · ${fmt(t.valor)} · ${t.data < hojeS ? 'venceu em ' + fmtDM(t.data) : t.data === hojeS ? 'vence hoje' : 'vence ' + fmtDM(t.data)}`, rota: 'mov' }));
+  if (revisaoPendente(S, hojeS)) out.push({ id: 'rev', icone: 'check', texto: 'A revisão semanal de 10 minutos está disponível.', rota: 'habitos' });
+  if (!dia.ver && !dia.reg && !dia.contas && !dia.nada) out.push({ id: 'chk', icone: 'bell', texto: 'O check-in de 3 minutos de hoje ainda não foi feito.', rota: 'habitos' });
+  S.espera.filter(e => e.ate <= hojeS).forEach(e => out.push({ id: 'e' + e.id, icone: 'cart', texto: `Passaram 24h: ainda quer comprar “${e.desc || 'item'}” (${fmt(e.valor)})?`, rota: 'comprar' }));
+  return out;
+}
+function acaoDoDia(S, hojeS) {
+  const dia = S.hab.dias[hojeS] || {}, cm = catMap(S);
+  if (S.tx.length === 0) return { id: 'primeiro', titulo: 'Registre um gasto de hoje', texto: 'Valor e categoria, uns 10 segundos. É só isso que o app precisa para começar a funcionar.', botao: 'Registrar agora', acao: { t: 'lanc' } };
+  const venc = pendentes(S, hojeS).filter(t => t.data <= hojeS);
+  if (venc.length) {
+    const t = venc[0], atras = t.data < hojeS;
+    return { id: 'pagar', titulo: `${atras ? 'Confirme' : 'Vence hoje'}: ${t.desc || (cm[t.catId] || {}).nome}`, texto: `${fmt(t.valor)}${atras ? `, venceu em ${fmtData(t.data)}` : ''}. Se já pagou, confirme com um toque para o saldo ficar certo.`, botao: 'Já paguei', acao: { t: 'pagar', id: t.id } };
+  }
+  const c = constancia(S, hojeS);
+  if (c.diasDesde != null && c.diasDesde >= 3) return { id: 'volta', titulo: 'Recomece pelo mais fácil', texto: `Faz ${c.diasDesde} dias sem registro, e tudo bem. Registre só o último gasto de que lembrar; o resto pode esperar.`, botao: 'Registrar o último gasto', acao: { t: 'lanc' } };
+  const O = orcamento(S, ymOf(hojeS), hojeS);
+  if (O.definido && O.pct >= 90) return { id: 'flex', titulo: O.pct >= 100 ? 'Orçamento flexível no limite' : 'Orçamento flexível quase no fim', texto: 'Antes de qualquer compra que não seja essencial, passe pelo “Antes de comprar”. Leva 30 segundos.', botao: 'Antes de comprar', acao: { t: 'ir', r: 'comprar' } };
+  if (!dia.reg && !dia.nada) return { id: 'registrar', titulo: 'Registre o que gastou hoje', texto: 'Se não gastou nada, também vale: marque e siga em frente.', botao: 'Registrar gasto', acao: { t: 'lanc' }, alt: { botao: 'Não gastei nada hoje', acao: { t: 'nada' } } };
+  if (revisaoPendente(S, hojeS)) return { id: 'revisao', titulo: 'Revisão da semana', texto: 'Dez minutos para olhar a semana e escolher um ajuste para a próxima.', botao: 'Fazer a revisão', acao: { t: 'revisao' } };
+  if (!dia.ver) return { id: 'ver', titulo: 'Olhe quanto ainda pode gastar', texto: 'O quadro verde acima mostra o valor livre do mês. Conferir já conta como o check-in de hoje.', botao: 'Conferi', acao: { t: 'check', k: 'ver' } };
+  return { id: 'ok', titulo: 'Tudo em dia por hoje', texto: 'Nada pede sua atenção agora. Se quiser, dê uma olhada no radar de gastos.', botao: 'Ver o radar', acao: { t: 'ir', r: 'radar' } };
+}
+
+/* ----- antes de comprar ----- */
+function avaliarCompra(S, hojeS, { valor, catId, motivo, planejada, compromete }) {
+  const O = orcamento(S, ymOf(hojeS), hojeS), c = catMap(S)[catId] || {}, essencial = c.gasto === 'essencial';
+  const saldoLivre = saldoAtual(S) - soma(pendentes(S, hojeS), t => t.valor), mot = [];
+  let risco = 0;
+  if (valor > saldoLivre) { risco += 3; mot.push({ n: 'bad', t: `Passa o saldo livre depois das contas a pagar (${fmt(saldoLivre)}).` }); }
+  else mot.push({ n: 'ok', t: `Cabe no saldo livre depois das contas a pagar (${fmt(saldoLivre)}); sobrariam ${fmt(saldoLivre - valor)}.` });
+  if (essencial) mot.push({ n: 'info', t: 'É uma categoria essencial, então não consome o orçamento flexível.' });
+  else if (!O.definido) mot.push({ n: 'info', t: 'O orçamento flexível ainda não está definido. Informe a renda mensal em Orçamento para uma análise melhor.' });
+  else if (valor > O.disp) { risco += 2; mot.push({ n: 'bad', t: `Passa ${fmt(valor - Math.max(0, O.disp))} do que resta no orçamento flexível (${fmt(Math.max(0, O.disp))}).` }); }
+  else { const p = Math.round(valor * 100 / O.disp); if (p >= 50) { risco += 1; mot.push({ n: 'warn', t: `Usaria ${p}% do que resta no orçamento flexível (${fmt(O.disp)}).` }); } else mot.push({ n: 'ok', t: `Usaria ${p}% do que resta no orçamento flexível (${fmt(O.disp)}).` }); }
+  if (planejada) { risco -= 1; mot.push({ n: 'ok', t: 'Estava planejada.' }); } else { risco += 1; mot.push({ n: 'warn', t: 'Não estava planejada.' }); }
+  if (compromete === 'sim') { risco += 3; mot.push({ n: 'bad', t: 'Você indicou que compromete despesas essenciais ou metas.' }); }
+  else if (compromete === 'talvez') { risco += 1; mot.push({ n: 'warn', t: 'Você não tem certeza se compromete despesas essenciais ou metas.' }); }
+  if (motivo === 'impulso' && !planejada) { risco += 1; mot.push({ n: 'warn', t: 'O motivo é impulso ou promoção. Esperar um dia costuma mostrar se o desejo continua.' }); }
+  if (motivo === 'necessidade') risco -= 1;
+  const mc = S.metas.filter(m => m.atual < m.alvo).map(m => ({ m, c: metaCalc(m, hojeS) })).filter(x => x.c.mensal > 0);
+  if (!essencial && mc.length && O.definido && valor > O.disp * 0.5) mot.push({ n: 'info', t: `Suas metas pedem cerca de ${fmt(soma(mc, x => x.c.mensal))} por mês. Vale conferir se essa compra convive com os aportes.` });
+  let veredito = risco <= 0 ? 'ok' : risco <= 2 ? 'esperar' : 'evitar';
+  if (valor > saldoLivre && veredito === 'ok') veredito = 'esperar';
+  const titulo = { ok: 'Parece caber', esperar: 'Vale esperar 24 horas', evitar: 'Melhor não agora' }[veredito];
+  return { veredito, titulo, mot, saldoLivre, disp: O.disp, definido: O.definido, essencial };
+}
+
+/* ----- relatórios ----- */
+function relatorio(S, ini, fim, hojeS) {
+  const cm = catMap(S), dias = difDias(fim, ini) + 1, iniAnt = addDias(ini, -dias), fimAnt = addDias(ini, -1);
+  const agrega = (a, b) => {
+    const r = { rec: 0, dsp: 0, porCat: {}, naoPlan: 0, naoPlanItens: [], guardado: 0 };
+    for (const t of periodoTx(S, a, b)) {
+      if (t.tipo === 'receita') { r.rec += t.valor; continue; }
+      const g = (cm[t.catId] || {}).gasto;
+      if (g === 'meta') { r.guardado += t.valor; continue; }
+      r.dsp += t.valor; r.porCat[t.catId] = (r.porCat[t.catId] || 0) + t.valor;
+      if (t.planejado === false) { r.naoPlan += t.valor; r.naoPlanItens.push(t); }
+    }
+    r.naoPlanItens.sort((x, y) => y.valor - x.valor);
+    return r;
+  };
+  const A = agrega(ini, fim), B = agrega(iniAnt, fimAnt);
+  const cats = Object.keys({ ...A.porCat, ...B.porCat }).map(id => ({ id, v: A.porCat[id] || 0, ant: B.porCat[id] || 0 })).sort((x, y) => y.v - x.v);
+  const aportes = soma(S.metas.flatMap(m => m.aportes.filter(a => a.data >= ini && a.data <= fim)), a => a.valor);
+  const concluidas = S.metas.filter(m => m.concluidaEm && m.concluidaEm >= ini && m.concluidaEm <= fim);
+  const fimEf = fim < hojeS ? fim : hojeS, diasPeriodo = Math.max(1, difDias(fimEf, ini) + 1);
+  const ativos = [...diasAtivos(S)].filter(d => d >= ini && d <= fimEf).length;
+  const revisoes = Object.entries(S.hab.semanas).filter(([k, v]) => v && v.feita && k >= segunda(ini) && k <= fim).length;
+  const recomend = [];
+  if (A.rec > 0 && A.dsp > A.rec) recomend.push(`As despesas superaram as receitas em ${fmt(A.dsp - A.rec)}. Escolha uma categoria flexível e reduza uns 10% no próximo período.`);
+  const sobe = cats.filter(c => c.v - c.ant >= 5000 && c.ant > 0 && c.v >= c.ant * 1.2)[0];
+  if (sobe) recomend.push(`${nomeCat(S, sobe.id)} subiu ${fmt(sobe.v - sobe.ant)} em relação ao período anterior. Vale olhar o que mudou.`);
+  if (A.dsp > 0 && A.naoPlan * 100 / A.dsp >= 25) recomend.push(`${Math.round(A.naoPlan * 100 / A.dsp)}% das despesas foram não planejadas. Use a lista de espera de 24h para compras desse tipo.`);
+  if (ativos * 100 / diasPeriodo < 50) recomend.push('O acompanhamento ficou em menos da metade dos dias. Escolha um horário fixo de 3 minutos, por exemplo depois do almoço.');
+  if (S.metas.some(m => m.atual < m.alvo) && aportes === 0) recomend.push('Nenhum aporte em metas no período. Mesmo um valor pequeno mantém a meta andando.');
+  if (!recomend.length) recomend.push(A.dsp + A.rec === 0 ? 'Sem registros no período. Comece registrando o próximo gasto.' : 'Sem alertas neste período. Mantenha o ritmo e a regularidade dos registros.');
+  return { ini, fim, dias, A, B, cats, aportes, concluidas, ativos, diasPeriodo, revisoes, recomend };
+}
+
+/* ----- CSV ----- */
+function csvExportar(S) {
+  const cm = catMap(S), esc = v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  const linhas = [['data', 'tipo', 'valor', 'categoria', 'descricao', 'pago', 'planejado'].join(';')];
+  [...S.tx].sort((a, b) => a.data.localeCompare(b.data)).forEach(t => linhas.push([t.data, t.tipo, numBR(t.valor).replace(/\./g, ''), esc((cm[t.catId] || {}).nome || ''), esc(t.desc || ''), t.pago ? 'sim' : 'nao', t.planejado === false ? 'nao' : 'sim'].join(';')));
+  return '﻿' + linhas.join('\r\n');
+}
+function csvLinhas(texto) {
+  const t = texto.replace(/^﻿/, ''), delim = (t.split('\n')[0].match(/;/g) || []).length >= (t.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+  const linhas = []; let campo = '', lin = [], asp = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (asp) { if (ch === '"') { if (t[i + 1] === '"') { campo += '"'; i++; } else asp = false; } else campo += ch; }
+    else if (ch === '"') asp = true;
+    else if (ch === delim) { lin.push(campo); campo = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; lin.push(campo); campo = ''; if (lin.some(x => x.trim())) linhas.push(lin); lin = []; }
+    else campo += ch;
+  }
+  lin.push(campo); if (lin.some(x => x.trim())) linhas.push(lin);
+  return linhas;
+}
+function csvImportar(S, texto, hojeS) {
+  const linhas = csvLinhas(texto), erros = [];
+  if (linhas.length < 2) throw new Error('O CSV precisa de um cabeçalho e ao menos uma linha.');
+  const cab = linhas[0].map(x => normDesc(x).replace(/ /g, ''));
+  const col = n => cab.indexOf(n), iD = col('data'), iT = col('tipo'), iV = col('valor'), iC = col('categoria'), iDs = Math.max(col('descricao'), col('desc')), iP = col('pago'), iPl = col('planejado');
+  if (iD < 0 || iV < 0) throw new Error('O CSV precisa ter ao menos as colunas "data" e "valor".');
+  const novasCats = [], cats = [...S.cats], tx = [];
+  linhas.slice(1).forEach((l, i) => {
+    const n = i + 2; let data = (l[iD] || '').trim();
+    const m = data.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (m) data = `${m[3]}-${m[2]}-${m[1]}`;
+    if (!dataValida(data)) return erros.push(`Linha ${n}: data inválida (“${l[iD] || ''}”).`);
+    const bruto = (l[iV] || '').trim(), neg = bruto.startsWith('-'), valor = parseMoeda(bruto.replace('-', ''));
+    if (!(valor > 0)) return erros.push(`Linha ${n}: valor inválido (“${bruto}”).`);
+    const tt = iT >= 0 ? normDesc(l[iT]) : '';
+    const tipo = /^r|entrada|recei/.test(tt) ? 'receita' : /^d|saida|desp/.test(tt) ? 'despesa' : (neg ? 'despesa' : 'receita');
+    const nome = ((iC >= 0 ? l[iC] : '') || '').trim();
+    let cat = cats.find(c => c.tipo === tipo && c.nome.toLowerCase() === nome.toLowerCase());
+    if (!cat) {
+      if (nome) { cat = { id: 'c_' + uid(), nome: nome.slice(0, 40), tipo, gasto: 'flexivel', cor: cats.length % 10, limite: 0 }; cats.push(cat); novasCats.push(cat); }
+      else cat = cats.find(c => c.id === (tipo === 'receita' ? 'r_outras' : 'c_outros'));
+    }
+    tx.push({ id: 'i_' + uid() + i, tipo, valor, data, catId: cat.id, desc: ((iDs >= 0 ? l[iDs] : '') || '').trim().slice(0, 120), pago: iP >= 0 ? !/^(n|0|f)/i.test((l[iP] || 'sim').trim()) : data <= hojeS, planejado: iPl >= 0 ? !/^(n|0|f)/i.test((l[iPl] || 'sim').trim()) : true, cr: hojeS });
+  });
+  return { tx, novasCats, erros };
+}
+
+/* ----- contexto e prompt do mentor (só dados reais do usuário) ----- */
+function contextoMentor(S, hojeS, demo) {
+  const ym = ymOf(hojeS), R = resumoMes(S, ym), O = orcamento(S, ym, hojeS), cm = catMap(S), real = c => Math.round(c) / 100;
+  const pend = pendentes(S, hojeS), cn = constancia(S, hojeS);
+  return {
+    aviso: demo ? 'ATENÇÃO: são dados de EXEMPLO do modo demonstração, não do usuário real.' : undefined,
+    hoje: hojeS, moeda: 'valores em reais (R$)', totalDeLancamentos: S.tx.length,
+    mes: nomeMes(ym), receitasDoMes: real(R.recTotal), receitasJaRecebidas: real(R.rec), despesasDoMes: real(R.dspTotal), despesasEssenciais: real(R.ess), despesasFlexiveis: real(R.flex),
+    saldoAtual: real(saldoAtual(S)), contasAPagar: real(soma(pend, t => t.valor)), contasAPagarQtd: pend.length,
+    orcamentoFlexivel: O.definido ? { total: real(O.total), usado: real(O.usado), disponivel: real(O.disp), percentualUsado: O.pct, diasRestantesNoMes: diasMes(ym) - +hojeS.slice(8, 10) + 1 } : 'não definido (renda mensal não informada)',
+    rendaMensalInformada: real(S.cfg.rendaMensal),
+    categoriasDoMes: Object.entries(R.porCat).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([id, v]) => ({ categoria: nomeCat(S, id), tipo: (cm[id] || {}).gasto, valor: real(v), limiteMensal: (cm[id] || {}).limite ? real(cm[id].limite) : undefined })),
+    ultimosMeses: serieMensal(S, ym, 4).map(m => ({ mes: m.ym, receitas: real(m.recTotal), despesas: real(m.dspTotal) })),
+    metas: S.metas.map(m => { const c = metaCalc(m, hojeS); return { nome: m.nome, tipo: m.tipo, alvo: real(m.alvo), guardado: real(m.atual), prazo: m.prazo || 'sem prazo', precisaPorMes: real(c.mensal) }; }),
+    radar: radar(S, hojeS).slice(0, 5).map(i => i.titulo + ': ' + i.texto),
+    habitos: { diasComAcompanhamentoNosUltimos30: cn.ativos30, revisoesSemanaisUltimas4Semanas: cn.revisoes4, diasDesdeUltimoRegistro: cn.diasDesde, desafioAtual: S.hab.desafio ? (DESAFIOS.find(d => d.id === S.hab.desafio.id) || {}).nome : null },
+    listaDeEspera24h: S.espera.map(e => ({ item: e.desc, valor: real(e.valor) })),
+    ultimosLancamentos: [...S.tx].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 15).map(t => ({ data: t.data, tipo: t.tipo, valor: real(t.valor), categoria: nomeCat(S, t.catId), descricao: t.desc || undefined, planejado: t.planejado === false ? false : undefined }))
+  };
+}
+function montarPrompt(S, hojeS, hist, demo) {
+  const conversa = hist.map(m => (m.r === 'u' ? 'USUÁRIO: ' : 'MENTOR: ') + m.t).join('\n\n');
+  return `Você é o Mentor do FINANCE MIND, um app pessoal de finanças e hábitos. Responda sempre em português do Brasil, em tom acolhedor, direto e sem julgamento.
+
+REGRAS
+- Use SOMENTE os números da seção DADOS. Se um dado necessário não estiver lá, diga que falta e peça; nunca invente valores, saldos, taxas ou datas.
+- O perfil comportamental é autorrelato exploratório, não diagnóstico. Não sugira transtornos, traumas ou "bloqueios", e não faça terapia. Use o perfil só para escolher ações práticas (ex.: passos pequenos, lembretes, começar pelo mais fácil).
+- Não prometa enriquecimento, rendimento ou resultado. Não recomende ativos ou produtos de investimento específicos; conceitos gerais são ok e, para decisões grandes, sugira conversar com um profissional.
+- Respostas curtas (até uns 150 palavras, a menos que peçam mais). Quando fizer sentido, termine com UMA ação pequena (até 5 minutos). Nunca penalize ou cobre quem falhou em manter rotina; normalize recomeçar.
+- Para avaliar uma compra: confronte o valor com o orçamento flexível disponível, o saldo, as contas a pagar e as metas, e explique em poucos passos.
+- Se os dados forem de exemplo (demonstração), avise na resposta.
+- Formatação simples: parágrafos curtos e listas com "-". Sem tabelas.
+
+PERFIL (autorrelato do usuário)
+${S.perfil.tracos.map(t => '- ' + t).join('\n') || '- (não informado)'}${S.perfil.notas ? '\nNotas do usuário: ' + S.perfil.notas : ''}
+
+DADOS
+${JSON.stringify(contextoMentor(S, hojeS, demo))}
+
+CONVERSA
+${conversa}
+
+MENTOR:`;
+}
+
+/* ----- demonstração (dados de exemplo, nunca salvos) ----- */
+function estadoDemo(hojeS) {
+  let s = estadoInicial(); s.criadoEm = addDias(hojeS, -100);
+  s.cfg = { ...s.cfg, rendaMensal: 650000, saldoInicial: 420000, onboard: true };
+  const ini = addMes(ymOf(hojeS), -3);
+  s.recs = [
+    { id: 'dm1', tipo: 'receita', valor: 650000, catId: 'r_salario', desc: 'Salário', dia: 5, inicio: ini, planejado: true },
+    { id: 'dm2', tipo: 'despesa', valor: 180000, catId: 'c_moradia', desc: 'Aluguel', dia: 10, inicio: ini, planejado: true },
+    { id: 'dm3', tipo: 'despesa', valor: 11990, catId: 'c_contas', desc: 'Internet', dia: 15, inicio: ini, planejado: true },
+    { id: 'dm4', tipo: 'despesa', valor: 5590, catId: 'c_assin', desc: 'Streaming', dia: 20, inicio: ini, planejado: true },
+    { id: 'dm5', tipo: 'despesa', valor: 9900, catId: 'c_cuid', desc: 'Academia', dia: 8, inicio: ini, planejado: true }
+  ];
+  s = gerarRecorrentes(s, hojeS);
+  s.tx = s.tx.map(t => t.recId && t.tipo === 'despesa' && t.data < addDias(hojeS, -3) ? { ...t, pago: true } : t);
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647, entre = (a, b) => Math.round(a + rnd() * (b - a));
+  const add = (data, catId, valor, desc, planejado = true) => s.tx.push({ id: 'dx' + s.tx.length, tipo: 'despesa', valor, data, catId, desc, pago: true, planejado, cr: data });
+  for (let d = `${ini}-01`; d <= hojeS; d = addDias(d, 1)) {
+    if (rnd() < 0.5) add(d, 'c_mercado', entre(4500, 17000), 'Mercado');
+    if (rnd() < 0.35) add(d, 'c_rest', entre(2400, 6800), rnd() < 0.5 ? 'Delivery' : 'Almoço fora', rnd() < 0.7);
+    if (rnd() < 0.3) add(d, 'c_rest', entre(900, 1900), 'Café', false);
+    if (rnd() < 0.22) add(d, 'c_transp', entre(1200, 3800), 'App de transporte');
+    if (rnd() < 0.07) add(d, 'c_lazer', entre(4000, 15000), 'Cinema e bar', false);
+    if (rnd() < 0.04) add(d, 'c_compras', entre(8000, 28000), 'Compra online', false);
+  }
+  dividir(240000, 4).forEach((v, i) => { const data = `${addMes(ymOf(hojeS), i - 1)}-12`; s.tx.push({ id: 'dxp' + i, tipo: 'despesa', valor: v, data, catId: 'c_compras', desc: `Notebook (${i + 1}/4)`, pago: data <= hojeS, planejado: true, grupoId: 'dxg', parc: { n: i + 1, total: 4 }, cr: addDias(hojeS, -40) }); });
+  s.metas = [
+    { id: 'dmeta1', tipo: 'reserva', nome: 'Reserva de emergência', alvo: 1800000, atual: 420000, prazo: addDias(hojeS, 540), mensal: 0, aportes: [{ id: 'da1', data: addDias(hojeS, -35), valor: 150000 }, { id: 'da2', data: addDias(hojeS, -5), valor: 100000 }], concluidaEm: null },
+    { id: 'dmeta2', tipo: 'compra', nome: 'Viagem de fim de ano', alvo: 480000, atual: 90000, prazo: addDias(hojeS, 200), mensal: 0, aportes: [], concluidaEm: null }
+  ];
+  for (let i = 0; i < 6; i++) { const d = addDias(hojeS, -i * 2 - 1); s.hab.dias[d] = { ver: true, reg: true }; }
+  return s;
+}
+
+/* ===== INTERFACE (React + htm) ===== */
+const { useState, useEffect, useMemo, useRef, useCallback, useContext } = React;
+const html = htm.bind(React.createElement);
+const Frag = React.Fragment;
+const CHAVE = 'financemind.v1';
+const MENTOR = false; // o build do PWA troca por false: o mentor precisa do Claude (sem servidor/chave de API fora dele)
+
+const IC = {
+  home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+  list: '<path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+  check: '<path d="M5 12.5 10 17.5 19 7"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  chat: '<path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>',
+  radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 18 6"/>',
+  cart: '<path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+  chart: '<path d="M5 20V11M12 20V4M19 20v-6"/>',
+  down: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+  up: '<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  chevL: '<path d="M15 5l-7 7 7 7"/>', chevR: '<path d="M9 5l7 7-7 7"/>',
+  bell: '<path d="M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/>',
+  spark: '<path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>',
+  wallet: '<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="16.5" cy="14.5" r="1.2"/>',
+  repeat: '<path d="M4 12V9a3 3 0 0 1 3-3h11l-3-3M20 12v3a3 3 0 0 1-3 3H6l3 3"/>',
+  calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  alert: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17v.5"/>',
+  file: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>',
+  send: '<path d="M4 12 20 4l-6 16-3-7z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>'
+};
+const Ico = ({ n, s = 20 }) => html`<svg width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: IC[n] || '' }} />`;
+const Logo = () => html`<span className="logo"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7" stroke="#3DDC97" strokeWidth="3.2" strokeLinecap="round" fill="none"/><path d="M20.5 19v-3" stroke="#F1FBF6" strokeWidth="3.2" strokeLinecap="round"/></svg></span>`;
+
+const ROTAS_TODAS = [
+  { id: 'inicio', n: 'Início', i: 'home' }, { id: 'mov', n: 'Movimentos', i: 'list' }, { id: 'metas', n: 'Metas', i: 'target' }, { id: 'habitos', n: 'Hábitos', i: 'check' },
+  { id: 'mentor', n: 'Mentor IA', i: 'chat' }, { id: 'comprar', n: 'Antes de comprar', i: 'cart' }, { id: 'radar', n: 'Radar de gastos', i: 'radar' },
+  { id: 'relat', n: 'Relatórios', i: 'chart' }, { id: 'orc', n: 'Orçamento e categorias', i: 'wallet' }, { id: 'dados', n: 'Dados e ajustes', i: 'gear' }
+];
+const ROTAS = ROTAS_TODAS.filter(r => MENTOR || r.id !== 'mentor');
+const TIPOS_META = { reserva: 'Reserva de emergência', divida: 'Quitação de dívida', compra: 'Compra planejada', projeto: 'Projeto pessoal', invest: 'Objetivo de investimento' };
+
+/* ----- persistência ----- */
+function lerLocal() {
+  try { const r = localStorage.getItem(CHAVE); if (!r) return null; return normalizarEstado(JSON.parse(r)).estado; } catch (e) { return null; }
+}
+function gravarLocal(s) { try { localStorage.setItem(CHAVE, JSON.stringify(s)); return true; } catch (e) { return false; } }
+const usar = async nome => { try { return window.claude && window.claude.use ? await window.claude.use(nome) : null; } catch (e) { return null; } };
+
+/* ----- ações puras sobre o estado ----- */
+const marca = (s, d, k) => ({ ...s, hab: { ...s.hab, dias: { ...s.hab.dias, [d]: { ...(s.hab.dias[d] || {}), [k]: true } } } });
+function removerTx(s, t, escopo) {
+  let ids = new Set([t.id]), recs = s.recs;
+  const rec = t.recId ? s.recs.find(r => r.id === t.recId) : null;
+  if (t.grupoId && escopo !== 'uma') s.tx.forEach(x => { if (x.grupoId === t.grupoId && (escopo === 'todas' || x.data >= t.data)) ids.add(x.id); });
+  if (rec) {
+    const ym = ymOf(t.data);
+    if (escopo === 'proximas') {
+      s.tx.forEach(x => { if (x.recId === rec.id && x.data >= t.data) ids.add(x.id); });
+      const fim = addMes(ym, -1);
+      recs = fim < rec.inicio ? s.recs.filter(r => r.id !== rec.id) : s.recs.map(r => r.id === rec.id ? { ...r, fim } : r);
+    } else recs = s.recs.map(r => r.id === rec.id ? { ...r, pulos: [...(r.pulos || []), ym] } : r);
+  }
+  const removidos = s.tx.filter(x => ids.has(x.id));
+  return { estado: { ...s, tx: s.tx.filter(x => !ids.has(x.id)), recs }, removidos, recsAntes: s.recs };
+}
+
+/* ----- contexto ----- */
+const Ctx = React.createContext(null);
+const useApp = () => useContext(Ctx);
+
+function Provider({ children }) {
+  const [S, setS] = useState(() => lerLocal() || estadoInicial());
+  const [demo, setDemo] = useState(null);
+  const [rota, setRota] = useState('inicio');
+  const [sheet, setSheet] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [hojeS, setHojeS] = useState(hoje());
+  const [status, setStatus] = useState({ modo: 'local', msg: 'Salvo neste navegador.' });
+  const [mentorPre, setMentorPre] = useState('');
+  const [fm, setFm] = useState(() => ({ per: 'mes', ym: ymOf(hoje()), ini: '', fim: '', cat: '', tipo: 'todos', q: '' }));
+  const A = demo || S;
+  const r = useRef({ ref: null, timer: null, primeira: true, toastT: null });
+
+  const upd = useCallback(fn => {
+    const f = s => { const n = fn(s); return n === s ? s : { ...n, atualizadoEm: Date.now() }; };
+    if (demo) setDemo(f); else setS(f);
+  }, [demo]);
+
+  const toast = useCallback((msg, desfazer) => {
+    clearTimeout(r.current.toastT);
+    setToastMsg({ msg, desfazer });
+    r.current.toastT = setTimeout(() => setToastMsg(null), desfazer ? 7000 : 3200);
+  }, []);
+
+  // data do dia: atualiza quando o app volta ao primeiro plano (virada de dia)
+  useEffect(() => {
+    const f = () => setHojeS(hoje());
+    window.addEventListener('focus', f); document.addEventListener('visibilitychange', f);
+    const i = setInterval(f, 60000);
+    return () => { window.removeEventListener('focus', f); document.removeEventListener('visibilitychange', f); clearInterval(i); };
+  }, []);
+
+  // gera as ocorrências das contas recorrentes (idempotente)
+  useEffect(() => {
+    const g = s => { const n = gerarRecorrentes(s, hojeS); return n === s ? s : { ...n, atualizadoEm: Date.now() }; };
+    if (demo) setDemo(g); else setS(g);
+  }, [hojeS, A.recs, !!demo]);
+
+  useEffect(() => { try { if (!MENTOR && navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { } }, []);
+
+  // tema
+  useEffect(() => {
+    const t = A.cfg.tema, el = document.documentElement;
+    if (t === 'claro') el.setAttribute('data-theme', 'light'); else if (t === 'escuro') el.setAttribute('data-theme', 'dark');
+  }, [A.cfg.tema]);
+
+  // armazenamento pessoal: banco privado do usuário (data/users/<id>) + cópia local
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      const [user, db] = [await usar('user'), await usar('db')];
+      if (!vivo || !user || !db) return;
+      try {
+        const id = await user.id(); if (!id) return;
+        const ref = db.collection('data/users/' + id).doc('estado');
+        r.current.ref = ref;
+        const snap = await ref.get();
+        const local = lerLocal();
+        if (snap.exists) {
+          const d = snap.data() || {};
+          if (typeof d.json === 'string' && (!local || (d.atualizadoEm || 0) > (local.atualizadoEm || 0))) {
+            const rem = normalizarEstado(JSON.parse(d.json)).estado; rem.atualizadoEm = d.atualizadoEm || rem.atualizadoEm;
+            if (vivo) { setS(rem); gravarLocal(rem); }
+          } else if (local && (local.atualizadoEm || 0) > (d.atualizadoEm || 0)) await ref.set({ json: JSON.stringify(local), atualizadoEm: local.atualizadoEm });
+        } else if (local && local.tx.length) await ref.set({ json: JSON.stringify(local), atualizadoEm: local.atualizadoEm || Date.now() });
+        if (vivo) setStatus({ modo: 'nuvem', msg: 'Salvo na sua conta (privado, só você lê) e neste navegador.' });
+      } catch (e) { if (vivo) setStatus({ modo: 'local', msg: 'Salvo neste navegador. O armazenamento na conta não está disponível agora.' }); }
+    })();
+    return () => { vivo = false; };
+  }, []);
+
+  useEffect(() => {
+    if (r.current.primeira) { r.current.primeira = false; return; }
+    if (demo) return;
+    // cópia local na hora (barata): fechar o app logo após registrar não perde nada; só a conta é gravada com atraso
+    if (!gravarLocal(S)) setStatus(s => ({ ...s, msg: 'Atenção: este navegador bloqueou o salvamento local. Exporte um backup.' }));
+    clearTimeout(r.current.timer);
+    r.current.timer = setTimeout(async () => {
+      if (r.current.ref) {
+        try {
+          const json = JSON.stringify(S);
+          if (json.length > 230000) throw new Error('grande');
+          await r.current.ref.set({ json, atualizadoEm: S.atualizadoEm });
+        } catch (e) { setStatus({ modo: 'local', msg: e.message === 'grande' ? 'Os dados passaram do limite da conta; seguem salvos neste navegador. Exporte um backup.' : 'Salvo neste navegador. Não consegui salvar na conta agora.' }); }
+      }
+    }, 500);
+  }, [S, demo]);
+
+  const ctx = {
+    A, S, demo, upd, hojeS, rota, ir: x => { setRota(x); setSheet(null); window.scrollTo(0, 0); }, toast, status, fm, setFm, mentorPre, setMentorPre,
+    abrir: (k, d) => setSheet({ k, d: d || {} }), fechar: () => setSheet(null), sheet,
+    entrarDemo: () => { setDemo(estadoDemo(hojeS)); setRota('inicio'); },
+    sairDemo: () => setDemo(null),
+    substituir: novo => setS({ ...novo, atualizadoEm: Date.now() }),
+    toastMsg, fecharToast: () => setToastMsg(null)
+  };
+  return html`<${Ctx.Provider} value=${ctx}>${children}<//>`;
+}
+
+/* ----- componentes básicos ----- */
+function Sheet({ titulo, onClose, children }) {
+  useEffect(() => {
+    const f = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', f);
+    const o = document.body.style.overflow; document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', f); document.body.style.overflow = o; };
+  }, [onClose]);
+  return html`<div className="sheet-bg" onMouseDown=${e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="sheet" role="dialog" aria-modal="true" aria-label=${titulo}>
+      <div className="sheet-h"><h2>${titulo}</h2><button className="icon-btn" onClick=${onClose} aria-label="Fechar"><${Ico} n="x" /></button></div>
+      <div className="sheet-b">${children}</div>
+    </div></div>`;
+}
+function Dinheiro({ valor, onChange, id, grande, autoFocus }) {
+  return html`<div className="moneywrap"><span>R$</span><input id=${id} className=${'money num' + (grande ? ' grande' : '')} inputMode="numeric" autoComplete="off" placeholder="0,00" autoFocus=${autoFocus}
+    value=${valor ? numBR(valor) : ''} onChange=${e => { const d = e.target.value.replace(/\D/g, '').slice(0, 11); onChange(d ? parseInt(d, 10) : 0); }} /></div>`;
+}
+const Seg = ({ valor, opcoes, onChange, full, rotulo }) => html`<div className=${'seg' + (full ? ' full' : '')} role="group" aria-label=${rotulo}>${opcoes.map(o => html`<button key=${o.v} type="button" className=${o.cls || ''} aria-pressed=${valor === o.v} onClick=${() => onChange(o.v)}>${o.t}</button>`)}</div>`;
+const Switch = ({ id, on, onChange, rotulo, desc }) => html`<div className="sw-row"><label htmlFor=${id}><div style=${{ fontWeight: 600 }}>${rotulo}</div>${desc ? html`<div className="xs mut">${desc}</div>` : null}</label><span className="sw"><input id=${id} type="checkbox" checked=${on} onChange=${e => onChange(e.target.checked)} /><b></b></span></div>`;
+const Secao = ({ titulo, acao, children }) => html`<section className="secao"><div className="secao-h"><h2>${titulo}</h2>${acao || null}</div>${children}</section>`;
+const Vazio = ({ t, d, children }) => html`<div className="empty"><strong>${t}</strong>${d}${children ? html`<div style=${{ marginTop: 12 }}>${children}</div>` : null}</div>`;
+function Md({ texto }) {
+  const blocos = []; let lista = null;
+  const inl = (t, k) => t.split(/(\*\*[^*]+\*\*)/g).map((p, i) => /^\*\*[^*]+\*\*$/.test(p) ? html`<strong key=${k + '-' + i}>${p.slice(2, -2)}</strong>` : p);
+  String(texto || '').split('\n').forEach(l => {
+    const m = l.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+    if (m) { if (!lista) { lista = []; blocos.push({ lista }); } lista.push(m[1]); }
+    else { lista = null; if (l.trim()) blocos.push({ p: l.replace(/^#+\s*/, '') }); }
+  });
+  return html`<div className="md">${blocos.map((b, i) => b.lista ? html`<ul key=${i}>${b.lista.map((x, j) => html`<li key=${j}>${inl(x, i + '-' + j)}</li>`)}</ul>` : html`<p key=${i}>${inl(b.p, i)}</p>`)}</div>`;
+}
+function BarraOrc({ pct, claro }) {
+  return html`<div className=${'bar' + (claro ? ' lt' : '')} role="progressbar" aria-valuenow=${Math.min(pct, 100)} aria-valuemin="0" aria-valuemax="100"><i className=${pct >= 100 ? 'bad' : pct >= 80 ? 'warn' : ''} style=${{ width: Math.min(100, pct) + '%' }}></i></div>`;
+}
+
+/* ----- gráfico de evolução mensal ----- */
+function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function GraficoEvolucao({ serie, sel, onSel }) {
+  const W = 340, H = 176, L = 46, B = 24, T = 8, max = niceMax(Math.max(100, ...serie.flatMap(m => [m.recTotal, m.dspTotal])));
+  const y = v => T + (H - T - B) * (1 - v / max), w = (W - L) / serie.length, bw = Math.min(18, w / 2 - 4);
+  return html`<svg className="chart" viewBox=${`0 0 ${W} ${H}`} role="img" aria-label="Receitas e despesas dos últimos 6 meses">
+    ${[0, 0.5, 1].map(f => html`<g key=${f}><line className="gl" x1=${L} x2=${W} y1=${y(max * f)} y2=${y(max * f)} /><text x=${L - 6} y=${y(max * f) + 3.5} textAnchor="end">${f === 0 ? 'R$ 0' : compacto(max * f)}</text></g>`)}
+    ${serie.map((m, i) => { const cx = L + w * i + w / 2; return html`<g key=${m.ym} className=${'grp' + (m.ym === sel ? ' sel' : '')} onClick=${() => onSel(m.ym)} role="button" tabIndex="0" aria-label=${`${nomeMes(m.ym)}: receitas ${fmt(m.recTotal)}, despesas ${fmt(m.dspTotal)}`} onKeyDown=${e => { if (e.key === 'Enter' || e.key === ' ') onSel(m.ym); }}>
+      <rect className="bg" x=${cx - w / 2 + 2} y=${T} width=${w - 4} height=${H - T} rx="8" fill="transparent" />
+      <rect x=${cx - bw - 1} y=${y(m.recTotal)} width=${bw} height=${Math.max(0, H - B - y(m.recTotal))} rx="3" fill="var(--rec)" />
+      <rect x=${cx + 1} y=${y(m.dspTotal)} width=${bw} height=${Math.max(0, H - B - y(m.dspTotal))} rx="3" fill="var(--dsp)" />
+      <text x=${cx} y=${H - 7} textAnchor="middle">${mesCurto(m.ym)}</text></g>`; })}
+  </svg>`;
+}
+
+/* ===== SHEET: lançamento ===== */
+function sugestoes(A, tipo) {
+  const vistos = new Set(), out = [];
+  [...A.tx].filter(t => t.tipo === tipo && !t.recId && !t.grupoId).sort((a, b) => (b.cr || b.data).localeCompare(a.cr || a.data)).forEach(t => {
+    const k = normDesc(t.desc) + '|' + t.catId + '|' + t.valor;
+    if (!vistos.has(k) && out.length < 4) { vistos.add(k); out.push(t); }
+  });
+  return out;
+}
+function SheetLanc({ init }) {
+  const { A, upd, fechar, toast, hojeS, ir } = useApp();
+  const edit = !!init.id, orig = edit ? A.tx.find(t => t.id === init.id) : null;
+  const catSug = t => { const u = [...A.tx].reverse().find(x => x.tipo === t); return u ? u.catId : (t === 'receita' ? 'r_salario' : 'c_mercado'); };
+  const [tipo, setTipo] = useState(init.tipo || 'despesa');
+  const [valor, setValor] = useState(init.valor || 0);
+  const [catId, setCatId] = useState(init.catId || catSug(init.tipo || 'despesa'));
+  const [desc, setDesc] = useState(init.desc || '');
+  const [data, setData] = useState(init.data || hojeS);
+  const [pago, setPago] = useState(init.pago != null ? init.pago : null);
+  const [plan, setPlan] = useState(init.planejado !== false);
+  const [parc, setParc] = useState(1);
+  const [rec, setRec] = useState(false);
+  const [mais, setMais] = useState(false);
+  const [erro, setErro] = useState('');
+  const [apagar, setApagar] = useState(false);
+  const cats = A.cats.filter(c => c.tipo === tipo && !c.oculta);
+  const trocaTipo = t => { setTipo(t); setCatId(catSug(t)); setParc(1); setRec(false); };
+  const pagoFinal = pago != null ? pago : data <= hojeS;
+  const sug = edit ? [] : sugestoes(A, tipo);
+
+  const salvar = () => {
+    const c = A.cats.find(x => x.id === catId && x.tipo === tipo);
+    if (!(valor > 0)) return setErro('Informe um valor maior que zero.');
+    if (!dataValida(data)) return setErro('A data não é válida.');
+    if (!c) return setErro('Escolha uma categoria.');
+    const base = { tipo, catId, desc: desc.trim().slice(0, 120), planejado: tipo === 'despesa' ? plan : true };
+    if (edit) {
+      upd(s => ({ ...s, tx: s.tx.map(t => t.id === init.id ? { ...t, ...base, valor, data, pago: pagoFinal } : t) }));
+      toast('Alterações salvas'); return fechar();
+    }
+    let msg;
+    if (tipo === 'despesa' && parc > 1) {
+      const gid = uid(), partes = dividir(valor, parc);
+      upd(s => marca({ ...s, tx: [...s.tx, ...partes.map((v, i) => { const d = `${addMes(ymOf(data), i)}-${pad(Math.min(+data.slice(8, 10), diasMes(addMes(ymOf(data), i))))}`; return { id: uid() + i, ...base, valor: v, data: d, pago: d <= hojeS, grupoId: gid, parc: { n: i + 1, total: parc }, cr: hojeS }; })] }, hojeS, 'reg'));
+      msg = `Compra parcelada em ${parc}x registrada`;
+    } else if (rec) {
+      const nr = { id: uid(), ...base, valor, dia: +data.slice(8, 10), inicio: ymOf(data), pulos: [], pagoPrimeiro: pagoFinal };
+      upd(s => marca(gerarRecorrentes({ ...s, recs: [...s.recs, nr] }, hojeS), hojeS, 'reg'));
+      msg = 'Conta recorrente criada. Ela se repete todo mês';
+    } else {
+      upd(s => marca({ ...s, tx: [...s.tx, { id: uid(), ...base, valor, data, pago: pagoFinal, cr: hojeS }] }, hojeS, 'reg'));
+      msg = tipo === 'receita' ? 'Receita registrada' : 'Despesa registrada';
+      if (tipo === 'despesa' && c.gasto === 'flexivel' && ymOf(data) === ymOf(hojeS)) { const O = orcamento(A, ymOf(hojeS), hojeS); if (O.definido) msg += ` · restam ${fmt(Math.max(0, O.disp - valor))} no flexível`; }
+    }
+    toast(msg); fechar();
+  };
+  const excluir = escopo => {
+    let res;
+    upd(s => { res = removerTx(s, orig, escopo); return res.estado; });
+    fechar();
+    toast('Lançamento excluído', () => upd(s => ({ ...s, tx: [...s.tx, ...res.removidos], recs: res.recsAntes })));
+  };
+
+  const salvarRef = useRef(salvar); salvarRef.current = salvar;
+  return html`<${Sheet} titulo=${edit ? 'Editar lançamento' : 'Registrar'} onClose=${fechar}>
+    <${Seg} full rotulo="Tipo" valor=${tipo} onChange=${trocaTipo} opcoes=${[{ v: 'despesa', t: 'Despesa', cls: 'dsp' }, { v: 'receita', t: 'Receita', cls: 'rec' }]} />
+    <${Dinheiro} id="lanc-valor" grande autoFocus valor=${valor} onChange=${setValor} />
+    ${sug.length ? html`<div className="chips" aria-label="Repetir um lançamento recente">${sug.map(t => html`<button key=${t.id} type="button" className="chip" onClick=${() => { setValor(t.valor); setCatId(t.catId); setDesc(t.desc); }}><${Ico} n="repeat" s=${15} />${t.desc || nomeCat(A, t.catId)} · ${fmt(t.valor)}</button>`)}</div>` : null}
+    <div className="field"><span className="lbl2" id="lbl-cat">Categoria</span>
+      <div className="chips" role="group" aria-labelledby="lbl-cat">${cats.map(c => html`<button key=${c.id} type="button" className="chip" aria-pressed=${catId === c.id} onClick=${() => setCatId(c.id)}><i style=${{ background: COR(c.cor) }}></i>${c.nome}</button>`)}</div></div>
+    <div className="field"><label htmlFor="lanc-desc">Descrição (opcional)</label><input id="lanc-desc" className="inp" maxLength="120" value=${desc} onChange=${e => setDesc(e.target.value)} placeholder="Ex.: mercado, uber, aluguel" onKeyDown=${e => { if (e.key === 'Enter') salvarRef.current(); }} /></div>
+    <div className="row"><div className="field grow"><label htmlFor="lanc-data">Data</label><input id="lanc-data" type="date" className="inp" value=${data} onChange=${e => setData(e.target.value)} /></div></div>
+    <button type="button" className="link" style=${{ textAlign: 'left' }} onClick=${() => setMais(!mais)} aria-expanded=${mais}>${mais ? 'Menos opções' : 'Mais opções (parcelas, recorrente, pago)'}</button>
+    ${mais ? html`<div className="stack">
+      ${tipo === 'despesa' && !edit ? html`<div className="field"><label htmlFor="lanc-parc">Compra parcelada</label><select id="lanc-parc" className="inp" value=${parc} disabled=${rec} onChange=${e => setParc(+e.target.value)}><option value="1">À vista (sem parcelas)</option>${Array.from({ length: 47 }, (_, i) => i + 2).map(n => html`<option key=${n} value=${n}>${n}x de ${fmt(Math.round(valor / n))}</option>`)}</select>${parc > 1 && valor ? html`<span className="xs mut">Valor total: ${fmt(valor)} dividido em ${parc} lançamentos mensais, sem perder centavos.</span>` : null}</div>` : null}
+      ${!edit ? html`<${Switch} id="lanc-rec" rotulo="Repetir todo mês" desc="Conta recorrente: aparece automaticamente em cada mês." on=${rec} onChange=${v => { setRec(v); if (v) setParc(1); }} />` : null}
+      <${Switch} id="lanc-pago" rotulo=${tipo === 'receita' ? 'Já recebi' : 'Já paguei'} desc=${tipo === 'receita' ? 'Desmarcado fica como “a receber”.' : 'Desmarcado fica em “A pagar” até você confirmar.'} on=${pagoFinal} onChange=${setPago} />
+      ${tipo === 'despesa' ? html`<${Switch} id="lanc-plan" rotulo="Estava planejado" desc="Ajuda o radar a separar gastos por impulso." on=${plan} onChange=${setPlan} />` : null}
+      ${edit && (orig.grupoId || orig.recId) ? html`<div className="info xs">${orig.grupoId ? `Parcela ${orig.parc.n}/${orig.parc.total}: ` : 'Conta recorrente: '}as alterações valem só para este lançamento.</div>` : null}
+    </div>` : null}
+    ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+    <button className="btn primary big" type="button" onClick=${salvar}>${edit ? 'Salvar alterações' : 'Salvar'}</button>
+    ${edit && !apagar ? html`<button className="btn danger" type="button" onClick=${() => (orig.grupoId || orig.recId) ? setApagar(true) : excluir('uma')}><${Ico} n="trash" s=${18} />Excluir</button>` : null}
+    ${apagar ? html`<div className="stack"><div className="lbl2">Excluir qual parte?</div>
+      <button className="btn" onClick=${() => excluir('uma')}>Só este lançamento</button>
+      <button className="btn" onClick=${() => excluir('proximas')}>Este e os próximos</button>
+      ${orig.grupoId ? html`<button className="btn danger" onClick=${() => excluir('todas')}>A compra inteira (todas as parcelas)</button>` : null}</div>` : null}
+  <//>`;
+}
+
+/* ===== SHEET: meta e aporte ===== */
+function SheetMeta({ init }) {
+  const { A, upd, fechar, toast, hojeS } = useApp();
+  const edit = !!init.id, m0 = edit ? A.metas.find(m => m.id === init.id) : null;
+  const [tipo, setTipo] = useState(m0 ? m0.tipo : 'reserva');
+  const [nome, setNome] = useState(m0 ? m0.nome : '');
+  const [alvo, setAlvo] = useState(m0 ? m0.alvo : 0);
+  const [atual, setAtual] = useState(m0 ? m0.atual : 0);
+  const [prazo, setPrazo] = useState(m0 && m0.prazo ? m0.prazo : '');
+  const [mensal, setMensal] = useState(m0 ? m0.mensal : 0);
+  const [erro, setErro] = useState(''), [apagar, setApagar] = useState(false);
+  const ess = useMemo(() => { const ms = [1, 2, 3].map(i => resumoMes(A, addMes(ymOf(hojeS), -i)).ess).filter(v => v > 0); return ms.length ? Math.round(soma(ms) / ms.length) : 0; }, [A, hojeS]);
+  const salvar = () => {
+    if (!(alvo > 0)) return setErro('Informe o valor da meta.');
+    if (atual > alvo && tipo !== 'divida') return setErro('O valor já guardado não pode passar do alvo.');
+    if (prazo && !dataValida(prazo)) return setErro('Prazo inválido.');
+    const nm = nome.trim() || TIPOS_META[tipo];
+    if (edit) upd(s => ({ ...s, metas: s.metas.map(m => m.id === init.id ? { ...m, tipo, nome: nm, alvo, atual: Math.min(atual, alvo), prazo: prazo || null, mensal: prazo ? 0 : mensal, concluidaEm: atual >= alvo ? (m.concluidaEm || hojeS) : null } : m) }));
+    else upd(s => ({ ...s, metas: [...s.metas, { id: uid(), tipo, nome: nm, alvo, atual: Math.min(atual, alvo), prazo: prazo || null, mensal: prazo ? 0 : mensal, aportes: [], concluidaEm: atual >= alvo ? hojeS : null }] }));
+    toast(edit ? 'Meta atualizada' : 'Meta criada'); fechar();
+  };
+  const c = alvo > 0 ? metaCalc({ alvo, atual: Math.min(atual, alvo), prazo: prazo || null, mensal }, hojeS) : null;
+  return html`<${Sheet} titulo=${edit ? 'Editar meta' : 'Nova meta'} onClose=${fechar}>
+    <div className="field"><label htmlFor="meta-tipo">Tipo</label><select id="meta-tipo" className="inp" value=${tipo} onChange=${e => setTipo(e.target.value)}>${Object.entries(TIPOS_META).map(([k, v]) => html`<option key=${k} value=${k}>${v}</option>`)}</select></div>
+    <div className="field"><label htmlFor="meta-nome">Nome</label><input id="meta-nome" className="inp" maxLength="50" value=${nome} onChange=${e => setNome(e.target.value)} placeholder=${TIPOS_META[tipo]} /></div>
+    <div className="field"><span className="lbl2">${tipo === 'divida' ? 'Valor total da dívida' : 'Valor da meta'}</span><${Dinheiro} id="meta-alvo" valor=${alvo} onChange=${setAlvo} /></div>
+    ${tipo === 'reserva' && ess > 0 ? html`<div className="info sm">Seus gastos essenciais somam em média ${fmt(ess)} por mês. Uma reserva costuma ficar entre 3 e 6 meses disso: ${fmt(ess * 3)} a ${fmt(ess * 6)}. <button className="link" onClick=${() => setAlvo(ess * 6)}>Usar ${fmt(ess * 6)}</button></div>` : null}
+    <div className="field"><span className="lbl2">${tipo === 'divida' ? 'Já quitado' : 'Já guardado'}</span><${Dinheiro} id="meta-atual" valor=${atual} onChange=${setAtual} /></div>
+    <div className="field"><label htmlFor="meta-prazo">Prazo (opcional)</label><input id="meta-prazo" type="date" className="inp" value=${prazo} onChange=${e => setPrazo(e.target.value)} /></div>
+    ${!prazo ? html`<div className="field"><span className="lbl2">Sem prazo: quanto pretende guardar por mês?</span><${Dinheiro} id="meta-mensal" valor=${mensal} onChange=${setMensal} /></div>` : null}
+    ${c && !c.concluida && c.mensal > 0 ? html`<div className="info">${prazo ? `Para chegar lá em ${c.meses} ${c.meses === 1 ? 'mês' : 'meses'}: ${fmt(c.mensal)} por mês.` : `Guardando ${fmt(mensal)} por mês, leva cerca de ${c.eta} ${c.eta === 1 ? 'mês' : 'meses'}.`}</div>` : null}
+    ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+    <button className="btn primary big" onClick=${salvar}>Salvar meta</button>
+    ${edit && !apagar ? html`<button className="btn danger" onClick=${() => setApagar(true)}><${Ico} n="trash" s=${18} />Excluir meta</button>` : null}
+    ${apagar ? html`<div className="note">Excluir a meta “${m0.nome}”? Os lançamentos de aportes continuam no histórico.<div className="row" style=${{ marginTop: 8 }}><button className="btn danger sm" onClick=${() => { upd(s => ({ ...s, metas: s.metas.filter(m => m.id !== init.id) })); toast('Meta excluída'); fechar(); }}>Sim, excluir</button><button className="btn sm" onClick=${() => setApagar(false)}>Cancelar</button></div></div>` : null}
+  <//>`;
+}
+function SheetAporte({ init }) {
+  const { A, upd, fechar, toast, hojeS } = useApp();
+  const m = A.metas.find(x => x.id === init.id);
+  const falta = m ? Math.max(0, m.alvo - m.atual) : 0, c = m ? metaCalc(m, hojeS) : null;
+  const [valor, setValor] = useState(c && c.mensal ? Math.min(c.mensal, falta) : 0);
+  const [data, setData] = useState(hojeS), [desc, setDesc] = useState(true), [erro, setErro] = useState('');
+  if (!m) return null;
+  const salvar = () => {
+    if (!(valor > 0)) return setErro('Informe o valor do aporte.');
+    if (!dataValida(data)) return setErro('Data inválida.');
+    const txId = desc ? uid() : undefined;
+    upd(s => {
+      const novoAtual = Math.min(m.alvo, (s.metas.find(x => x.id === m.id) || m).atual + valor);
+      const ns = { ...s, metas: s.metas.map(x => x.id === m.id ? { ...x, atual: novoAtual, aportes: [...x.aportes, { id: uid(), data, valor, txId }], concluidaEm: novoAtual >= x.alvo ? (x.concluidaEm || hojeS) : x.concluidaEm } : x) };
+      if (desc) ns.tx = [...s.tx, { id: txId, tipo: 'despesa', valor, data, catId: 'c_meta', desc: m.nome, pago: true, planejado: true, cr: hojeS }];
+      return marca(ns, hojeS, 'reg');
+    });
+    toast(valor >= falta ? `Meta “${m.nome}” concluída` : 'Aporte registrado'); fechar();
+  };
+  return html`<${Sheet} titulo=${m.tipo === 'divida' ? 'Registrar pagamento' : 'Registrar aporte'} onClose=${fechar}>
+    <div className="mut">${m.nome} · falta ${fmt(falta)}</div>
+    <${Dinheiro} id="aporte-valor" grande autoFocus valor=${valor} onChange=${setValor} />
+    <div className="field"><label htmlFor="aporte-data">Data</label><input id="aporte-data" type="date" className="inp" value=${data} onChange=${e => setData(e.target.value)} /></div>
+    <${Switch} id="aporte-desc" rotulo="Descontar do saldo" desc="Registra uma saída em “Aportes em metas”. Desligue se o dinheiro já estava separado." on=${desc} onChange=${setDesc} />
+    ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+    <button className="btn primary big" onClick=${salvar}>Salvar</button>
+  <//>`;
+}
+
+/* ===== SHEET: revisão semanal ===== */
+function SheetRevisao() {
+  const { A, upd, fechar, toast, hojeS } = useApp();
+  const seg = segunda(hojeS), dom = addDias(seg, 6), fimEf = dom < hojeS ? dom : hojeS;
+  const rel = useMemo(() => relatorio(A, seg, dom, hojeS), [A, hojeS]);
+  const ex = A.hab.semanas[seg] || {};
+  const [a, setA] = useState(ex.a || ''), [b, setB] = useState(ex.b || '');
+  const prox = pendentes(A, addDias(dom, 7)).filter(t => t.data >= hojeS && t.data <= addDias(hojeS, 7));
+  const top = rel.cats[0];
+  return html`<${Sheet} titulo="Revisão da semana (10 min)" onClose=${fechar}>
+    <div className="stack">
+      <div className="card flat"><div className="lbl2">1 · O que aconteceu (${fmtDM(seg)} a ${fmtDM(fimEf)})</div>
+        <p style=${{ marginTop: 6 }}>Receitas ${fmt(rel.A.rec)} · despesas ${fmt(rel.A.dsp)}${top ? ` · maior categoria: ${nomeCat(A, top.id)} (${fmt(top.v)})` : ''}.</p>
+        ${rel.A.naoPlan ? html`<p className="mut sm">Não planejados: ${fmt(rel.A.naoPlan)}.</p>` : null}</div>
+      <div className="field"><label htmlFor="rev-a">2 · Algum gasto da semana que você não repetiria?</label><textarea id="rev-a" className="inp" maxLength="300" value=${a} onChange=${e => setA(e.target.value)} placeholder="Pode ficar em branco"></textarea></div>
+      <div className="card flat"><div className="lbl2">3 · Contas dos próximos 7 dias</div>
+        ${prox.length ? prox.slice(0, 6).map(t => html`<div key=${t.id} className="row sb sm" style=${{ marginTop: 6 }}><span>${fmtDM(t.data)} · ${t.desc || nomeCat(A, t.catId)}</span><strong className="num">${fmt(t.valor)}</strong></div>`) : html`<p className="mut sm" style=${{ marginTop: 6 }}>Nenhuma conta pendente nos próximos dias.</p>`}</div>
+      <div className="field"><label htmlFor="rev-b">4 · Um ajuste pequeno para a próxima semana</label><textarea id="rev-b" className="inp" maxLength="300" value=${b} onChange=${e => setB(e.target.value)} placeholder="Ex.: esperar 24h antes de compras não planejadas"></textarea></div>
+      <button className="btn primary big" onClick=${() => { upd(s => ({ ...s, hab: { ...s.hab, semanas: { ...s.hab.semanas, [seg]: { feita: hojeS, a: a.trim(), b: b.trim() } } } })); toast('Revisão concluída. Bom trabalho'); fechar(); }}>Concluir revisão</button>
+    </div><//>`;
+}
+
+/* ===== PÁGINAS ===== */
+function Inicio() {
+  const { A, upd, abrir, ir, hojeS, entrarDemo, toast, setFm } = useApp();
+  const ym = ymOf(hojeS);
+  const R = useMemo(() => resumoMes(A, ym), [A, ym]);
+  const O = useMemo(() => orcamento(A, ym, hojeS), [A, ym, hojeS]);
+  const pend = useMemo(() => pendentes(A, hojeS), [A, hojeS]);
+  const totalPend = soma(pend, t => t.valor), saldo = saldoAtual(A);
+  const acao = useMemo(() => acaoDoDia(A, hojeS), [A, hojeS]);
+  const lemb = useMemo(() => lembretes(A, hojeS), [A, hojeS]);
+  const rad = useMemo(() => radar(A, hojeS), [A, hojeS]);
+  const serie = useMemo(() => serieMensal(A, ym, 6), [A, ym]);
+  const [selMes, setSelMes] = useState(ym);
+  const [renda, setRenda] = useState(0);
+  const diasRest = diasMes(ym) - +hojeS.slice(8, 10) + 1;
+  const vazio = A.tx.length === 0;
+  const fazer = a => {
+    if (a.t === 'lanc') abrir('lanc'); else if (a.t === 'ir') ir(a.r); else if (a.t === 'revisao') abrir('revisao');
+    else if (a.t === 'pagar') { upd(s => ({ ...s, tx: s.tx.map(t => t.id === a.id ? { ...t, pago: true } : t) })); toast('Conta marcada como paga'); }
+    else if (a.t === 'nada') { upd(s => marca(s, hojeS, 'nada')); toast('Anotado: nenhum gasto hoje'); }
+    else if (a.t === 'check') { upd(s => marca(s, hojeS, a.k)); toast('Check-in feito'); }
+  };
+  const cats = Object.entries(R.porCat).sort((a, b) => b[1] - a[1]).slice(0, 6), maxCat = cats.length ? cats[0][1] : 1;
+  const sm = serie.find(m => m.ym === selMes) || serie[serie.length - 1];
+  const metasAtivas = A.metas.filter(m => m.atual < m.alvo).slice(0, 3);
+  return html`<div className="page">
+    <div className="row sb"><div><div className="xs mut">${rotuloDia(hojeS, hojeS) === 'Hoje' ? fmtData(hojeS) : ''}</div></div>
+      <button className="chip" aria-pressed=${A.cfg.simples} onClick=${() => upd(s => ({ ...s, cfg: { ...s.cfg, simples: !s.cfg.simples } }))} title="Mostra só o essencial nos dias sem energia">Dia difícil? Modo simples</button></div>
+    ${vazio && !A.cfg.onboard ? html`<section className="card stack"><h2>Comece em 30 segundos</h2>
+      <p className="mut">Dois passos bastam. O resto o app vai pedindo aos poucos.</p>
+      <div className="field"><label htmlFor="on-renda">1 · Quanto você recebe por mês? (opcional)</label><${Dinheiro} id="on-renda" valor=${renda} onChange=${setRenda} /></div>
+      <button className="btn primary" onClick=${() => { upd(s => ({ ...s, cfg: { ...s.cfg, rendaMensal: renda, onboard: true } })); abrir('lanc'); }}>2 · Registrar meu primeiro gasto</button>
+      <button className="link" style=${{ textAlign: 'left' }} onClick=${entrarDemo}>Prefiro ver o app com dados de exemplo antes</button></section>` : null}
+    <section className="hero" aria-label="Situação financeira">
+      <div className="row sb"><span className="lbl">Saldo disponível</span><span className="pill">${nomeMes(ym)}</span></div>
+      <div className="big num">${fmt(saldo)}</div>
+      <div className="sub">${pend.length ? `Depois das contas a pagar (${fmt(totalPend)}): ${fmt(saldo - totalPend)}` : 'Sem contas a pagar neste momento.'}</div>
+      <div className="orc">${O.definido ? html`<${Frag}>
+        <div className="row sb"><span className="lbl">Livre para gastos flexíveis</span><span className="lbl num">${O.pct}% usado</span></div>
+        <div className="v num">${O.disp >= 0 ? fmt(O.disp) : '−' + fmt(-O.disp)}</div>
+        <${BarraOrc} pct=${O.pct} />
+        <div className="sub num">${fmt(O.usado)} de ${fmt(O.total)}${O.disp > 0 ? ` · cerca de ${fmt(Math.floor(O.disp / diasRest))} por dia até o fim do mês` : O.disp < 0 ? ` · passou ${fmt(-O.disp)}` : ''}</div><//>`
+        : html`<${Frag}><div className="sub">Para calcular quanto você pode gastar livremente, informe sua renda mensal.</div><button className="btn sm" style=${{ marginTop: 10 }} onClick=${() => ir('orc')}>Definir renda mensal</button><//>`}</div>
+    </section>
+    <div className="g3 stk">
+      <div className="stat"><div className="k">Receitas do mês</div><div className="v rec num">${fmt(R.recTotal)}</div>${R.recPrev ? html`<div className="s num">${fmt(R.recPrev)} a receber</div>` : null}</div>
+      <div className="stat"><div className="k">Despesas do mês</div><div className="v dsp num">${fmt(R.dspTotal)}</div>${R.dspPrev ? html`<div className="s num">${fmt(R.dspPrev)} a pagar</div>` : null}</div>
+      <div className="stat"><div className="k">A pagar (compromissos)</div><div className="v num">${fmt(totalPend)}</div><div className="s">${pend.length} ${pend.length === 1 ? 'conta' : 'contas'}</div></div>
+    </div>
+    <section className="acao" aria-label="Ação recomendada para hoje"><div className="k">Sua ação de hoje</div><h2>${acao.titulo}</h2><p>${acao.texto}</p>
+      <div className="row"><button className="btn primary" onClick=${() => fazer(acao.acao)}>${acao.botao}</button>${acao.alt ? html`<button className="btn ghost" onClick=${() => fazer(acao.alt.acao)}>${acao.alt.botao}</button>` : null}</div></section>
+    <button className="btn primary big" onClick=${() => abrir('lanc')}><${Ico} n="plus" />Registrar gasto ou receita</button>
+    <${Secao} titulo="Metas" acao=${html`<button className="link" onClick=${() => ir('metas')}>Ver todas</button>`}>
+      ${metasAtivas.length ? html`<div className="card stack">${metasAtivas.map(m => { const c = metaCalc(m, hojeS); return html`<div key=${m.id} className="meta-mini"><div className="t"><span>${m.nome}</span><span className="num">${c.pct}%</span></div><${BarraOrc} pct=${c.pct} claro /><div className="xs mut num">${fmt(m.atual)} de ${fmt(m.alvo)}${c.mensal ? ` · ${fmt(c.mensal)}/mês` : ''}</div></div>`; })}</div>`
+        : html`<div className="card"><${Vazio} t="Nenhuma meta ainda" d="Uma meta pequena já serve, como uma reserva de R$ 500."><button className="btn" onClick=${() => abrir('meta')}>Criar uma meta</button><//></div>`}
+    <//>
+    ${MENTOR ? html`<button className="mentor-card" onClick=${() => ir('mentor')}><span className="ic"><${Ico} n="chat" s=${22} /></span><span><strong>Mentor IA</strong><span className="sm mut">Pergunte sobre uma compra, um gasto ou uma meta.</span></span></button>` : null}
+    ${A.cfg.simples ? html`<button className="btn" onClick=${() => ir('comprar')}><${Ico} n="cart" s=${18} />Antes de comprar</button>` : html`<${Frag}>
+      ${lemb.length ? html`<${Secao} titulo="Lembretes"><div className="card"><div className="lista">${lemb.slice(0, 4).map(l => html`<button key=${l.id} className="item" onClick=${() => ir(l.rota)}><span className="dot" style=${{ background: 'var(--brand)' }}><${Ico} n=${l.icone} s=${17} /></span><span className="mid"><span className="t" style=${{ whiteSpace: 'normal' }}>${l.texto}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div><div className="xs mut" style=${{ marginTop: 8 }}>Lembretes aparecem aqui quando você abre o app. Não há notificações no celular.</div></div><//>` : null}
+      <${Secao} titulo="Evolução mensal"><div className="card">
+        ${A.tx.length ? html`<${Frag}><div className="legend" style=${{ marginBottom: 6 }}><span><i style=${{ background: 'var(--rec)' }}></i>Receitas</span><span><i style=${{ background: 'var(--dsp)' }}></i>Despesas</span></div>
+          <${GraficoEvolucao} serie=${serie} sel=${selMes} onSel=${setSelMes} />
+          <div className="sm num" style=${{ marginTop: 6 }}><strong>${nomeMes(sm.ym)}</strong>: receitas ${fmt(sm.recTotal)} · despesas ${fmt(sm.dspTotal)} · resultado <strong style=${{ color: sm.recTotal - sm.dspTotal >= 0 ? 'var(--rec)' : 'var(--dsp)' }}>${sm.recTotal - sm.dspTotal >= 0 ? '+' : '−'}${fmt(Math.abs(sm.recTotal - sm.dspTotal))}</strong></div><//>`
+          : html`<${Vazio} t="O gráfico aparece com seus registros" d="Cada lançamento entra no mês certo automaticamente." />`}</div><//>
+      <${Secao} titulo="Principais categorias do mês"><div className="card">
+        ${cats.length ? html`<div className="rank">${cats.map(([id, v]) => { const c = catMap(A)[id] || {}; return html`<button key=${id} style=${{ '--c': COR(c.cor) }} onClick=${() => { setFm(f => ({ ...f, cat: id, per: 'mes', ym, tipo: 'todos', q: '' })); ir('mov'); }}><span className="h"><span>${c.nome || 'Sem categoria'}</span><span className="num">${fmt(v)}</span></span><span className="bar lt"><i style=${{ width: Math.max(3, Math.round(v * 100 / maxCat)) + '%' }}></i></span></button>`; })}</div>`
+          : html`<${Vazio} t="Sem despesas neste mês" d="As categorias que mais pesam vão aparecer aqui." />`}</div><//>
+      ${rad.length ? html`<${Secao} titulo="Radar de gastos" acao=${html`<button className="link" onClick=${() => ir('radar')}>Ver tudo</button>`}>${rad.slice(0, 2).map(i => html`<${Insight} key=${i.id} i=${i} />`)}<//>` : null}
+      <button className="btn" onClick=${() => ir('comprar')}><${Ico} n="cart" s=${18} />Antes de comprar: avaliar uma compra</button>
+    <//>`}
+  </div>`;
+}
+function Insight({ i }) {
+  return html`<div className=${'card ins ' + i.nivel}><span className="ic"><${Ico} n=${i.icone} s=${19} /></span><div className="mid" style=${{ minWidth: 0 }}><h3>${i.titulo}</h3><p>${i.texto}</p></div></div>`;
+}
+
+/* ----- Movimentos ----- */
+function Movimentos() {
+  const { A, upd, abrir, hojeS, fm, setFm, toast } = useApp();
+  const [lim, setLim] = useState(60);
+  const cm = catMap(A);
+  const lista = useMemo(() => {
+    const q = normDesc(fm.q);
+    return A.tx.filter(t => {
+      if (fm.per === 'mes' && ymOf(t.data) !== fm.ym) return false;
+      if (fm.per === 'custom') { if (fm.ini && t.data < fm.ini) return false; if (fm.fim && t.data > fm.fim) return false; }
+      if (fm.cat && t.catId !== fm.cat) return false;
+      if (fm.tipo === 'despesa' && t.tipo !== 'despesa') return false;
+      if (fm.tipo === 'receita' && t.tipo !== 'receita') return false;
+      if (fm.tipo === 'pagar' && (t.tipo !== 'despesa' || t.pago)) return false;
+      if (q && !normDesc(t.desc + ' ' + (cm[t.catId] || {}).nome).includes(q)) return false;
+      return true;
+    }).sort((a, b) => b.data.localeCompare(a.data) || (b.cr || '').localeCompare(a.cr || ''));
+  }, [A.tx, fm]);
+  const rec = soma(lista.filter(t => t.tipo === 'receita'), t => t.valor), dsp = soma(lista.filter(t => t.tipo === 'despesa' && (cm[t.catId] || {}).gasto !== 'meta'), t => t.valor);
+  const grupos = []; lista.slice(0, lim).forEach(t => { const g = grupos[grupos.length - 1]; if (g && g.d === t.data) g.l.push(t); else grupos.push({ d: t.data, l: [t] }); });
+  const set = p => { setFm({ ...fm, ...p }); setLim(60); };
+  const alt = t => { upd(s => ({ ...s, tx: s.tx.map(x => x.id === t.id ? { ...x, pago: !x.pago } : x) })); };
+  return html`<div className="page">
+    <h1 className="ptitle">Movimentos</h1>
+    <div className="card stack flat">
+      <div className="row"><select id="mov-per" className="inp" style=${{ flex: 1, minWidth: 140 }} aria-label="Período" value=${fm.per} onChange=${e => set({ per: e.target.value })}><option value="mes">Por mês</option><option value="custom">Intervalo de datas</option><option value="tudo">Todo o histórico</option></select>
+        <select id="mov-cat" className="inp" style=${{ flex: 1, minWidth: 140 }} aria-label="Categoria" value=${fm.cat} onChange=${e => set({ cat: e.target.value })}><option value="">Todas as categorias</option>${A.cats.filter(c => !c.oculta || c.id === 'c_meta').map(c => html`<option key=${c.id} value=${c.id}>${c.nome}</option>`)}</select></div>
+      ${fm.per === 'mes' ? html`<div className="row sb"><button className="icon-btn" aria-label="Mês anterior" onClick=${() => set({ ym: addMes(fm.ym, -1) })}><${Ico} n="chevL" /></button><strong>${nomeMes(fm.ym)}</strong><button className="icon-btn" aria-label="Próximo mês" onClick=${() => set({ ym: addMes(fm.ym, 1) })}><${Ico} n="chevR" /></button></div>` : null}
+      ${fm.per === 'custom' ? html`<div className="row"><input type="date" id="mov-ini" aria-label="De" className="inp" style=${{ flex: 1 }} value=${fm.ini} onChange=${e => set({ ini: e.target.value })} /><input type="date" id="mov-fim" aria-label="Até" className="inp" style=${{ flex: 1 }} value=${fm.fim} onChange=${e => set({ fim: e.target.value })} /></div>` : null}
+      <${Seg} full rotulo="Tipo" valor=${fm.tipo} onChange=${v => set({ tipo: v })} opcoes=${[{ v: 'todos', t: 'Todos' }, { v: 'despesa', t: 'Despesas' }, { v: 'receita', t: 'Receitas' }, { v: 'pagar', t: 'A pagar' }]} />
+      <input id="mov-q" className="inp" placeholder="Buscar por descrição ou categoria" aria-label="Buscar" value=${fm.q} onChange=${e => set({ q: e.target.value })} />
+    </div>
+    <div className="g3 stk"><div className="stat"><div className="k">Receitas</div><div className="v rec num">${fmt(rec)}</div></div><div className="stat"><div className="k">Despesas</div><div className="v dsp num">${fmt(dsp)}</div></div><div className="stat"><div className="k">Resultado</div><div className="v num">${rec - dsp < 0 ? '−' : ''}${fmt(Math.abs(rec - dsp))}</div></div></div>
+    ${lista.length ? html`<div className="card">${grupos.map(g => html`<div key=${g.d}><div className="dia-h"><span>${rotuloDia(g.d, hojeS)}</span><span className="num">${fmtData(g.d)}</span></div><div className="lista">${g.l.map(t => { const c = cm[t.catId] || {}; return html`<div key=${t.id} className="item">
+      <button className=${'pago ' + (t.pago ? 'on' : (t.tipo === 'despesa' && t.data < hojeS ? 'off' : ''))} onClick=${() => alt(t)} aria-label=${t.pago ? (t.tipo === 'receita' ? 'Recebido. Toque para desfazer' : 'Pago. Toque para desfazer') : (t.tipo === 'receita' ? 'Marcar como recebido' : 'Marcar como pago')} title=${t.pago ? 'Confirmado' : 'Toque para confirmar'}><${Ico} n="check" s=${15} /></button>
+      <button className="item" style=${{ border: 0, padding: 0, flex: 1 }} onClick=${() => abrir('lanc', t)}><span className="dot" style=${{ background: COR(c.cor) }}><${Ico} n=${t.tipo === 'receita' ? 'down' : t.recId ? 'repeat' : 'cart'} s=${16} /></span>
+        <span className="mid"><span className="t">${t.desc || c.nome || 'Sem categoria'}</span><span className="d">${c.nome}${t.parc ? ` · parcela ${t.parc.n}/${t.parc.total}` : ''}${t.recId ? ' · recorrente' : ''}${!t.pago ? (t.tipo === 'receita' ? ' · a receber' : ' · a pagar') : ''}${t.planejado === false ? ' · não planejado' : ''}</span></span>
+        <span className=${'val num ' + (t.tipo === 'receita' ? 'rec' : '')}>${t.tipo === 'receita' ? '+' : '−'}${fmt(t.valor)}</span></button></div>`; })}</div></div>`)}
+      ${lista.length > lim ? html`<button className="btn" style=${{ width: '100%', marginTop: 10 }} onClick=${() => setLim(lim + 60)}>Mostrar mais (${lista.length - lim})</button>` : null}</div>`
+      : html`<div className="card"><${Vazio} t=${A.tx.length ? 'Nada neste filtro' : 'Nenhum lançamento ainda'} d=${A.tx.length ? 'Ajuste o período ou a categoria.' : 'O primeiro registro leva 10 segundos.'}><button className="btn primary" onClick=${() => abrir('lanc')}>Registrar agora</button><//></div>`}
+  </div>`;
+}
+
+/* ----- Metas ----- */
+function Metas() {
+  const { A, abrir, hojeS, upd, toast } = useApp();
+  const [aberta, setAberta] = useState(null);
+  const totalMensal = metasMensal(A, hojeS);
+  return html`<div className="page"><div className="row sb"><h1 className="ptitle">Metas</h1><button className="btn primary sm" onClick=${() => abrir('meta')}><${Ico} n="plus" s=${16} />Nova meta</button></div>
+    ${A.metas.length ? html`<p className="psub num">${totalMensal ? `Somando as metas ativas, você precisa guardar cerca de ${fmt(totalMensal)} por mês.` : 'Defina prazo ou valor mensal para ver quanto guardar por mês.'}</p>` : null}
+    ${A.metas.length ? A.metas.map(m => { const c = metaCalc(m, hojeS); return html`<section key=${m.id} className="card stack">
+      <div className="row sb"><div style=${{ minWidth: 0 }}><h2>${m.nome}</h2><div className="xs mut">${TIPOS_META[m.tipo]}${m.prazo ? ` · até ${fmtData(m.prazo)}` : ''}</div></div>${c.concluida ? html`<span className="badge ok">Concluída</span>` : c.vencida ? html`<span className="badge warn">Prazo passou</span>` : null}</div>
+      <div><div className="row sb"><strong className="num">${fmt(m.atual)}</strong><span className="mut num">de ${fmt(m.alvo)}</span></div><${BarraOrc} pct=${c.pct} claro /><div className="xs mut">${c.pct}% ${m.tipo === 'divida' ? 'quitado' : 'alcançado'}</div></div>
+      ${!c.concluida ? html`<div className="info num">${c.mensal ? (m.prazo ? `Faltam ${fmt(c.rest)}. Para chegar no prazo: ${fmt(c.mensal)} por mês (${c.meses} ${c.meses === 1 ? 'mês' : 'meses'}).` : `Faltam ${fmt(c.rest)}. Guardando ${fmt(c.mensal)} por mês, leva cerca de ${c.eta} ${c.eta === 1 ? 'mês' : 'meses'}.`) : `Faltam ${fmt(c.rest)}. Defina um prazo ou um valor mensal para calcular o ritmo.`}</div>` : null}
+      <div className="row">${!c.concluida ? html`<button className="btn primary sm" onClick=${() => abrir('aporte', { id: m.id })}>${m.tipo === 'divida' ? 'Registrar pagamento' : 'Aportar'}</button>` : null}<button className="btn sm" onClick=${() => abrir('meta', { id: m.id })}><${Ico} n="edit" s=${15} />Editar</button>${m.aportes.length ? html`<button className="link" onClick=${() => setAberta(aberta === m.id ? null : m.id)}>${aberta === m.id ? 'Ocultar histórico' : `Histórico (${m.aportes.length})`}</button>` : null}</div>
+      ${aberta === m.id ? html`<div className="lista">${[...m.aportes].sort((a, b) => b.data.localeCompare(a.data)).map(a => html`<div key=${a.id} className="item"><span className="mid"><span className="t">${fmtData(a.data)}</span></span><span className="val num">${fmt(a.valor)}</span><button className="icon-btn" aria-label="Remover aporte" onClick=${() => { upd(s => ({ ...s, tx: s.tx.filter(t => t.id !== a.txId), metas: s.metas.map(x => x.id === m.id ? { ...x, atual: Math.max(0, x.atual - a.valor), aportes: x.aportes.filter(y => y.id !== a.id), concluidaEm: null } : x) })); toast('Aporte removido'); }}><${Ico} n="trash" s=${16} /></button></div>`)}</div>` : null}
+    </section>`; })
+      : html`<div className="card"><${Vazio} t="Metas dão direção ao dinheiro" d="Reserva de emergência, quitar uma dívida, uma compra planejada. O app calcula quanto guardar por mês."><button className="btn primary" onClick=${() => abrir('meta')}>Criar a primeira meta</button><//></div>`}
+  </div>`;
+}
+
+/* ----- Hábitos ----- */
+function Habitos() {
+  const { A, upd, abrir, hojeS, toast } = useApp();
+  const c = useMemo(() => constancia(A, hojeS), [A, hojeS]);
+  const dia = A.hab.dias[hojeS] || {}, ym = ymOf(hojeS);
+  const metasMes = A.hab.metasMes[ym] || [];
+  const [nova, setNova] = useState('');
+  const marcaK = (k, v) => upd(s => ({ ...s, hab: { ...s.hab, dias: { ...s.hab.dias, [hojeS]: { ...(s.hab.dias[hojeS] || {}), [k]: v } } } }));
+  const ITENS = [{ k: 'ver', t: 'Ver quanto ainda posso gastar', d: 'Olhe o quadro verde do Início. 20 segundos.' }, { k: 'reg', t: 'Registrar o que gastei hoje', d: 'Pode ser só o último gasto de que lembra. Registrar um lançamento marca sozinho.' }, { k: 'contas', t: 'Conferir as contas dos próximos dias', d: 'Veja a lista “A pagar” em Movimentos.' }];
+  const feitos = ITENS.filter(i => dia[i.k]).length;
+  const setMetasMes = f => upd(s => ({ ...s, hab: { ...s.hab, metasMes: { ...s.hab.metasMes, [ym]: f(s.hab.metasMes[ym] || []) } } }));
+  const SUG = ['Registrar gastos em pelo menos 20 dias', 'Manter o orçamento flexível abaixo de 100%', 'Fazer as 4 revisões semanais', 'Aportar em uma meta pelo menos uma vez'];
+  const des = A.hab.desafio, dDef = des ? DESAFIOS.find(d => d.id === des.id) : null;
+  const ultimos = Array.from({ length: 28 }, (_, i) => addDias(hojeS, i - 27));
+  return html`<div className="page"><h1 className="ptitle">Hábitos</h1>
+    ${c.diasDesde != null && c.diasDesde >= 3 ? html`<div className="info"><strong>Bem-vindo de volta.</strong> Não existe sequência para quebrar aqui. Registre o último gasto de que lembrar e já conta.<div style=${{ marginTop: 8 }}><button className="btn primary sm" onClick=${() => abrir('lanc')}>Registrar agora</button></div></div>` : null}
+    <${Secao} titulo="Check-in de hoje (3 min)"><div className="card">
+      <div className="lista">${ITENS.map(i => html`<button key=${i.k} className=${'check' + (dia[i.k] ? ' done' : '')} onClick=${() => marcaK(i.k, !dia[i.k])}><span className=${'pago' + (dia[i.k] ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span><span className="tt" style=${{ fontWeight: 600, display: 'block' }}>${i.t}</span><span className="xs mut">${i.d}</span></span></button>`)}
+        <button className=${'check' + (dia.nada ? ' done' : '')} onClick=${() => marcaK('nada', !dia.nada)}><span className=${'pago' + (dia.nada ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span><span className="tt" style=${{ fontWeight: 600, display: 'block' }}>Hoje não gastei nada</span><span className="xs mut">Também conta como registro do dia.</span></span></button></div>
+      <div className="xs mut" style=${{ marginTop: 8 }}>${feitos === 3 ? 'Check-in completo. Pode fechar o app.' : `${feitos} de 3 feitos. Fazer só um já vale.`}</div></div><//>
+    <${Secao} titulo="Constância"><div className="card stack">
+      <div className="row" style=${{ gap: 16 }}><div className="ring" style=${{ '--p': c.pct }}><b className="num">${c.pct}%</b></div>
+        <div className="stack" style=${{ gap: 4, flex: 1, minWidth: 160 }}><div><strong>${c.ativos30} ${c.ativos30 === 1 ? 'dia' : 'dias'}</strong> com acompanhamento${c.base < 30 ? ` desde o início (${c.base} ${c.base === 1 ? 'dia' : 'dias'})` : ' nos últimos 30'}</div><div><strong>${c.revisoes4} de 4</strong> revisões semanais nas últimas 4 semanas</div><div className="xs mut">Dias sem registro não zeram nada. O que conta é voltar.</div></div></div>
+      <div><div className="xs mut" style=${{ marginBottom: 6 }}>Últimos 28 dias</div><div className="dots" role="img" aria-label=${`${ultimos.filter(d => c.set.has(d)).length} dias com acompanhamento nos últimos 28`}>${ultimos.map(d => html`<i key=${d} className=${(c.set.has(d) ? 'on' : '') + (d === hojeS ? ' hoje' : '')} title=${fmtData(d)}></i>`)}</div></div></div><//>
+    <${Secao} titulo="Revisão semanal (10 min)"><div className="card stack">
+      ${(A.hab.semanas[segunda(hojeS)] || {}).feita ? html`<div className="info">Revisão desta semana feita em ${fmtData(A.hab.semanas[segunda(hojeS)].feita)}.${A.hab.semanas[segunda(hojeS)].b ? ` Ajuste escolhido: “${A.hab.semanas[segunda(hojeS)].b}”.` : ''}</div>` : html`<p className="mut">Olhe a semana, confira as contas dos próximos dias e escolha um ajuste pequeno.</p>`}
+      <button className="btn primary" onClick=${() => abrir('revisao')}>${(A.hab.semanas[segunda(hojeS)] || {}).feita ? 'Rever ou editar' : 'Começar a revisão'}</button></div><//>
+    <${Secao} titulo=${`Metas de ${MESES[+ym.slice(5) - 1]}`}><div className="card stack">
+      ${metasMes.length ? html`<div className="lista">${metasMes.map(g => html`<div key=${g.id} className=${'check' + (g.ok ? ' done' : '')} style=${{ alignItems: 'center' }}><button className=${'pago' + (g.ok ? ' on' : '')} aria-label=${g.ok ? 'Desmarcar' : 'Marcar como feita'} onClick=${() => setMetasMes(l => l.map(x => x.id === g.id ? { ...x, ok: !x.ok } : x))}><${Ico} n="check" s=${15} /></button><span className="tt" style=${{ flex: 1, fontWeight: 600 }}>${g.t}</span><button className="icon-btn" style=${{ width: 34, height: 34 }} aria-label="Remover meta do mês" onClick=${() => setMetasMes(l => l.filter(x => x.id !== g.id))}><${Ico} n="x" s=${15} /></button></div>`)}</div>` : html`<p className="mut sm">Escolha de 1 a 3 metas simples para o mês.</p>`}
+      <div className="chips">${SUG.filter(s => !metasMes.some(g => g.t === s)).map(s => html`<button key=${s} className="chip" onClick=${() => setMetasMes(l => [...l, { id: uid(), t: s, ok: false }])}><${Ico} n="plus" s=${14} />${s}</button>`)}</div>
+      <form className="row" style=${{ flexWrap: 'nowrap' }} onSubmit=${e => { e.preventDefault(); if (nova.trim()) { setMetasMes(l => [...l, { id: uid(), t: nova.trim().slice(0, 100), ok: false }]); setNova(''); } }}><input id="mm-nova" className="inp" aria-label="Nova meta do mês" placeholder="Escrever a minha" maxLength="100" value=${nova} onChange=${e => setNova(e.target.value)} /><button className="btn" type="submit">Adicionar</button></form></div><//>
+    <${Secao} titulo="Desafio comportamental"><div className="card stack">
+      ${des && dDef ? html`<${Frag}><div><strong>${dDef.nome}</strong><div className="mut sm">${dDef.desc}</div></div>
+        <${BarraOrc} pct=${Math.round(des.feitos.length * 100 / 7)} claro /><div className="xs mut">${des.feitos.length} de 7 dias feitos. Sem prazo: faça quando puder.</div>
+        <button className=${'check' + (des.feitos.includes(hojeS) ? ' done' : '')} onClick=${() => {
+          const jaFeito = des.feitos.includes(hojeS), novo = jaFeito ? des.feitos.filter(d => d !== hojeS) : [...des.feitos, hojeS];
+          if (novo.length >= 7) { upd(s => ({ ...s, hab: { ...s.hab, desafio: null, desafiosFeitos: [...s.hab.desafiosFeitos, { id: des.id, fim: hojeS }] } })); toast('Desafio concluído!'); }
+          else upd(s => ({ ...s, hab: { ...s.hab, desafio: { ...des, feitos: novo } } }));
+        }}><span className=${'pago' + (des.feitos.includes(hojeS) ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span className="tt" style=${{ fontWeight: 600 }}>${dDef.tarefa}</span></button>
+        <button className="link" style=${{ textAlign: 'left' }} onClick=${() => upd(s => ({ ...s, hab: { ...s.hab, desafio: null } }))}>Trocar de desafio</button><//>`
+        : html`<${Frag}><p className="mut sm">Escolha um desafio de 7 dias feitos. Eles não precisam ser seguidos.${A.hab.desafiosFeitos.length ? ` Você já concluiu ${A.hab.desafiosFeitos.length}.` : ''}</p>
+          <div className="lista">${DESAFIOS.map(d => html`<button key=${d.id} className="item" onClick=${() => upd(s => ({ ...s, hab: { ...s.hab, desafio: { id: d.id, inicio: hojeS, feitos: [] } } }))}><span className="mid"><span className="t" style=${{ whiteSpace: 'normal' }}>${d.nome}</span><span className="d" style=${{ whiteSpace: 'normal' }}>${d.desc}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div><//>`}</div><//>
+  </div>`;
+}
+
+/* ----- Antes de comprar ----- */
+function Comprar() {
+  const { A, upd, abrir, ir, hojeS, toast, setMentorPre } = useApp();
+  const cats = A.cats.filter(c => c.tipo === 'despesa' && !c.oculta);
+  const [valor, setValor] = useState(0), [catId, setCatId] = useState('c_compras'), [motivo, setMotivo] = useState('quero'), [desc, setDesc] = useState('');
+  const [planejada, setPlanejada] = useState('nao'), [comp, setComp] = useState('nao'), [res, setRes] = useState(null), [erro, setErro] = useState('');
+  const avaliar = () => { if (!(valor > 0)) return setErro('Informe o valor da compra.'); setErro(''); setRes(avaliarCompra(A, hojeS, { valor, catId, motivo, planejada: planejada === 'sim', compromete: comp })); };
+  const MOT = [{ v: 'necessidade', t: 'Preciso' }, { v: 'quero', t: 'Quero' }, { v: 'impulso', t: 'Impulso ou promoção' }, { v: 'presente', t: 'Presente' }];
+  const espera = [...A.espera].sort((a, b) => a.ate.localeCompare(b.ate));
+  return html`<div className="page"><h1 className="ptitle">Antes de comprar</h1><p className="psub">Cinco perguntas rápidas, com base no seu orçamento real.</p>
+    <section className="card stack">
+      <div className="field"><span className="lbl2">Valor da compra</span><${Dinheiro} id="cp-valor" grande valor=${valor} onChange=${v => { setValor(v); setRes(null); }} /></div>
+      <div className="field"><label htmlFor="cp-desc">O que é? (opcional)</label><input id="cp-desc" className="inp" maxLength="80" value=${desc} onChange=${e => setDesc(e.target.value)} placeholder="Ex.: tênis, fone, jantar" /></div>
+      <div className="field"><label htmlFor="cp-cat">Tipo de despesa</label><select id="cp-cat" className="inp" value=${catId} onChange=${e => { setCatId(e.target.value); setRes(null); }}>${cats.map(c => html`<option key=${c.id} value=${c.id}>${c.nome} (${c.gasto === 'essencial' ? 'essencial' : 'flexível'})</option>`)}</select></div>
+      <div className="field"><span className="lbl2">Motivo da compra</span><${Seg} rotulo="Motivo" valor=${motivo} onChange=${v => { setMotivo(v); setRes(null); }} opcoes=${MOT} /></div>
+      <div className="field"><span className="lbl2">Estava planejada?</span><${Seg} full rotulo="Planejada" valor=${planejada} onChange=${v => { setPlanejada(v); setRes(null); }} opcoes=${[{ v: 'sim', t: 'Sim' }, { v: 'nao', t: 'Não' }]} /></div>
+      <div className="field"><span className="lbl2">Compromete despesas essenciais ou metas?</span><${Seg} full rotulo="Compromete" valor=${comp} onChange=${v => { setComp(v); setRes(null); }} opcoes=${[{ v: 'nao', t: 'Não' }, { v: 'talvez', t: 'Talvez' }, { v: 'sim', t: 'Sim' }]} /></div>
+      ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+      <button className="btn primary big" onClick=${avaliar}>Avaliar compra</button></section>
+    ${res ? html`<section className="stack">
+      <div className=${'veredito ' + res.veredito} role="status"><h2>${res.titulo}</h2><span className="num">${fmt(valor)} · saldo livre após contas: ${fmt(res.saldoLivre)}${res.definido && !res.essencial ? ` · flexível restante: ${fmt(Math.max(0, res.disp))}` : ''}</span></div>
+      <div className="card mot">${res.mot.map((m, i) => html`<div key=${i} className=${m.n}><span className="m">${m.n === 'ok' ? '✓' : m.n === 'bad' ? '!' : m.n === 'warn' ? '•' : 'i'}</span><span>${m.t}</span></div>`)}</div>
+      <p className="xs mut">Regra simples baseada nos seus registros, sem consultoria financeira. A decisão é sua.</p>
+      <div className="row">
+        <button className="btn primary" onClick=${() => abrir('lanc', { tipo: 'despesa', valor, catId, desc, planejado: planejada === 'sim' })}>Comprei: registrar</button>
+        <button className="btn" onClick=${() => { upd(s => ({ ...s, espera: [...s.espera, { id: uid(), valor, desc: desc.trim() || nomeCat(A, catId), catId, ate: addDias(hojeS, 1) }] })); setRes(null); setValor(0); setDesc(''); toast('Na lista de espera. Decida amanhã'); }}>Esperar 24h</button>
+        ${MENTOR ? html`<button className="btn" onClick=${() => { setMentorPre(`Estou pensando em comprar ${desc.trim() || 'um item'} por ${fmt(valor)} (${nomeCat(A, catId)}). Motivo: ${MOT.find(m => m.v === motivo).t.toLowerCase()}. ${planejada === 'sim' ? 'Estava planejado.' : 'Não estava planejado.'} Qual a sua avaliação?`); ir('mentor'); }}><${Ico} n="chat" s=${16} />Pedir ao mentor</button>` : null}</div>
+    </section>` : null}
+    <${Secao} titulo="Lista de espera de 24h">
+      ${espera.length ? html`<div className="card"><div className="lista">${espera.map(e => html`<div key=${e.id} className="item"><span className="mid"><span className="t">${e.desc || 'Item'} · ${fmt(e.valor)}</span><span className="d">${e.ate <= hojeS ? 'Pronto para decidir' : 'Decida a partir de ' + fmtData(e.ate)}</span></span>
+        <button className="btn sm" onClick=${() => { upd(s => ({ ...s, espera: s.espera.filter(x => x.id !== e.id) })); abrir('lanc', { tipo: 'despesa', valor: e.valor, catId: e.catId, desc: e.desc, planejado: false }); }}>Comprei</button>
+        <button className="btn sm" onClick=${() => { upd(s => ({ ...s, economizado: s.economizado + e.valor, espera: s.espera.filter(x => x.id !== e.id) })); toast(`Você deixou de gastar ${fmt(e.valor)}`); }}>Desisti</button></div>`)}</div></div>`
+        : html`<div className="card"><p className="mut sm">Vazia. Quando uma compra não for urgente, “Esperar 24h” guarda o item aqui.</p></div>`}
+      ${A.economizado ? html`<div className="info num">Já deixou de gastar ${fmt(A.economizado)} ao desistir de compras na espera.</div>` : null}
+    <//></div>`;
+}
+
+/* ----- Radar ----- */
+function Radar() {
+  const { A, upd, hojeS } = useApp();
+  const ins = useMemo(() => radar(A, hojeS), [A, hojeS]);
+  return html`<div className="page"><h1 className="ptitle">Radar de gastos</h1><p className="psub">Padrões que passam despercebidos, sem julgamento. Calculado só com os seus registros.</p>
+    ${ins.length ? ins.map(i => html`<${Insight} key=${i.id} i=${i} />`) : html`<div className="card"><${Vazio} t=${A.tx.length < 5 ? 'Poucos dados por enquanto' : 'Nada fora do esperado'} d=${A.tx.length < 5 ? 'Com alguns dias de registros o radar começa a achar padrões.' : 'Nenhum acúmulo, aumento ou desvio relevante agora.'} /></div>`}
+    <section className="card stack"><h3>O que o radar observa</h3>
+      <ul className="sm mut" style=${{ margin: 0, paddingLeft: 18 }}><li>Acúmulo de compras pequenas nos últimos 30 dias</li><li>Categorias que cresceram em relação ao mesmo trecho do mês anterior</li><li>Compras que se repetem em meses diferentes</li><li>Aproximação do orçamento flexível e dos limites por categoria</li><li>Desvios em relação às metas e gastos não planejados</li></ul>
+      <div className="field"><span className="lbl2">Considerar “pequena” a compra de até</span><${Dinheiro} id="rd-peq" valor=${A.cfg.pequeno} onChange=${v => upd(s => ({ ...s, cfg: { ...s.cfg, pequeno: v || 3000 } }))} /></div></section></div>`;
+}
+
+/* ----- Relatórios ----- */
+function Relatorios() {
+  const { A, hojeS, toast } = useApp();
+  const [modo, setModo] = useState('mes'), [ref, setRef] = useState(ymOf(hojeS)), [refS, setRefS] = useState(segunda(hojeS));
+  const ini = modo === 'mes' ? ref + '-01' : refS, fim = modo === 'mes' ? fimMes(ref) : addDias(refS, 6);
+  const rel = useMemo(() => relatorio(A, ini, fim, hojeS), [A, ini, fim, hojeS]);
+  const maxC = rel.cats.length ? Math.max(...rel.cats.map(c => Math.max(c.v, 1))) : 1;
+  const nav = d => modo === 'mes' ? setRef(addMes(ref, d)) : setRefS(addDias(refS, 7 * d));
+  const resumo = () => `Relatório ${modo === 'mes' ? nomeMes(ref) : fmtData(ini) + ' a ' + fmtData(fim)}\nReceitas: ${fmt(rel.A.rec)}\nDespesas: ${fmt(rel.A.dsp)}\nResultado: ${fmt(rel.A.rec - rel.A.dsp)}\nNão planejados: ${fmt(rel.A.naoPlan)}\nAportes em metas: ${fmt(rel.aportes)}\n` + rel.cats.slice(0, 6).map(c => `- ${nomeCat(A, c.id)}: ${fmt(c.v)}`).join('\n') + '\nPróximo período:\n' + rel.recomend.map(r => '- ' + r).join('\n');
+  const dif = (a, b) => b ? Math.round((a - b) * 100 / b) : null;
+  return html`<div className="page"><h1 className="ptitle">Relatórios</h1>
+    <${Seg} full rotulo="Período" valor=${modo} onChange=${setModo} opcoes=${[{ v: 'semana', t: 'Semanal' }, { v: 'mes', t: 'Mensal' }]} />
+    <div className="row sb"><button className="icon-btn" aria-label="Anterior" onClick=${() => nav(-1)}><${Ico} n="chevL" /></button><strong>${modo === 'mes' ? nomeMes(ref) : `${fmtDM(ini)} a ${fmtDM(fim)}`}</strong><button className="icon-btn" aria-label="Próximo" onClick=${() => nav(1)}><${Ico} n="chevR" /></button></div>
+    <div className="g3 stk"><div className="stat"><div className="k">Receitas</div><div className="v rec num">${fmt(rel.A.rec)}</div>${rel.B.rec ? html`<div className="s">${dif(rel.A.rec, rel.B.rec) >= 0 ? '+' : ''}${dif(rel.A.rec, rel.B.rec)}% vs. anterior</div>` : null}</div>
+      <div className="stat"><div className="k">Despesas</div><div className="v dsp num">${fmt(rel.A.dsp)}</div>${rel.B.dsp ? html`<div className="s">${dif(rel.A.dsp, rel.B.dsp) >= 0 ? '+' : ''}${dif(rel.A.dsp, rel.B.dsp)}% vs. anterior</div>` : null}</div>
+      <div className="stat"><div className="k">Resultado</div><div className="v num">${rel.A.rec - rel.A.dsp < 0 ? '−' : ''}${fmt(Math.abs(rel.A.rec - rel.A.dsp))}</div></div></div>
+    <${Secao} titulo="Evolução por categoria"><div className="card">${rel.cats.length ? html`<div className="scroll-x"><table className="tbl"><thead><tr><th>Categoria</th><th className="r">Período</th><th className="r">Anterior</th><th className="r">Variação</th></tr></thead><tbody>${rel.cats.slice(0, 10).map(c => { const d = dif(c.v, c.ant); return html`<tr key=${c.id}><td><div>${nomeCat(A, c.id)}</div><div className="bar lt" style=${{ margin: '5px 0 0', height: 6 }}><i style=${{ width: Math.max(3, c.v * 100 / maxC) + '%', background: COR((catMap(A)[c.id] || {}).cor) }}></i></div></td><td className="r num">${fmt(c.v)}</td><td className="r num mut">${fmt(c.ant)}</td><td className="r num">${d == null ? '—' : (d > 0 ? '+' : '') + d + '%'}</td></tr>`; })}</tbody></table></div>` : html`<${Vazio} t="Sem despesas no período" d="" />`}</div><//>
+    <${Secao} titulo="Gastos não planejados"><div className="card stack"><div className="row sb"><span>Total não planejado</span><strong className="num">${fmt(rel.A.naoPlan)}</strong></div>${rel.A.naoPlan && rel.A.dsp ? html`<div className="xs mut">${Math.round(rel.A.naoPlan * 100 / rel.A.dsp)}% das despesas do período.</div>` : null}${rel.A.naoPlanItens.slice(0, 5).map(t => html`<div key=${t.id} className="row sb sm"><span>${fmtDM(t.data)} · ${t.desc || nomeCat(A, t.catId)}</span><span className="num">${fmt(t.valor)}</span></div>`)}</div><//>
+    <${Secao} titulo="Metas e constância"><div className="card stack">
+      <div className="row sb"><span>Aportes em metas</span><strong className="num">${fmt(rel.aportes)}</strong></div>
+      <div className="row sb"><span>Metas alcançadas</span><strong>${rel.concluidas.length ? rel.concluidas.map(m => m.nome).join(', ') : 'nenhuma no período'}</strong></div>
+      <div className="row sb"><span>Dias com acompanhamento</span><strong className="num">${rel.ativos} de ${rel.diasPeriodo}</strong></div>
+      <div className="row sb"><span>Revisões semanais feitas</span><strong className="num">${rel.revisoes}</strong></div></div><//>
+    <${Secao} titulo="Para o próximo período"><div className="card stack">${rel.recomend.map((r, i) => html`<div key=${i} className="row" style=${{ alignItems: 'flex-start', flexWrap: 'nowrap' }}><span className="dot" style=${{ background: 'var(--brand)', width: 26, height: 26, borderRadius: 9 }}><${Ico} n="spark" s=${14} /></span><span>${r}</span></div>`)}</div><//>
+    <button className="btn" onClick=${async () => { try { await navigator.clipboard.writeText(resumo()); toast('Resumo copiado'); } catch (e) { toast('Não foi possível copiar neste ambiente'); } }}><${Ico} n="file" s=${18} />Copiar resumo do relatório</button></div>`;
+}
+
+/* ----- Orçamento e categorias ----- */
+function Orcamento() {
+  const { A, upd, hojeS, toast } = useApp();
+  const ym = ymOf(hojeS), O = useMemo(() => orcamento(A, ym, hojeS), [A, ym, hojeS]);
+  const [nome, setNome] = useState(''), [tipoC, setTipoC] = useState('despesa');
+  const setCfg = p => upd(s => ({ ...s, cfg: { ...s.cfg, ...p } }));
+  const setCat = (id, p) => upd(s => ({ ...s, cats: s.cats.map(c => c.id === id ? { ...c, ...p } : c) }));
+  const remover = c => { upd(s => ({ ...s, cats: s.cats.filter(x => x.id !== c.id), tx: s.tx.map(t => t.catId === c.id ? { ...t, catId: c.tipo === 'receita' ? 'r_outras' : 'c_outros' } : t), recs: s.recs.map(r => r.catId === c.id ? { ...r, catId: c.tipo === 'receita' ? 'r_outras' : 'c_outros' } : r) })); toast(`Categoria removida. Lançamentos foram para “${c.tipo === 'receita' ? 'Outras receitas' : 'Outros'}”`); };
+  const adicionar = e => { e.preventDefault(); const n = nome.trim(); if (!n) return; if (A.cats.some(c => c.tipo === tipoC && c.nome.toLowerCase() === n.toLowerCase())) return toast('Essa categoria já existe'); upd(s => ({ ...s, cats: [...s.cats, { id: 'c_' + uid(), nome: n.slice(0, 40), tipo: tipoC, gasto: 'flexivel', cor: s.cats.length % 10, limite: 0 }] })); setNome(''); toast('Categoria criada'); };
+  const recorrentes = A.recs;
+  return html`<div className="page"><h1 className="ptitle">Orçamento e categorias</h1>
+    <section className="card stack"><h2>Base do orçamento</h2>
+      <div className="field"><span className="lbl2">Renda mensal prevista</span><${Dinheiro} id="o-renda" valor=${A.cfg.rendaMensal} onChange=${v => setCfg({ rendaMensal: v })} /><span className="xs mut">Usada quando as receitas registradas no mês ainda são menores que isso.</span></div>
+      <div className="field"><span className="lbl2">Quanto você tem em conta hoje? (saldo inicial)</span><${Dinheiro} id="o-saldo" valor=${Math.max(0, A.cfg.saldoInicial)} onChange=${v => setCfg({ saldoInicial: v })} /><span className="xs mut">Ponto de partida do “Saldo disponível”. Receitas e despesas pagas se somam a ele.</span></div></section>
+    <section className="card stack"><h2>Orçamento flexível de ${MESES[+ym.slice(5) - 1]}</h2>
+      <div className="stack sm num"><div className="row sb"><span>Renda do mês</span><strong>${fmt(O.base)}</strong></div><div className="row sb"><span>− Gastos essenciais do mês</span><strong>${fmt(O.ess)}</strong></div><div className="row sb"><span>− Guardar para metas${S_ehAuto(A) ? ' (automático)' : ''}</span><strong>${fmt(O.guardar)}</strong></div><div className="row sb" style=${{ borderTop: '1px solid var(--line)', paddingTop: 8 }}><span><strong>Livre para gastos flexíveis</strong></span><strong style=${{ fontSize: 18 }}>${fmt(O.total)}</strong></div></div>
+      <div className="field"><span className="lbl2">Guardar por mês (deixe 0 para automático pelas metas)</span><${Dinheiro} id="o-guardar" valor=${A.cfg.guardarMes || 0} onChange=${v => setCfg({ guardarMes: v || null })} /></div>
+      <div className="field"><span className="lbl2">Ou fixar o orçamento flexível manualmente (0 = automático)</span><${Dinheiro} id="o-flex" valor=${A.cfg.orcFlex || 0} onChange=${v => setCfg({ orcFlex: v || null })} /></div>
+      <div className="note xs">Os gastos essenciais usam o que já foi lançado no mês. Cadastre as contas fixas como recorrentes para o cálculo ficar completo desde o dia 1.</div></section>
+    <${Secao} titulo="Categorias de despesa"><div className="card"><div className="lista">${A.cats.filter(c => c.tipo === 'despesa' && !c.oculta).map(c => html`<div key=${c.id} className="item" style=${{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <span className="dot" style=${{ background: COR(c.cor), width: 12, height: 12, borderRadius: 4, marginTop: 8 }}></span>
+      <div className="mid" style=${{ minWidth: 150 }}><input className="inp" style=${{ minHeight: 40, padding: '6px 10px' }} aria-label=${'Nome da categoria ' + c.nome} defaultValue=${c.nome} maxLength="40" onBlur=${e => { const v = e.target.value.trim(); if (v && v !== c.nome) setCat(c.id, { nome: v.slice(0, 40) }); else e.target.value = c.nome; }} /></div>
+      <${Seg} rotulo=${'Natureza de ' + c.nome} valor=${c.gasto} onChange=${v => setCat(c.id, { gasto: v })} opcoes=${[{ v: 'essencial', t: 'Essencial' }, { v: 'flexivel', t: 'Flexível' }]} />
+      <div style=${{ width: '100%', display: 'flex', gap: 10, alignItems: 'center' }}><span className="xs mut">Limite mensal</span><div style=${{ flex: 1, maxWidth: 200 }}><${Dinheiro} id=${'lim-' + c.id} valor=${c.limite || 0} onChange=${v => setCat(c.id, { limite: v })} /></div>${c.fixa ? null : html`<button className="icon-btn" aria-label=${'Remover ' + c.nome} onClick=${() => remover(c)}><${Ico} n="trash" s=${16} /></button>`}</div></div>`)}</div></div><//>
+    <form className="card stack" onSubmit=${adicionar}><h3>Nova categoria</h3><div className="row" style=${{ flexWrap: 'nowrap' }}><input id="nc-nome" className="inp" aria-label="Nome da nova categoria" maxLength="40" placeholder="Ex.: Pets, Presentes" value=${nome} onChange=${e => setNome(e.target.value)} /><select id="nc-tipo" aria-label="Tipo" className="inp" style=${{ width: 130 }} value=${tipoC} onChange=${e => setTipoC(e.target.value)}><option value="despesa">Despesa</option><option value="receita">Receita</option></select></div><button className="btn" type="submit">Criar categoria</button></form>
+    <${Secao} titulo="Contas recorrentes"><div className="card">${recorrentes.length ? html`<div className="lista">${recorrentes.map(r => html`<div key=${r.id} className="item"><span className="mid"><span className="t">${r.desc || nomeCat(A, r.catId)}</span><span className="d">${r.tipo === 'receita' ? 'Receita' : 'Despesa'} · todo dia ${r.dia} · desde ${mesCurto(r.inicio)}/${r.inicio.slice(0, 4)}${r.fim ? ' · até ' + mesCurto(r.fim) + '/' + r.fim.slice(0, 4) : ''}</span></span><span className="val num">${fmt(r.valor)}</span>
+      ${r.fim && r.fim < ym ? html`<span className="badge">Encerrada</span>` : html`<button className="btn sm" onClick=${() => { upd(s => ({ ...s, recs: s.recs.map(x => x.id === r.id ? { ...x, fim: ymOf(hojeS) } : x), tx: s.tx.filter(t => !(t.recId === r.id && t.data > fimMes(ymOf(hojeS)) )) })); toast('Recorrência encerrada neste mês'); }}>Encerrar</button>`}</div>`)}</div>` : html`<${Vazio} t="Nenhuma conta recorrente" d="Ao registrar, ative “Repetir todo mês” em Mais opções (aluguel, internet, salário)." />`}</div><//></div>`;
+}
+const S_ehAuto = A => A.cfg.guardarMes == null;
+
+/* ----- Mentor IA ----- */
+function Mentor() {
+  const { A, upd, hojeS, demo, mentorPre, setMentorPre, ir } = useApp();
+  const [txt, setTxt] = useState(mentorPre || '');
+  const [busy, setBusy] = useState(false), [parcial, setParcial] = useState(''), [erro, setErro] = useState(''), [semIA, setSemIA] = useState(false);
+  const fim = useRef(null), ctl = useRef(null);
+  useEffect(() => { if (mentorPre) setMentorPre(''); }, []);
+  useEffect(() => { fim.current && fim.current.scrollIntoView({ block: 'end' }); }, [A.mentor.length, parcial, busy]);
+  const enviar = async pergunta => {
+    const q = (pergunta != null ? pergunta : txt).trim();
+    if (!q || busy) return;
+    setTxt(''); setErro(''); setParcial(''); setBusy(true);
+    const hist = [...A.mentor, { r: 'u', t: q.slice(0, 1500) }];
+    upd(s => ({ ...s, mentor: hist.slice(-30) }));
+    try {
+      const sample = await usar('sample');
+      if (!sample) { setSemIA(true); return; }
+      ctl.current = new AbortController();
+      const { text } = await sample(montarPrompt(A, hojeS, hist.slice(-10), !!demo), { modelTier: 'default', cache: false, signal: ctl.current.signal, onText: ({ text }) => setParcial(text) });
+      upd(s => ({ ...s, mentor: [...hist, { r: 'a', t: text.trim().slice(0, 3500) }].slice(-30) }));
+    } catch (e) {
+      if (e && e.text) upd(s => ({ ...s, mentor: [...hist, { r: 'a', t: e.text.slice(0, 3500) }].slice(-30) }));
+      const c = e && e.code;
+      setErro(c === 'not_granted' ? 'Você não autorizou o uso do Claude nesta página. Toque em enviar de novo para decidir outra vez.' : c === 'rate_limited' ? 'Muitas perguntas em pouco tempo. Aguarde um instante.' : c === 'aborted' ? 'Resposta interrompida.' : 'Não consegui falar com o Claude agora. Tente de novo em instantes.');
+    } finally { setBusy(false); setParcial(''); }
+  };
+  const SUGS = [{ t: 'Explique meu mês', q: 'Explique meu mês em poucas linhas, com base nos meus dados.' }, { t: 'Onde posso economizar?', q: 'Onde posso reduzir gastos com mais facilidade, olhando meus dados?' }, { t: 'Uma ação pequena para hoje', q: 'Qual é uma ação pequena de até 5 minutos que eu posso fazer hoje?' }, { t: 'Ajude com uma meta', q: 'Quero definir uma meta financeira. Faça perguntas curtas para me ajudar a defini-la.' }, { t: 'Posso fazer uma compra?', pre: 'Quero comprar ____ por R$ ____. Posso?' }];
+  return html`<div className="page"><h1 className="ptitle">Mentor IA</h1>
+    <p className="psub">Usa o seu perfil e os dados registrados aqui. Não inventa números e não faz diagnóstico.</p>
+    ${demo ? html`<div className="note">Modo demonstração: o mentor vai responder com base nos dados de exemplo.</div>` : null}
+    ${A.tx.length === 0 ? html`<div className="info">Você ainda não tem lançamentos. O mentor responde dúvidas gerais, mas as análises ficam melhores depois de alguns registros.</div>` : null}
+    <div className="chat" aria-live="polite">
+      ${A.mentor.length === 0 && !busy ? html`<div className="msg a">Oi! Posso ajudar a avaliar uma compra, olhar para onde o dinheiro foi, ou transformar uma meta em passos pequenos. Por onde quer começar?</div>` : null}
+      ${A.mentor.map((m, i) => html`<div key=${i} className=${'msg ' + m.r}>${m.r === 'a' ? html`<${Md} texto=${m.t} />` : m.t}</div>`)}
+      ${busy ? html`<div className="msg a">${parcial ? html`<${Md} texto=${parcial} />` : html`<span className="dots3" aria-label="Pensando"><span></span><span></span><span></span></span>`}</div>` : null}
+      ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+      ${semIA ? html`<div className="note">O mentor precisa do Claude, que só responde quando esta página está aberta dentro do Claude. Aqui fora, use o Radar e o “Antes de comprar”, que funcionam sem IA. <button className="link" onClick=${() => ir('radar')}>Abrir o radar</button></div>` : null}
+      <div ref=${fim}></div></div>
+    ${!busy ? html`<div className="chips">${SUGS.map(s => html`<button key=${s.t} className="chip" onClick=${() => s.q ? enviar(s.q) : setTxt(s.pre)}>${s.t}</button>`)}</div>` : null}
+    <form className="composer" onSubmit=${e => { e.preventDefault(); enviar(); }}>
+      <input id="mentor-in" className="inp" aria-label="Sua pergunta" placeholder="Pergunte ao mentor" value=${txt} maxLength="1500" onChange=${e => setTxt(e.target.value)} />
+      ${busy ? html`<button type="button" className="btn" onClick=${() => ctl.current && ctl.current.abort()}>Parar</button>` : html`<button type="submit" className="btn primary" aria-label="Enviar"><${Ico} n="send" s=${18} /></button>`}</form>
+    <div className="row sb xs mut"><span>Cada resposta usa o seu próprio acesso ao Claude e é enviada junto com um resumo dos seus dados.</span>${A.mentor.length ? html`<button className="link" onClick=${() => upd(s => ({ ...s, mentor: [] }))}>Limpar conversa</button>` : null}</div></div>`;
+}
+
+/* ----- Dados e ajustes ----- */
+async function salvarArquivo(nome, dados) {
+  try {
+    const dl = await usar('downloads');
+    if (dl) { await dl.save({ filename: nome, data: dados }); return 'ok'; }
+    if (MENTOR) return 'indisponivel';
+    // PWA/navegador comum: link com blob (no iOS abre a folha de compartilhar/salvar)
+    const url = URL.createObjectURL(new Blob([dados], { type: /\.json$/.test(nome) ? 'application/json' : 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000); return 'ok';
+  }
+  catch (e) { return e && e.code === 'declined' ? 'recusado' : 'erro'; }
+}
+function Dados() {
+  const { A, S, upd, demo, status, hojeS, toast, substituir, sairDemo, entrarDemo } = useApp();
+  const [imp, setImp] = useState(null), [erro, setErro] = useState(''), [saida, setSaida] = useState(null), [apagar, setApagar] = useState(false), [novoTraco, setNovoTraco] = useState('');
+  const exportar = async (nome, texto) => { const r = await salvarArquivo(nome, texto); if (r === 'ok') { toast('Arquivo salvo'); setSaida(null); } else if (r !== 'recusado') setSaida({ nome, texto }); };
+  const abrirArquivo = e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; setErro(''); setImp(null);
+    if (!f) return;
+    if (f.size > 8e6) return setErro('Arquivo grande demais (limite de 8 MB).');
+    const rd = new FileReader();
+    rd.onerror = () => setErro('Não consegui ler o arquivo.');
+    rd.onload = () => {
+      try {
+        const t = String(rd.result);
+        if (/\.csv$/i.test(f.name) || !/^\s*[{[]/.test(t)) setImp({ k: 'csv', res: csvImportar(A, t, hojeS), nome: f.name });
+        else { const r = normalizarEstado(JSON.parse(t)); setImp({ k: 'json', res: r, nome: f.name }); }
+      } catch (er) { setErro(er instanceof SyntaxError ? 'O arquivo não é um JSON válido.' : er.message); }
+    };
+    rd.readAsText(f);
+  };
+  const aplicar = modo => {
+    if (imp.k === 'json') { if (modo === 'substituir') substituir(imp.res.estado); else upd(s => mesclar(s, imp.res.estado)); toast('Backup importado'); }
+    else { const { tx, novasCats } = imp.res; upd(s => ({ ...s, cats: [...s.cats, ...novasCats], tx: [...s.tx, ...tx] })); toast(`${tx.length} lançamentos importados`); }
+    setImp(null);
+  };
+  return html`<div className="page"><h1 className="ptitle">Dados e ajustes</h1>
+    ${demo ? html`<div className="demo-banner"><span>Você está no modo demonstração. Exportar e importar ficam desativados.</span><button className="btn sm" onClick=${sairDemo}>Sair da demonstração</button></div>` : null}
+    <section className="card stack"><h2>Aparência</h2><${Seg} full rotulo="Tema" valor=${A.cfg.tema} onChange=${v => { upd(s => ({ ...s, cfg: { ...s.cfg, tema: v } })); if (v === 'auto') document.documentElement.removeAttribute('data-theme'); }} opcoes=${[{ v: 'auto', t: 'Automático' }, { v: 'claro', t: 'Claro' }, { v: 'escuro', t: 'Escuro' }]} /></section>
+    <section className="card stack"><h2>Onde seus dados ficam</h2><p>${demo ? 'Dados de exemplo: nada é salvo.' : status.msg}</p><p className="xs mut">${A.tx.length} lançamentos · ${A.metas.length} metas. Os dados nunca são compartilhados com outras pessoas que abrirem este link.</p></section>
+    <section className="card stack"><h2>Exportar</h2>
+      <button className="btn" disabled=${!!demo} onClick=${() => exportar(`financemind-backup-${hojeS}.json`, JSON.stringify(S, null, 1))}><${Ico} n="down" s=${18} />Backup completo (JSON)</button>
+      <button className="btn" disabled=${!!demo} onClick=${() => exportar(`financemind-lancamentos-${hojeS}.csv`, csvExportar(S))}><${Ico} n="down" s=${18} />Lançamentos (CSV para planilha)</button>
+      ${saida ? html`<div className="stack"><div className="note">Não consegui abrir o salvamento neste ambiente. Copie o texto abaixo e salve num arquivo ${saida.nome.split('.').pop().toUpperCase()}.</div><pre className="out">${saida.texto.slice(0, 60000)}</pre><button className="btn sm" onClick=${async () => { try { await navigator.clipboard.writeText(saida.texto); toast('Copiado'); } catch (e) { toast('Selecione o texto e copie manualmente'); } }}>Copiar tudo</button></div>` : null}</section>
+    <section className="card stack"><h2>Importar</h2><p className="sm mut">Aceita o backup JSON do Finance Mind ou um CSV com colunas data;tipo;valor;categoria;descricao.</p>
+      <input id="imp-arq" className="inp" type="file" accept=".json,.csv,application/json,text/csv" aria-label="Escolher arquivo" disabled=${!!demo} onChange=${abrirArquivo} />
+      ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+      ${imp && imp.k === 'json' ? html`<div className="stack"><div className="info">${imp.nome}: ${imp.res.estado.tx.length} lançamentos, ${imp.res.estado.metas.length} metas, ${imp.res.estado.recs.length} contas recorrentes.</div>${imp.res.avisos.length ? html`<div className="note xs">${imp.res.avisos.slice(0, 4).join(' ')}${imp.res.avisos.length > 4 ? ` (+${imp.res.avisos.length - 4})` : ''}</div>` : null}<button className="btn primary" onClick=${() => aplicar('mesclar')}>Mesclar com meus dados</button><button className="btn danger" onClick=${() => aplicar('substituir')}>Substituir tudo pelo backup</button></div>` : null}
+      ${imp && imp.k === 'csv' ? html`<div className="stack"><div className="info">${imp.nome}: ${imp.res.tx.length} lançamentos válidos${imp.res.novasCats.length ? `, ${imp.res.novasCats.length} categorias novas` : ''}.</div>${imp.res.erros.length ? html`<div className="note xs"><strong>${imp.res.erros.length} linhas ignoradas.</strong> ${imp.res.erros.slice(0, 4).join(' ')}</div>` : null}<button className="btn primary" disabled=${!imp.res.tx.length} onClick=${() => aplicar()}>Importar ${imp.res.tx.length} lançamentos</button></div>` : null}</section>
+    <section className="card stack"><h2>Meu perfil comportamental</h2><p className="sm mut">Autorrelato exploratório, não é diagnóstico. O mentor usa isso só para sugerir passos práticos. Edite à vontade.</p>
+      <ul style=${{ margin: 0, paddingLeft: 0, listStyle: 'none' }} className="stack">${A.perfil.tracos.map((t, i) => html`<li key=${i} className="row sb" style=${{ flexWrap: 'nowrap', alignItems: 'flex-start' }}><span className="sm">${t}</span><button className="icon-btn" style=${{ width: 32, height: 32 }} aria-label="Remover" onClick=${() => upd(s => ({ ...s, perfil: { ...s.perfil, tracos: s.perfil.tracos.filter((_, j) => j !== i) } }))}><${Ico} n="x" s=${14} /></button></li>`)}</ul>
+      <form className="row" style=${{ flexWrap: 'nowrap' }} onSubmit=${e => { e.preventDefault(); if (novoTraco.trim()) { upd(s => ({ ...s, perfil: { ...s.perfil, tracos: [...s.perfil.tracos, novoTraco.trim().slice(0, 160)] } })); setNovoTraco(''); } }}><input id="pf-novo" className="inp" aria-label="Adicionar característica" placeholder="Adicionar algo sobre você" maxLength="160" value=${novoTraco} onChange=${e => setNovoTraco(e.target.value)} /><button className="btn" type="submit">Adicionar</button></form>
+      <div className="field"><label htmlFor="pf-notas">Notas para o mentor</label><textarea id="pf-notas" className="inp" maxLength="600" defaultValue=${A.perfil.notas} onBlur=${e => upd(s => ({ ...s, perfil: { ...s.perfil, notas: e.target.value } }))} placeholder="Ex.: prefiro lembretes curtos"></textarea></div></section>
+    <section className="card stack"><h2>O que funciona e o que não</h2>
+      <ul className="sm" style=${{ margin: 0, paddingLeft: 18 }}><li><strong>Funciona aqui:</strong> lançamentos, parcelas, recorrentes, orçamento, metas, hábitos, radar, “Antes de comprar”, relatórios, exportar e importar.</li>${MENTOR ? html`<li><strong>Mentor IA:</strong> só responde com a página aberta dentro do Claude e usa o seu acesso ao Claude.</li>` : html`<li><strong>Mentor IA:</strong> não existe nesta versão instalada, que funciona 100% offline e sem enviar nada para fora.</li>`}<li><strong>Não existe:</strong> conexão com bancos, notificações no celular, sincronização automática entre aparelhos sem a sua conta, ou conferência de saldo real. Você registra, o app calcula.</li></ul></section>
+    <section className="card stack"><h2>Zona de risco</h2>
+      ${demo ? null : html`<button className="btn" onClick=${entrarDemo}>Ver com dados de exemplo</button>`}
+      ${!apagar ? html`<button className="btn danger" disabled=${!!demo} onClick=${() => setApagar(true)}><${Ico} n="trash" s=${18} />Apagar todos os meus dados</button>`
+        : html`<div className="note">Isso apaga lançamentos, metas e hábitos deste app e da sua conta. Exporte um backup antes se quiser guardar.<div className="row" style=${{ marginTop: 8 }}><button className="btn danger sm" onClick=${() => { const tema = S.cfg.tema; const novo = estadoInicial(); novo.cfg.tema = tema; substituir(novo); setApagar(false); toast('Dados apagados'); }}>Sim, apagar tudo</button><button className="btn sm" onClick=${() => setApagar(false)}>Cancelar</button></div></div>`}</section></div>`;
+}
+
+function Mais() {
+  const { ir } = useApp();
+  const itens = ROTAS.filter(r => ['mentor', 'comprar', 'radar', 'relat', 'orc', 'dados'].includes(r.id));
+  const D = { mentor: 'Converse sobre compras, gastos e metas', comprar: 'Avalie uma compra em 30 segundos', radar: 'Padrões e alertas dos seus gastos', relat: 'Resumos semanais e mensais', orc: 'Renda, categorias e contas recorrentes', dados: 'Backup, importação, perfil e tema' };
+  return html`<div className="page"><h1 className="ptitle">Mais</h1><div className="stack">${itens.map(r => html`<button key=${r.id} className="menu-item" onClick=${() => ir(r.id)}><span className="ic"><${Ico} n=${r.i} s=${21} /></span><span style=${{ flex: 1 }}><strong>${r.n}</strong><span className="sm mut">${D[r.id]}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div></div>`;
+}
+
+/* ----- casca do app ----- */
+function Shell() {
+  const { A, rota, ir, abrir, sheet, fechar, demo, sairDemo, toastMsg, fecharToast, status } = useApp();
+  const P = { inicio: Inicio, mov: Movimentos, metas: Metas, habitos: Habitos, mentor: Mentor, comprar: Comprar, radar: Radar, relat: Relatorios, orc: Orcamento, dados: Dados, mais: Mais }[rota] || Inicio;
+  const baixo = [{ id: 'inicio', n: 'Início', i: 'home' }, { id: 'mov', n: 'Movimentos', i: 'list' }, 'fab', { id: 'metas', n: 'Metas', i: 'target' }, { id: 'habitos', n: 'Hábitos', i: 'check' }];
+  const maisAtivo = ['mentor', 'comprar', 'radar', 'relat', 'orc', 'dados', 'mais'].includes(rota);
+  return html`<div className="app">
+    <aside className="side"><div className="brand"><${Logo} />Finance Mind</div>
+      <button className="btn primary" onClick=${() => abrir('lanc')}><${Ico} n="plus" s=${18} />Registrar</button>
+      <nav aria-label="Principal">${ROTAS.map(r => html`<button key=${r.id} aria-current=${rota === r.id ? 'page' : undefined} onClick=${() => ir(r.id)}><${Ico} n=${r.i} s=${19} />${r.n}</button>`)}</nav>
+      <div className="foot">${demo ? 'Demonstração: nada é salvo' : status.msg}</div></aside>
+    <div style=${{ minWidth: 0 }}>
+      <header className="topbar"><div className="brand"><${Logo} />Finance Mind</div><div className="grow"></div>
+        ${MENTOR ? html`<button className="icon-btn" aria-label="Mentor IA" onClick=${() => ir('mentor')}><${Ico} n="chat" s=${19} /></button>` : null}
+        <button className="icon-btn" aria-label="Mais opções" onClick=${() => ir('mais')} style=${maisAtivo ? { borderColor: 'var(--brand)', color: 'var(--brand)' } : null}><${Ico} n="more" s=${19} /></button></header>
+      <main>
+        ${demo ? html`<div className="demo-banner" style=${{ marginBottom: 12 }}><span>Modo demonstração: dados de exemplo, nada é salvo.</span><button className="btn sm" onClick=${sairDemo}>Sair e usar meus dados</button></div>` : null}
+        <${P} key=${rota} /></main></div>
+    <nav className="nav" aria-label="Principal">${baixo.map(b => b === 'fab' ? html`<button key="fab" className="fab" aria-label="Registrar gasto ou receita" onClick=${() => abrir('lanc')}><${Ico} n="plus" s=${28} /></button>` : html`<button key=${b.id} aria-current=${rota === b.id ? 'page' : undefined} onClick=${() => ir(b.id)}><${Ico} n=${b.i} s=${22} />${b.n}</button>`)}</nav>
+    ${sheet && sheet.k === 'lanc' ? html`<${SheetLanc} key=${sheet.d.id || 'novo'} init=${sheet.d} />` : null}
+    ${sheet && sheet.k === 'meta' ? html`<${SheetMeta} init=${sheet.d} />` : null}
+    ${sheet && sheet.k === 'aporte' ? html`<${SheetAporte} init=${sheet.d} />` : null}
+    ${sheet && sheet.k === 'revisao' ? html`<${SheetRevisao} />` : null}
+    ${toastMsg ? html`<div className="toast" role="status"><span>${toastMsg.msg}</span>${toastMsg.desfazer ? html`<button onClick=${() => { toastMsg.desfazer(); fecharToast(); }}>Desfazer</button>` : null}</div>` : null}
+  </div>`;
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { erro: null }; }
+  static getDerivedStateFromError(e) { return { erro: e }; }
+  render() {
+    if (!this.state.erro) return this.props.children;
+    let bruto = ''; try { bruto = localStorage.getItem(CHAVE) || ''; } catch (e) { }
+    return html`<div className="card stack" style=${{ margin: '40px auto', maxWidth: 560 }}><h2>Algo deu errado ao mostrar esta tela</h2><p className="mut">Seus dados continuam guardados. Recarregue a página; se o problema voltar, copie o backup abaixo e guarde num arquivo.</p>
+      <p className="sm err">${String(this.state.erro && this.state.erro.message || this.state.erro)}</p>
+      <button className="btn primary" onClick=${() => this.setState({ erro: null })}>Tentar de novo</button>${bruto ? html`<pre className="out">${bruto.slice(0, 40000)}</pre>` : null}</div>`;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${ErrorBoundary}><${Provider}><${Shell} /><//><//>`);
+
+/* ===== PWA: service worker (só em http/https) ===== */
+if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
+  const tinha = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => {});
+  // versão nova assumiu: recarrega uma vez para não ficar com tela velha
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (tinha && !window.__recarregou) { window.__recarregou = true; location.reload(); } });
+}
+</script></body></html>

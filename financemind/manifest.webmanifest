@@ -1,0 +1,17 @@
+{
+  "name": "Finance Mind",
+  "short_name": "Finance Mind",
+  "description": "Gestor financeiro e comportamental pessoal. Funciona offline.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F1F6F3",
+  "theme_color": "#0A3D2E",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
