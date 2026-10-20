@@ -71,6 +71,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--navy);outline-o
 .ico svg{width:19px;height:19px;stroke:var(--gr);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .li .a{font-size:14px;font-weight:600;line-height:1.2}
 .li .b{font-size:11.5px;color:var(--mut);margin-top:2px;font-variant-numeric:tabular-nums}
+.secao-t{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);font-weight:700;padding:10px 4px 0;border-top:1px solid var(--gr3);margin-top:4px}
+.secao-t:first-child{border-top:0;margin-top:0;padding-top:2px}
 .h3{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);font-weight:600;padding:4px 4px 0}
 .vazio{font-size:13px;color:var(--mut);padding:18px 14px;text-align:center}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -322,7 +324,7 @@ async function reqDemo(caminho){
     const modelos=await Promise.all(idx.filter(m=>m.ativo).map(async m=>(await fetch(`modelos/${m.id}.json`)).json()));
     return { usuario:{id:0, nome:'Demonstração', papel:'fiscal'}, modelos,
       contratos:[{ id:1, numero:'14 00515/2024', orgao:'DNIT', descricao:'Manutenção (demonstração)', rodovias:[ls.get('fc-demo-rod')||'BR-226/RN'],
-        parametros:{ espessura_projeto_cm:5, densidade_cbuq_t_m3:2.4, largura_faixa_m:3.6 },
+        parametros:{ espessura_projeto_cm:5, densidade_cbuq_t_m3:2.4, largura_faixa_m:3.6, temp_mistura_c:155, temp_compactacao_c:148, ponto_amolecimento_c:50, mancha_min_mm:0.6 },
         equipamentos:['Vibroacabadora','Rolo de pneus','Rolo liso','Caminhão basculante','Caminhão espargidor','Retroescavadeira','Roçadeira'],
         modelos:[], equipes:[{id:1, nome:'Equipe 1'}], minha_equipe:1 }] };
   }
@@ -495,13 +497,14 @@ function saiDaFicha(){
 const valorContrato = ref => { const k=String(ref).replace(/^contrato\./,''); const v=S.contrato?.parametros?.[k]; return v==null?null:v };
 
 /* ===== fórmulas dos campos calculados =====
-   Linguagem mínima dos modelos: + - * / ( ), nomes de campo, contrato.parâmetro e soma(grupo.campo ...).
+   Linguagem mínima dos modelos: + - * / ( ), comparação com ? : (ex.: contrato.espessura_projeto_cm < 3 ? 15 : 10),
+   nomes de campo, contrato.parâmetro e soma(grupo.campo ...).
    Os modelos vêm do nosso servidor; mesmo assim só passam caracteres de conta (nada de chamar função). */
 const _formulas=new Map();
 function compila(f){
   if(_formulas.has(f)) return _formulas.get(f);
   let fn=()=>null;
-  if(/^[\w\s.+\-*/()]*$/.test(f)){
+  if(/^[\w\s.+\-*/()<>=!?:&|]*$/.test(f)){
     let js=f.replace(/soma\(((?:[^()]|\([^()]*\))*)\)/g,(m,expr)=>{ let g='x';
       const e=expr.replace(/\b([a-z_]\w*)\.([a-z_]\w*)\b/gi,(mm,a,b)=>{ if(a==='contrato') return mm; g=a; return 'it.'+b });
       return `__soma(V.${g},it=>(${e}))` });
@@ -585,12 +588,13 @@ function campoHtml(c, v, cam){
     case 'contador': return `<div class="fld">${q}<div class="step" ${dc} data-tipo="contador"><button type="button" data-d="-1" aria-label="Menos">−</button><output>${v??0}</output><button type="button" data-d="1" aria-label="Mais">+</button><span>${esc(c.unidade||'')}</span></div></div>`;
     case 'numero': {
       const un = c.unidade_de ? (c.unidade_de[S.ficha.respostas.dispositivo]||c.unidade_de['*']) : c.unidade;
-      return `<div class="fld">${q}<div class="num"><input ${dc} data-tipo="numero" inputmode="decimal" value="${v==null?'':String(v).replace('.',',')}" placeholder="0"><span>${esc(un||'')}</span></div><div data-av="${esc(cam)}">${avisoFaixa(c,v)}</div></div>` }
+      return `<div class="fld">${q}<div class="num"><input ${dc} data-tipo="numero" inputmode="decimal" value="${v==null?'':String(v).replace('.',',')}" placeholder="0"><span>${esc(un||'')}</span></div><div data-av="${esc(cam)}">${avisoRegras(c,v)}</div></div>` }
     case 'hora': return `<div class="fld">${q}<div class="num"><input ${dc} data-tipo="texto" type="time" value="${esc(v||'')}"><button type="button" class="btn sm ghost" onclick="agoraEm('${esc(cam)}')">Agora</button></div></div>`;
     case 'texto': return `<div class="fld">${q}<textarea class="txt" ${dc} data-tipo="texto" placeholder="${c.voz?'Toque no microfone do teclado para ditar':''}">${esc(v||'')}</textarea></div>`;
     case 'calc': {
       if(c.formula==='fichas_do_dia') return `<div class="fld">${q}<div class="sub" id="calc-fichas-dia">${esc(resumoDoDia())}</div></div>`;
       return `<div class="fld" data-calc="${esc(c.id)}"><div class="lbl">${esc(c.rotulo)}</div><div class="calc"><b>${v==null?'—':fmtN(v,c.casas??2)}</b><span>${esc(c.unidade||'')}</span>${confere(c,v)}</div></div>` }
+    case 'secao': return `<div class="secao-t">${esc(c.rotulo)}</div>`;
     case 'assinatura': return `<div class="fld">${q}<div class="sub">Assinatura no passo final.</div></div>`;
     case 'grupo-fixo': {
       const o=v||{};
@@ -604,19 +608,35 @@ function campoHtml(c, v, cam){
   return '';
 }
 const valorListaContrato = ref => S.contrato?.[String(ref).replace(/^contrato\./,'')] || [];
-function avisoFaixa(c,v){
-  if(!c.faixa||v==null||v==='') return '';
-  const [a,b]=c.faixa.map(valorContrato);
-  if(a!=null&&+v<a) return `<div class="aviso er">Abaixo do mínimo do projeto (${fmtN(a)} ${esc(c.unidade||'')})</div>`;
-  if(b!=null&&+v>b) return `<div class="aviso er">Acima do máximo do projeto (${fmtN(b)} ${esc(c.unidade||'')})</div>`;
-  if(a==null&&b==null) return '<div class="sub">Faixa do projeto ainda não cadastrada no contrato.</div>';
-  return '';
+/* ===== regras de número (norma e projeto) =====
+   Cada regra do modelo tem min / max (inclusive), gt / lt (estritos: "acima de", "abaixo de") ou aviso_min (só alerta),
+   com número fixo da norma ou fórmula com parâmetro do contrato, e a referência do item da norma.
+   Regra que depende de parâmetro não cadastrado não reprova nada: só avisa que falta o valor de projeto. */
+const regrasDe = c => [...(c.regras||[]), ...(c.faixa?[{min:c.faixa[0],max:c.faixa[1],ref:'faixa do projeto'}]:[])];
+function limite(x){
+  if(x==null) return null;
+  if(typeof x==='number') return x;
+  const v=compila(String(x))({},S.contrato?.parametros||{});
+  return v==null||!isFinite(v)?null:+v;
 }
-/* null = faixa não cadastrada no contrato; true/false = fora/dentro */
-function foraDaFaixa(c,v){
-  const [a,b]=c.faixa.map(valorContrato); if(a==null&&b==null) return null;
-  return (a!=null&&+v<a)||(b!=null&&+v>b);
+const fmtL = v => fmtN(v, Number.isInteger(+v)?0:(Math.abs(v)<1?2:1));
+function avaliaNumero(c,v){
+  const msgs=[]; if(v==null||v==='') return {nc:null,msgs};
+  const x=+v, u=c.unidade?' '+c.unidade:''; let conferiu=false, nc=false;
+  for(const r of regrasDe(c)){
+    const mn=limite(r.min), mx=limite(r.max), gt=limite(r.gt), lt=limite(r.lt), am=limite(r.aviso_min);
+    const pede=r.min!=null||r.max!=null||r.gt!=null||r.lt!=null;
+    if(pede && mn==null&&mx==null&&gt==null&&lt==null){ msgs.push({er:false,txt:`Sem valor de projeto no contrato para conferir · ${r.ref}`}); continue }
+    if(pede) conferiu=true;
+    if(mn!=null&&x<mn){ nc=true; msgs.push({er:true,txt:`Abaixo de ${fmtL(mn)}${u} · ${r.ref}`}) }
+    else if(gt!=null&&x<=gt){ nc=true; msgs.push({er:true,txt:`Precisa estar acima de ${fmtL(gt)}${u} · ${r.ref}`}) }
+    else if(mx!=null&&x>mx){ nc=true; msgs.push({er:true,txt:`Acima de ${fmtL(mx)}${u} · ${r.ref}`}) }
+    else if(lt!=null&&x>=lt){ nc=true; msgs.push({er:true,txt:`Precisa estar abaixo de ${fmtL(lt)}${u} · ${r.ref}`}) }
+    if(am!=null&&x<am) msgs.push({er:false,txt:`Abaixo de ${fmtL(am)}${u} · ${r.ref}`});
+  }
+  return {nc:conferiu?nc:null, msgs};
 }
+const avisoRegras = (c,v) => avaliaNumero(c,v).msgs.map(m=>`<div class="aviso ${m.er?'er':''}">${esc(m.txt)}</div>`).join('');
 function confere(c,v){
   if(!c.confere) return '';
   const alvo=valorContrato(c.confere.alvo);
@@ -663,7 +683,7 @@ $('#fx-campos').addEventListener('change',e=>{
   for(const box of document.querySelectorAll('#fx-campos [data-calc]')){ const c=S.modelo.campos.find(x=>x.id===box.dataset.calc); if(c) box.outerHTML=campoHtml(c,S.ficha.respostas[c.id],c.id) }
   const av=document.querySelector(`#fx-campos [data-av="${CSS.escape(el.dataset.cam)}"]`), {raiz,sub}=caminho(el.dataset.cam);
   const c=S.modelo.campos.find(x=>x.id===raiz), cc=sub?c?.campos?.find(x=>x.id===sub):c;
-  if(av&&cc) av.innerHTML=avisoFaixa(cc,le(el.dataset.cam));
+  if(av&&cc) av.innerHTML=avisoRegras(cc,le(el.dataset.cam));
 });
 function redesenha(){ const y=scrollY; desenhaFicha(); scrollTo(0,y) }
 function poeItem(cam){
@@ -676,25 +696,25 @@ function tiraItem(cam,i){ S.ficha.respostas[cam].splice(i,1); guardaRascunho(); 
 function agoraEm(cam){ const d=new Date(); grava(cam, String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); redesenha() }
 
 /* ===== conferência e confirmação ===== */
-function percorre(campos, resp, fn){
+function percorre(campos, resp, fn, pre=''){
   for(const c of campos){
-    if(c.tipo==='grupo') (resp[c.id]||[]).forEach(it=>percorre(c.campos,it,fn));
-    else fn(c, resp[c.id]);
+    if(c.tipo==='grupo') (resp[c.id]||[]).forEach((it,i)=>percorre(c.campos,it,fn,`${pre}${c.id}.${i}.`));
+    else fn(c, resp[c.id], pre+c.id);
   }
 }
+/* true = não conforme, false = conforme, null = não se aplica / sem como conferir */
+function julga(cp,v){
+  if(cp.tipo==='cnc') return v==='NC'?true:v==='C'?false:null;
+  if(cp.tipo==='opcoes' && cp.nc_se?.length && v) return cp.nc_se.includes(v);
+  if(cp.tipo==='escala' && cp.nc_a_partir!=null && v) return cp.opcoes.indexOf(v)>=cp.nc_a_partir;
+  if(cp.tipo==='numero' && (cp.regras||cp.faixa)) return avaliaNumero(cp,v).nc;
+  if(cp.confere && v!=null){ const a=valorContrato(cp.confere.alvo); return a==null?null:Math.abs(v-a)>a*cp.confere.tolerancia }
+  return null;
+}
 function contaRespostas(){
-  let c=0,nc=0;
-  percorre(S.modelo.campos, S.ficha.respostas, (cp,v)=>{
-    if(cp.tipo==='cnc'){ if(v==='C') c++; else if(v==='NC') nc++ }
-    else if(cp.tipo==='opcoes' && cp.nc_se?.length && v){ cp.nc_se.includes(v)?nc++:c++ }
-    else if(cp.tipo==='escala' && cp.nc_a_partir!=null && v){ cp.opcoes.indexOf(v)>=cp.nc_a_partir?nc++:c++ }
-    /* número com faixa do projeto (ex.: temperatura da massa): fora da faixa é não conformidade */
-    else if(cp.tipo==='numero' && cp.faixa && v!=null && v!==''){ const f=foraDaFaixa(cp,v); if(f!=null) f?nc++:c++ }
-  });
-  /* espessura estimada fora da tolerância conta como não conformidade */
-  for(const cp of S.modelo.campos) if(cp.confere){ const v=S.ficha.respostas[cp.id], a=valorContrato(cp.confere.alvo);
-    if(v!=null&&a!=null) Math.abs(v-a)<=a*cp.confere.tolerancia?c++:nc++ }
-  return {c,nc};
+  let c=0,nc=0; const fora=[];
+  percorre(S.modelo.campos, S.ficha.respostas, (cp,v,cam)=>{ const j=julga(cp,v); if(j===true){ nc++; fora.push(cam) } else if(j===false) c++ });
+  return {c,nc,fora};
 }
 function faltando(){
   const f=S.ficha, m=S.modelo, falta=[];
@@ -752,14 +772,15 @@ function reduzAss(cv){ const c=document.createElement('canvas'); c.width=360; c.
 function limpaAss(){ S.ficha.assinatura=null; guardaRascunho(); iniciaAss(); _ass.g.clearRect(0,0,9999,9999); $('#ass span').hidden=false }
 
 async function salvaFicha(){
-  const f=S.ficha, m=S.modelo, {c,nc}=contaRespostas();
+  const f=S.ficha, m=S.modelo, {c,nc,fora}=contaRespostas();
   if(nc && !f.gravidade){ toast('Escolha a gravidade da não conformidade'); $('#cf-grav').classList.add('erro'); return }
   if(!f.assinatura){ toast('Assine para confirmar'); return }
   $('#btn-salvar').disabled=true;
   const med=medicao();
   const pronta={ uuid:f.uuid, contrato:f.contrato, modelo_id:f.modelo_id, modelo_versao:f.modelo_versao, equipe:f.equipe, rodovia:f.rodovia,
     km_ini:f.km_ini, km_fim:f.km_fim, lat:f.lat, lon:f.lon, gps_precisao:f.gps_precisao, feita_em:new Date().toISOString(),
-    respostas:{...f.respostas, _assinatura:f.assinatura, _iniciada_em:f.iniciada_em}, conformes:c, nao_conformes:nc, gravidade:nc?f.gravidade:null,
+    /* _nc: quais respostas ficaram fora, julgadas com os valores de projeto do momento (o painel e o relatório destacam) */
+    respostas:{...f.respostas, _assinatura:f.assinatura, _iniciada_em:f.iniciada_em, _nc:fora}, conformes:c, nao_conformes:nc, gravidade:nc?f.gravidade:null,
     medicao:med?.v??null, medicao_unidade:med?.u??null };
   await idb.put('fichas',{...pronta, nome:m.nome, estado:DEMO?'aparelho':'fila'});
   if(!DEMO) await idb.put('fila',pronta);
@@ -859,7 +880,7 @@ function mostraRespostas(f){
 function corrige(f){
   const m=(S.eu?.modelos||[]).find(x=>x.id===f.modelo_id && x.versao===f.modelo_versao)||(S.eu?.modelos||[]).find(x=>x.id===f.modelo_id);
   if(!m) return toast('Modelo desta ficha não está mais no aparelho');
-  const {_assinatura,_iniciada_em,...resp}=f.respostas;
+  const {_assinatura,_iniciada_em,_nc,...resp}=f.respostas;
   S.modelo=m; S.ficha={ uuid:f.uuid, modelo_id:f.modelo_id, modelo_versao:f.modelo_versao, contrato:f.contrato, equipe:f.equipe, rodovia:f.rodovia,
     km_ini:f.km_ini, km_fim:f.km_fim, lat:f.lat, lon:f.lon, gps_precisao:f.gps_precisao, iniciada_em:_iniciada_em, respostas:resp, gravidade:f.gravidade, assinatura:null };
   guardaRascunho(); desenhaFicha(); vai('ficha');

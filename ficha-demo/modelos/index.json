@@ -6,6 +6,11 @@
  },
  {
   "id": "cbuq",
+  "versao": 2,
+  "ativo": true
+ },
+ {
+  "id": "cbuq-controle",
   "versao": 1,
   "ativo": true
  },

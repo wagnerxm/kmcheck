@@ -1,0 +1,132 @@
+{
+ "id": "cbuq-controle",
+ "versao": 1,
+ "nome": "Controle de pista do CBUQ",
+ "icone": "scan",
+ "local": "trecho",
+ "ativo": true,
+ "norma": "DNIT 031/2024-ES, 7.3. Resultados de pista para o controle estatístico (7.5) no painel.",
+ "campos": [
+  {
+   "id": "s_gc",
+   "tipo": "secao",
+   "rotulo": "Grau de compactação e espessura · a cada 100 m"
+  },
+  {
+   "id": "pontos",
+   "tipo": "grupo",
+   "rotulo": "Pontos de controle",
+   "gps_por_item": true,
+   "campos": [
+    {
+     "id": "gc",
+     "tipo": "numero",
+     "rotulo": "Grau de compactação",
+     "unidade": "%",
+     "min": 50,
+     "max": 120,
+     "casas": 1,
+     "regras": [
+      {
+       "min": 97,
+       "max": 100,
+       "ref": "7.3.1: de 97 % a 100 %"
+      }
+     ]
+    },
+    {
+     "id": "espessura",
+     "tipo": "numero",
+     "rotulo": "Espessura do corpo de prova",
+     "unidade": "cm",
+     "min": 0,
+     "max": 30,
+     "casas": 1,
+     "regras": [
+      {
+       "min": "contrato.espessura_projeto_cm * 0.95",
+       "max": "contrato.espessura_projeto_cm * 1.05",
+       "ref": "7.3.2: ±5 % da espessura de projeto"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "s_regua",
+   "tipo": "secao",
+   "rotulo": "Acabamento · régua de 3 m a cada 200 m (7.3.5)"
+  },
+  {
+   "id": "regua",
+   "tipo": "grupo",
+   "rotulo": "Medidas com a régua",
+   "gps_por_item": true,
+   "campos": [
+    {
+     "id": "variacao",
+     "tipo": "numero",
+     "rotulo": "Maior variação sob a régua",
+     "unidade": "cm",
+     "min": 0,
+     "max": 10,
+     "casas": 1,
+     "regras": [
+      {
+       "max": 0.5,
+       "ref": "7.3.5: no máximo 0,5 cm"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "s_text",
+   "tipo": "secao",
+   "rotulo": "Segurança · a cada 300 m (7.3.6)"
+  },
+  {
+   "id": "textura",
+   "tipo": "grupo",
+   "rotulo": "Textura",
+   "gps_por_item": true,
+   "campos": [
+    {
+     "id": "mancha",
+     "tipo": "numero",
+     "rotulo": "Mancha de areia (HS)",
+     "unidade": "mm",
+     "min": 0,
+     "max": 5,
+     "casas": 2,
+     "regras": [
+      {
+       "min": "contrato.mancha_min_mm",
+       "ref": "7.3.6: mínimo definido em projeto"
+      }
+     ]
+    },
+    {
+     "id": "vdr",
+     "tipo": "numero",
+     "rotulo": "Pêndulo britânico (VDR)",
+     "min": 0,
+     "max": 150,
+     "casas": 0,
+     "regras": [
+      {
+       "min": 47,
+       "ref": "7.3.6: VDR de no mínimo 47"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "obs",
+   "tipo": "texto",
+   "rotulo": "Observação",
+   "voz": true
+  }
+ ]
+}

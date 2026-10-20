@@ -1,16 +1,21 @@
 {
  "id": "cbuq",
- "versao": 1,
+ "versao": 2,
  "nome": "Aplicação de CBUQ",
  "icone": "layers",
  "local": "trecho",
  "ativo": true,
- "norma": "DNIT 031/2006-ES. Espessura média tolerada: ±5% do projeto (item 7.3).",
+ "norma": "DNIT 031/2024-ES (errata de 27/11/2025). Concreto asfáltico: condições de execução na pista.",
  "medicao": {
   "unidade": "t",
   "campo": "massa_total"
  },
  "campos": [
+  {
+   "id": "s_antes",
+   "tipo": "secao",
+   "rotulo": "Antes de começar"
+  },
   {
    "id": "lado",
    "tipo": "opcoes",
@@ -31,7 +36,13 @@
    "max": 15,
    "casas": 2,
    "padrao": "contrato.largura_faixa_m",
-   "obrig": true
+   "obrig": true,
+   "regras": [
+    {
+     "min": "contrato.largura_faixa_m",
+     "ref": "7.3.3: largura não pode ser menor que a de projeto"
+    }
+   ]
   },
   {
    "id": "area",
@@ -42,19 +53,85 @@
    "casas": 0
   },
   {
-   "id": "superficie",
-   "tipo": "cnc",
-   "rotulo": "Superfície limpa e seca"
-  },
-  {
-   "id": "pintura",
-   "tipo": "cnc",
-   "rotulo": "Pintura de ligação executada e curada"
+   "id": "segmento",
+   "tipo": "opcoes",
+   "rotulo": "É o segmento experimental? (mín. 200 m, 5.4.1)",
+   "opcoes": [
+    "Não",
+    "Sim"
+   ]
   },
   {
    "id": "sem_chuva",
    "tipo": "cnc",
-   "rotulo": "Sem chuva no momento da aplicação"
+   "rotulo": "Sem chuva (4 b)"
+  },
+  {
+   "id": "temp_superficie",
+   "tipo": "numero",
+   "rotulo": "Temperatura da superfície da pista",
+   "unidade": "°C",
+   "min": -10,
+   "max": 80,
+   "casas": 0,
+   "obrig": true,
+   "regras": [
+    {
+     "gt": "contrato.espessura_projeto_cm < 3 ? 15 : 10",
+     "ref": "4 c: acima de 10 °C (acima de 15 °C se a camada tiver menos de 3 cm)"
+    }
+   ]
+  },
+  {
+   "id": "sinalizacao",
+   "tipo": "cnc",
+   "rotulo": "Sinalização de obra e Pare/Siga conforme o manual IPR-738 (4 g)"
+  },
+  {
+   "id": "superficie",
+   "tipo": "cnc",
+   "rotulo": "Superfície seca, limpa, sem pó e com defeitos já reparados (5.4.2)"
+  },
+  {
+   "id": "pintura",
+   "tipo": "cnc",
+   "rotulo": "Pintura de ligação com barra espargidora, película homogênea (5.4.3)"
+  },
+  {
+   "id": "pintura_rompida",
+   "tipo": "cnc",
+   "rotulo": "Emulsão rompida antes do tráfego dos caminhões (5.4.3)"
+  },
+  {
+   "id": "pintura_prazo",
+   "tipo": "cnc",
+   "rotulo": "Pintura com até 7 dias, sem tráfego nem areia por cima; senão, pintura nova (5.4.3)"
+  },
+  {
+   "id": "rolos",
+   "tipo": "cnc",
+   "rotulo": "Rolo de pneus e tandem liso; sem rolo misto nem rolo de solo adaptado (5.3.7)"
+  },
+  {
+   "id": "pressao_pneus",
+   "tipo": "numero",
+   "rotulo": "Pressão dos pneus do rolo pneumático",
+   "unidade": "psi",
+   "min": 0,
+   "max": 200,
+   "casas": 0,
+   "regras": [
+    {
+     "min": 35,
+     "max": 120,
+     "ref": "5.3.7: de 35 a 120 psi"
+    }
+   ]
+  },
+  {
+   "id": "s_cargas",
+   "tipo": "secao",
+   "rotulo": "Cargas · uma por caminhão (7.3.1)"
   },
   {
    "id": "cargas",
@@ -77,32 +154,82 @@
      "casas": 2
     },
     {
+     "id": "lona",
+     "tipo": "cnc",
+     "rotulo": "Caçamba coberta com lona e sem diesel como desmoldante (5.3.5)"
+    },
+    {
      "id": "temp_chegada",
      "tipo": "numero",
-     "rotulo": "Temperatura na chegada",
+     "rotulo": "Temperatura da massa na chegada",
      "unidade": "°C",
      "min": 0,
      "max": 250,
      "casas": 0,
-     "faixa": [
-      "contrato.temp_massa_min",
-      "contrato.temp_massa_max"
+     "regras": [
+      {
+       "min": 107,
+       "max": 177,
+       "ref": "5.4.4: entre 107 e 177 °C"
+      },
+      {
+       "min": "contrato.temp_mistura_c - 5",
+       "max": "contrato.temp_mistura_c + 5",
+       "ref": "Anexo E: ±5 °C da temperatura de projeto"
+      }
+     ]
+    },
+    {
+     "id": "temp_espalhamento",
+     "tipo": "numero",
+     "rotulo": "Temperatura após espalhar, antes de compactar",
+     "unidade": "°C",
+     "min": 0,
+     "max": 250,
+     "casas": 0,
+     "regras": [
+      {
+       "min": 107,
+       "max": 177,
+       "ref": "5.4.4: entre 107 e 177 °C"
+      },
+      {
+       "min": "contrato.temp_compactacao_c - 5",
+       "max": "contrato.temp_compactacao_c + 5",
+       "ref": "7.3.1: ±5 °C da temperatura de projeto"
+      },
+      {
+       "aviso_min": 145,
+       "ref": "7.3.1: evitar abaixo de 145 °C"
+      }
      ]
     }
    ]
   },
   {
-   "id": "temp_compactacao",
-   "tipo": "numero",
-   "rotulo": "Temperatura no início da compactação",
-   "unidade": "°C",
-   "min": 0,
-   "max": 250,
-   "casas": 0,
-   "faixa": [
-    "contrato.temp_compactacao_min",
-    "contrato.temp_compactacao_max"
-   ]
+   "id": "s_exec",
+   "tipo": "secao",
+   "rotulo": "Espalhamento e compactação"
+  },
+  {
+   "id": "distribuicao",
+   "tipo": "cnc",
+   "rotulo": "Acabadora contínua, sem paradas acima de 15 min (5.4.8)"
+  },
+  {
+   "id": "textura",
+   "tipo": "cnc",
+   "rotulo": "Textura uniforme, sem segregação, ondulações ou marcas (5.4.8)"
+  },
+  {
+   "id": "sequencia",
+   "tipo": "cnc",
+   "rotulo": "Rolagem tandem → pneus → tandem, das bordas para o eixo, cobrindo metade da passada (5.4.9)"
+  },
+  {
+   "id": "manobras",
+   "tipo": "cnc",
+   "rotulo": "Sem mudança de direção nem rolo parado sobre a massa recém-rolada (5.4.9)"
   },
   {
    "id": "passadas_pneu",
@@ -115,14 +242,39 @@
    "rotulo": "Passadas do rolo liso"
   },
   {
-   "id": "acabamento",
+   "id": "juntas",
    "tipo": "cnc",
-   "rotulo": "Juntas, acabamento e nivelamento com a pista"
+   "rotulo": "Juntas sem degrau; emenda transversal reta, rolada na perpendicular (5.4.10)"
   },
   {
-   "id": "cps",
-   "tipo": "contador",
-   "rotulo": "Corpos de prova extraídos"
+   "id": "s_trafego",
+   "tipo": "secao",
+   "rotulo": "Abertura ao tráfego (5.4.11)"
+  },
+  {
+   "id": "temp_liberacao",
+   "tipo": "numero",
+   "rotulo": "Temperatura da superfície na liberação (termômetro a laser)",
+   "unidade": "°C",
+   "min": 0,
+   "max": 200,
+   "casas": 0,
+   "regras": [
+    {
+     "lt": "contrato.ponto_amolecimento_c",
+     "ref": "5.4.11: abaixo do ponto de amolecimento do CAP"
+    }
+   ]
+  },
+  {
+   "id": "liberacao",
+   "tipo": "hora",
+   "rotulo": "Hora da liberação ao tráfego"
+  },
+  {
+   "id": "s_quant",
+   "tipo": "secao",
+   "rotulo": "Quantidade (medição em toneladas, seção 8)"
   },
   {
    "id": "massa_total",
@@ -143,7 +295,7 @@
   {
    "id": "espessura_est",
    "tipo": "calc",
-   "rotulo": "Espessura estimada pela massa",
+   "rotulo": "Espessura estimada pela massa (a oficial é por corpo de prova, 7.3.2)",
    "unidade": "cm",
    "formula": "consumo / (contrato.densidade_cbuq_t_m3 * 10)",
    "casas": 1,
@@ -152,11 +304,6 @@
     "tolerancia": 0.05,
     "mensagem": "Espessura estimada fora de ±5% do projeto"
    }
-  },
-  {
-   "id": "liberacao",
-   "tipo": "hora",
-   "rotulo": "Liberação ao tráfego"
   }
  ]
 }
