@@ -393,7 +393,7 @@ let _seqRod=0;
 async function carregaRodovias(){
   const seq=++_seqRod, bases=[];
   for(const rod of S.contrato?.rodovias||[]){
-    const m=/BR-?(\d+)\/?([A-Z]{2})/i.exec(rod); if(!m) continue;
+    const m=/BR[\s-]*(\d+)[\s\/-]*([A-Z]{2})/i.exec(rod); if(!m) continue;   // aceita BR-226/RN, BR 226 RN, br226-rn
     const id=m[1].padStart(3,'0')+'-'+m[2].toUpperCase();
     let b=await idb.get('rodovias',id).catch(()=>null);
     /* baixa de novo a cada 15 dias (o SNV muda pouco); sem sinal, fica com a que tem */
@@ -612,6 +612,11 @@ function avisoFaixa(c,v){
   if(a==null&&b==null) return '<div class="sub">Faixa do projeto ainda não cadastrada no contrato.</div>';
   return '';
 }
+/* null = faixa não cadastrada no contrato; true/false = fora/dentro */
+function foraDaFaixa(c,v){
+  const [a,b]=c.faixa.map(valorContrato); if(a==null&&b==null) return null;
+  return (a!=null&&+v<a)||(b!=null&&+v>b);
+}
 function confere(c,v){
   if(!c.confere) return '';
   const alvo=valorContrato(c.confere.alvo);
@@ -683,6 +688,8 @@ function contaRespostas(){
     if(cp.tipo==='cnc'){ if(v==='C') c++; else if(v==='NC') nc++ }
     else if(cp.tipo==='opcoes' && cp.nc_se?.length && v){ cp.nc_se.includes(v)?nc++:c++ }
     else if(cp.tipo==='escala' && cp.nc_a_partir!=null && v){ cp.opcoes.indexOf(v)>=cp.nc_a_partir?nc++:c++ }
+    /* número com faixa do projeto (ex.: temperatura da massa): fora da faixa é não conformidade */
+    else if(cp.tipo==='numero' && cp.faixa && v!=null && v!==''){ const f=foraDaFaixa(cp,v); if(f!=null) f?nc++:c++ }
   });
   /* espessura estimada fora da tolerância conta como não conformidade */
   for(const cp of S.modelo.campos) if(cp.confere){ const v=S.ficha.respostas[cp.id], a=valorContrato(cp.confere.alvo);

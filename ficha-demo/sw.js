@@ -2,7 +2,7 @@
    Documento: rede primeiro com limite de 4 s (sinal fraco na beira da pista não pode travar a abertura).
    Ícones e manifesto: cache primeiro. /api nunca passa por aqui (a fila do app cuida do envio).
    Toda mudança no app exige subir o número do cache, senão o aparelho segue com a versão velha. */
-const CACHE = 'fichacheck-demo-v3';
+const CACHE = 'fichacheck-demo-v4';
 const ARQUIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
