@@ -7,269 +7,355 @@
 <meta name="apple-mobile-web-app-title" content="Finance Mind"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png">
 <style>
+@font-face{font-family:'Manrope';font-style:normal;font-weight:200 800;font-display:swap;src:url(vendor/manrope.woff2) format('woff2')}
 /* Equivale ao esqueleto que o Claude Artifacts aplica: respiros das áreas seguras do iPhone e atributo [hidden]. */
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 [hidden]{display:none!important}img{max-width:100%}
-/* Layout: mobile-first, uma coluna com barra inferior; no desktop vira menu lateral + conteúdo central.
-   Identidade: fintech em verde-esmeralda/verde-escuro, receita = esmeralda, despesa = laranja queimado. */
+/* Layout: mobile-first em uma coluna com cabeçalho de marca, abas em cápsula e navegação flutuante de vidro;
+   no desktop vira barra lateral de vidro + coluna central. Fundo com manchas orgânicas difusas (sálvia, champanhe, névoa).
+   Identidade: verde-petróleo #003A3B, sálvia #A8D5B4, branco-gelo #F6F7F3, cinza-névoa #E5EAE6, champanhe #DCD6B9. */
 :root{
-  --bg:#F1F6F3; --surf:#FFFFFF; --surf2:#E7EFEB; --ink:#0C1A15; --muted:#52665D; --line:#D6E1DB;
-  --brand:#0B7F58; --brand-ink:#FFFFFF; --brand-soft:#D3EFE2;
-  --hero:#0A3D2E; --hero-ink:#F1FBF6; --hero-mute:#A9CDBE; --hero-line:rgba(255,255,255,.16);
-  --rec:#0B8C61; --dsp:#D2591F;
-  --ok:#0B7F58; --warn:#8F5600; --warn-soft:#FBEFCF; --bad:#B42318; --bad-soft:#FCE3E0;
-  --bar-ok:#5EE0A4; --bar-warn:#F5B93B; --bar-bad:#FF8A80;
-  --shadow:0 1px 2px rgba(10,50,36,.06),0 8px 28px rgba(10,50,36,.07);
-  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --f-body:'Figtree','Segoe UI',system-ui,sans-serif;
+  --petrol:#003A3B; --sage:#A8D5B4; --ice:#F6F7F3; --mist:#E5EAE6; --champ:#DCD6B9;
+  --bg:#F6F7F3; --blob1:rgba(168,213,180,.75); --blob2:rgba(220,214,185,.7); --blob3:rgba(229,234,230,.9); --blob4:rgba(168,213,180,.45);
+  --ink:#0B2B2C; --muted:#5B7271; --line:rgba(0,58,59,.12);
+  --glass:rgba(255,255,255,.58); --glass2:rgba(255,255,255,.82); --glass-b:rgba(255,255,255,.75); --glass-sh:0 10px 34px rgba(0,58,59,.09);
+  --surf:rgba(255,255,255,.62); --surf2:rgba(0,58,59,.06);
+  --brand:#003A3B; --brand-ink:#F6F7F3; --brand-soft:rgba(168,213,180,.42);
+  --hero1:#0A5253; --hero2:#003A3B; --hero-ink:#F6F7F3; --hero-mute:rgba(246,247,243,.72); --hero-line:rgba(246,247,243,.18);
+  --rec:#2B7F5B; --dsp:#C25B5B; --rec-soft:rgba(168,213,180,.55); --dsp-soft:rgba(226,160,160,.35);
+  --ok:#256B4E; --warn:#7B6420; --warn-soft:rgba(220,214,185,.7); --bad:#A94444; --bad-soft:rgba(226,160,160,.35);
+  --bar-ok:#A8D5B4; --bar-warn:#E6D9A0; --bar-bad:#EBA5A0;
+  --active:#FFFFFF; --nav-sh:0 14px 40px rgba(0,58,59,.18);
+  --f-display:'Manrope','Segoe UI',system-ui,-apple-system,sans-serif; --f-body:'Manrope','Segoe UI',system-ui,-apple-system,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#07120E; --surf:#0E1C17; --surf2:#162922; --ink:#E6F2EC; --muted:#93ABA0; --line:#20362E;
-  --brand:#3DDC97; --brand-ink:#04251A; --brand-soft:#12392A;
-  --hero:#0E3B2C; --hero-ink:#EFFBF5; --hero-mute:#9CC4B3;
-  --rec:#3DDC97; --dsp:#FF9461;
-  --ok:#3DDC97; --warn:#F5B93B; --warn-soft:#3A2D0B; --bad:#FF8A80; --bad-soft:#431A17;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}}
+  --bg:#021A1B; --blob1:rgba(0,90,88,.7); --blob2:rgba(168,213,180,.16); --blob3:rgba(0,58,59,.8); --blob4:rgba(168,213,180,.12);
+  --ink:#EAF3EE; --muted:#9DB6B0; --line:rgba(255,255,255,.12);
+  --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.12); --glass-b:rgba(255,255,255,.14); --glass-sh:0 10px 34px rgba(0,0,0,.35);
+  --surf:rgba(255,255,255,.07); --surf2:rgba(255,255,255,.08);
+  --brand:#A8D5B4; --brand-ink:#00282A; --brand-soft:rgba(168,213,180,.2);
+  --hero1:#0B5658; --hero2:#00383A;
+  --rec:#8ADBA9; --dsp:#EE9894; --rec-soft:rgba(168,213,180,.2); --dsp-soft:rgba(238,152,148,.2);
+  --ok:#A8D5B4; --warn:#E6D9A0; --warn-soft:rgba(220,214,185,.16); --bad:#EE9894; --bad-soft:rgba(238,152,148,.18);
+  --active:rgba(255,255,255,.92); --nav-sh:0 14px 40px rgba(0,0,0,.5); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#07120E; --surf:#0E1C17; --surf2:#162922; --ink:#E6F2EC; --muted:#93ABA0; --line:#20362E;
-  --brand:#3DDC97; --brand-ink:#04251A; --brand-soft:#12392A;
-  --hero:#0E3B2C; --hero-ink:#EFFBF5; --hero-mute:#9CC4B3;
-  --rec:#3DDC97; --dsp:#FF9461;
-  --ok:#3DDC97; --warn:#F5B93B; --warn-soft:#3A2D0B; --bad:#FF8A80; --bad-soft:#431A17;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}
+  --bg:#021A1B; --blob1:rgba(0,90,88,.7); --blob2:rgba(168,213,180,.16); --blob3:rgba(0,58,59,.8); --blob4:rgba(168,213,180,.12);
+  --ink:#EAF3EE; --muted:#9DB6B0; --line:rgba(255,255,255,.12);
+  --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.12); --glass-b:rgba(255,255,255,.14); --glass-sh:0 10px 34px rgba(0,0,0,.35);
+  --surf:rgba(255,255,255,.07); --surf2:rgba(255,255,255,.08);
+  --brand:#A8D5B4; --brand-ink:#00282A; --brand-soft:rgba(168,213,180,.2);
+  --hero1:#0B5658; --hero2:#00383A;
+  --rec:#8ADBA9; --dsp:#EE9894; --rec-soft:rgba(168,213,180,.2); --dsp-soft:rgba(238,152,148,.2);
+  --ok:#A8D5B4; --warn:#E6D9A0; --warn-soft:rgba(220,214,185,.16); --bad:#EE9894; --bad-soft:rgba(238,152,148,.18);
+  --active:rgba(255,255,255,.92); --nav-sh:0 14px 40px rgba(0,0,0,.5); color-scheme:dark}
 
 *{box-sizing:border-box}
-html,body{height:auto;min-height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+html{min-height:100%}
+body{margin:0;min-height:100vh;color:var(--ink);font:15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased;
+  background-color:var(--bg);
+  background-image:radial-gradient(60% 38% at 8% 4%,var(--blob1),transparent 70%),radial-gradient(55% 40% at 100% 22%,var(--blob2),transparent 72%),radial-gradient(70% 45% at 0% 62%,var(--blob3),transparent 70%),radial-gradient(60% 40% at 100% 100%,var(--blob4),transparent 70%);
+  background-attachment:fixed;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:60}
 button,input,select,textarea{font:inherit;color:inherit}
-h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
-h2{font-size:18px;font-weight:700}h3{font-size:15px;font-weight:700}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.02em}
+h2{font-size:18px;font-weight:800}h3{font-size:15px;font-weight:800}
 p{margin:0}
 .num{font-variant-numeric:tabular-nums}
-:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:8px}
-button{cursor:pointer}
+:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:14px}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mut{color:var(--muted)}.sm{font-size:13px}.xs{font-size:12px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-
-.app{max-width:1180px;margin:0 auto;display:block;min-height:100vh}
-.side{display:none}
-.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg);display:flex;align-items:center;gap:10px;padding:10px 0}
-.brand{display:flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:-.02em}
-.logo{width:30px;height:30px;border-radius:9px;background:var(--hero);display:grid;place-items:center;flex:none}
-.logo svg{display:block}
 .grow{flex:1;min-width:0}
-.icon-btn{border:0;background:var(--surf);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--line);flex:none}
-.icon-btn:hover{background:var(--surf2)}
-main{padding-bottom:110px;min-width:0}
-.page{display:flex;flex-direction:column;gap:14px;animation:in .25s ease both}
-@keyframes in{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.page{animation:none}*{transition:none!important}}
-.ptitle{font-size:26px;font-weight:700;margin:4px 0 2px}
-.psub{color:var(--muted);margin-top:-8px}
 
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--surf);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);
-  padding:6px max(8px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
-.nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:11.5px;font-weight:600;color:var(--muted);border-radius:12px}
-.nav button[aria-current="page"]{color:var(--brand)}
-.nav .fab{align-self:start;margin-top:-22px;width:56px;height:56px;border-radius:50%;background:var(--brand);color:var(--brand-ink);justify-self:center;display:grid;place-items:center;
-  box-shadow:0 6px 18px rgba(11,127,88,.45);padding:0}
-.nav .fab:hover{filter:brightness(1.06)}
+/* vidro */
+.glass,.card,.stat,.tabs,.floatnav,.side,.composer-glass,.acao-card,.sug{background:var(--glass);border:1px solid var(--glass-b);box-shadow:var(--glass-sh);-webkit-backdrop-filter:blur(20px) saturate(1.3);backdrop-filter:blur(20px) saturate(1.3)}
+.card{border-radius:28px;padding:18px;min-width:0}
+.card.flat{box-shadow:none}
+
+.app{max-width:1120px;margin:0 auto;min-height:100vh}
+.side{display:none}
+.pagehead{display:flex;align-items:center;gap:12px;padding:16px 0 10px;position:relative;z-index:2}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo-mind{width:42px;height:42px;display:grid;place-items:center;color:var(--petrol);flex:none}
+:root[data-theme="dark"] .logo-mind{color:var(--sage)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .logo-mind{color:var(--sage)}}
+.bname{font-weight:800;font-size:17px;letter-spacing:.01em;line-height:1.1}
+.btag{font-size:12.5px;color:var(--muted)}
+.avatar{width:46px;height:46px;border-radius:50%;border:1px solid var(--glass-b);background:var(--glass2);display:grid;place-items:center;color:var(--ink);box-shadow:var(--glass-sh);flex:none;transition:transform .15s}
+.avatar:active{transform:scale(.94)}
+
+main{padding-bottom:150px;min-width:0}
+.page{display:flex;flex-direction:column;gap:16px;animation:in .35s cubic-bezier(.2,.7,.2,1) both}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.page,.sheet,.msg{animation:none!important}*{transition:none!important}}
+.ptitle{font-size:30px;font-weight:800;margin:2px 0}
+.psub{color:var(--muted);margin-top:-10px}
+.tabbed .ptitle{font-size:24px}
+
+/* abas em cápsula */
+.tabs{display:flex;border-radius:999px;padding:5px;gap:2px}
+.tabs button{flex:1;border:0;background:none;padding:11px 8px;border-radius:999px;font-weight:700;color:var(--muted);transition:background .2s,color .2s,box-shadow .2s;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--active);color:#0B2B2C;box-shadow:0 2px 10px rgba(0,58,59,.12)}
+
+/* saudação */
+.greet{padding:4px 2px 0}
+.greet .oi{font-size:36px;font-weight:300;color:var(--muted);line-height:1.1;letter-spacing:-.03em}
+.greet .dia{font-size:38px;font-weight:800;line-height:1.1;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.greet .dia svg{color:#C9A84C;flex:none}
+.greet p{color:var(--muted);margin-top:8px}
+
+/* navegação flutuante de vidro */
+.floatnav{position:fixed;z-index:45;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:min(430px,calc(100% - 28px));
+  border-radius:34px;padding:8px 10px;display:grid;grid-template-columns:1fr 1fr 74px 1fr 1fr;align-items:center;box-shadow:var(--nav-sh);background:var(--glass2)}
+.floatnav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;font-size:11.5px;font-weight:700;color:var(--muted);border-radius:24px;transition:background .2s,color .2s,transform .15s}
+.floatnav button:active{transform:scale(.94)}
+.floatnav button[aria-current="page"]{background:var(--active);color:#0B2B2C;box-shadow:0 3px 14px rgba(0,58,59,.16)}
+.floatnav .fab{width:64px;height:64px;border-radius:50%;margin:-26px auto 0;padding:0;justify-content:center;background:var(--brand);color:var(--brand-ink);border:4px solid var(--glass-b);box-shadow:0 10px 26px rgba(0,58,59,.35)}
+:root[data-theme="dark"] .floatnav .fab{box-shadow:0 10px 26px rgba(0,0,0,.5)}
+.floatnav .fab:hover{filter:brightness(1.12)}
 
 @media (min-width:900px){
-  .app{display:grid;grid-template-columns:236px minmax(0,1fr);gap:32px;padding-top:16px}
-  .side{display:flex;flex-direction:column;gap:4px;position:sticky;top:16px;align-self:start;height:calc(100vh - 32px);padding-bottom:8px}
-  .side .brand{padding:6px 8px 18px}
-  .side nav{display:flex;flex-direction:column;gap:2px}
-  .side nav button{display:flex;align-items:center;gap:11px;border:0;background:none;padding:10px 12px;border-radius:12px;font-weight:600;color:var(--muted);text-align:left}
+  .app{display:grid;grid-template-columns:250px minmax(0,1fr);gap:34px;padding-top:22px}
+  .side{display:flex;flex-direction:column;gap:6px;position:sticky;top:22px;align-self:start;height:calc(100vh - 44px);padding:20px 14px;border-radius:32px}
+  .side .brand{padding:4px 8px 20px}
+  .side nav{display:flex;flex-direction:column;gap:4px}
+  .side nav button{display:flex;align-items:center;gap:12px;border:0;background:none;padding:12px 14px;border-radius:999px;font-weight:700;color:var(--muted);text-align:left;transition:background .2s}
   .side nav button:hover{background:var(--surf2)}
-  .side nav button[aria-current="page"]{background:var(--brand-soft);color:var(--brand)}
-  .side .btn{margin:10px 0}
-  .side .foot{margin-top:auto;font-size:12px;color:var(--muted);padding:8px}
-  .topbar,.nav{display:none}
-  main{padding-bottom:48px;max-width:860px}
+  .side nav button[aria-current="page"]{background:var(--active);color:#0B2B2C;box-shadow:0 3px 14px rgba(0,58,59,.12)}
+  .side .btn{margin:12px 0}
+  .side .foot{margin-top:auto;font-size:12px;color:var(--muted);padding:8px 10px}
+  .pagehead,.floatnav{display:none}
+  main{padding-bottom:56px;max-width:820px}
+  .toast{bottom:28px!important}
 }
 
-.card{background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}
-.card.flat{box-shadow:none}
-.secao{display:flex;flex-direction:column;gap:10px;min-width:0}
+.secao{display:flex;flex-direction:column;gap:12px;min-width:0}
 .secao-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.link{border:0;background:none;color:var(--brand);font-weight:600;padding:4px 2px;font-size:14px}
+.secao-h h2{font-size:19px}
+.link{border:0;background:none;color:var(--muted);font-weight:700;padding:4px 2px;font-size:13.5px;display:inline-flex;align-items:center;gap:2px}
+.link:hover{color:var(--ink)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .row.sb{justify-content:space-between}
-.stack{display:flex;flex-direction:column;gap:10px}
-.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 @media (max-width:520px){.g3.stk{grid-template-columns:1fr}}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surf);padding:11px 16px;border-radius:13px;font-weight:700;min-height:44px}
-.btn:hover{background:var(--surf2)}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
-.btn.primary:hover{filter:brightness(1.07)}
-.btn.big{width:100%;font-size:17px;min-height:54px;border-radius:16px}
-.btn.ghost{background:none}
-.btn.danger{color:var(--bad);border-color:var(--bad)}
-.btn.sm{min-height:36px;padding:7px 12px;font-size:14px;border-radius:11px}
-.btn[disabled]{opacity:.55;cursor:default}
+/* botões em cápsula */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--glass-b);background:var(--glass2);padding:12px 20px;border-radius:999px;font-weight:700;min-height:46px;transition:transform .15s,filter .2s,background .2s}
+.btn:hover{filter:brightness(1.03)}.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--brand);border-color:transparent;color:var(--brand-ink);box-shadow:0 8px 22px rgba(0,58,59,.25)}
+.btn.big{width:100%;font-size:16.5px;min-height:56px}
+.btn.ghost{background:none;box-shadow:none}
+.btn.danger{color:var(--bad);border-color:var(--bad);background:none}
+.btn.sm{min-height:38px;padding:8px 16px;font-size:14px}
+.btn.light{background:rgba(246,247,243,.9);color:#003A3B;border-color:transparent}
+.btn[disabled]{opacity:.5;cursor:default}
+.icon-btn{border:1px solid var(--glass-b);background:var(--glass2);width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none;transition:transform .15s}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn.solid{background:var(--brand);color:var(--brand-ink);border-color:transparent;width:50px;height:50px;box-shadow:0 8px 22px rgba(0,58,59,.3)}
 
-/* Hero: situação financeira */
-.hero{background:var(--hero);color:var(--hero-ink);border-radius:22px;padding:18px;position:relative;overflow:hidden;
-  background-image:radial-gradient(120% 90% at 100% 0%,rgba(61,220,151,.18),transparent 60%)}
-.hero .lbl{font-size:13px;color:var(--hero-mute);font-weight:600;letter-spacing:.02em}
-.hero .big{font-family:var(--f-display);font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin:2px 0}
-.hero .sub{font-size:13.5px;color:var(--hero-mute)}
-.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);color:var(--hero-ink)}
-.orc{margin-top:16px;padding-top:14px;border-top:1px solid var(--hero-line)}
-.orc .v{font-family:var(--f-display);font-size:26px;font-weight:700}
-.bar{height:9px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden;margin:8px 0 6px}
-.bar i{display:block;height:100%;border-radius:9px;background:var(--bar-ok);transition:width .5s}
+/* cartão principal verde-petróleo */
+.hero,.metahero{background:linear-gradient(145deg,var(--hero1),var(--hero2) 70%);color:var(--hero-ink);border-radius:30px;padding:20px;position:relative;overflow:hidden;box-shadow:0 18px 40px rgba(0,58,59,.28);border:1px solid rgba(255,255,255,.12)}
+.hero::after,.metahero::after{content:"";position:absolute;inset:-30% -20% auto auto;width:70%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(168,213,180,.28),transparent 65%);pointer-events:none}
+.hero>*,.metahero>*{position:relative;z-index:1}
+.hero .lbl,.metahero .lbl{font-size:14px;color:var(--hero-mute);font-weight:600;display:flex;align-items:center;gap:7px}
+.bignum{font-weight:800;font-size:46px;letter-spacing:-.04em;line-height:1.05;display:block}
+.bignum small{font-size:.5em;font-weight:700;letter-spacing:-.01em;opacity:.85}
+.bignum small:first-child{margin-right:.2em}
+.hero .sub,.metahero .sub{font-size:13.5px;color:var(--hero-mute)}
+.walleticon{width:48px;height:48px;border-radius:16px;background:rgba(246,247,243,.14);border:1px solid rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
+.bar{height:11px;border-radius:99px;background:rgba(246,247,243,.2);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--bar-ok);transition:width .8s cubic-bezier(.2,.7,.2,1)}
 .bar i.warn{background:var(--bar-warn)}.bar i.bad{background:var(--bar-bad)}
 .bar.lt{background:var(--surf2)}
-.bar.lt i{background:var(--brand)}
-.bar.lt i.warn{background:#C98A00}.bar.lt i.bad{background:var(--bad)}
-.stat{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:12px 14px;min-width:0}
-.stat .k{font-size:12.5px;color:var(--muted);font-weight:600}
-.stat .v{font-family:var(--f-display);font-size:20px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+.bar.lt i{background:linear-gradient(90deg,var(--sage),#7FBF98)}
+.bar.lt i.warn{background:var(--champ)}.bar.lt i.bad{background:#E0A19D}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 11px;font-size:12px;font-weight:700;background:rgba(246,247,243,.16);color:var(--hero-ink)}
+.stat{border-radius:26px;padding:14px 16px;min-width:0}
+.stat .k{font-size:13px;color:var(--muted);font-weight:600}
+.stat .v{font-weight:800;font-size:19px;margin-top:2px;overflow-wrap:anywhere;letter-spacing:-.02em}
 .stat .s{font-size:12px;color:var(--muted)}
 .v.rec{color:var(--rec)}.v.dsp{color:var(--dsp)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.duo .stat{display:flex;align-items:center;gap:10px;padding:12px 12px}
+.duo .stat .v{font-size:16.5px;white-space:nowrap}
+.duo .stat .k{font-size:12.5px}
+.duo .ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none}
+.duo .ico.r{background:var(--rec-soft);color:var(--rec)}.duo .ico.d{background:var(--dsp-soft);color:var(--dsp)}
+@media (max-width:380px){.duo{grid-template-columns:1fr}}
 
-.acao{border:1.5px solid var(--brand);background:var(--surf);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px}
-.acao .k{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
-.acao h2{font-size:21px}
-.acao p{color:var(--muted)}
-.mentor-card{display:flex;gap:14px;align-items:center;background:var(--brand-soft);border:1px solid transparent;border-radius:18px;padding:14px 16px;width:100%;text-align:left}
-.mentor-card .ic{width:44px;height:44px;border-radius:14px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;flex:none}
-.mentor-card strong{display:block;font-family:var(--f-display);font-size:17px}
+.catsrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.catbtn{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:7px;padding:2px;text-align:center;min-width:0}
+.catbtn .c{width:58px;height:58px;border-radius:22px;display:grid;place-items:center;background:var(--glass2);border:1px solid var(--glass-b);box-shadow:var(--glass-sh);color:var(--ink);transition:transform .15s}
+.catbtn:active .c{transform:scale(.93)}
+.catbtn .n{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.15;overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.catbtn .vv{font-size:12.5px;font-weight:700}
 
-/* metas */
-.meta-mini{display:flex;flex-direction:column;gap:6px}
+.acao-card{display:flex;align-items:center;gap:14px;border-radius:28px;padding:14px 14px 14px 16px;width:100%;text-align:left;transition:transform .15s}
+.acao-card:active{transform:scale(.985)}
+.acao-card .t{width:50px;height:50px;border-radius:18px;display:grid;place-items:center;flex:none;border:1px solid var(--line);background:var(--glass2)}
+.acao-card .k{font-size:12.5px;color:var(--muted);font-weight:600}
+.acao-card .h{font-weight:800;font-size:17.5px;letter-spacing:-.02em;line-height:1.25}
+.acao-card .d{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.acao-card .go{width:42px;height:42px;border-radius:50%;background:var(--glass2);border:1px solid var(--glass-b);display:grid;place-items:center;flex:none}
+
+.meta-mini{display:flex;flex-direction:column;gap:4px}
 .meta-mini .t{font-weight:700;display:flex;justify-content:space-between;gap:8px}
-.badge{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--surf2);color:var(--muted)}
-.badge.ok{background:var(--brand-soft);color:var(--ok)}.badge.warn{background:var(--warn-soft);color:var(--warn)}.badge.bad{background:var(--bad-soft);color:var(--bad)}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;background:var(--surf2);color:var(--muted)}
+.badge.ok{background:var(--rec-soft);color:var(--ok)}.badge.warn{background:var(--warn-soft);color:var(--warn)}.badge.bad{background:var(--bad-soft);color:var(--bad)}
 
-/* listas */
+/* meta principal */
+.metahero .top{display:flex;align-items:center;gap:12px;font-weight:700;font-size:17px}
+.metahero .top .walleticon{width:44px;height:44px;border-radius:50%}
+.metahero .mid{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0 4px}
+.ringS{--p:0;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--sage) calc(var(--p)*1%),rgba(246,247,243,.18) 0);display:grid;place-items:center;flex:none;transition:--p 1s}
+.ringS::before{content:"";grid-area:1/1;width:64px;height:64px;border-radius:50%;background:var(--hero2)}
+.ringS b{grid-area:1/1;z-index:1;font-size:18px;font-weight:800}
+.metahero .foot{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--hero-mute);margin-bottom:14px}
+.metahero .chipc{display:inline-flex;gap:6px;align-items:center;background:rgba(246,247,243,.14);border-radius:99px;padding:5px 12px;font-size:12.5px;font-weight:700;margin-bottom:12px}
+.metahero .btn{width:100%}
+.metarow{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border-radius:28px;padding:14px;border:1px solid var(--glass-b);background:var(--glass);box-shadow:var(--glass-sh);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.metarow .t{width:54px;height:54px;border-radius:20px;background:linear-gradient(145deg,var(--champ),var(--mist));display:grid;place-items:center;flex:none;color:#003A3B}
+.metarow .n{font-weight:800}
+
+.daydots{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.daydots span{font-size:12px;color:var(--muted);font-weight:700}
+.daydots i{width:34px;height:34px;border-radius:50%;margin:5px auto 0;display:grid;place-items:center;background:var(--surf2);color:transparent}
+.daydots i.on{background:var(--sage);color:#003A3B}
+.daydots i.hoje{outline:2px solid var(--brand);outline-offset:2px}
+
+/* listas e itens */
 .lista{display:flex;flex-direction:column}
 .item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);min-width:0;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left}
 .item:last-child{border-bottom:0}
-.dot{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;color:#fff}
+.dot{width:38px;height:38px;border-radius:14px;flex:none;display:grid;place-items:center;color:#fff}
 .item .mid{flex:1;min-width:0}
-.item .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .t,.item .d{display:block}
+.item .t{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item .d{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.val{font-weight:700;white-space:nowrap}.val.rec{color:var(--rec)}
-.pago{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:none;display:grid;place-items:center;color:transparent;flex:none;padding:0}
-.pago.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.val{font-weight:800;white-space:nowrap}.val.rec{color:var(--rec)}
+.pago{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:none;display:grid;place-items:center;color:transparent;flex:none;padding:0;transition:background .2s,border-color .2s}
+.pago.on{background:var(--sage);border-color:var(--sage);color:#003A3B}
 .pago.off{border-color:var(--warn)}
-.dia-h{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:capitalize;padding:12px 0 2px;display:flex;justify-content:space-between}
+.dia-h{font-size:12.5px;font-weight:800;color:var(--muted);text-transform:capitalize;padding:14px 0 2px;display:flex;justify-content:space-between}
 
 /* formulários */
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>label,.lbl2{font-size:13px;font-weight:700;color:var(--muted)}
-.inp{width:100%;background:var(--surf);border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;min-height:46px}
-.inp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
-textarea.inp{min-height:84px;resize:vertical}
+.inp{width:100%;background:var(--glass2);border:1.5px solid var(--glass-b);border-radius:18px;padding:12px 16px;min-height:48px}
+.inp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+textarea.inp{min-height:84px;resize:vertical;border-radius:20px}
 .moneywrap{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--line);padding:4px 0}
 .moneywrap:focus-within{border-color:var(--brand)}
-.moneywrap span{font-size:22px;color:var(--muted);font-weight:600}
-.money{border:0;background:none;width:100%;font-family:var(--f-display);font-weight:700;font-size:28px;padding:4px 0;min-width:0}
-.money.grande{font-size:44px}
+.moneywrap span{font-size:22px;color:var(--muted);font-weight:700}
+.money{border:0;background:none;width:100%;font-weight:800;font-size:28px;padding:4px 0;min-width:0;letter-spacing:-.02em}
+.money.grande{font-size:46px}
 .money:focus{outline:none}
-.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;background:var(--surf2);border-radius:13px;padding:3px;gap:3px}
-.seg button{border:0;background:none;padding:8px 14px;border-radius:10px;font-weight:700;color:var(--muted);min-height:38px}
-.seg button[aria-pressed="true"]{background:var(--surf);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;background:var(--surf2);border-radius:999px;padding:4px;gap:3px}
+.seg button{border:0;background:none;padding:9px 16px;border-radius:999px;font-weight:700;color:var(--muted);min-height:40px;transition:background .2s}
+.seg button[aria-pressed="true"]{background:var(--active);color:#0B2B2C;box-shadow:0 2px 10px rgba(0,58,59,.12)}
 .seg.full{display:flex}.seg.full button{flex:1}
-.seg button.dsp[aria-pressed="true"]{color:var(--dsp)}.seg button.rec[aria-pressed="true"]{color:var(--rec)}
+.seg button.dsp[aria-pressed="true"]{color:#A94444}.seg button.rec[aria-pressed="true"]{color:#256B4E}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1.5px solid var(--line);background:var(--surf);border-radius:99px;padding:7px 13px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;min-height:38px}
-.chip[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--ok)}
-.chip i{width:9px;height:9px;border-radius:50%;display:block}
-.sw{position:relative;display:inline-block;width:46px;height:26px;flex:none}
+.chip{border:1.5px solid var(--glass-b);background:var(--glass2);border-radius:999px;padding:8px 15px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:7px;min-height:40px;transition:transform .15s,background .2s}
+.chip:active{transform:scale(.96)}
+.chip[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+.chip i{width:10px;height:10px;border-radius:50%;display:block}
+.sw{position:relative;display:inline-block;width:50px;height:30px;flex:none}
 .sw input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
-.sw b{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.2s;pointer-events:none}
-.sw b::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.sw input:checked+b{background:var(--brand)}.sw input:checked+b::after{left:23px}
+.sw b{position:absolute;inset:0;background:var(--surf2);border:1px solid var(--line);border-radius:99px;transition:.25s;pointer-events:none}
+.sw b::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.sw input:checked+b{background:var(--sage);border-color:var(--sage)}.sw input:checked+b::after{left:23px}
 .sw input:focus-visible+b{outline:2.5px solid var(--brand);outline-offset:2px}
 .sw-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0}
-.err{background:var(--bad-soft);color:var(--bad);border-radius:11px;padding:9px 12px;font-weight:600;font-size:14px}
-.note{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13.5px}
-.info{background:var(--brand-soft);color:var(--ok);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:18px;padding:10px 14px;font-weight:700;font-size:14px}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:20px;padding:12px 14px;font-size:13.5px}
+.info{background:var(--brand-soft);color:var(--ink);border-radius:20px;padding:12px 14px;font-size:13.5px}
 
-/* sheet */
-.sheet-bg{position:fixed;inset:0;background:rgba(4,16,11,.55);display:flex;align-items:flex-end;justify-content:center;z-index:80}
-.sheet{background:var(--surf);width:min(580px,100%);max-height:94%;border-radius:22px 22px 0 0;display:flex;flex-direction:column;box-shadow:var(--shadow);animation:up .22s ease both}
-@keyframes up{from{transform:translateY(24px);opacity:.5}to{transform:none;opacity:1}}
-.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px 20px}
-.sheet-b{overflow-y:auto;padding:8px 20px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
-@media (min-width:700px){.sheet-bg{align-items:center}.sheet{border-radius:22px;max-height:90%}}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:90;background:var(--ink);color:var(--bg);border-radius:14px;padding:11px 14px;display:flex;gap:14px;align-items:center;max-width:min(92vw,460px);font-weight:600;box-shadow:var(--shadow)}
-.toast button{border:0;background:none;color:var(--brand);font-weight:800;padding:0;filter:brightness(1.25)}
-@media (min-width:900px){.toast{bottom:28px}}
+/* folhas (sheets) de vidro */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,30,31,.42);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;z-index:80;animation:fade .2s both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--bg);background-image:linear-gradient(var(--glass2),var(--glass2));width:min(580px,100%);max-height:94%;border-radius:32px 32px 0 0;display:flex;flex-direction:column;box-shadow:var(--glass-sh);border:1px solid var(--glass-b);animation:up .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 6px 22px}
+.sheet-b{overflow-y:auto;padding:8px 22px calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+@media (min-width:700px){.sheet-bg{align-items:center}.sheet{border-radius:32px;max-height:90%}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(112px + env(safe-area-inset-bottom,0px));z-index:90;background:var(--petrol);color:var(--ice);border-radius:999px;padding:12px 18px;display:flex;gap:16px;align-items:center;max-width:min(92vw,460px);font-weight:700;box-shadow:var(--nav-sh);animation:in .25s both}
+:root[data-theme="dark"] .toast{background:var(--ice);color:#00282A}
+.toast button{border:0;background:none;color:var(--sage);font-weight:800;padding:0}
+:root[data-theme="dark"] .toast button{color:#00605F}
 
-/* gráficos */
+/* gráficos e listas de apoio */
 .chart{width:100%;max-width:560px;height:auto;display:block;overflow:visible}
 .chart text{fill:var(--muted);font:600 10.5px var(--f-body)}
 .chart .gl{stroke:var(--line);stroke-width:1}
 .chart .grp{cursor:pointer}
 .chart .grp:hover rect.bg,.chart .grp.sel rect.bg{fill:var(--surf2)}
 .chart .grp.sel text{fill:var(--ink);font-weight:800}
-.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);font-weight:600}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);font-weight:700}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .rank{display:flex;flex-direction:column;gap:11px}
-.rank button{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:5px;width:100%}
-.rank .h{display:flex;justify-content:space-between;gap:8px;font-weight:600}
-.rank .bar{margin:0}
-.rank .bar i{background:var(--c)}
-.ring{--p:0;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--brand) calc(var(--p)*1%),var(--surf2) 0);display:grid;place-items:center;flex:none}
-.ring::before{content:"";grid-area:1/1;width:70px;height:70px;border-radius:50%;background:var(--surf)}
-.ring b{grid-area:1/1;font-family:var(--f-display);font-size:20px;z-index:1}
+.ring{--p:0;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--sage) calc(var(--p)*1%),var(--surf2) 0);display:grid;place-items:center;flex:none}
+.ring::before{content:"";grid-area:1/1;width:70px;height:70px;border-radius:50%;background:var(--bg)}
+.ring b{grid-area:1/1;font-size:20px;z-index:1}
 .dots{display:flex;gap:5px;flex-wrap:wrap}
-.dots i{width:14px;height:14px;border-radius:5px;background:var(--surf2);display:block}
-.dots i.on{background:var(--brand)}
-.dots i.hoje{outline:2px solid var(--ink);outline-offset:1px}
-
-/* radar / insights */
+.dots i{width:14px;height:14px;border-radius:50%;background:var(--surf2);display:block}
+.dots i.on{background:var(--sage)}
+.dots i.hoje{outline:2px solid var(--brand);outline-offset:1px}
 .ins{display:flex;gap:12px;align-items:flex-start}
-.ins .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--brand-soft);color:var(--ok)}
+.ins .ic{width:40px;height:40px;border-radius:15px;display:grid;place-items:center;flex:none;background:var(--rec-soft);color:var(--ok)}
 .ins.atencao .ic{background:var(--warn-soft);color:var(--warn)}
 .ins h3{margin-bottom:2px}
 .ins p{color:var(--muted);font-size:14px}
-.veredito{border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:6px}
-.veredito.ok{background:var(--brand-soft);color:var(--ok)}.veredito.esperar{background:var(--warn-soft);color:var(--warn)}.veredito.evitar{background:var(--bad-soft);color:var(--bad)}
-.veredito h2{font-size:22px}
-.mot{display:flex;flex-direction:column;gap:9px}
+.veredito{border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.veredito.ok{background:var(--rec-soft);color:var(--ok)}.veredito.esperar{background:var(--warn-soft);color:var(--warn)}.veredito.evitar{background:var(--bad-soft);color:var(--bad)}
+.veredito h2{font-size:23px}
+.mot{display:flex;flex-direction:column;gap:10px}
 .mot div{display:flex;gap:10px;align-items:flex-start}
-.mot .m{width:20px;height:20px;border-radius:50%;flex:none;margin-top:1px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--muted)}
-.mot .ok .m{background:var(--ok)}.mot .warn .m{background:#C98A00}.mot .bad .m{background:var(--bad)}
+.mot .m{width:21px;height:21px;border-radius:50%;flex:none;margin-top:1px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--muted)}
+.mot .ok .m{background:#3E9A74}.mot .warn .m{background:#B79A3B}.mot .bad .m{background:#C25B5B}
 
-/* chat */
+/* mentor */
+.mtitle{font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-.04em;margin-top:6px}
+.mtitle svg{color:var(--muted);vertical-align:middle;margin-left:6px}
+.sug{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border-radius:26px;padding:14px 16px;transition:transform .15s}
+.sug:active{transform:scale(.985)}
+.sug .t{width:46px;height:46px;border-radius:17px;background:var(--rec-soft);color:var(--ok);display:grid;place-items:center;flex:none}
+.sug span.x{flex:1;font-weight:600}
 .chat{display:flex;flex-direction:column;gap:12px}
-.msg{max-width:92%;padding:11px 14px;border-radius:16px;overflow-wrap:anywhere}
-.msg.u{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:5px}
-.msg.a{align-self:flex-start;background:var(--surf);border:1px solid var(--line);border-bottom-left-radius:5px}
+.msg{max-width:92%;padding:12px 16px;border-radius:22px;overflow-wrap:anywhere;animation:in .3s both}
+.msg.u{align-self:flex-end;background:var(--brand);color:var(--brand-ink);border-bottom-right-radius:8px}
+.msg.a{align-self:flex-start;background:var(--glass2);border:1px solid var(--glass-b);border-bottom-left-radius:8px;box-shadow:var(--glass-sh)}
 .md p+p,.md p+ul,.md ul+p{margin-top:7px}
 .md ul{margin:0;padding-left:20px}.md li{margin:2px 0}
-.composer{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;background:var(--bg);padding:8px 0}
-@media (min-width:900px){.composer{bottom:0}}
-.composer .inp{flex:1}
+.composer-glass{position:sticky;bottom:calc(104px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:center;border-radius:30px;padding:8px 8px 8px 18px;z-index:5;background:var(--glass2)}
+@media (min-width:900px){.composer-glass{bottom:16px}}
+.composer-glass input{flex:1;border:0;background:none;min-height:44px;padding:0;min-width:0}
+.composer-glass input:focus{outline:none}
+.sendbtn{width:48px;height:48px;border-radius:50%;border:0;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;flex:none;box-shadow:0 6px 18px rgba(0,58,59,.3);transition:transform .15s}
+.sendbtn:active{transform:scale(.92)}
 .dots3 span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin:0 2px;animation:b 1s infinite}
 .dots3 span:nth-child(2){animation-delay:.15s}.dots3 span:nth-child(3){animation-delay:.3s}
 @keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
 
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:6px 6px 6px 0}
-.tbl td{padding:9px 6px 9px 0;border-top:1px solid var(--line);vertical-align:middle}
+.tbl td{padding:10px 6px 10px 0;border-top:1px solid var(--line);vertical-align:middle}
 .tbl td.r,.tbl th.r{text-align:right;padding-right:0}
 .scroll-x{overflow-x:auto}
-.menu-item{display:flex;align-items:center;gap:14px;width:100%;border:0;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left}
-.menu-item .ic{width:40px;height:40px;border-radius:12px;background:var(--brand-soft);color:var(--ok);display:grid;place-items:center;flex:none}
-.menu-item strong{display:block}
 .empty{text-align:center;padding:24px 12px;color:var(--muted)}
-.empty strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:17px;margin-bottom:4px}
-.demo-banner{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:9px 12px;font-size:13.5px;font-weight:600;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
-.check{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);width:100%;border-left:0;border-right:0;border-top:0;background:none;text-align:left}
+.empty strong{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+.demo-banner{background:var(--warn-soft);color:var(--warn);border-radius:22px;padding:10px 14px;font-size:13.5px;font-weight:700;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.check{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);width:100%;border-left:0;border-right:0;border-top:0;background:none;text-align:left}
 .check:last-child{border-bottom:0}
 .check .pago{margin-top:1px}
 .check.done .tt{text-decoration:line-through;color:var(--muted)}
-pre.out{background:var(--surf2);border-radius:12px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;user-select:all}
+pre.out{background:var(--surf2);border-radius:18px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;user-select:all}
+.rank button{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:5px;width:100%}
+.rank .h{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.rank .bar{margin:0}
 
 </style></head><body>
 <div id="root"></div>
@@ -811,10 +897,19 @@ const IC = {
   file: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>',
   send: '<path d="M4 12 20 4l-6 16-3-7z"/>',
+  car: '<path d="M5 16V12l2-5h10l2 5v4"/><path d="M3.5 16h17v2.5h-3V16M6.5 16v2.5h-3"/><circle cx="8" cy="13" r=".9"/><circle cx="16" cy="13" r=".9"/>',
+  fork: '<path d="M7 3v7a2 2 0 0 0 4 0V3M9 3v18M17 3c-2 2-2.5 5-2.5 8H17v10"/>',
+  bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.6 4.2 4.2 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
+  book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 19V5.5"/>',
+  user: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c.8-4 3.7-6 7.5-6s6.7 2 7.5 6"/>',
+  shield: '<path d="M12 3l7 3v5.5c0 4.4-3 7.7-7 9.5-4-1.8-7-5.1-7-9.5V6z"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  brain: '<path d="M12 5v14"/><path d="M12 6.5C11.3 4.8 9.2 4.4 8 5.5 6.5 5.5 5.2 6.9 5.4 8.4 4.1 9 3.8 10.7 4.7 11.8 3.9 13 4.4 14.6 5.7 15.1 5.9 16.7 7.5 17.7 9 17.2 9.8 18.6 11.4 19 12 18.2M8.5 9.5c1 .1 1.8.8 2 1.8M8 14c1.2-.2 2-.8 2.4-1.8"/><path d="M12 6.5c.7-1.7 2.8-2.1 4-1 1.5 0 2.8 1.4 2.6 2.9 1.3.6 1.6 2.3.7 3.4.8 1.2.3 2.8-1 3.3-.2 1.6-1.8 2.6-3.3 2.1-.8 1.4-2.4 1.8-3 1M15.5 9.5c-1 .1-1.8.8-2 1.8M16 14c-1.2-.2-2-.8-2.4-1.8"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>'
 };
 const Ico = ({ n, s = 20 }) => html`<svg width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: IC[n] || '' }} />`;
-const Logo = () => html`<span className="logo"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7" stroke="#3DDC97" strokeWidth="3.2" strokeLinecap="round" fill="none"/><path d="M20.5 19v-3" stroke="#F1FBF6" strokeWidth="3.2" strokeLinecap="round"/></svg></span>`;
+const Logo = () => html`<span className="logo-mind"><${Ico} n="brain" s=${40} /></span>`;
 
 const ROTAS_TODAS = [
   { id: 'inicio', n: 'Início', i: 'home' }, { id: 'mov', n: 'Movimentos', i: 'list' }, { id: 'metas', n: 'Metas', i: 'target' }, { id: 'habitos', n: 'Hábitos', i: 'check' },
@@ -822,6 +917,7 @@ const ROTAS_TODAS = [
   { id: 'relat', n: 'Relatórios', i: 'chart' }, { id: 'orc', n: 'Orçamento e categorias', i: 'wallet' }, { id: 'dados', n: 'Dados e ajustes', i: 'gear' }
 ];
 const ROTAS = ROTAS_TODAS.filter(r => MENTOR || r.id !== 'mentor');
+const ALIAS = { inicio: ['inicio', 'geral'], mov: ['inicio', 'hist'], orc: ['inicio', 'orc'], fin: ['fin', null], radar: ['mentor', 'insights'], comprar: ['fin', 'comprar'], relat: ['fin', 'relat'], metas: ['metas', 'metas'], habitos: ['metas', 'desafios'], mentor: ['mentor', null], dados: ['dados', null] };
 const TIPOS_META = { reserva: 'Reserva de emergência', divida: 'Quitação de dívida', compra: 'Compra planejada', projeto: 'Projeto pessoal', invest: 'Objetivo de investimento' };
 
 /* ----- persistência ----- */
@@ -857,6 +953,7 @@ function Provider({ children }) {
   const [S, setS] = useState(() => lerLocal() || estadoInicial());
   const [demo, setDemo] = useState(null);
   const [rota, setRota] = useState('inicio');
+  const [aba, setAbas] = useState({ inicio: 'geral', fin: 'comprar', metas: 'metas', mentor: MENTOR ? 'chat' : 'insights' });
   const [sheet, setSheet] = useState(null);
   const [toastMsg, setToastMsg] = useState(null);
   const [hojeS, setHojeS] = useState(hoje());
@@ -942,7 +1039,9 @@ function Provider({ children }) {
   }, [S, demo]);
 
   const ctx = {
-    A, S, demo, upd, hojeS, rota, ir: x => { setRota(x); setSheet(null); window.scrollTo(0, 0); }, toast, status, fm, setFm, mentorPre, setMentorPre,
+    A, S, demo, upd, hojeS, rota, aba, setAba: (r, a) => setAbas(s => ({ ...s, [r]: a })), toast,
+    // aceita os nomes antigos das telas e leva para a aba certa
+    ir: x => { const [r, a] = ALIAS[x] || [x, null]; setRota(r); if (a) setAbas(s => ({ ...s, [r]: a })); setSheet(null); window.scrollTo(0, 0); }, status, fm, setFm, mentorPre, setMentorPre,
     abrir: (k, d) => setSheet({ k, d: d || {} }), fechar: () => setSheet(null), sheet,
     entrarDemo: () => { setDemo(estadoDemo(hojeS)); setRota('inicio'); },
     sairDemo: () => setDemo(null),
@@ -1181,78 +1280,6 @@ function SheetRevisao() {
     </div><//>`;
 }
 
-/* ===== PÁGINAS ===== */
-function Inicio() {
-  const { A, upd, abrir, ir, hojeS, entrarDemo, toast, setFm } = useApp();
-  const ym = ymOf(hojeS);
-  const R = useMemo(() => resumoMes(A, ym), [A, ym]);
-  const O = useMemo(() => orcamento(A, ym, hojeS), [A, ym, hojeS]);
-  const pend = useMemo(() => pendentes(A, hojeS), [A, hojeS]);
-  const totalPend = soma(pend, t => t.valor), saldo = saldoAtual(A);
-  const acao = useMemo(() => acaoDoDia(A, hojeS), [A, hojeS]);
-  const lemb = useMemo(() => lembretes(A, hojeS), [A, hojeS]);
-  const rad = useMemo(() => radar(A, hojeS), [A, hojeS]);
-  const serie = useMemo(() => serieMensal(A, ym, 6), [A, ym]);
-  const [selMes, setSelMes] = useState(ym);
-  const [renda, setRenda] = useState(0);
-  const diasRest = diasMes(ym) - +hojeS.slice(8, 10) + 1;
-  const vazio = A.tx.length === 0;
-  const fazer = a => {
-    if (a.t === 'lanc') abrir('lanc'); else if (a.t === 'ir') ir(a.r); else if (a.t === 'revisao') abrir('revisao');
-    else if (a.t === 'pagar') { upd(s => ({ ...s, tx: s.tx.map(t => t.id === a.id ? { ...t, pago: true } : t) })); toast('Conta marcada como paga'); }
-    else if (a.t === 'nada') { upd(s => marca(s, hojeS, 'nada')); toast('Anotado: nenhum gasto hoje'); }
-    else if (a.t === 'check') { upd(s => marca(s, hojeS, a.k)); toast('Check-in feito'); }
-  };
-  const cats = Object.entries(R.porCat).sort((a, b) => b[1] - a[1]).slice(0, 6), maxCat = cats.length ? cats[0][1] : 1;
-  const sm = serie.find(m => m.ym === selMes) || serie[serie.length - 1];
-  const metasAtivas = A.metas.filter(m => m.atual < m.alvo).slice(0, 3);
-  return html`<div className="page">
-    <div className="row sb"><div><div className="xs mut">${rotuloDia(hojeS, hojeS) === 'Hoje' ? fmtData(hojeS) : ''}</div></div>
-      <button className="chip" aria-pressed=${A.cfg.simples} onClick=${() => upd(s => ({ ...s, cfg: { ...s.cfg, simples: !s.cfg.simples } }))} title="Mostra só o essencial nos dias sem energia">Dia difícil? Modo simples</button></div>
-    ${vazio && !A.cfg.onboard ? html`<section className="card stack"><h2>Comece em 30 segundos</h2>
-      <p className="mut">Dois passos bastam. O resto o app vai pedindo aos poucos.</p>
-      <div className="field"><label htmlFor="on-renda">1 · Quanto você recebe por mês? (opcional)</label><${Dinheiro} id="on-renda" valor=${renda} onChange=${setRenda} /></div>
-      <button className="btn primary" onClick=${() => { upd(s => ({ ...s, cfg: { ...s.cfg, rendaMensal: renda, onboard: true } })); abrir('lanc'); }}>2 · Registrar meu primeiro gasto</button>
-      <button className="link" style=${{ textAlign: 'left' }} onClick=${entrarDemo}>Prefiro ver o app com dados de exemplo antes</button></section>` : null}
-    <section className="hero" aria-label="Situação financeira">
-      <div className="row sb"><span className="lbl">Saldo disponível</span><span className="pill">${nomeMes(ym)}</span></div>
-      <div className="big num">${fmt(saldo)}</div>
-      <div className="sub">${pend.length ? `Depois das contas a pagar (${fmt(totalPend)}): ${fmt(saldo - totalPend)}` : 'Sem contas a pagar neste momento.'}</div>
-      <div className="orc">${O.definido ? html`<${Frag}>
-        <div className="row sb"><span className="lbl">Livre para gastos flexíveis</span><span className="lbl num">${O.pct}% usado</span></div>
-        <div className="v num">${O.disp >= 0 ? fmt(O.disp) : '−' + fmt(-O.disp)}</div>
-        <${BarraOrc} pct=${O.pct} />
-        <div className="sub num">${fmt(O.usado)} de ${fmt(O.total)}${O.disp > 0 ? ` · cerca de ${fmt(Math.floor(O.disp / diasRest))} por dia até o fim do mês` : O.disp < 0 ? ` · passou ${fmt(-O.disp)}` : ''}</div><//>`
-        : html`<${Frag}><div className="sub">Para calcular quanto você pode gastar livremente, informe sua renda mensal.</div><button className="btn sm" style=${{ marginTop: 10 }} onClick=${() => ir('orc')}>Definir renda mensal</button><//>`}</div>
-    </section>
-    <div className="g3 stk">
-      <div className="stat"><div className="k">Receitas do mês</div><div className="v rec num">${fmt(R.recTotal)}</div>${R.recPrev ? html`<div className="s num">${fmt(R.recPrev)} a receber</div>` : null}</div>
-      <div className="stat"><div className="k">Despesas do mês</div><div className="v dsp num">${fmt(R.dspTotal)}</div>${R.dspPrev ? html`<div className="s num">${fmt(R.dspPrev)} a pagar</div>` : null}</div>
-      <div className="stat"><div className="k">A pagar (compromissos)</div><div className="v num">${fmt(totalPend)}</div><div className="s">${pend.length} ${pend.length === 1 ? 'conta' : 'contas'}</div></div>
-    </div>
-    <section className="acao" aria-label="Ação recomendada para hoje"><div className="k">Sua ação de hoje</div><h2>${acao.titulo}</h2><p>${acao.texto}</p>
-      <div className="row"><button className="btn primary" onClick=${() => fazer(acao.acao)}>${acao.botao}</button>${acao.alt ? html`<button className="btn ghost" onClick=${() => fazer(acao.alt.acao)}>${acao.alt.botao}</button>` : null}</div></section>
-    <button className="btn primary big" onClick=${() => abrir('lanc')}><${Ico} n="plus" />Registrar gasto ou receita</button>
-    <${Secao} titulo="Metas" acao=${html`<button className="link" onClick=${() => ir('metas')}>Ver todas</button>`}>
-      ${metasAtivas.length ? html`<div className="card stack">${metasAtivas.map(m => { const c = metaCalc(m, hojeS); return html`<div key=${m.id} className="meta-mini"><div className="t"><span>${m.nome}</span><span className="num">${c.pct}%</span></div><${BarraOrc} pct=${c.pct} claro /><div className="xs mut num">${fmt(m.atual)} de ${fmt(m.alvo)}${c.mensal ? ` · ${fmt(c.mensal)}/mês` : ''}</div></div>`; })}</div>`
-        : html`<div className="card"><${Vazio} t="Nenhuma meta ainda" d="Uma meta pequena já serve, como uma reserva de R$ 500."><button className="btn" onClick=${() => abrir('meta')}>Criar uma meta</button><//></div>`}
-    <//>
-    ${MENTOR ? html`<button className="mentor-card" onClick=${() => ir('mentor')}><span className="ic"><${Ico} n="chat" s=${22} /></span><span><strong>Mentor IA</strong><span className="sm mut">Pergunte sobre uma compra, um gasto ou uma meta.</span></span></button>` : null}
-    ${A.cfg.simples ? html`<button className="btn" onClick=${() => ir('comprar')}><${Ico} n="cart" s=${18} />Antes de comprar</button>` : html`<${Frag}>
-      ${lemb.length ? html`<${Secao} titulo="Lembretes"><div className="card"><div className="lista">${lemb.slice(0, 4).map(l => html`<button key=${l.id} className="item" onClick=${() => ir(l.rota)}><span className="dot" style=${{ background: 'var(--brand)' }}><${Ico} n=${l.icone} s=${17} /></span><span className="mid"><span className="t" style=${{ whiteSpace: 'normal' }}>${l.texto}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div><div className="xs mut" style=${{ marginTop: 8 }}>Lembretes aparecem aqui quando você abre o app. Não há notificações no celular.</div></div><//>` : null}
-      <${Secao} titulo="Evolução mensal"><div className="card">
-        ${A.tx.length ? html`<${Frag}><div className="legend" style=${{ marginBottom: 6 }}><span><i style=${{ background: 'var(--rec)' }}></i>Receitas</span><span><i style=${{ background: 'var(--dsp)' }}></i>Despesas</span></div>
-          <${GraficoEvolucao} serie=${serie} sel=${selMes} onSel=${setSelMes} />
-          <div className="sm num" style=${{ marginTop: 6 }}><strong>${nomeMes(sm.ym)}</strong>: receitas ${fmt(sm.recTotal)} · despesas ${fmt(sm.dspTotal)} · resultado <strong style=${{ color: sm.recTotal - sm.dspTotal >= 0 ? 'var(--rec)' : 'var(--dsp)' }}>${sm.recTotal - sm.dspTotal >= 0 ? '+' : '−'}${fmt(Math.abs(sm.recTotal - sm.dspTotal))}</strong></div><//>`
-          : html`<${Vazio} t="O gráfico aparece com seus registros" d="Cada lançamento entra no mês certo automaticamente." />`}</div><//>
-      <${Secao} titulo="Principais categorias do mês"><div className="card">
-        ${cats.length ? html`<div className="rank">${cats.map(([id, v]) => { const c = catMap(A)[id] || {}; return html`<button key=${id} style=${{ '--c': COR(c.cor) }} onClick=${() => { setFm(f => ({ ...f, cat: id, per: 'mes', ym, tipo: 'todos', q: '' })); ir('mov'); }}><span className="h"><span>${c.nome || 'Sem categoria'}</span><span className="num">${fmt(v)}</span></span><span className="bar lt"><i style=${{ width: Math.max(3, Math.round(v * 100 / maxCat)) + '%' }}></i></span></button>`; })}</div>`
-          : html`<${Vazio} t="Sem despesas neste mês" d="As categorias que mais pesam vão aparecer aqui." />`}</div><//>
-      ${rad.length ? html`<${Secao} titulo="Radar de gastos" acao=${html`<button className="link" onClick=${() => ir('radar')}>Ver tudo</button>`}>${rad.slice(0, 2).map(i => html`<${Insight} key=${i.id} i=${i} />`)}<//>` : null}
-      <button className="btn" onClick=${() => ir('comprar')}><${Ico} n="cart" s=${18} />Antes de comprar: avaliar uma compra</button>
-    <//>`}
-  </div>`;
-}
 function Insight({ i }) {
   return html`<div className=${'card ins ' + i.nivel}><span className="ic"><${Ico} n=${i.icone} s=${19} /></span><div className="mid" style=${{ minWidth: 0 }}><h3>${i.titulo}</h3><p>${i.texto}</p></div></div>`;
 }
@@ -1297,69 +1324,6 @@ function Movimentos() {
         <span className=${'val num ' + (t.tipo === 'receita' ? 'rec' : '')}>${t.tipo === 'receita' ? '+' : '−'}${fmt(t.valor)}</span></button></div>`; })}</div></div>`)}
       ${lista.length > lim ? html`<button className="btn" style=${{ width: '100%', marginTop: 10 }} onClick=${() => setLim(lim + 60)}>Mostrar mais (${lista.length - lim})</button>` : null}</div>`
       : html`<div className="card"><${Vazio} t=${A.tx.length ? 'Nada neste filtro' : 'Nenhum lançamento ainda'} d=${A.tx.length ? 'Ajuste o período ou a categoria.' : 'O primeiro registro leva 10 segundos.'}><button className="btn primary" onClick=${() => abrir('lanc')}>Registrar agora</button><//></div>`}
-  </div>`;
-}
-
-/* ----- Metas ----- */
-function Metas() {
-  const { A, abrir, hojeS, upd, toast } = useApp();
-  const [aberta, setAberta] = useState(null);
-  const totalMensal = metasMensal(A, hojeS);
-  return html`<div className="page"><div className="row sb"><h1 className="ptitle">Metas</h1><button className="btn primary sm" onClick=${() => abrir('meta')}><${Ico} n="plus" s=${16} />Nova meta</button></div>
-    ${A.metas.length ? html`<p className="psub num">${totalMensal ? `Somando as metas ativas, você precisa guardar cerca de ${fmt(totalMensal)} por mês.` : 'Defina prazo ou valor mensal para ver quanto guardar por mês.'}</p>` : null}
-    ${A.metas.length ? A.metas.map(m => { const c = metaCalc(m, hojeS); return html`<section key=${m.id} className="card stack">
-      <div className="row sb"><div style=${{ minWidth: 0 }}><h2>${m.nome}</h2><div className="xs mut">${TIPOS_META[m.tipo]}${m.prazo ? ` · até ${fmtData(m.prazo)}` : ''}</div></div>${c.concluida ? html`<span className="badge ok">Concluída</span>` : c.vencida ? html`<span className="badge warn">Prazo passou</span>` : null}</div>
-      <div><div className="row sb"><strong className="num">${fmt(m.atual)}</strong><span className="mut num">de ${fmt(m.alvo)}</span></div><${BarraOrc} pct=${c.pct} claro /><div className="xs mut">${c.pct}% ${m.tipo === 'divida' ? 'quitado' : 'alcançado'}</div></div>
-      ${!c.concluida ? html`<div className="info num">${c.mensal ? (m.prazo ? `Faltam ${fmt(c.rest)}. Para chegar no prazo: ${fmt(c.mensal)} por mês (${c.meses} ${c.meses === 1 ? 'mês' : 'meses'}).` : `Faltam ${fmt(c.rest)}. Guardando ${fmt(c.mensal)} por mês, leva cerca de ${c.eta} ${c.eta === 1 ? 'mês' : 'meses'}.`) : `Faltam ${fmt(c.rest)}. Defina um prazo ou um valor mensal para calcular o ritmo.`}</div>` : null}
-      <div className="row">${!c.concluida ? html`<button className="btn primary sm" onClick=${() => abrir('aporte', { id: m.id })}>${m.tipo === 'divida' ? 'Registrar pagamento' : 'Aportar'}</button>` : null}<button className="btn sm" onClick=${() => abrir('meta', { id: m.id })}><${Ico} n="edit" s=${15} />Editar</button>${m.aportes.length ? html`<button className="link" onClick=${() => setAberta(aberta === m.id ? null : m.id)}>${aberta === m.id ? 'Ocultar histórico' : `Histórico (${m.aportes.length})`}</button>` : null}</div>
-      ${aberta === m.id ? html`<div className="lista">${[...m.aportes].sort((a, b) => b.data.localeCompare(a.data)).map(a => html`<div key=${a.id} className="item"><span className="mid"><span className="t">${fmtData(a.data)}</span></span><span className="val num">${fmt(a.valor)}</span><button className="icon-btn" aria-label="Remover aporte" onClick=${() => { upd(s => ({ ...s, tx: s.tx.filter(t => t.id !== a.txId), metas: s.metas.map(x => x.id === m.id ? { ...x, atual: Math.max(0, x.atual - a.valor), aportes: x.aportes.filter(y => y.id !== a.id), concluidaEm: null } : x) })); toast('Aporte removido'); }}><${Ico} n="trash" s=${16} /></button></div>`)}</div>` : null}
-    </section>`; })
-      : html`<div className="card"><${Vazio} t="Metas dão direção ao dinheiro" d="Reserva de emergência, quitar uma dívida, uma compra planejada. O app calcula quanto guardar por mês."><button className="btn primary" onClick=${() => abrir('meta')}>Criar a primeira meta</button><//></div>`}
-  </div>`;
-}
-
-/* ----- Hábitos ----- */
-function Habitos() {
-  const { A, upd, abrir, hojeS, toast } = useApp();
-  const c = useMemo(() => constancia(A, hojeS), [A, hojeS]);
-  const dia = A.hab.dias[hojeS] || {}, ym = ymOf(hojeS);
-  const metasMes = A.hab.metasMes[ym] || [];
-  const [nova, setNova] = useState('');
-  const marcaK = (k, v) => upd(s => ({ ...s, hab: { ...s.hab, dias: { ...s.hab.dias, [hojeS]: { ...(s.hab.dias[hojeS] || {}), [k]: v } } } }));
-  const ITENS = [{ k: 'ver', t: 'Ver quanto ainda posso gastar', d: 'Olhe o quadro verde do Início. 20 segundos.' }, { k: 'reg', t: 'Registrar o que gastei hoje', d: 'Pode ser só o último gasto de que lembra. Registrar um lançamento marca sozinho.' }, { k: 'contas', t: 'Conferir as contas dos próximos dias', d: 'Veja a lista “A pagar” em Movimentos.' }];
-  const feitos = ITENS.filter(i => dia[i.k]).length;
-  const setMetasMes = f => upd(s => ({ ...s, hab: { ...s.hab, metasMes: { ...s.hab.metasMes, [ym]: f(s.hab.metasMes[ym] || []) } } }));
-  const SUG = ['Registrar gastos em pelo menos 20 dias', 'Manter o orçamento flexível abaixo de 100%', 'Fazer as 4 revisões semanais', 'Aportar em uma meta pelo menos uma vez'];
-  const des = A.hab.desafio, dDef = des ? DESAFIOS.find(d => d.id === des.id) : null;
-  const ultimos = Array.from({ length: 28 }, (_, i) => addDias(hojeS, i - 27));
-  return html`<div className="page"><h1 className="ptitle">Hábitos</h1>
-    ${c.diasDesde != null && c.diasDesde >= 3 ? html`<div className="info"><strong>Bem-vindo de volta.</strong> Não existe sequência para quebrar aqui. Registre o último gasto de que lembrar e já conta.<div style=${{ marginTop: 8 }}><button className="btn primary sm" onClick=${() => abrir('lanc')}>Registrar agora</button></div></div>` : null}
-    <${Secao} titulo="Check-in de hoje (3 min)"><div className="card">
-      <div className="lista">${ITENS.map(i => html`<button key=${i.k} className=${'check' + (dia[i.k] ? ' done' : '')} onClick=${() => marcaK(i.k, !dia[i.k])}><span className=${'pago' + (dia[i.k] ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span><span className="tt" style=${{ fontWeight: 600, display: 'block' }}>${i.t}</span><span className="xs mut">${i.d}</span></span></button>`)}
-        <button className=${'check' + (dia.nada ? ' done' : '')} onClick=${() => marcaK('nada', !dia.nada)}><span className=${'pago' + (dia.nada ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span><span className="tt" style=${{ fontWeight: 600, display: 'block' }}>Hoje não gastei nada</span><span className="xs mut">Também conta como registro do dia.</span></span></button></div>
-      <div className="xs mut" style=${{ marginTop: 8 }}>${feitos === 3 ? 'Check-in completo. Pode fechar o app.' : `${feitos} de 3 feitos. Fazer só um já vale.`}</div></div><//>
-    <${Secao} titulo="Constância"><div className="card stack">
-      <div className="row" style=${{ gap: 16 }}><div className="ring" style=${{ '--p': c.pct }}><b className="num">${c.pct}%</b></div>
-        <div className="stack" style=${{ gap: 4, flex: 1, minWidth: 160 }}><div><strong>${c.ativos30} ${c.ativos30 === 1 ? 'dia' : 'dias'}</strong> com acompanhamento${c.base < 30 ? ` desde o início (${c.base} ${c.base === 1 ? 'dia' : 'dias'})` : ' nos últimos 30'}</div><div><strong>${c.revisoes4} de 4</strong> revisões semanais nas últimas 4 semanas</div><div className="xs mut">Dias sem registro não zeram nada. O que conta é voltar.</div></div></div>
-      <div><div className="xs mut" style=${{ marginBottom: 6 }}>Últimos 28 dias</div><div className="dots" role="img" aria-label=${`${ultimos.filter(d => c.set.has(d)).length} dias com acompanhamento nos últimos 28`}>${ultimos.map(d => html`<i key=${d} className=${(c.set.has(d) ? 'on' : '') + (d === hojeS ? ' hoje' : '')} title=${fmtData(d)}></i>`)}</div></div></div><//>
-    <${Secao} titulo="Revisão semanal (10 min)"><div className="card stack">
-      ${(A.hab.semanas[segunda(hojeS)] || {}).feita ? html`<div className="info">Revisão desta semana feita em ${fmtData(A.hab.semanas[segunda(hojeS)].feita)}.${A.hab.semanas[segunda(hojeS)].b ? ` Ajuste escolhido: “${A.hab.semanas[segunda(hojeS)].b}”.` : ''}</div>` : html`<p className="mut">Olhe a semana, confira as contas dos próximos dias e escolha um ajuste pequeno.</p>`}
-      <button className="btn primary" onClick=${() => abrir('revisao')}>${(A.hab.semanas[segunda(hojeS)] || {}).feita ? 'Rever ou editar' : 'Começar a revisão'}</button></div><//>
-    <${Secao} titulo=${`Metas de ${MESES[+ym.slice(5) - 1]}`}><div className="card stack">
-      ${metasMes.length ? html`<div className="lista">${metasMes.map(g => html`<div key=${g.id} className=${'check' + (g.ok ? ' done' : '')} style=${{ alignItems: 'center' }}><button className=${'pago' + (g.ok ? ' on' : '')} aria-label=${g.ok ? 'Desmarcar' : 'Marcar como feita'} onClick=${() => setMetasMes(l => l.map(x => x.id === g.id ? { ...x, ok: !x.ok } : x))}><${Ico} n="check" s=${15} /></button><span className="tt" style=${{ flex: 1, fontWeight: 600 }}>${g.t}</span><button className="icon-btn" style=${{ width: 34, height: 34 }} aria-label="Remover meta do mês" onClick=${() => setMetasMes(l => l.filter(x => x.id !== g.id))}><${Ico} n="x" s=${15} /></button></div>`)}</div>` : html`<p className="mut sm">Escolha de 1 a 3 metas simples para o mês.</p>`}
-      <div className="chips">${SUG.filter(s => !metasMes.some(g => g.t === s)).map(s => html`<button key=${s} className="chip" onClick=${() => setMetasMes(l => [...l, { id: uid(), t: s, ok: false }])}><${Ico} n="plus" s=${14} />${s}</button>`)}</div>
-      <form className="row" style=${{ flexWrap: 'nowrap' }} onSubmit=${e => { e.preventDefault(); if (nova.trim()) { setMetasMes(l => [...l, { id: uid(), t: nova.trim().slice(0, 100), ok: false }]); setNova(''); } }}><input id="mm-nova" className="inp" aria-label="Nova meta do mês" placeholder="Escrever a minha" maxLength="100" value=${nova} onChange=${e => setNova(e.target.value)} /><button className="btn" type="submit">Adicionar</button></form></div><//>
-    <${Secao} titulo="Desafio comportamental"><div className="card stack">
-      ${des && dDef ? html`<${Frag}><div><strong>${dDef.nome}</strong><div className="mut sm">${dDef.desc}</div></div>
-        <${BarraOrc} pct=${Math.round(des.feitos.length * 100 / 7)} claro /><div className="xs mut">${des.feitos.length} de 7 dias feitos. Sem prazo: faça quando puder.</div>
-        <button className=${'check' + (des.feitos.includes(hojeS) ? ' done' : '')} onClick=${() => {
-          const jaFeito = des.feitos.includes(hojeS), novo = jaFeito ? des.feitos.filter(d => d !== hojeS) : [...des.feitos, hojeS];
-          if (novo.length >= 7) { upd(s => ({ ...s, hab: { ...s.hab, desafio: null, desafiosFeitos: [...s.hab.desafiosFeitos, { id: des.id, fim: hojeS }] } })); toast('Desafio concluído!'); }
-          else upd(s => ({ ...s, hab: { ...s.hab, desafio: { ...des, feitos: novo } } }));
-        }}><span className=${'pago' + (des.feitos.includes(hojeS) ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span className="tt" style=${{ fontWeight: 600 }}>${dDef.tarefa}</span></button>
-        <button className="link" style=${{ textAlign: 'left' }} onClick=${() => upd(s => ({ ...s, hab: { ...s.hab, desafio: null } }))}>Trocar de desafio</button><//>`
-        : html`<${Frag}><p className="mut sm">Escolha um desafio de 7 dias feitos. Eles não precisam ser seguidos.${A.hab.desafiosFeitos.length ? ` Você já concluiu ${A.hab.desafiosFeitos.length}.` : ''}</p>
-          <div className="lista">${DESAFIOS.map(d => html`<button key=${d.id} className="item" onClick=${() => upd(s => ({ ...s, hab: { ...s.hab, desafio: { id: d.id, inicio: hojeS, feitos: [] } } }))}><span className="mid"><span className="t" style=${{ whiteSpace: 'normal' }}>${d.nome}</span><span className="d" style=${{ whiteSpace: 'normal' }}>${d.desc}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div><//>`}</div><//>
   </div>`;
 }
 
@@ -1417,6 +1381,8 @@ function Relatorios() {
   const [modo, setModo] = useState('mes'), [ref, setRef] = useState(ymOf(hojeS)), [refS, setRefS] = useState(segunda(hojeS));
   const ini = modo === 'mes' ? ref + '-01' : refS, fim = modo === 'mes' ? fimMes(ref) : addDias(refS, 6);
   const rel = useMemo(() => relatorio(A, ini, fim, hojeS), [A, ini, fim, hojeS]);
+  const serie = useMemo(() => serieMensal(A, ymOf(hojeS), 6), [A, hojeS]);
+  const [selM, setSelM] = useState(ymOf(hojeS)), sm = serie.find(m => m.ym === selM) || serie[5];
   const maxC = rel.cats.length ? Math.max(...rel.cats.map(c => Math.max(c.v, 1))) : 1;
   const nav = d => modo === 'mes' ? setRef(addMes(ref, d)) : setRefS(addDias(refS, 7 * d));
   const resumo = () => `Relatório ${modo === 'mes' ? nomeMes(ref) : fmtData(ini) + ' a ' + fmtData(fim)}\nReceitas: ${fmt(rel.A.rec)}\nDespesas: ${fmt(rel.A.dsp)}\nResultado: ${fmt(rel.A.rec - rel.A.dsp)}\nNão planejados: ${fmt(rel.A.naoPlan)}\nAportes em metas: ${fmt(rel.aportes)}\n` + rel.cats.slice(0, 6).map(c => `- ${nomeCat(A, c.id)}: ${fmt(c.v)}`).join('\n') + '\nPróximo período:\n' + rel.recomend.map(r => '- ' + r).join('\n');
@@ -1427,6 +1393,7 @@ function Relatorios() {
     <div className="g3 stk"><div className="stat"><div className="k">Receitas</div><div className="v rec num">${fmt(rel.A.rec)}</div>${rel.B.rec ? html`<div className="s">${dif(rel.A.rec, rel.B.rec) >= 0 ? '+' : ''}${dif(rel.A.rec, rel.B.rec)}% vs. anterior</div>` : null}</div>
       <div className="stat"><div className="k">Despesas</div><div className="v dsp num">${fmt(rel.A.dsp)}</div>${rel.B.dsp ? html`<div className="s">${dif(rel.A.dsp, rel.B.dsp) >= 0 ? '+' : ''}${dif(rel.A.dsp, rel.B.dsp)}% vs. anterior</div>` : null}</div>
       <div className="stat"><div className="k">Resultado</div><div className="v num">${rel.A.rec - rel.A.dsp < 0 ? '−' : ''}${fmt(Math.abs(rel.A.rec - rel.A.dsp))}</div></div></div>
+    <${Secao} titulo="Evolução mensal"><div className="card">${A.tx.length ? html`<${Frag}><div className="legend" style=${{ marginBottom: 6 }}><span><i style=${{ background: 'var(--rec)' }}></i>Receitas</span><span><i style=${{ background: 'var(--dsp)' }}></i>Despesas</span></div><${GraficoEvolucao} serie=${serie} sel=${selM} onSel=${setSelM} /><div className="sm num" style=${{ marginTop: 6 }}><strong>${nomeMes(sm.ym)}</strong>: receitas ${fmt(sm.recTotal)} · despesas ${fmt(sm.dspTotal)} · resultado ${sm.recTotal - sm.dspTotal >= 0 ? '+' : '−'}${fmt(Math.abs(sm.recTotal - sm.dspTotal))}</div><//>` : html`<${Vazio} t="O gráfico aparece com seus registros" d="" />`}</div><//>
     <${Secao} titulo="Evolução por categoria"><div className="card">${rel.cats.length ? html`<div className="scroll-x"><table className="tbl"><thead><tr><th>Categoria</th><th className="r">Período</th><th className="r">Anterior</th><th className="r">Variação</th></tr></thead><tbody>${rel.cats.slice(0, 10).map(c => { const d = dif(c.v, c.ant); return html`<tr key=${c.id}><td><div>${nomeCat(A, c.id)}</div><div className="bar lt" style=${{ margin: '5px 0 0', height: 6 }}><i style=${{ width: Math.max(3, c.v * 100 / maxC) + '%', background: COR((catMap(A)[c.id] || {}).cor) }}></i></div></td><td className="r num">${fmt(c.v)}</td><td className="r num mut">${fmt(c.ant)}</td><td className="r num">${d == null ? '—' : (d > 0 ? '+' : '') + d + '%'}</td></tr>`; })}</tbody></table></div>` : html`<${Vazio} t="Sem despesas no período" d="" />`}</div><//>
     <${Secao} titulo="Gastos não planejados"><div className="card stack"><div className="row sb"><span>Total não planejado</span><strong className="num">${fmt(rel.A.naoPlan)}</strong></div>${rel.A.naoPlan && rel.A.dsp ? html`<div className="xs mut">${Math.round(rel.A.naoPlan * 100 / rel.A.dsp)}% das despesas do período.</div>` : null}${rel.A.naoPlanItens.slice(0, 5).map(t => html`<div key=${t.id} className="row sb sm"><span>${fmtDM(t.data)} · ${t.desc || nomeCat(A, t.catId)}</span><span className="num">${fmt(t.valor)}</span></div>`)}</div><//>
     <${Secao} titulo="Metas e constância"><div className="card stack">
@@ -1467,51 +1434,6 @@ function Orcamento() {
       ${r.fim && r.fim < ym ? html`<span className="badge">Encerrada</span>` : html`<button className="btn sm" onClick=${() => { upd(s => ({ ...s, recs: s.recs.map(x => x.id === r.id ? { ...x, fim: ymOf(hojeS) } : x), tx: s.tx.filter(t => !(t.recId === r.id && t.data > fimMes(ymOf(hojeS)) )) })); toast('Recorrência encerrada neste mês'); }}>Encerrar</button>`}</div>`)}</div>` : html`<${Vazio} t="Nenhuma conta recorrente" d="Ao registrar, ative “Repetir todo mês” em Mais opções (aluguel, internet, salário)." />`}</div><//></div>`;
 }
 const S_ehAuto = A => A.cfg.guardarMes == null;
-
-/* ----- Mentor IA ----- */
-function Mentor() {
-  const { A, upd, hojeS, demo, mentorPre, setMentorPre, ir } = useApp();
-  const [txt, setTxt] = useState(mentorPre || '');
-  const [busy, setBusy] = useState(false), [parcial, setParcial] = useState(''), [erro, setErro] = useState(''), [semIA, setSemIA] = useState(false);
-  const fim = useRef(null), ctl = useRef(null);
-  useEffect(() => { if (mentorPre) setMentorPre(''); }, []);
-  useEffect(() => { fim.current && fim.current.scrollIntoView({ block: 'end' }); }, [A.mentor.length, parcial, busy]);
-  const enviar = async pergunta => {
-    const q = (pergunta != null ? pergunta : txt).trim();
-    if (!q || busy) return;
-    setTxt(''); setErro(''); setParcial(''); setBusy(true);
-    const hist = [...A.mentor, { r: 'u', t: q.slice(0, 1500) }];
-    upd(s => ({ ...s, mentor: hist.slice(-30) }));
-    try {
-      const sample = await usar('sample');
-      if (!sample) { setSemIA(true); return; }
-      ctl.current = new AbortController();
-      const { text } = await sample(montarPrompt(A, hojeS, hist.slice(-10), !!demo), { modelTier: 'default', cache: false, signal: ctl.current.signal, onText: ({ text }) => setParcial(text) });
-      upd(s => ({ ...s, mentor: [...hist, { r: 'a', t: text.trim().slice(0, 3500) }].slice(-30) }));
-    } catch (e) {
-      if (e && e.text) upd(s => ({ ...s, mentor: [...hist, { r: 'a', t: e.text.slice(0, 3500) }].slice(-30) }));
-      const c = e && e.code;
-      setErro(c === 'not_granted' ? 'Você não autorizou o uso do Claude nesta página. Toque em enviar de novo para decidir outra vez.' : c === 'rate_limited' ? 'Muitas perguntas em pouco tempo. Aguarde um instante.' : c === 'aborted' ? 'Resposta interrompida.' : 'Não consegui falar com o Claude agora. Tente de novo em instantes.');
-    } finally { setBusy(false); setParcial(''); }
-  };
-  const SUGS = [{ t: 'Explique meu mês', q: 'Explique meu mês em poucas linhas, com base nos meus dados.' }, { t: 'Onde posso economizar?', q: 'Onde posso reduzir gastos com mais facilidade, olhando meus dados?' }, { t: 'Uma ação pequena para hoje', q: 'Qual é uma ação pequena de até 5 minutos que eu posso fazer hoje?' }, { t: 'Ajude com uma meta', q: 'Quero definir uma meta financeira. Faça perguntas curtas para me ajudar a defini-la.' }, { t: 'Posso fazer uma compra?', pre: 'Quero comprar ____ por R$ ____. Posso?' }];
-  return html`<div className="page"><h1 className="ptitle">Mentor IA</h1>
-    <p className="psub">Usa o seu perfil e os dados registrados aqui. Não inventa números e não faz diagnóstico.</p>
-    ${demo ? html`<div className="note">Modo demonstração: o mentor vai responder com base nos dados de exemplo.</div>` : null}
-    ${A.tx.length === 0 ? html`<div className="info">Você ainda não tem lançamentos. O mentor responde dúvidas gerais, mas as análises ficam melhores depois de alguns registros.</div>` : null}
-    <div className="chat" aria-live="polite">
-      ${A.mentor.length === 0 && !busy ? html`<div className="msg a">Oi! Posso ajudar a avaliar uma compra, olhar para onde o dinheiro foi, ou transformar uma meta em passos pequenos. Por onde quer começar?</div>` : null}
-      ${A.mentor.map((m, i) => html`<div key=${i} className=${'msg ' + m.r}>${m.r === 'a' ? html`<${Md} texto=${m.t} />` : m.t}</div>`)}
-      ${busy ? html`<div className="msg a">${parcial ? html`<${Md} texto=${parcial} />` : html`<span className="dots3" aria-label="Pensando"><span></span><span></span><span></span></span>`}</div>` : null}
-      ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
-      ${semIA ? html`<div className="note">O mentor precisa do Claude, que só responde quando esta página está aberta dentro do Claude. Aqui fora, use o Radar e o “Antes de comprar”, que funcionam sem IA. <button className="link" onClick=${() => ir('radar')}>Abrir o radar</button></div>` : null}
-      <div ref=${fim}></div></div>
-    ${!busy ? html`<div className="chips">${SUGS.map(s => html`<button key=${s.t} className="chip" onClick=${() => s.q ? enviar(s.q) : setTxt(s.pre)}>${s.t}</button>`)}</div>` : null}
-    <form className="composer" onSubmit=${e => { e.preventDefault(); enviar(); }}>
-      <input id="mentor-in" className="inp" aria-label="Sua pergunta" placeholder="Pergunte ao mentor" value=${txt} maxLength="1500" onChange=${e => setTxt(e.target.value)} />
-      ${busy ? html`<button type="button" className="btn" onClick=${() => ctl.current && ctl.current.abort()}>Parar</button>` : html`<button type="submit" className="btn primary" aria-label="Enviar"><${Ico} n="send" s=${18} /></button>`}</form>
-    <div className="row sb xs mut"><span>Cada resposta usa o seu próprio acesso ao Claude e é enviada junto com um resumo dos seus dados.</span>${A.mentor.length ? html`<button className="link" onClick=${() => upd(s => ({ ...s, mentor: [] }))}>Limpar conversa</button>` : null}</div></div>`;
-}
 
 /* ----- Dados e ajustes ----- */
 async function salvarArquivo(nome, dados) {
@@ -1575,40 +1497,284 @@ function Dados() {
         : html`<div className="note">Isso apaga lançamentos, metas e hábitos deste app e da sua conta. Exporte um backup antes se quiser guardar.<div className="row" style=${{ marginTop: 8 }}><button className="btn danger sm" onClick=${() => { const tema = S.cfg.tema; const novo = estadoInicial(); novo.cfg.tema = tema; substituir(novo); setApagar(false); toast('Dados apagados'); }}>Sim, apagar tudo</button><button className="btn sm" onClick=${() => setApagar(false)}>Cancelar</button></div></div>`}</section></div>`;
 }
 
-function Mais() {
+/* ===== TELAS NOVAS (vidro, cápsulas, navegação flutuante) ===== */
+const ICONE_CAT = { c_moradia: 'home', c_mercado: 'cart', c_contas: 'file', c_transp: 'car', c_saude: 'heart', c_educ: 'book', c_rest: 'fork', c_lazer: 'spark', c_compras: 'bag', c_assin: 'repeat', c_cuid: 'spark', c_outros: 'bag', c_meta: 'target' };
+const ICONE_META = { reserva: 'shield', divida: 'wallet', compra: 'bag', projeto: 'target', invest: 'chart' };
+
+// Número que "rola" até o novo valor (respeita prefers-reduced-motion)
+function useCountUp(alvo) {
+  const [v, setV] = useState(alvo), ant = useRef(alvo);
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(alvo); ant.current = alvo; return; }
+    const ini = ant.current, t0 = performance.now(); let raf;
+    const f = t => { const k = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(1 - k, 3); setV(Math.round(ini + (alvo - ini) * e)); if (k < 1) raf = requestAnimationFrame(f); else ant.current = alvo; };
+    raf = requestAnimationFrame(f);
+    return () => cancelAnimationFrame(raf);
+  }, [alvo]);
+  return v;
+}
+function BigNum({ v }) {
+  const neg = v < 0, a = Math.abs(v);
+  return html`<span className="bignum num">${neg ? '−' : ''}<small>R$</small>${Math.floor(a / 100).toLocaleString('pt-BR')}<small>,${pad(a % 100)}</small></span>`;
+}
+const Abas = ({ valor, opcoes, onChange, rotulo }) => html`<div className="tabs" role="tablist" aria-label=${rotulo}>${opcoes.map(o => html`<button key=${o.v} role="tab" aria-selected=${valor === o.v} onClick=${() => onChange(o.v)}>${o.t}</button>`)}</div>`;
+
+function Cabecalho() {
   const { ir } = useApp();
-  const itens = ROTAS.filter(r => ['mentor', 'comprar', 'radar', 'relat', 'orc', 'dados'].includes(r.id));
-  const D = { mentor: 'Converse sobre compras, gastos e metas', comprar: 'Avalie uma compra em 30 segundos', radar: 'Padrões e alertas dos seus gastos', relat: 'Resumos semanais e mensais', orc: 'Renda, categorias e contas recorrentes', dados: 'Backup, importação, perfil e tema' };
-  return html`<div className="page"><h1 className="ptitle">Mais</h1><div className="stack">${itens.map(r => html`<button key=${r.id} className="menu-item" onClick=${() => ir(r.id)}><span className="ic"><${Ico} n=${r.i} s=${21} /></span><span style=${{ flex: 1 }}><strong>${r.n}</strong><span className="sm mut">${D[r.id]}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div></div>`;
+  return html`<header className="pagehead"><div className="brand"><${Logo} /><div><div className="bname">FINANCE MIND</div><div className="btag">Seu dinheiro. Seu futuro.</div></div></div><div className="grow"></div>
+    <button className="avatar" aria-label="Dados e ajustes" onClick=${() => ir('dados')}><${Ico} n="user" s=${22} /></button></header>`;
+}
+function Saudacao() {
+  const h = new Date().getHours(), t = h < 12 ? 'Bom dia!' : h < 18 ? 'Boa tarde!' : 'Boa noite!';
+  return html`<div className="greet"><div className="oi">Olá,</div><div className="dia">${t}<${Ico} n=${h >= 18 || h < 5 ? 'moon' : 'sun'} s=${30} /></div><p>Aqui está a sua situação financeira deste mês.</p></div>`;
+}
+
+/* ----- Início ----- */
+function Inicio() {
+  const { aba, setAba } = useApp(), a = aba.inicio;
+  return html`<div className="page">
+    <${Abas} rotulo="Início" valor=${a} onChange=${v => setAba('inicio', v)} opcoes=${[{ v: 'geral', t: 'Visão geral' }, { v: 'hist', t: 'Histórico' }, { v: 'orc', t: 'Orçamento' }]} />
+    ${a === 'geral' ? html`<${VisaoGeral} />` : a === 'hist' ? html`<div className="tabbed stack"><${Movimentos} /></div>` : html`<div className="tabbed stack"><${Orcamento} /></div>`}</div>`;
+}
+function VisaoGeral() {
+  const { A, upd, abrir, ir, hojeS, entrarDemo, toast, setFm, setAba } = useApp();
+  const ym = ymOf(hojeS);
+  const R = useMemo(() => resumoMes(A, ym), [A, ym]);
+  const O = useMemo(() => orcamento(A, ym, hojeS), [A, ym, hojeS]);
+  const pend = useMemo(() => pendentes(A, hojeS), [A, hojeS]);
+  const acao = useMemo(() => acaoDoDia(A, hojeS), [A, hojeS]);
+  const lemb = useMemo(() => lembretes(A, hojeS), [A, hojeS]);
+  const totalPend = soma(pend, t => t.valor), saldo = saldoAtual(A), saldoAnim = useCountUp(saldo);
+  const [renda, setRenda] = useState(0);
+  const diasRest = diasMes(ym) - +hojeS.slice(8, 10) + 1, vazio = A.tx.length === 0;
+  const cm = catMap(A), top = Object.entries(R.porCat).sort((x, y) => y[1] - x[1]).slice(0, 4);
+  const metasAtivas = A.metas.filter(m => m.atual < m.alvo).slice(0, 2);
+  const fazer = x => {
+    if (x.t === 'lanc') abrir('lanc'); else if (x.t === 'ir') ir(x.r); else if (x.t === 'revisao') abrir('revisao');
+    else if (x.t === 'pagar') { upd(s => ({ ...s, tx: s.tx.map(t => t.id === x.id ? { ...t, pago: true } : t) })); toast('Conta marcada como paga'); }
+    else if (x.t === 'nada') { upd(s => marca(s, hojeS, 'nada')); toast('Anotado: nenhum gasto hoje'); }
+    else if (x.t === 'check') { upd(s => marca(s, hojeS, x.k)); toast('Check-in feito'); }
+  };
+  return html`<${Frag}>
+    <${Saudacao} />
+    ${vazio && !A.cfg.onboard ? html`<section className="card stack"><h2>Comece em 30 segundos</h2>
+      <p className="mut">Dois passos bastam. O resto o app vai pedindo aos poucos.</p>
+      <div className="field"><label htmlFor="on-renda">1 · Quanto você recebe por mês? (opcional)</label><${Dinheiro} id="on-renda" valor=${renda} onChange=${setRenda} /></div>
+      <button className="btn primary" onClick=${() => { upd(s => ({ ...s, cfg: { ...s.cfg, rendaMensal: renda, onboard: true } })); abrir('lanc'); }}>2 · Registrar meu primeiro gasto</button>
+      <button className="link" style=${{ textAlign: 'left' }} onClick=${entrarDemo}>Prefiro ver o app com dados de exemplo antes</button></section>` : null}
+    <section className="hero" aria-label="Situação financeira">
+      <div className="row sb" style=${{ flexWrap: 'nowrap', alignItems: 'flex-start' }}><div><div className="lbl">Saldo disponível<${Ico} n="info" s=${15} /></div><${BigNum} v=${saldoAnim} /></div><span className="walleticon"><${Ico} n="wallet" s=${24} /></span></div>
+      <div className="sub" style=${{ marginTop: 4 }}>${pend.length ? `Depois das contas a pagar (${fmt(totalPend)}): ${fmt(saldo - totalPend)}` : 'Sem contas a pagar neste momento.'}</div>
+      <div style=${{ marginTop: 18 }}>${O.definido ? html`<${Frag}>
+        <div className="row sb num" style=${{ flexWrap: 'nowrap', gap: 12 }}><span className="sub">Livre para gastos flexíveis: <strong style=${{ color: 'var(--hero-ink)' }}>${O.disp >= 0 ? fmt(O.disp) : '−' + fmt(-O.disp)}</strong> de ${fmt(O.total)}</span><strong>${O.pct}%</strong></div>
+        <${BarraOrc} pct=${O.pct} />
+        <div className="sub num">${O.disp > 0 ? `Cerca de ${fmt(Math.floor(O.disp / diasRest))} por dia até o fim do mês` : O.disp < 0 ? `Passou ${fmt(-O.disp)} do orçamento flexível` : 'Orçamento flexível todo usado'}</div><//>`
+        : html`<${Frag}><div className="sub">Informe sua renda mensal para ver quanto pode gastar livremente.</div><button className="btn light sm" style=${{ marginTop: 10 }} onClick=${() => ir('orc')}>Definir renda mensal</button><//>`}</div>
+    </section>
+    <div className="duo">
+      <div className="stat"><span className="ico r"><${Ico} n="down" s=${20} /></span><div><div className="k">Receitas</div><div className="v num">${fmt(R.recTotal)}</div>${R.recPrev ? html`<div className="s num">${fmt(R.recPrev)} a receber</div>` : null}</div></div>
+      <div className="stat"><span className="ico d"><${Ico} n="up" s=${20} /></span><div><div className="k">Despesas</div><div className="v num">${fmt(R.dspTotal)}</div>${R.dspPrev ? html`<div className="s num">${fmt(R.dspPrev)} a pagar</div>` : null}</div></div>
+    </div>
+    <${Secao} titulo="Suas principais despesas" acao=${html`<button className="link" onClick=${() => ir('mov')}>Ver todas<${Ico} n="chevR" s=${15} /></button>`}>
+      ${top.length ? html`<div className="catsrow">${top.map(([id, v]) => { const c = cm[id] || {}; return html`<button key=${id} className="catbtn" onClick=${() => { setFm(f => ({ ...f, cat: id, per: 'mes', ym, tipo: 'todos', q: '' })); ir('mov'); }}><span className="c"><${Ico} n=${ICONE_CAT[id] || 'bag'} s=${24} /></span><span className="n">${(c.nome || 'Sem categoria').split(' ')[0]}</span><span className="vv num">R$ ${Math.round(v / 100).toLocaleString('pt-BR')}</span></button>`; })}</div>`
+        : html`<div className="card"><p className="mut sm" style=${{ textAlign: 'center' }}>As categorias que mais pesam aparecem aqui depois dos primeiros gastos do mês.</p></div>`}<//>
+    <section aria-label="Ação recomendada para hoje" className="stack" style=${{ gap: 6 }}>
+      <button className="acao-card" aria-label=${acao.botao + ': ' + acao.titulo} onClick=${() => fazer(acao.acao)}><span className="t"><${Ico} n="target" s=${24} /></span><span className="grow"><span className="k" style=${{ display: 'block' }}>Sua ação de hoje</span><span className="h" style=${{ display: 'block' }}>${acao.titulo}</span><span className="d" style=${{ display: 'block' }}>${acao.texto}</span></span><span className="go"><${Ico} n="chevR" s=${18} /></span></button>
+      ${acao.alt ? html`<button className="link" style=${{ alignSelf: 'center' }} onClick=${() => fazer(acao.alt.acao)}>${acao.alt.botao}</button>` : null}</section>
+    <button className="btn primary big" onClick=${() => abrir('lanc')}><${Ico} n="plus" s=${20} />Registrar nova movimentação</button>
+    ${metasAtivas.length ? html`<${Secao} titulo="Metas" acao=${html`<button className="link" onClick=${() => ir('metas')}>Ver todas<${Ico} n="chevR" s=${15} /></button>`}><div className="card stack">${metasAtivas.map(m => { const c = metaCalc(m, hojeS); return html`<div key=${m.id} className="meta-mini"><div className="t"><span>${m.nome}</span><span className="num">${c.pct}%</span></div><${BarraOrc} pct=${c.pct} claro /><div className="xs mut num">${fmt(m.atual)} de ${fmt(m.alvo)}${c.mensal ? ` · ${fmt(c.mensal)}/mês` : ''}</div></div>`; })}</div><//>` : null}
+    ${lemb.length ? html`<${Secao} titulo="Lembretes"><div className="card"><div className="lista">${lemb.slice(0, 3).map(l => html`<button key=${l.id} className="item" onClick=${() => ir(l.rota)}><span className="dot" style=${{ background: 'var(--petrol)' }}><${Ico} n=${l.icone} s=${17} /></span><span className="mid"><span className="t" style=${{ whiteSpace: 'normal' }}>${l.texto}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div><div className="xs mut" style=${{ marginTop: 8 }}>Lembretes aparecem quando você abre o app. Não há notificações no celular.</div></div><//>` : null}
+  <//>`;
+}
+
+/* ----- Finanças ----- */
+function Financas() {
+  const { aba, setAba } = useApp(), a = aba.fin;
+  return html`<div className="page">
+    <${Abas} rotulo="Finanças" valor=${a} onChange=${v => setAba('fin', v)} opcoes=${[{ v: 'comprar', t: 'Antes de comprar' }, { v: 'relat', t: 'Relatórios' }]} />
+    <div className="tabbed stack">${a === 'comprar' ? html`<${Comprar} />` : html`<${Relatorios} />`}</div></div>`;
+}
+
+/* ----- Metas e desafios ----- */
+function alternarDesafioHoje(des, hojeS, upd, toast) {
+  const feito = des.feitos.includes(hojeS), novo = feito ? des.feitos.filter(d => d !== hojeS) : [...des.feitos, hojeS];
+  if (novo.length >= 7) { upd(s => ({ ...s, hab: { ...s.hab, desafio: null, desafiosFeitos: [...s.hab.desafiosFeitos, { id: des.id, fim: hojeS }] } })); toast('Desafio concluído!'); }
+  else upd(s => ({ ...s, hab: { ...s.hab, desafio: { ...des, feitos: novo } } }));
+}
+function DesafioCard() {
+  const { A, upd, hojeS, toast, abrir } = useApp();
+  const des = A.hab.desafio, d = des && DESAFIOS.find(x => x.id === des.id);
+  const seg = segunda(hojeS), dias = Array.from({ length: 7 }, (_, i) => addDias(seg, i));
+  if (!des || !d) return html`<div className="card stack"><div className="row" style=${{ flexWrap: 'nowrap' }}><span className="acao-card t" style=${{ display: 'grid', width: 50, height: 50, borderRadius: 18, placeItems: 'center', flex: 'none', border: '1px solid var(--line)' }}><${Ico} n="calendar" s=${22} /></span><div><h3>Desafio da semana</h3><div className="sm mut">Um passo pequeno por dia, sem precisar de sequência.${A.hab.desafiosFeitos.length ? ` Você já concluiu ${A.hab.desafiosFeitos.length}.` : ''}</div></div></div><button className="btn primary" onClick=${() => abrir('desafios')}>Escolher um desafio</button></div>`;
+  const hojeFeito = des.feitos.includes(hojeS);
+  return html`<div className="card stack">
+    <div className="row sb" style=${{ flexWrap: 'nowrap' }}><div className="row" style=${{ flexWrap: 'nowrap' }}><span style=${{ width: 46, height: 46, borderRadius: 17, display: 'grid', placeItems: 'center', border: '1px solid var(--line)', background: 'var(--glass2)', flex: 'none' }}><${Ico} n="calendar" s=${22} /></span><div><div className="xs mut">Desafio da semana</div><h3>${d.nome}</h3></div></div><strong className="num" style=${{ whiteSpace: 'nowrap' }}>${des.feitos.length} de 7 dias</strong></div>
+    <div className="daydots" aria-label="Dias desta semana">${dias.map((dt, i) => html`<div key=${dt}><span>${['S', 'T', 'Q', 'Q', 'S', 'S', 'D'][i]}</span><i className=${(des.feitos.includes(dt) ? 'on ' : '') + (dt === hojeS ? 'hoje' : '')}><${Ico} n="check" s=${16} /></i></div>`)}</div>
+    <button className=${'check' + (hojeFeito ? ' done' : '')} onClick=${() => alternarDesafioHoje(des, hojeS, upd, toast)}><span className=${'pago' + (hojeFeito ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span className="tt" style=${{ fontWeight: 600 }}>${d.tarefa}</span></button>
+    <div className="row sb"><span className="xs mut">Sem prazo: os 7 dias não precisam ser seguidos.</span><button className="link" onClick=${() => abrir('desafios')}>Trocar</button></div></div>`;
+}
+function MetasPage() {
+  const { aba, setAba, abrir } = useApp(), a = aba.metas;
+  return html`<div className="page">
+    <${Abas} rotulo="Metas" valor=${a} onChange=${v => setAba('metas', v)} opcoes=${[{ v: 'metas', t: 'Metas' }, { v: 'desafios', t: 'Desafios' }, { v: 'plan', t: 'Planejamento' }]} />
+    <div className="row sb" style=${{ flexWrap: 'nowrap' }}><div><h1 className="ptitle">${a === 'metas' ? 'Minhas metas' : a === 'desafios' ? 'Desafios' : 'Planejamento'}</h1><p className="psub" style=${{ marginTop: 0 }}>${a === 'metas' ? 'Construa hoje o seu futuro.' : a === 'desafios' ? 'Pequenos passos, no seu ritmo.' : 'Olhe para a semana e para o mês.'}</p></div>
+      ${a === 'metas' ? html`<button className="icon-btn solid" aria-label="Nova meta" onClick=${() => abrir('meta')}><${Ico} n="plus" s=${24} /></button>` : null}</div>
+    ${a === 'metas' ? html`<${MetasLista} />` : a === 'desafios' ? html`<${DesafiosTab} />` : html`<${PlanejamentoTab} />`}</div>`;
+}
+function MetasLista() {
+  const { A, abrir, hojeS, ir, setAba } = useApp();
+  const ativas = A.metas.filter(m => m.atual < m.alvo).sort((x, y) => (x.prazo || '9999').localeCompare(y.prazo || '9999'));
+  const concl = A.metas.filter(m => m.atual >= m.alvo), cn = useMemo(() => constancia(A, hojeS), [A, hojeS]);
+  const [p, ...outras] = ativas;
+  const c = p && metaCalc(p, hojeS);
+  const valorAnim = useCountUp(p ? p.atual : 0);
+  return html`<${Frag}>
+    ${p ? html`<section className="metahero" aria-label=${'Meta principal: ' + p.nome}>
+      <div className="top"><span className="walleticon"><${Ico} n=${ICONE_META[p.tipo] || 'target'} s=${22} /></span>${p.nome}</div>
+      <div className="mid"><div><${BigNum} v=${valorAnim} /><div className="sub num">de ${fmt(p.alvo)}</div></div><div className="ringS" style=${{ '--p': c.pct }} role="img" aria-label=${c.pct + '% alcançado'}><b>${c.pct}%</b></div></div>
+      <${BarraOrc} pct=${c.pct} />
+      <div className="foot num"><span>Faltam ${fmt(c.rest)}</span><span>${c.vencida ? 'Prazo passou' : p.prazo ? `Prazo: ${c.meses} ${c.meses === 1 ? 'mês' : 'meses'}` : c.eta ? `Cerca de ${c.eta} ${c.eta === 1 ? 'mês' : 'meses'}` : 'Sem prazo'}</span></div>
+      <div className="chipc"><${Ico} n="check" s=${14} />${cn.ativos30} ${cn.ativos30 === 1 ? 'dia' : 'dias'} de constância${cn.base < 30 ? '' : ' em 30 dias'}</div>
+      <button className="btn light" onClick=${() => abrir('metadet', { id: p.id })}>Ver detalhes<${Ico} n="chevR" s=${16} /></button></section>`
+      : html`<div className="card"><${Vazio} t=${concl.length ? 'Todas as metas concluídas' : 'Metas dão direção ao dinheiro'} d="Reserva de emergência, quitar uma dívida, uma viagem. O app calcula quanto guardar por mês."><button className="btn primary" onClick=${() => abrir('meta')}>Criar uma meta</button><//></div>`}
+    <${Secao} titulo="Meus desafios" acao=${html`<button className="link" onClick=${() => setAba('metas', 'desafios')}>Ver todos<${Ico} n="chevR" s=${15} /></button>`}><${DesafioCard} /><//>
+    ${outras.length ? html`<${Secao} titulo=${outras.length === 1 ? 'Próxima meta' : 'Próximas metas'}>${outras.map(m => { const k = metaCalc(m, hojeS); return html`<button key=${m.id} className="metarow" onClick=${() => abrir('metadet', { id: m.id })}><span className="t"><${Ico} n=${ICONE_META[m.tipo] || 'target'} s=${24} /></span><span className="grow"><span className="n" style=${{ display: 'block' }}>${m.nome}</span><span className="xs mut num" style=${{ display: 'block' }}>${fmt(m.atual)} de ${fmt(m.alvo)}</span><${BarraOrc} pct=${k.pct} claro /></span><strong className="num">${k.pct}%</strong></button>`; })}<//>` : null}
+    ${concl.length ? html`<${Secao} titulo="Concluídas"><div className="card"><div className="lista">${concl.map(m => html`<button key=${m.id} className="item" onClick=${() => abrir('metadet', { id: m.id })}><span className="mid"><span className="t">${m.nome}</span><span className="d">${fmt(m.alvo)}${m.concluidaEm ? ' · concluída em ' + fmtData(m.concluidaEm) : ''}</span></span><span className="badge ok">Concluída</span></button>`)}</div></div><//>` : null}
+  <//>`;
+}
+function DesafiosTab() {
+  const { A, upd, abrir, hojeS } = useApp();
+  const c = useMemo(() => constancia(A, hojeS), [A, hojeS]);
+  const dia = A.hab.dias[hojeS] || {};
+  const marcaK = (k, v) => upd(s => ({ ...s, hab: { ...s.hab, dias: { ...s.hab.dias, [hojeS]: { ...(s.hab.dias[hojeS] || {}), [k]: v } } } }));
+  const ITENS = [{ k: 'ver', t: 'Ver quanto ainda posso gastar', d: 'Olhe o cartão verde do Início. 20 segundos.' }, { k: 'reg', t: 'Registrar o que gastei hoje', d: 'Pode ser só o último gasto de que lembra. Registrar um lançamento marca sozinho.' }, { k: 'contas', t: 'Conferir as contas dos próximos dias', d: 'Veja “A pagar” no Histórico.' }];
+  const feitos = ITENS.filter(i => dia[i.k]).length, ultimos = Array.from({ length: 28 }, (_, i) => addDias(hojeS, i - 27));
+  return html`<${Frag}>
+    ${c.diasDesde != null && c.diasDesde >= 3 ? html`<div className="info"><strong>Bem-vindo de volta.</strong> Aqui não existe sequência para quebrar. Registre o último gasto de que lembrar e já conta.<div style=${{ marginTop: 10 }}><button className="btn primary sm" onClick=${() => abrir('lanc')}>Registrar agora</button></div></div>` : null}
+    <${DesafioCard} />
+    <${Secao} titulo="Check-in de hoje (3 min)"><div className="card">
+      <div className="lista">${ITENS.map(i => html`<button key=${i.k} className=${'check' + (dia[i.k] ? ' done' : '')} onClick=${() => marcaK(i.k, !dia[i.k])}><span className=${'pago' + (dia[i.k] ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span><span className="tt" style=${{ fontWeight: 700, display: 'block' }}>${i.t}</span><span className="xs mut">${i.d}</span></span></button>`)}
+        <button className=${'check' + (dia.nada ? ' done' : '')} onClick=${() => marcaK('nada', !dia.nada)}><span className=${'pago' + (dia.nada ? ' on' : '')}><${Ico} n="check" s=${15} /></span><span><span className="tt" style=${{ fontWeight: 700, display: 'block' }}>Hoje não gastei nada</span><span className="xs mut">Também conta como registro do dia.</span></span></button></div>
+      <div className="xs mut" style=${{ marginTop: 8 }}>${feitos === 3 ? 'Check-in completo. Pode fechar o app.' : `${feitos} de 3 feitos. Fazer só um já vale.`}</div></div><//>
+    <${Secao} titulo="Constância"><div className="card stack">
+      <div className="row" style=${{ gap: 16 }}><div className="ring" style=${{ '--p': c.pct }}><b className="num">${c.pct}%</b></div>
+        <div className="stack" style=${{ gap: 4, flex: 1, minWidth: 160 }}><div><strong>${c.ativos30} ${c.ativos30 === 1 ? 'dia' : 'dias'}</strong> com acompanhamento${c.base < 30 ? ` desde o início (${c.base} ${c.base === 1 ? 'dia' : 'dias'})` : ' nos últimos 30'}</div><div><strong>${c.revisoes4} de 4</strong> revisões semanais nas últimas 4 semanas</div><div className="xs mut">Dias sem registro não zeram nada. O que conta é voltar.</div></div></div>
+      <div><div className="xs mut" style=${{ marginBottom: 6 }}>Últimos 28 dias</div><div className="dots" role="img" aria-label=${`${ultimos.filter(d => c.set.has(d)).length} dias com acompanhamento nos últimos 28`}>${ultimos.map(d => html`<i key=${d} className=${(c.set.has(d) ? 'on' : '') + (d === hojeS ? ' hoje' : '')} title=${fmtData(d)}></i>`)}</div></div></div><//>
+  <//>`;
+}
+function PlanejamentoTab() {
+  const { A, upd, abrir, hojeS, ir } = useApp();
+  const ym = ymOf(hojeS), metasMes = A.hab.metasMes[ym] || [], [nova, setNova] = useState('');
+  const setMetasMes = f => upd(s => ({ ...s, hab: { ...s.hab, metasMes: { ...s.hab.metasMes, [ym]: f(s.hab.metasMes[ym] || []) } } }));
+  const SUG = ['Registrar gastos em pelo menos 20 dias', 'Manter o orçamento flexível abaixo de 100%', 'Fazer as 4 revisões semanais', 'Aportar em uma meta pelo menos uma vez'];
+  const rv = A.hab.semanas[segunda(hojeS)] || {};
+  return html`<${Frag}>
+    <${Secao} titulo="Revisão semanal (10 min)"><div className="card stack">
+      ${rv.feita ? html`<div className="info">Revisão desta semana feita em ${fmtData(rv.feita)}.${rv.b ? ` Ajuste escolhido: “${rv.b}”.` : ''}</div>` : html`<p className="mut">Olhe a semana, confira as contas dos próximos dias e escolha um ajuste pequeno.</p>`}
+      <button className="btn primary" onClick=${() => abrir('revisao')}>${rv.feita ? 'Rever ou editar' : 'Começar a revisão'}</button></div><//>
+    <${Secao} titulo=${`Metas de ${MESES[+ym.slice(5) - 1]}`}><div className="card stack">
+      ${metasMes.length ? html`<div className="lista">${metasMes.map(g => html`<div key=${g.id} className=${'check' + (g.ok ? ' done' : '')} style=${{ alignItems: 'center' }}><button className=${'pago' + (g.ok ? ' on' : '')} aria-label=${g.ok ? 'Desmarcar' : 'Marcar como feita'} onClick=${() => setMetasMes(l => l.map(x => x.id === g.id ? { ...x, ok: !x.ok } : x))}><${Ico} n="check" s=${15} /></button><span className="tt" style=${{ flex: 1, fontWeight: 700 }}>${g.t}</span><button className="icon-btn" style=${{ width: 34, height: 34 }} aria-label="Remover meta do mês" onClick=${() => setMetasMes(l => l.filter(x => x.id !== g.id))}><${Ico} n="x" s=${15} /></button></div>`)}</div>` : html`<p className="mut sm">Escolha de 1 a 3 metas simples para o mês.</p>`}
+      <div className="chips">${SUG.filter(s => !metasMes.some(g => g.t === s)).map(s => html`<button key=${s} className="chip" onClick=${() => setMetasMes(l => [...l, { id: uid(), t: s, ok: false }])}><${Ico} n="plus" s=${14} />${s}</button>`)}</div>
+      <form className="row" style=${{ flexWrap: 'nowrap' }} onSubmit=${e => { e.preventDefault(); if (nova.trim()) { setMetasMes(l => [...l, { id: uid(), t: nova.trim().slice(0, 100), ok: false }]); setNova(''); } }}><input id="mm-nova" className="inp" aria-label="Nova meta do mês" placeholder="Escrever a minha" maxLength="100" value=${nova} onChange=${e => setNova(e.target.value)} /><button className="btn" type="submit">Adicionar</button></form></div><//>
+    <button className="btn" onClick=${() => ir('orc')}><${Ico} n="wallet" s=${18} />Ajustar orçamento e categorias</button>
+  <//>`;
+}
+function SheetMetaDet({ init }) {
+  const { A, upd, abrir, fechar, hojeS, toast } = useApp();
+  const m = A.metas.find(x => x.id === init.id);
+  if (!m) return null;
+  const c = metaCalc(m, hojeS);
+  return html`<${Sheet} titulo=${m.nome} onClose=${fechar}>
+    <div className="row sb"><span className="mut sm">${TIPOS_META[m.tipo]}${m.prazo ? ` · até ${fmtData(m.prazo)}` : ''}</span>${c.concluida ? html`<span className="badge ok">Concluída</span>` : c.vencida ? html`<span className="badge warn">Prazo passou</span>` : null}</div>
+    <div><div className="row sb"><strong className="num" style=${{ fontSize: 24 }}>${fmt(m.atual)}</strong><span className="mut num">de ${fmt(m.alvo)}</span></div><${BarraOrc} pct=${c.pct} claro /><div className="xs mut">${c.pct}% ${m.tipo === 'divida' ? 'quitado' : 'alcançado'}</div></div>
+    ${!c.concluida ? html`<div className="info num">${c.mensal ? (m.prazo ? `Faltam ${fmt(c.rest)}. Para chegar no prazo: ${fmt(c.mensal)} por mês (${c.meses} ${c.meses === 1 ? 'mês' : 'meses'}).` : `Faltam ${fmt(c.rest)}. Guardando ${fmt(c.mensal)} por mês, leva cerca de ${c.eta} ${c.eta === 1 ? 'mês' : 'meses'}.`) : `Faltam ${fmt(c.rest)}. Defina um prazo ou um valor mensal para calcular o ritmo.`}</div>` : null}
+    <div className="row">${!c.concluida ? html`<button className="btn primary" onClick=${() => abrir('aporte', { id: m.id })}>${m.tipo === 'divida' ? 'Registrar pagamento' : 'Aportar'}</button>` : null}<button className="btn" onClick=${() => abrir('meta', { id: m.id })}><${Ico} n="edit" s=${16} />Editar</button></div>
+    ${m.aportes.length ? html`<div><div className="lbl2" style=${{ marginBottom: 4 }}>Histórico</div><div className="lista">${[...m.aportes].sort((a, b) => b.data.localeCompare(a.data)).map(a => html`<div key=${a.id} className="item"><span className="mid"><span className="t">${fmtData(a.data)}</span></span><span className="val num">${fmt(a.valor)}</span><button className="icon-btn" style=${{ width: 36, height: 36 }} aria-label="Remover aporte" onClick=${() => { upd(s => ({ ...s, tx: s.tx.filter(t => t.id !== a.txId), metas: s.metas.map(x => x.id === m.id ? { ...x, atual: Math.max(0, x.atual - a.valor), aportes: x.aportes.filter(y => y.id !== a.id), concluidaEm: null } : x) })); toast('Aporte removido'); }}><${Ico} n="trash" s=${16} /></button></div>`)}</div></div>` : null}
+  <//>`;
+}
+function SheetDesafios() {
+  const { upd, fechar, hojeS, toast } = useApp();
+  return html`<${Sheet} titulo="Escolha um desafio" onClose=${fechar}><p className="mut sm">Cada desafio tem 7 dias feitos, em qualquer ordem. Dá para trocar quando quiser.</p>
+    <div className="lista">${DESAFIOS.map(d => html`<button key=${d.id} className="item" onClick=${() => { upd(s => ({ ...s, hab: { ...s.hab, desafio: { id: d.id, inicio: hojeS, feitos: [] } } })); toast('Desafio iniciado'); fechar(); }}><span className="mid"><span className="t" style=${{ whiteSpace: 'normal' }}>${d.nome}</span><span className="d" style=${{ whiteSpace: 'normal' }}>${d.desc}</span></span><${Ico} n="chevR" s=${16} /></button>`)}</div><//>`;
+}
+
+/* ----- Mentor IA / Insights ----- */
+function MentorPage() {
+  const { aba, setAba } = useApp(), a = MENTOR ? aba.mentor : 'insights';
+  return html`<div className="page">
+    ${MENTOR ? html`<${Abas} rotulo="Mentor" valor=${a} onChange=${v => setAba('mentor', v)} opcoes=${[{ v: 'chat', t: 'Chat' }, { v: 'insights', t: 'Meus insights' }]} />` : null}
+    ${a === 'chat' ? html`<${MentorChat} />` : html`<div className="tabbed stack"><${Radar} /></div>`}</div>`;
+}
+function MentorChat() {
+  const { A, upd, hojeS, demo, mentorPre, setMentorPre, ir } = useApp();
+  const [txt, setTxt] = useState(mentorPre || '');
+  const [busy, setBusy] = useState(false), [parcial, setParcial] = useState(''), [erro, setErro] = useState(''), [semIA, setSemIA] = useState(false);
+  const fim = useRef(null), ctl = useRef(null), conversando = A.mentor.length > 0 || busy;
+  useEffect(() => { if (mentorPre) setMentorPre(''); }, []);
+  useEffect(() => { if (conversando && fim.current) fim.current.scrollIntoView({ block: 'end' }); }, [A.mentor.length, parcial, busy]);
+  const enviar = async pergunta => {
+    const q = (pergunta != null ? pergunta : txt).trim();
+    if (!q || busy) return;
+    setTxt(''); setErro(''); setParcial(''); setBusy(true);
+    const hist = [...A.mentor, { r: 'u', t: q.slice(0, 1500) }];
+    upd(s => ({ ...s, mentor: hist.slice(-30) }));
+    try {
+      const sample = await usar('sample');
+      if (!sample) { setSemIA(true); return; }
+      ctl.current = new AbortController();
+      const { text } = await sample(montarPrompt(A, hojeS, hist.slice(-10), !!demo), { modelTier: 'default', cache: false, signal: ctl.current.signal, onText: ({ text }) => setParcial(text) });
+      upd(s => ({ ...s, mentor: [...hist, { r: 'a', t: text.trim().slice(0, 3500) }].slice(-30) }));
+    } catch (e) {
+      if (e && e.text) upd(s => ({ ...s, mentor: [...hist, { r: 'a', t: e.text.slice(0, 3500) }].slice(-30) }));
+      const c = e && e.code;
+      setErro(c === 'not_granted' ? 'Você não autorizou o uso do Claude nesta página. Toque em enviar de novo para decidir outra vez.' : c === 'rate_limited' ? 'Muitas perguntas em pouco tempo. Aguarde um instante.' : c === 'aborted' ? 'Resposta interrompida.' : 'Não consegui falar com o Claude agora. Tente de novo em instantes.');
+    } finally { setBusy(false); setParcial(''); }
+  };
+  const SUGS = [{ i: 'chart', t: 'Como está o meu orçamento este mês?', q: 'Como está o meu orçamento este mês? Explique em poucas linhas, com base nos meus dados.' }, { i: 'cart', t: 'Vale a pena fazer esta compra?', pre: 'Quero comprar ____ por R$ ____. Vale a pena?' }, { i: 'target', t: 'Como posso economizar mais neste mês?', q: 'Onde posso reduzir gastos com mais facilidade, olhando meus dados?' }, { i: 'spark', t: 'Me dê uma ação pequena para hoje', q: 'Qual é uma ação pequena de até 5 minutos que eu posso fazer hoje?' }, { i: 'shield', t: 'Me ajude a planejar minha reserva de emergência', q: 'Me ajude a planejar uma reserva de emergência. Faça perguntas curtas se precisar de algum dado.' }];
+  return html`<${Frag}>
+    ${conversando ? null : html`<div><h1 className="mtitle">Seu mentor financeiro<${Ico} n="spark" s=${30} /></h1><p className="mut" style=${{ marginTop: 10 }}>Converse sobre suas finanças, tire dúvidas, analise compras e receba orientações personalizadas. Não faço diagnósticos nem promessas de ganho.</p></div>`}
+    ${demo ? html`<div className="note">Modo demonstração: o mentor responde com base nos dados de exemplo.</div>` : null}
+    ${conversando ? html`<div className="chat" aria-live="polite">
+      ${A.mentor.map((m, i) => html`<div key=${i} className=${'msg ' + m.r}>${m.r === 'a' ? html`<${Md} texto=${m.t} />` : m.t}</div>`)}
+      ${busy ? html`<div className="msg a">${parcial ? html`<${Md} texto=${parcial} />` : html`<span className="dots3" aria-label="Pensando"><span></span><span></span><span></span></span>`}</div>` : null}
+      ${erro ? html`<div className="err" role="alert">${erro}</div>` : null}
+      ${semIA ? html`<div className="note">O mentor precisa do Claude, que só responde com esta página aberta dentro dele. Aqui fora, os insights e o “Antes de comprar” funcionam sem IA. <button className="link" onClick=${() => ir('radar')}>Ver insights</button></div>` : null}
+      <div ref=${fim}></div></div>` : null}
+    ${!busy ? (conversando ? html`<div className="chips">${SUGS.slice(0, 4).map(s => html`<button key=${s.t} className="chip" onClick=${() => s.q ? enviar(s.q) : setTxt(s.pre)}>${s.t}</button>`)}</div>`
+      : html`<div className="stack">${SUGS.slice(0, 4).map(s => html`<button key=${s.t} className="sug" onClick=${() => s.q ? enviar(s.q) : setTxt(s.pre)}><span className="t"><${Ico} n=${s.i} s=${22} /></span><span className="x">${s.t}</span><${Ico} n="chevR" s=${16} /></button>`)}</div>`) : null}
+    <form className="composer-glass" onSubmit=${e => { e.preventDefault(); enviar(); }}>
+      <input id="mentor-in" aria-label="Sua mensagem" placeholder="Digite sua mensagem..." value=${txt} maxLength="1500" onChange=${e => setTxt(e.target.value)} />
+      ${busy ? html`<button type="button" className="btn sm" onClick=${() => ctl.current && ctl.current.abort()}>Parar</button>` : html`<button type="submit" className="sendbtn" aria-label="Enviar"><${Ico} n="send" s=${20} /></button>`}</form>
+    <div className="row sb xs mut"><span>Cada resposta usa o seu acesso ao Claude e envia junto um resumo dos seus dados.</span>${A.mentor.length ? html`<button className="link" onClick=${() => upd(s => ({ ...s, mentor: [] }))}>Limpar conversa</button>` : null}</div>
+  <//>`;
 }
 
 /* ----- casca do app ----- */
 function Shell() {
   const { A, rota, ir, abrir, sheet, fechar, demo, sairDemo, toastMsg, fecharToast, status } = useApp();
-  const P = { inicio: Inicio, mov: Movimentos, metas: Metas, habitos: Habitos, mentor: Mentor, comprar: Comprar, radar: Radar, relat: Relatorios, orc: Orcamento, dados: Dados, mais: Mais }[rota] || Inicio;
-  const baixo = [{ id: 'inicio', n: 'Início', i: 'home' }, { id: 'mov', n: 'Movimentos', i: 'list' }, 'fab', { id: 'metas', n: 'Metas', i: 'target' }, { id: 'habitos', n: 'Hábitos', i: 'check' }];
-  const maisAtivo = ['mentor', 'comprar', 'radar', 'relat', 'orc', 'dados', 'mais'].includes(rota);
+  const P = { inicio: Inicio, fin: Financas, metas: MetasPage, mentor: MentorPage, dados: Dados }[rota] || Inicio;
+  const NAV = [{ id: 'inicio', n: 'Início', i: 'home' }, { id: 'fin', n: 'Finanças', i: 'wallet' }, 'fab', { id: 'metas', n: 'Metas', i: 'target' }, MENTOR ? { id: 'mentor', n: 'Mentor', i: 'chat' } : { id: 'mentor', n: 'Insights', i: 'radar' }];
+  const LATERAL = [...NAV.filter(x => x !== 'fab'), { id: 'dados', n: 'Dados e ajustes', i: 'gear' }];
   return html`<div className="app">
-    <aside className="side"><div className="brand"><${Logo} />Finance Mind</div>
+    <aside className="side"><div className="brand" style=${{ padding: '4px 8px 18px' }}><${Logo} /><div><div className="bname">FINANCE MIND</div><div className="btag">Seu dinheiro. Seu futuro.</div></div></div>
       <button className="btn primary" onClick=${() => abrir('lanc')}><${Ico} n="plus" s=${18} />Registrar</button>
-      <nav aria-label="Principal">${ROTAS.map(r => html`<button key=${r.id} aria-current=${rota === r.id ? 'page' : undefined} onClick=${() => ir(r.id)}><${Ico} n=${r.i} s=${19} />${r.n}</button>`)}</nav>
+      <nav aria-label="Principal">${LATERAL.map(r => html`<button key=${r.id} aria-current=${rota === r.id ? 'page' : undefined} onClick=${() => ir(r.id)}><${Ico} n=${r.i} s=${19} />${r.n}</button>`)}</nav>
       <div className="foot">${demo ? 'Demonstração: nada é salvo' : status.msg}</div></aside>
     <div style=${{ minWidth: 0 }}>
-      <header className="topbar"><div className="brand"><${Logo} />Finance Mind</div><div className="grow"></div>
-        ${MENTOR ? html`<button className="icon-btn" aria-label="Mentor IA" onClick=${() => ir('mentor')}><${Ico} n="chat" s=${19} /></button>` : null}
-        <button className="icon-btn" aria-label="Mais opções" onClick=${() => ir('mais')} style=${maisAtivo ? { borderColor: 'var(--brand)', color: 'var(--brand)' } : null}><${Ico} n="more" s=${19} /></button></header>
+      <${Cabecalho} />
       <main>
-        ${demo ? html`<div className="demo-banner" style=${{ marginBottom: 12 }}><span>Modo demonstração: dados de exemplo, nada é salvo.</span><button className="btn sm" onClick=${sairDemo}>Sair e usar meus dados</button></div>` : null}
+        ${demo ? html`<div className="demo-banner" style=${{ marginBottom: 14 }}><span>Modo demonstração: dados de exemplo, nada é salvo.</span><button className="btn sm" onClick=${sairDemo}>Sair e usar meus dados</button></div>` : null}
         <${P} key=${rota} /></main></div>
-    <nav className="nav" aria-label="Principal">${baixo.map(b => b === 'fab' ? html`<button key="fab" className="fab" aria-label="Registrar gasto ou receita" onClick=${() => abrir('lanc')}><${Ico} n="plus" s=${28} /></button>` : html`<button key=${b.id} aria-current=${rota === b.id ? 'page' : undefined} onClick=${() => ir(b.id)}><${Ico} n=${b.i} s=${22} />${b.n}</button>`)}</nav>
+    <nav className="floatnav" aria-label="Principal">${NAV.map(b => b === 'fab' ? html`<button key="fab" className="fab" aria-label="Registrar nova movimentação" onClick=${() => abrir('lanc')}><${Ico} n="plus" s=${30} /></button>` : html`<button key=${b.id} aria-current=${rota === b.id ? 'page' : undefined} onClick=${() => ir(b.id)}><${Ico} n=${b.i} s=${22} />${b.n}</button>`)}</nav>
     ${sheet && sheet.k === 'lanc' ? html`<${SheetLanc} key=${sheet.d.id || 'novo'} init=${sheet.d} />` : null}
     ${sheet && sheet.k === 'meta' ? html`<${SheetMeta} init=${sheet.d} />` : null}
+    ${sheet && sheet.k === 'metadet' ? html`<${SheetMetaDet} init=${sheet.d} />` : null}
     ${sheet && sheet.k === 'aporte' ? html`<${SheetAporte} init=${sheet.d} />` : null}
     ${sheet && sheet.k === 'revisao' ? html`<${SheetRevisao} />` : null}
+    ${sheet && sheet.k === 'desafios' ? html`<${SheetDesafios} />` : null}
     ${toastMsg ? html`<div className="toast" role="status"><span>${toastMsg.msg}</span>${toastMsg.desfazer ? html`<button onClick=${() => { toastMsg.desfazer(); fecharToast(); }}>Desfazer</button>` : null}</div>` : null}
   </div>`;
 }
-
 class ErrorBoundary extends React.Component {
   constructor(p) { super(p); this.state = { erro: null }; }
   static getDerivedStateFromError(e) { return { erro: e }; }
