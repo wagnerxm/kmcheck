@@ -1,5 +1,5 @@
 /**
- * Processa versões do SNV localmente e envia para o servidor ControlCheck
+ * Processa versões do SNV localmente e envia para o servidor do KM Check (api.kmcheck.com.br)
  *
  * Roda na máquina local (que consegue acessar o DNIT) e faz upload
  * via HTTPS para a API no servidor.
@@ -28,7 +28,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const TMP = join(__dirname, '..', '.tmp-snv-upload');
 
 // ── Configuração ──
-const API_URL = 'https://controlcheck.duckdns.org/api';
+/* servidor do KM Check (api.kmcheck.com.br). O endereço antigo era o do ControlCheck, que não é mais usado pelo app.
+   KMCHECK_API troca o destino (ex.: teste local). A IMPORT_KEY fica no .env do servidor (/opt/kmcheck-server/.env). */
+const API_URL = process.env.KMCHECK_API || 'https://api.kmcheck.com.br/api';
 const IMPORT_KEY = process.env.IMPORT_KEY;
 if (!IMPORT_KEY) { console.error('⚠  Defina IMPORT_KEY (env var)'); process.exit(1); }
 const SHARE_TOKEN = process.env.WEBDAV_SHARE_TOKEN;
@@ -265,24 +267,27 @@ async function processVersion(zipPath, snvId, zipName) {
   console.log(`  📊 Parseando SHP...`);
   const geoms = readShp(readFileSync(shpPath));
 
-  // Agrupar por rodovia (só tipo B = eixo principal)
+  // Agrupar por rodovia E código do trecho (B = eixo principal; A, C, N, U, V… = acessos, contornos, variantes):
+  // o app oferece todos no campo "Código" e eles só existem aqui no servidor. Até 2026-10 esta carga mandava só o
+  // B e o SNV Out/2026 entrou sem os outros códigos.
   const roadMap = {};
   let skipped = 0;
   for (let i = 0; i < recs.length; i++) {
     const r = recs[i];
-    if (r.sg_tipo_tr !== 'B') { skipped++; continue; }
+    const tipo = String(r.sg_tipo_tr || '').trim().toUpperCase();
+    if (!tipo) { skipped++; continue; }
     const ki = r.vl_km_inic, kf = r.vl_km_fina;
     if (ki == null || kf == null) continue;
     const pts = geoms[i];
     if (!pts || pts.length < 2) continue;
     const br = String(r.vl_br).padStart(3, '0');
     const uf = r.sg_uf;
-    const key = `${br}-${uf}`;
+    const key = `${br}-${uf}-${tipo}`;
     (roadMap[key] = roadMap[key] || []).push({ ki, kf, pts });
   }
 
   const keys = Object.keys(roadMap).sort();
-  console.log(`     ${keys.length} rodovias (${skipped} trechos não-B ignorados)`);
+  console.log(`     ${keys.length} rodovias/códigos (${skipped} trechos sem código ignorados)`);
 
   // Upload em lotes
   console.log(`  📤 Enviando para o servidor (lotes de ${BATCH_SIZE})...`);
@@ -290,10 +295,10 @@ async function processVersion(zipPath, snvId, zipName) {
   let batch = [];
 
   for (let k = 0; k < keys.length; k++) {
-    const [br, uf] = keys[k].split('-');
+    const [br, uf, tipo_tr] = keys[k].split('-');
     const road = buildRoad(roadMap[keys[k]]);
     totalCoords += road.lat.length;
-    batch.push({ br, uf, ...road, fonte: 'SNV/DNIT' });
+    batch.push({ br, uf, tipo_tr, ...road, fonte: 'SNV/DNIT' });
 
     if (batch.length >= BATCH_SIZE || k === keys.length - 1) {
       await uploadBatch(batch, snvId);
