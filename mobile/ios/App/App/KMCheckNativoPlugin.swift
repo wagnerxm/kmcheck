@@ -66,18 +66,20 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
     /**
      * Liga (ou mantém ligado) o cartão do KM. { bases?: [rodovia…], maxdist } — "bases" só vem quando o conjunto de
      * rodovias perto do carro mudou (é o eixo recortado, pode ter centenas de KB); sem ele fica o que já estava.
+     * { manual: true } = botão "Mostrar o cartão agora": liga mesmo parado e não sai sozinho com o carro parado.
      * Devolve { ligada, temBases, motivo } — motivo: "ios" (iOS < 18), "desligada" (Atividades ao Vivo desligadas
      * para o KM Check nos Ajustes do iPhone), "recusada" (a pessoa dispensou o cartão nesta viagem), "erro".
      */
     @objc func atividadeIniciar(_ call: CAPPluginCall) {
         guard #available(iOS 18.0, *) else { call.resolve(["ligada": false, "temBases": false, "motivo": "ios"]); return }
         let maxdist = call.getDouble("maxdist") ?? 300
+        let manual = call.getBool("manual") ?? false   // botão "Mostrar o cartão agora" dos Ajustes
         let lista = call.options["bases"] as? [Any]
         /* converter o eixo (dezenas de milhares de números) fora da linha principal, para não engasgar a tela */
         DispatchQueue.global(qos: .userInitiated).async {
             let rodovias = lista.map { $0.compactMap { ($0 as? [String: Any]).flatMap(RodoviaAtv.de) } }
             DispatchQueue.main.async {
-                let motivo = self.gps.atividadeIniciar(rodovias, maxdist)
+                let motivo = self.gps.atividadeIniciar(rodovias, maxdist, manual)
                 call.resolve(["ligada": motivo.isEmpty, "temBases": self.gps.atividadeTemBases, "motivo": motivo])
             }
         }
@@ -455,13 +457,13 @@ private final class GpsNativo: NSObject, CLLocationManagerDelegate {
 
     /** "" = cartão no ar; senão o motivo (ver atividadeIniciar no plugin). rodovias nil = mantém as que já tinha. */
     @available(iOS 18.0, *)
-    func atividadeIniciar(_ rodovias: [RodoviaAtv]?, _ maxdist: Double) -> String {
+    func atividadeIniciar(_ rodovias: [RodoviaAtv]?, _ maxdist: Double, _ manual: Bool) -> String {
         let a = (atv as? AtividadeKM) ?? AtividadeKM()
         atv = a
         if let r = rodovias { a.motor.rodovias = r }
         a.motor.maxdist = maxdist
         let g = gerenteGps()
-        let motivo = a.iniciar(g.location)
+        let motivo = a.iniciar(g.location, manual: manual)
         if motivo.isEmpty { gpsDeFundo(g, true) }
         return motivo
     }

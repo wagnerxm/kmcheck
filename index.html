@@ -1722,6 +1722,10 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
           <span class="ltext"><b>KM no CarPlay e na tela bloqueada</b><i>Cartão com o KM ao vivo na tela bloqueada, na Ilha Dinâmica e no CarPlay. Aparece sozinho acima de 20 km/h numa rodovia e some após 10 min parado.</i></span>
           <input type="checkbox" id="cfg-atividade" checked>
         </label>
+        <div class="listrow">
+          <span class="ltext"><b>Mostrar o cartão agora</b><i>Para ver o KM parado ou testar. Fica até você desligar a chave acima ou arrastar o cartão.</i></span>
+          <button class="btn small gold" id="atv-agora" type="button" style="flex:0 0 auto">Mostrar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5787,7 +5791,7 @@ function emPistaDupla(f, entrando){
    carro, recortado num quadrado de ±1,5° (~160 km) para não passar megabytes pela ponte. O nativo desliga sozinho
    depois de 10 min parado; na próxima arrancada (com o app aberto) liga de novo. */
 const ATV_VEL=20/3.6, ATV_JANELA=1.5;
-let _atvIds='', _atvCentro=null, _atvUlt=0, _atvOcupado=false, _atvSem=false;
+let _atvIds='', _atvCentro=null, _atvUlt=0, _atvOcupado=false, _atvSem=false, _atvManual=false;
 /* trecho da base dentro da janela, com as ligações que não são estrada marcadas em "pula" (fantasmas, trechos
    cedidos a outra BR e as emendas do próprio recorte) — o nativo não liga esses pontos */
 function atvRecorte(b, p){
@@ -5814,24 +5818,49 @@ function atvRecorte(b, p){
 function atvConfere(){
   if(!NATIVO || !NATIVO.ios || _atvSem || !CFG.atividade || document.hidden || _atvOcupado) return;
   const p=S.pos, f=S.fix;
-  if(!p || !f || f.km==null || f.dist>CFG.maxdist || !(p.spd>=ATV_VEL)) return;
+  if(!p || !f || f.km==null || f.dist>CFG.maxdist) return;
   /* eixo novo só quando entrou noutra rodovia ou andou 50 km desde o último envio; senão só o "continua ligado",
      no máximo 1x a cada 30 s (é o que religa o cartão depois que ele saiu por 10 min parado) */
   const mudou=!_atvCentro || _distM(_atvCentro,p)>50000 || !_atvIds.includes('|'+f.id+'|');
+  /* devagar não liga; mas o cartão ligado pelo botão (fica mesmo parado) recebe o eixo da rodovia nova */
+  if(!(p.spd>=ATV_VEL) && !(_atvManual && mudou)) return;
   if(!mudou && Date.now()-_atvUlt<30000) return;
+  atvEnvia(p, mudou, false).catch(()=>{});
+}
+/* chama o nativo; com eixo=true manda o eixo recortado das rodovias perto de p. Devolve a resposta do nativo. */
+async function atvEnvia(p, eixo, manual){
   _atvUlt=Date.now();
-  const op={maxdist:CFG.maxdist};
+  const op={maxdist:CFG.maxdist, manual};
   let ids='|';
-  if(mudou){
+  if(eixo){
     op.bases=[];
     for(const b of S.bases){ const r=atvRecorte(b,p); if(r){ op.bases.push(r); ids+=b.id+'|' } }
   }
   _atvOcupado=true;
-  NATIVO.chama('atividadeIniciar', op).then(r=>{
-    if(r && r.motivo==='ios'){ _atvSem=true; return }   // iPhone com iOS 17 ou anterior: não tem o cartão
+  try{
+    const r=await NATIVO.chama('atividadeIniciar', op);
+    if(r && r.motivo==='ios'){ _atvSem=true; return r }   // iPhone com iOS 17 ou anterior: não tem o cartão
     if(op.bases){ _atvIds=ids; _atvCentro={lat:p.lat, lon:p.lon} }
     else if(r && !r.temBases){ _atvIds=''; _atvCentro=null }   // o nativo ficou sem o eixo: manda de novo
-  }).catch(()=>{}).finally(()=>{ _atvOcupado=false });
+    if(manual) _atvManual=!!(r && r.ligada);
+    else if(r && !r.ligada) _atvManual=false;   // o cartão do botão acabou (arrastado ou encerrado pelo iOS)
+    return r;
+  }finally{ _atvOcupado=false }
+}
+/* botão "Mostrar o cartão agora" (Ajustes): liga parado, para ver o KM ou testar; fica até desligar ou arrastar */
+async function atvMostrarAgora(){
+  const p=S.pos;
+  if(!p || gpsStale(60000)){ toast('Aguardando o GPS…'); return }
+  if(_atvOcupado) return;
+  const ch=document.getElementById('cfg-atividade');
+  if(!ch.checked){ ch.checked=true; try{ localStorage.setItem('kc-atividade','1') }catch(e){} }
+  let r=null;
+  try{ r=await atvEnvia(p, true, true) }catch(e){}
+  if(r && r.ligada) return;   // o cartão aparece na tela bloqueada / Ilha Dinâmica: não precisa de aviso
+  const m=r && r.motivo;
+  toast(m==='ios' ? 'O cartão do KM precisa do iOS 18 ou mais novo.'
+    : m==='desligada' ? 'As Atividades ao Vivo estão desligadas para o KM Check.\nAjustes do iPhone › KM Check › Atividades ao Vivo.'
+    : 'Não consegui mostrar o cartão do KM.', 6000);
 }
 function confereTags(){
   const p=S.pos;
@@ -7555,9 +7584,10 @@ for(const [id, key, lbl] of [['cfg-logoop','logoop','lbl-logoop'],['cfg-logosz',
 if(NATIVO && NATIVO.ios){
   document.getElementById('sec-atv').hidden=false;
   document.getElementById('cfg-atividade').addEventListener('change', e=>{
-    _atvUlt=0; _atvIds=''; _atvCentro=null;
+    _atvUlt=0; _atvIds=''; _atvCentro=null; _atvManual=false;
     if(!e.target.checked) NATIVO.chama('atividadeEncerrar').catch(()=>{});
   });
+  document.getElementById('atv-agora').onclick=atvMostrarAgora;
 }
 const md=document.getElementById('cfg-maxdist');
 md.value=CFG.maxdist;

@@ -125,6 +125,9 @@ final class AtividadeKM {
     private var dupla = false
     /** a pessoa arrastou o cartão para fora da tela: não volta até a próxima viagem (10 min parado) */
     private var recusada = false
+    /** ligado pelo botão "Mostrar o cartão agora" (Ajustes): não sai sozinho com o carro parado — fica até a pessoa
+     *  desligar a chave ou arrastar o cartão (ou o iOS encerrar, ~8 h). Serve para ver o KM parado e para testar. */
+    private var manual = false
 
     /** o cartão está na tela? */
     var noAr: Bool { atividade?.activityState == .active }
@@ -132,13 +135,15 @@ final class AtividadeKM {
     var temAtividade: Bool { atividade != nil }
 
     /** Liga o cartão (se ainda não estiver). Devolve "" se ligou/já estava, ou o motivo de não ligar. */
-    func iniciar(_ p: CLLocation?) -> String {
+    func iniciar(_ p: CLLocation?, manual pedido: Bool) -> String {
         if let a = atividade {
-            if a.activityState == .active { return "" }
+            if a.activityState == .active { if pedido { manual = true }; return "" }
             /* dispensado pela pessoa (arrastou para o lado) ou encerrado pelo sistema: não insiste na mesma viagem */
             if a.activityState == .dismissed { recusada = true }
             atividade = nil
+            manual = false
         }
+        if pedido { recusada = false }   // o botão vale mesmo depois de a pessoa ter arrastado o cartão
         if recusada { return "recusada" }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return "desligada" }
         ultimoMovimento = Date()
@@ -149,6 +154,7 @@ final class AtividadeKM {
                                              pushType: nil)
             ultimoEstado = e
             ultimoEnvio = Date()
+            manual = pedido
             return ""
         } catch {
             return "erro"
@@ -156,19 +162,20 @@ final class AtividadeKM {
     }
 
     /**
-     * Nova leitura do GPS (com o app na frente ou no fundo). Devolve false quando o cartão acabou (10 min parado ou
-     * dispensado) — aí o GpsNativo desliga o GPS de fundo para não gastar bateria.
+     * Nova leitura do GPS (com o app na frente ou no fundo). Devolve false quando o cartão acabou (10 min parado, se não
+     * foi ligado pelo botão, ou dispensado) — aí o GpsNativo desliga o GPS de fundo para não gastar bateria.
      */
     func posicao(_ p: CLLocation) -> Bool {
         guard let a = atividade else { return false }
         if a.activityState != .active {
             if a.activityState == .dismissed { recusada = true }
             atividade = nil
+            manual = false
             return false
         }
         let agora = Date()
         if p.speed >= 1.5 { ultimoMovimento = agora }   // ~5 km/h: abaixo disso é parado (ruído do GPS)
-        if agora.timeIntervalSince(ultimoMovimento) > 600 {
+        if !manual && agora.timeIntervalSince(ultimoMovimento) > 600 {
             encerrar()
             recusada = false   // parou 10 min = fim da viagem: na próxima o cartão volta normalmente
             return false
@@ -193,6 +200,7 @@ final class AtividadeKM {
         guard let a = atividade else { return }
         atividade = nil
         ultimoEstado = nil
+        manual = false
         Task { await a.end(nil, dismissalPolicy: .immediate) }
     }
 
