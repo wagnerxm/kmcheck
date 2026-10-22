@@ -19,7 +19,36 @@
 		A1EC00012F00000100000001 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000011 /* MainViewController.swift */; };
 		A1EC00012F00000100000002 /* KMCheckNativoPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000012 /* KMCheckNativoPlugin.swift */; };
 		A1EC00012F00000100000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000013 /* PrivacyInfo.xcprivacy */; };
+		A1EC00012F00000100000004 /* KMAtividade.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000014 /* KMAtividade.swift */; };
+		A1EC00012F00000100000005 /* KMAtividadeAtributos.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000015 /* KMAtividadeAtributos.swift */; };
+		A1EC00012F00000100000006 /* KMAtividadeAtributos.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000015 /* KMAtividadeAtributos.swift */; };
+		A1EC00012F00000100000007 /* KMCheckAtividade.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000016 /* KMCheckAtividade.swift */; };
+		A1EC00012F00000100000008 /* KMCheckAtividade.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1EC00012F00000100000018 /* KMCheckAtividade.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A1EC00012F00000100000041 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1EC00012F00000100000040;
+			remoteInfo = KMCheckAtividade;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A1EC00012F00000100000030 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A1EC00012F00000100000008 /* KMCheckAtividade.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -36,6 +65,11 @@
 		A1EC00012F00000100000011 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		A1EC00012F00000100000012 /* KMCheckNativoPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMCheckNativoPlugin.swift; sourceTree = "<group>"; };
 		A1EC00012F00000100000013 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A1EC00012F00000100000014 /* KMAtividade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMAtividade.swift; sourceTree = "<group>"; };
+		A1EC00012F00000100000015 /* KMAtividadeAtributos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMAtividadeAtributos.swift; sourceTree = "<group>"; };
+		A1EC00012F00000100000016 /* KMCheckAtividade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMCheckAtividade.swift; sourceTree = "<group>"; };
+		A1EC00012F00000100000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1EC00012F00000100000018 /* KMCheckAtividade.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KMCheckAtividade.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +81,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1EC00012F00000100000032 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -55,6 +96,8 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				A1EC00012F00000100000021 /* Compartilhado */,
+				A1EC00012F00000100000020 /* KMCheckAtividade */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				A1EC00012F00000100000018 /* KMCheckAtividade.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,6 +117,7 @@
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				A1EC00012F00000100000011 /* MainViewController.swift */,
 				A1EC00012F00000100000012 /* KMCheckNativoPlugin.swift */,
+				A1EC00012F00000100000014 /* KMAtividade.swift */,
 				A1EC00012F00000100000013 /* PrivacyInfo.xcprivacy */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -86,6 +131,23 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		A1EC00012F00000100000020 /* KMCheckAtividade */ = {
+			isa = PBXGroup;
+			children = (
+				A1EC00012F00000100000016 /* KMCheckAtividade.swift */,
+				A1EC00012F00000100000017 /* Info.plist */,
+			);
+			path = KMCheckAtividade;
+			sourceTree = "<group>";
+		};
+		A1EC00012F00000100000021 /* Compartilhado */ = {
+			isa = PBXGroup;
+			children = (
+				A1EC00012F00000100000015 /* KMAtividadeAtributos.swift */,
+			);
+			path = Compartilhado;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -96,10 +158,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				A1EC00012F00000100000030 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A1EC00012F00000100000042 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -108,6 +172,23 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A1EC00012F00000100000040 /* KMCheckAtividade */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1EC00012F00000100000050 /* Build configuration list for PBXNativeTarget "KMCheckAtividade" */;
+			buildPhases = (
+				A1EC00012F00000100000031 /* Sources */,
+				A1EC00012F00000100000032 /* Frameworks */,
+				A1EC00012F00000100000033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KMCheckAtividade;
+			productName = KMCheckAtividade;
+			productReference = A1EC00012F00000100000018 /* KMCheckAtividade.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -121,6 +202,10 @@
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
+						ProvisioningStyle = Automatic;
+					};
+					A1EC00012F00000100000040 = {
+						CreatedOnToolsVersion = 26.0;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -142,6 +227,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				A1EC00012F00000100000040 /* KMCheckAtividade */,
 			);
 		};
 /* End PBXProject section */
@@ -161,6 +247,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1EC00012F00000100000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -172,10 +265,29 @@
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				A1EC00012F00000100000001 /* MainViewController.swift in Sources */,
 				A1EC00012F00000100000002 /* KMCheckNativoPlugin.swift in Sources */,
+				A1EC00012F00000100000004 /* KMAtividade.swift in Sources */,
+				A1EC00012F00000100000005 /* KMAtividadeAtributos.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1EC00012F00000100000031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1EC00012F00000100000007 /* KMCheckAtividade.swift in Sources */,
+				A1EC00012F00000100000006 /* KMAtividadeAtributos.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A1EC00012F00000100000042 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1EC00012F00000100000040 /* KMCheckAtividade */;
+			targetProxy = A1EC00012F00000100000041 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -312,7 +424,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 349;
+				CURRENT_PROJECT_VERSION = 351;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -334,7 +446,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 349;
+				CURRENT_PROJECT_VERSION = 351;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -344,6 +456,52 @@
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = br.com.kmcheck.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A1EC00012F00000100000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 351;
+				INFOPLIST_FILE = KMCheckAtividade/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.kmcheck.app.atividade;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A1EC00012F00000100000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 351;
+				INFOPLIST_FILE = KMCheckAtividade/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = br.com.kmcheck.app.atividade;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -367,6 +525,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1EC00012F00000100000050 /* Build configuration list for PBXNativeTarget "KMCheckAtividade" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1EC00012F00000100000051 /* Debug */,
+				A1EC00012F00000100000052 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

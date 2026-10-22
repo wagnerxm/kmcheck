@@ -3,6 +3,8 @@
 # projeto iOS está certo antes de ter a conta da Apple.
 # Segredos (gravados por mobile/ios-assinatura.mjs --github): IOS_P12_BASE64, IOS_P12_SENHA,
 # IOS_PERFIL_BASE64, IOS_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8.
+# Desde a v351 o app leva a extensão do cartão do KM (KMCheckAtividade, br.com.kmcheck.app.atividade), que precisa
+# do próprio perfil App Store: segredo IOS_PERFIL_ATV_BASE64, perfil com o nome "KM Check Atividade App Store".
 name: iOS → TestFlight
 
 on:
@@ -61,6 +63,7 @@ jobs:
           IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
           IOS_P12_SENHA: ${{ secrets.IOS_P12_SENHA }}
           IOS_PERFIL_BASE64: ${{ secrets.IOS_PERFIL_BASE64 }}
+          IOS_PERFIL_ATV_BASE64: ${{ secrets.IOS_PERFIL_ATV_BASE64 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
@@ -75,6 +78,7 @@ jobs:
           # o Xcode 16+ procura os perfis em UserData; os mais antigos em MobileDevice — grava nos dois
           for D in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"; do
             mkdir -p "$D"; echo "$IOS_PERFIL_BASE64" | base64 --decode > "$D/kmcheck.mobileprovision"
+            [ -n "$IOS_PERFIL_ATV_BASE64" ] && echo "$IOS_PERFIL_ATV_BASE64" | base64 --decode > "$D/kmcheck-atividade.mobileprovision"
           done
           mkdir -p "$HOME/private_keys"
           printf '%s' "$ASC_KEY_P8" > "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8"
@@ -100,6 +104,8 @@ jobs:
           # logado: troca, só nesta cópia, para a manual com o certificado e o perfil dos segredos. Não dá para
           # passar isso na linha de comando: o perfil iria também para os pacotes Swift, que não aceitam perfil.
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual; "CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution"; "PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "KM Check App Store";/' mobile/ios/App/App.xcodeproj/project.pbxproj
+          # a extensão do cartão do KM (configuração com INFOPLIST_FILE = KMCheckAtividade/…) usa o perfil dela
+          perl -0pi -e 's/"KM Check App Store";(\s*CURRENT_PROJECT_VERSION = \d+;\s*INFOPLIST_FILE = KMCheckAtividade)/"KM Check Atividade App Store";$1/g' mobile/ios/App/App.xcodeproj/project.pbxproj
           xcodebuild -project mobile/ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" \
             DEVELOPMENT_TEAM="$IOS_TEAM_ID" \
@@ -119,7 +125,7 @@ jobs:
             <key>destination</key><string>export</string>
             <key>signingStyle</key><string>manual</string>
             <key>teamID</key><string>$IOS_TEAM_ID</string>
-            <key>provisioningProfiles</key><dict><key>br.com.kmcheck.app</key><string>KM Check App Store</string></dict>
+            <key>provisioningProfiles</key><dict><key>br.com.kmcheck.app</key><string>KM Check App Store</string><key>br.com.kmcheck.app.atividade</key><string>KM Check Atividade App Store</string></dict>
             <key>uploadSymbols</key><true/>
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict></plist>

@@ -42,7 +42,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>O KM Check usa a câmera para tirar as fotos da rodovia com a legenda gravada na imagem (rodovia, KM, estaca, coordenadas, data e hora).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>O KM Check usa a sua localização enquanto o app está aberto para mostrar em que rodovia e em que KM você está e gravar as coordenadas na legenda da foto.</string>
+	<string>O KM Check usa a sua localização para mostrar em que rodovia e em que KM você está, gravar as coordenadas na legenda da foto e manter o KM atualizado na tela bloqueada e no CarPlay enquanto você dirige.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>O KM Check salva no app Fotos as fotos que você tira nele, já com a legenda. Ele não lê nem altera as suas outras fotos.</string>
 	<!-- NSPhotoLibraryUsageDescription (leitura da Fototeca) NÃO é necessário: o app só ADICIONA fotos (addOnly),
@@ -59,6 +59,19 @@
 
 	<!-- exportações (salvarArquivo) vão para Documentos/KM Check e aparecem no app Arquivos em
 	     "No Meu iPhone › KM Check". Os dados do WebView (rodovias, galeria) ficam em Library, que NÃO aparece. -->
+	<!-- Atividade ao Vivo (iOS 18+): cartão com o KM na tela bloqueada, na Ilha Dinâmica e no painel do CarPlay
+	     (desenhado pela extensão KMCheckAtividade). Liga sozinho a mais de 20 km/h numa rodovia, sai depois de 10 min
+	     parado; desliga nos Ajustes do app ("KM no CarPlay e na tela bloqueada"). -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<!-- GPS no fundo SÓ enquanto o cartão do KM está na tela (allowsBackgroundLocationUpdates é ligado e desligado
+	     junto com ele, em GpsNativo.gpsDeFundo). Com o app aberto e sem o cartão, nada muda. Na revisão da Apple:
+	     "o app mostra o KM da rodovia ao vivo numa Atividade ao Vivo / no CarPlay enquanto a pessoa dirige". -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

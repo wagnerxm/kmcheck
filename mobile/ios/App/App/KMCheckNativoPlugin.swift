@@ -41,7 +41,10 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "vibrar", returnType: CAPPluginReturnPromise),
         /* GPS nativo: o index.html troca o navigator.geolocation por estes no iPhone (ver GpsNativo abaixo) */
         CAPPluginMethod(name: "gpsVigiar", returnType: CAPPluginReturnCallback),
-        CAPPluginMethod(name: "gpsParar", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "gpsParar", returnType: CAPPluginReturnPromise),
+        /* Atividade ao Vivo: KM na tela bloqueada, na Ilha Dinâmica e no CarPlay (ver KMAtividade.swift) */
+        CAPPluginMethod(name: "atividadeIniciar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "atividadeEncerrar", returnType: CAPPluginReturnPromise)
     ]
 
     private lazy var gps = GpsNativo(plugin: self)
@@ -60,6 +63,33 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    /**
+     * Liga (ou mantém ligado) o cartão do KM. { bases?: [rodovia…], maxdist } — "bases" só vem quando o conjunto de
+     * rodovias perto do carro mudou (é o eixo recortado, pode ter centenas de KB); sem ele fica o que já estava.
+     * Devolve { ligada, temBases, motivo } — motivo: "ios" (iOS < 18), "desligada" (Atividades ao Vivo desligadas
+     * para o KM Check nos Ajustes do iPhone), "recusada" (a pessoa dispensou o cartão nesta viagem), "erro".
+     */
+    @objc func atividadeIniciar(_ call: CAPPluginCall) {
+        guard #available(iOS 18.0, *) else { call.resolve(["ligada": false, "temBases": false, "motivo": "ios"]); return }
+        let maxdist = call.getDouble("maxdist") ?? 300
+        let lista = call.options["bases"] as? [Any]
+        /* converter o eixo (dezenas de milhares de números) fora da linha principal, para não engasgar a tela */
+        DispatchQueue.global(qos: .userInitiated).async {
+            let rodovias = lista.map { $0.compactMap { ($0 as? [String: Any]).flatMap(RodoviaAtv.de) } }
+            DispatchQueue.main.async {
+                let motivo = self.gps.atividadeIniciar(rodovias, maxdist)
+                call.resolve(["ligada": motivo.isEmpty, "temBases": self.gps.atividadeTemBases, "motivo": motivo])
+            }
+        }
+    }
+
+    @objc func atividadeEncerrar(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.gps.atividadeEncerrar()
+            call.resolve()
+        }
+    }
+
     fileprivate func solta(_ call: CAPPluginCall) { bridge?.releaseCall(call) }
 
     private static let pasta = "KM Check"
@@ -74,6 +104,13 @@ public class KMCheckNativoPlugin: CAPPlugin, CAPBridgedPlugin {
         /* o iOS pode desligar o isIdleTimerDisabled quando o app sai da frente; ao voltar, liga de novo */
         NotificationCenter.default.addObserver(self, selector: #selector(voltouParaFrente),
                                                name: UIApplication.didBecomeActiveNotification, object: nil)
+        /* cartão do KM que sobrou de quando o app foi fechado à força: o número dele está parado, tira da tela.
+           E ao fechar o app (arrastar no seletor de apps) encerra o cartão, que sem o GPS ficaria mentindo. */
+        if #available(iOS 18.0, *) {
+            AtividadeKM.limpaSobras()
+            NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil,
+                                                   queue: .main) { _ in AtividadeKM.encerraTudoJa() }
+        }
     }
 
     deinit {
@@ -374,30 +411,84 @@ private final class GpsNativo: NSObject, CLLocationManagerDelegate {
     private weak var plugin: KMCheckNativoPlugin?
     private var gerente: CLLocationManager?
     private var vigias: [String: CAPPluginCall] = [:]
+    /** o cartão do KM (AtividadeKM, iOS 18+). AnyObject porque propriedade guardada não aceita @available. */
+    private var atv: AnyObject?
 
     init(plugin: KMCheckNativoPlugin) {
         self.plugin = plugin
         super.init()
     }
 
+    /** cartão do KM na tela: o GPS segue ligado mesmo sem vigia do index.html (app no fundo / tela bloqueada) */
+    private var atividadeNoAr: Bool {
+        if #available(iOS 18.0, *), let a = atv as? AtividadeKM { return a.noAr }
+        return false
+    }
+
+    var atividadeTemBases: Bool {
+        if #available(iOS 18.0, *), let a = atv as? AtividadeKM { return !a.motor.rodovias.isEmpty }
+        return false
+    }
+
     func vigiar(_ call: CAPPluginCall) {
         vigias[call.callbackId] = call
-        let g = gerente ?? {
-            let novo = CLLocationManager()
-            novo.delegate = self
-            novo.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-            novo.distanceFilter = kCLDistanceFilterNone
-            novo.activityType = .automotiveNavigation
-            novo.pausesLocationUpdatesAutomatically = false
-            gerente = novo
-            return novo
-        }()
-        aplica(g)
+        aplica(gerenteGps())
+    }
+
+    private func gerenteGps() -> CLLocationManager {
+        if let g = gerente { return g }
+        let novo = CLLocationManager()
+        novo.delegate = self
+        novo.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        novo.distanceFilter = kCLDistanceFilterNone
+        novo.activityType = .automotiveNavigation
+        novo.pausesLocationUpdatesAutomatically = false
+        gerente = novo
+        return novo
     }
 
     func parar(_ id: String) {
         if let v = vigias.removeValue(forKey: id) { plugin?.solta(v) }
-        if vigias.isEmpty { gerente?.stopUpdatingLocation() }
+        /* o index.html larga o GPS ao ir para o fundo (economia); com o cartão do KM na tela ele continua */
+        if vigias.isEmpty && !atividadeNoAr { gerente?.stopUpdatingLocation() }
+    }
+
+    /** "" = cartão no ar; senão o motivo (ver atividadeIniciar no plugin). rodovias nil = mantém as que já tinha. */
+    @available(iOS 18.0, *)
+    func atividadeIniciar(_ rodovias: [RodoviaAtv]?, _ maxdist: Double) -> String {
+        let a = (atv as? AtividadeKM) ?? AtividadeKM()
+        atv = a
+        if let r = rodovias { a.motor.rodovias = r }
+        a.motor.maxdist = maxdist
+        let g = gerenteGps()
+        let motivo = a.iniciar(g.location)
+        if motivo.isEmpty { gpsDeFundo(g, true) }
+        return motivo
+    }
+
+    func atividadeEncerrar() {
+        if #available(iOS 18.0, *), let a = atv as? AtividadeKM { a.encerrar() }
+        if let g = gerente { gpsDeFundo(g, false) }
+    }
+
+    /**
+     * GPS com o app no fundo enquanto o cartão está na tela. Basta a permissão "Durante o uso": as leituras começaram
+     * com o app aberto, então o iOS deixa continuar e mostra a pílula azul da localização no topo da tela.
+     * allowsBackgroundLocationUpdates sem o modo "location" no Info.plist derruba o app — por isso a conferência.
+     */
+    private static let temModoFundo =
+        ((Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String]) ?? []).contains("location")
+
+    private func gpsDeFundo(_ g: CLLocationManager, _ ligar: Bool) {
+        if Self.temModoFundo {
+            g.allowsBackgroundLocationUpdates = ligar
+            g.showsBackgroundLocationIndicator = ligar
+        }
+        if ligar {
+            if g.authorizationStatus == .authorizedWhenInUse || g.authorizationStatus == .authorizedAlways { g.startUpdatingLocation() }
+        } else if vigias.isEmpty {
+            g.stopUpdatingLocation()
+        }
     }
 
     private func aplica(_ g: CLLocationManager) {
@@ -410,10 +501,15 @@ private final class GpsNativo: NSObject, CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ g: CLLocationManager) {
         if !vigias.isEmpty { aplica(g) }
+        /* tirou a permissão com o cartão na tela: sem GPS o KM dele ficaria parado */
+        if atividadeNoAr && (g.authorizationStatus == .denied || g.authorizationStatus == .restricted) { atividadeEncerrar() }
     }
 
     func locationManager(_ g: CLLocationManager, didUpdateLocations locais: [CLLocation]) {
         guard let p = locais.last, p.horizontalAccuracy >= 0 else { return }
+        /* o cartão do KM recebe toda leitura (na frente ou no fundo); acabou (10 min parado) → larga o GPS de fundo */
+        if #available(iOS 18.0, *), let a = atv as? AtividadeKM, a.temAtividade, !a.posicao(p) { gpsDeFundo(g, false) }
+        if vigias.isEmpty { return }
         /* valores negativos = "não disponível" no CoreLocation; no navegador viriam como null */
         let r: [String: Any] = [
             "lat": p.coordinate.latitude, "lon": p.coordinate.longitude, "acc": p.horizontalAccuracy,
