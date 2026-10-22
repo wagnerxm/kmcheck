@@ -501,6 +501,22 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .bdet.has::after{content:'';position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:#b7d92d;
   box-shadow:0 0 6px rgba(183,217,45,.7)}
 .base-item .bdet + .del{margin-left:0}
+/* rodovia baixada num SNV mais antigo que o publicado: faixa âmbar embaixo do item, com o botão Atualizar
+   (ver snvDaBase/atualizaBase). O item quebra a linha para a faixa ocupar a largura toda. */
+.base-item.velha{flex-wrap:wrap}
+.bnova{flex:1 0 100%;display:flex;align-items:center;gap:10px;margin-top:2px;padding:8px 8px 8px 12px;border-radius:14px;
+  background:rgba(255,184,28,.08);border:1px solid rgba(255,184,28,.32)}
+.bnova .bn-t{flex:1;min-width:0;font-size:12px;line-height:1.35;color:#ffcf5a}
+.bnova .bn-t b{display:block;font-weight:800}
+.bnova .bn-t i{font-style:normal;color:#e2c48a;font-size:11px}
+.bnova .bn-t b::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#ffb81c;margin-right:6px;
+  vertical-align:1px;box-shadow:0 0 8px rgba(255,184,28,.7)}
+.bnova button{flex:0 0 auto;min-height:40px;padding:0 16px;border-radius:999px;border:0;background:#b7d92d;color:#111;
+  font-family:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.bnova button:disabled{opacity:.6}
+/* tela inicial: pontinho âmbar no "Gestão de Eixo" quando alguma rodovia tem SNV mais novo */
+.gcard.snvnovo .gtitle::after{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffb81c;
+  margin-left:7px;vertical-align:2px;box-shadow:0 0 8px rgba(255,184,28,.7)}
 /* diálogo de detalhes: seções e linhas tocáveis */
 .dsec{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:16px 0 8px;font-weight:600}
 .drow{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel2);border:1px solid var(--line);
@@ -3007,9 +3023,9 @@ function renderBases(){
        o pontinho verde no ⋯ avisa que a rodovia tem estaca manual ou trecho coincidente */
     const ovl=getOverlaps();
     el.innerHTML=S.bases.map(b=>{
-      const tem=getEstRefs(b.id).length>0 || ovl.some(o=>o.a===b.id||o.b===b.id);
+      const tem=getEstRefs(b.id).length>0 || ovl.some(o=>o.a===b.id||o.b===b.id), velha=snvVelho(b);
       return `
-      <div class="base-item">
+      <div class="base-item${velha?' velha':''}">
         <div class="binfo">
           <div class="bname">${_esc(b.br)}/${_esc(b.uf)}</div>
           <div class="bmeta">KM ${fkm(b.kmMin)} ao ${fkm(b.kmMax)}</div>
@@ -3018,6 +3034,7 @@ function renderBases(){
         </div>
         <button class="bdet${tem?' has':''}" data-id="${_esc(b.id)}" aria-label="Detalhes de ${_esc(b.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
         <button class="del" data-id="${_esc(b.id)}">remover</button>
+        ${velha?`<div class="bnova"><span class="bn-t"><b>SNV novo disponível</b><i>${_esc(fmtSnvId(_localSnv))} · esta está no ${_esc(fmtSnvId(snvDaBase(b)))}</i></span><button class="bat" data-id="${_esc(b.id)}">Atualizar</button></div>`:''}
       </div>`}).join('');
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
       if(!confirm('Remover '+btn.dataset.id+'?')) return;
@@ -3027,7 +3044,10 @@ function renderBases(){
       renderBases();
     });
     el.querySelectorAll('.bdet').forEach(btn=>btn.onclick=()=>openBaseDetails(btn.dataset.id));
+    el.querySelectorAll('.bat').forEach(btn=>btn.onclick=()=>atualizaBase(btn.dataset.id, btn));
   }
+  const ng=document.querySelector('.gcard[data-goto="scr-bases"]');
+  if(ng) ng.classList.toggle('snvnovo', S.bases.some(snvVelho));
   for(const b of S.bases){ const o=document.createElement('option'); o.value=b.id; o.textContent=`${b.br}/${b.uf}`; sel.appendChild(o) }
   /* bases mudaram: recalcula o KM na hora — parado (iOS quase não manda leitura nova) a tela
      continuava mostrando "—" após baixar, ou o KM de uma rodovia já removida */
@@ -3062,13 +3082,50 @@ sel.onchange=()=>{ document.getElementById('dl-br-custom').style.display = sel.v
       const idx=await r.json();
       _localSnv=idx.snv||null;
       const m={};
-      for(const rd of idx.roads)(m[rd.uf]=m[rd.uf]||[]).push(rd.br);
+      for(const rd of idx.roads){ (m[rd.uf]=m[rd.uf]||[]).push(rd.br); _idxKm[rd.br+'-'+rd.uf]=rd.km }
       for(const u in m) m[u]=[...new Set(m[u])].sort();
       BR_POR_UF=m;
+      if(S.bases.some(snvVelho)) renderBases();   // a lista já estava na tela: agora dá para avisar do SNV novo
+      const o0=document.querySelector('#dl-snv option[value=""]');
+      if(o0 && o0.textContent==='Mais recente') o0.textContent='Mais recente ('+fmtSnvId(_localSnv)+')';
     }
   }catch(e){}
   renderBrOptions();
 })();
+/* ---- SNV mais novo para uma rodovia já baixada ----
+   As rodovias ficam no celular na versão em que foram baixadas; quando o DNIT publica outra (o servidor do app
+   pega sozinho, ver scripts/atualizar-snv-agendado.sh), a Gestão de Eixo avisa e o botão Atualizar baixa de novo
+   a mesma rodovia, no mesmo trecho, mantendo estaca, contratos vinculados e trechos coincidentes (mesmo id).
+   Só rodovias do SNV: as importadas de arquivo não têm versão para comparar. */
+const _idxKm={};   // extensão de cada rodovia no index.json ("226-RN" → km), para saber se a baixada era inteira
+function snvDaBase(b){ const m=/SNV (\d{6}[a-z]?)/.exec(b && b.fonte || ''); return m ? m[1] : null }
+function snvVelho(b){ const v=snvDaBase(b); return !!(v && _localSnv && v<_localSnv) }   // "202607a" < "202610a"
+async function atualizaBase(id, btn){
+  const b=S.bases.find(x=>x.id===id); if(!b) return;
+  if(!navigator.onLine){ toast('Sem internet: não dá para atualizar agora.'); return }
+  const br=(/^BR-?(\d+)/i.exec(b.br)||[])[1], tipo=(/\((\w+)\)$/.exec(b.id)||[])[1]||'B', antes=snvDaBase(b);
+  if(!br) return;
+  /* trecho: a baixada inteira volta inteira (a nova versão pode ter mais KM); a de um trecho volta no mesmo trecho */
+  const ext=_idxKm[br.padStart(3,'0')+'-'+b.uf], parcial=!ext || (b.kmMax-b.kmMin) < ext*0.9;
+  const kmi=parcial?b.kmMin:null, kmf=parcial?b.kmMax:null;
+  btn.disabled=true; btn.textContent='Atualizando…';
+  try{
+    const nb = tipo==='B' ? await downloadRoadWfs(br.padStart(3,'0'), b.uf, null, kmi, kmf)
+                          : await downloadRoadFromApi(br.padStart(3,'0'), b.uf, _localSnv, null, kmi, kmf, tipo);
+    /* os dados do app caem no GeoServer público (SNV de 2025) quando não respondem: isso não é atualizar */
+    const depois=snvDaBase(nb);
+    if(!depois || depois<=antes || nb.id!==b.id) throw new Error('não veio a versão nova. Tente de novo com internet.');
+    if(b.nome) nb.nome=b.nome;
+    await dbPut(nb);
+    S.bases=S.bases.map(x=>x.id===id?nb:x);
+    renderBases();
+    await checkOverlaps(nb); renderBases();
+  }catch(e){
+    btn.disabled=false; btn.textContent='Atualizar';
+    const msg=/Failed to fetch|Load failed|NetworkError/i.test(e.message)?'sem conexão com o servidor.':e.message;
+    toast('Não consegui atualizar '+id+': '+msg, 5000);
+  }
+}
 
 /* ================= seletor de versão SNV =================
    Busca as versões disponíveis no servidor (API do KM Check).
@@ -3100,6 +3157,12 @@ function fmtSnvId(id){ const mi=parseInt(id.slice(4,6),10); return _snvMonths[mi
     if(!ok.length) return false;
     const atual=sel.value;
     sel.innerHTML='';
+    /* 1ª opção = "Mais recente": os dados do app (data/rodovias), que a tarefa diária renova assim que o DNIT
+       publica. As versões do servidor podem chegar depois — antes o padrão era a 1ª delas e quem baixava
+       recebia a versão anterior mesmo com a nova já no app. */
+    const o0=document.createElement('option');
+    o0.value=''; o0.textContent='Mais recente'+(_localSnv?' ('+fmtSnvId(_localSnv)+')':'');
+    sel.appendChild(o0);
     for(const v of ok){
       const o=document.createElement('option');
       o.value=v.id; o.textContent=fmtSnvId(v.id);

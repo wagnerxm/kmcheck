@@ -22,7 +22,7 @@ const LEG = JSON.parse(fs.readFileSync(path.join(EST, 'legenda.json'), 'utf8'));
 const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.resolve('logo-kmcheck.png')).toString('base64');
 await conv.close();
 
-const ESCURAS = new Set(['10-camera', '11-camera-servico-contrato', '12-camera-deitada', '13-galeria', '21-carro-noite', '33-importar-configurar', '60-vincular-contrato', '61-vincular-trecho', '62-detalhes-rodovia', '63-estaca', '64-gps-desligado']);
+const ESCURAS = new Set(['10-camera', '11-camera-servico-contrato', '12-camera-deitada', '13-galeria', '14-galeria-selecao', '15-galeria-foto', '16-camera-pista-lado', '17-camera-pista-dupla', '18-camera-gps-fraco', '70-cartao-bloqueio', '21-carro-noite', '33-importar-configurar', '60-vincular-contrato', '61-vincular-trecho', '62-detalhes-rodovia', '63-estaca', '64-gps-desligado']);
 const idx = fs.readFileSync(path.resolve('index.html'), 'utf8');
 const ini = idx.indexOf('<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>');
 const DEFS = idx.slice(ini, idx.indexOf('</defs></svg>', ini) + 13);

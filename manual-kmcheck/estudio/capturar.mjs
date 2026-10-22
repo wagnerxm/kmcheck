@@ -7,7 +7,7 @@ import puppeteer from 'puppeteer';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const BASE = 'http://localhost:3456/';
+const BASE = process.env.KC_BASE || 'http://localhost:3456/';   // KC_BASE=…/index.html quando o servidor lista a pasta na raiz
 /* KC_ANDROID=1: prints com cara de Android (tela de 412×915 de um Pixel, navegador Android) para as
    capturas da Google Play, numa pasta própria — os prints do manual (iPhone) não são tocados */
 const ANDROID = process.env.KC_ANDROID === '1';
@@ -166,8 +166,20 @@ const cenas = {
   async camera() {
     let p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);
     await p.evaluate(() => { localStorage.setItem('kc-svcsel', 'Aplicação de CBUQ'); openCam() });
-    await print(p, '10-camera', { marcas: [[1,"#camback"],[2,"#camgpsdot"],[3,"#camflip"],[4,"#liveplate"],[5,"#camfmts"],[6,"#cam-logo"],[7,"#cam-ld"],[8,"#cam-svc"],[9,"#shutter"],[10,"#cam-settings"],[11,"#cam-flash"],[12,"#cam-gallery"]], espera: 3500 });
+    await print(p, '10-camera', { marcas: [[1,"#camback"],[2,"#camgpsdot"],[3,"#camflip"],[4,"#liveplate"],[5,"#cam-ajuda"],[6,"#camfmts"],[7,"#cam-logo"],[8,"#cam-lados"],[9,"#cam-svc"],[10,"#shutter"],[11,"#cam-settings"],[12,"#cam-flash"],[13,"#cam-gallery"]], espera: 3500 });
     await p.evaluate(() => document.getElementById('cam-svc').click()); await print(p, '11-camera-servico-contrato', { espera: 900 });
+    await p.evaluate(() => { document.querySelectorAll('dialog[open]').forEach(d => d.close()); document.getElementById('cam-ajuda').click() });
+    await print(p, '16-camera-pista-lado', { espera: 900 });
+    await p.close();
+    /* aviso de pista dupla (balão sobre os botões): BR-226/RN km 1,5 é pista dupla no SNV; sem PC/PD marcado */
+    p = await abrir(); await posicionar(p, 'BR-226/RN', 1.5);
+    await p.evaluate(() => { localStorage.setItem('kc-svcsel', 'Aplicação de CBUQ'); localStorage.setItem('kc-pista', ''); openCam() });
+    await espera(3000); await p.evaluate(() => { paintTags(); paintGps(); balao('dup') });
+    await print(p, '17-camera-pista-dupla', { espera: 900 });
+    /* GPS fraco: a precisão passou de 15 m */
+    /* PD marcado: senão o balão da pista dupla volta a cada leitura e cobre o aviso do GPS */
+    await p.evaluate(() => { localStorage.setItem('kc-pista', 'PD'); confereTags = () => {}; paintTags(); balao(''); S.pos = { ...S.pos, acc: 24, t: Date.now() }; paintGps(); confereGpsFraco() });
+    await print(p, '18-camera-gps-fraco', { espera: 700 });
     await p.close();
     /* celular deitado, como no app de verdade: a página fica EM PÉ (travada em retrato) e só os botões e a
        legenda giram pelo sensor (S.sensorTilt). O print em pé é girado depois para mostrar o aparelho deitado. */
@@ -178,21 +190,54 @@ const cenas = {
     await print(p, '12-camera-deitada', { espera: 1200 });
     await girarPrint(p, '12-camera-deitada', -90); await p.close();
   },
+  /* galeria: fotos de exemplo de dias, rodovias, serviços e contratos diferentes → grade, seleção e foto aberta */
   async galeria() {
     const p = await abrir(); await posicionar(p, 'BR-226/RN', 326.04);
-    /* a foto aberta na galeria é a mesma da legenda do manual (gerada pelo app em fotolegenda) */
-    const fotos = ['foto-campo-tapaburaco.webp', 'foto-campo-nova-legenda.webp'].map(n => 'data:image/webp;base64,' + fs.readFileSync(path.resolve('manual-kmcheck/estudio/' + n)).toString('base64'));
+    const b64 = n => 'data:image/webp;base64,' + fs.readFileSync(path.resolve('manual-kmcheck/estudio/' + n)).toString('base64');
+    const fotos = ['foto-campo-nova-legenda.webp', 'foto-campo-tapaburaco.webp', 'foto-campo-rodovia.webp', 'foto-campo-nova.webp'].map(b64);
+    const NOME_LEG = JSON.parse(fs.readFileSync(path.resolve('manual-kmcheck/estudio/legenda.json'), 'utf8')).nome;
     await p.evaluate(async (fotos, NOME_LEG) => {
-      const nomes = ['BR-405-RN_KM138+799_LD_2026-10-07_10-48-12.jpg', NOME_LEG];
-      for (let i = 0; i < fotos.length; i++) {
-        const bin = atob(fotos[i].split(',')[1]), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k); const blob = new Blob([u8], { type: 'image/webp' });
-        const img = await createImageBitmap(blob), c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0);
-        const jpg = await new Promise(r => c.toBlob(r, 'image/jpeg', .92));
-        const id = await savePhotoToGallery(jpg, nomes[i]); await markPhotoSaved(id);
+      const dia = 864e5, agora = Date.now();
+      /* [foto, nome do arquivo, serviço, contrato, dias atrás, espelhar] — a 1ª é a mesma da legenda do manual */
+      const lista = [
+        [0, NOME_LEG, 'Aplicação de CBUQ', '14 00515/2024', 0, 0],
+        [1, 'BR-226-RN_KM326+410_LD_2026-10-07_10-48-12.jpg', 'Tapa-buraco', '14 00515/2024', 0, 0],
+        [2, 'BR-226-RN_KM325+870_LE_2026-10-07_10-31-40.jpg', 'Roçada manual', '14 00515/2024', 0, 1],
+        [3, 'BR-226-RN_KM324+120_PD_LD_2026-10-06_15-02-09.jpg', 'Aplicação de CBUQ', '14 00515/2024', 1, 1],
+        [1, 'BR-226-RN_KM323+905_PD_LE_2026-10-06_14-40-55.jpg', 'Tapa-buraco', '14 00515/2024', 1, 1],
+        [2, 'BR-110-RN_KM12+300_LD_2026-10-06_09-12-33.jpg', 'Limpeza de drenagem', '14 00546/2025', 1, 0],
+        [3, 'BR-110-RN_KM14+050_LE_2026-10-03_16-20-01.jpg', 'Roçada manual', '14 00546/2025', 4, 0],
+        [1, 'BR-110-RN_KM15+780_LD_2026-10-03_15-58-47.jpg', 'Limpeza de drenagem', '14 00546/2025', 4, 1],
+        [2, 'BR-110-RN_KM18+210_LD_2026-10-03_15-31-12.jpg', 'Tapa-buraco', '14 00546/2025', 4, 0],
+      ];
+      const d = await idb();
+      for (let i = lista.length - 1; i >= 0; i--) {   // a mais antiga primeiro: a grade mostra a mais nova em cima
+        const [fi, nome, svc, ct, atras, esp] = lista[i];
+        const bin = atob(fotos[fi].split(',')[1]), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+        const img = await createImageBitmap(new Blob([u8], { type: 'image/webp' })), c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+        const g = c.getContext('2d'); if (esp) { g.translate(c.width, 0); g.scale(-1, 1) } g.drawImage(img, 0, 0);
+        const jpg = await new Promise(r => c.toBlob(r, 'image/jpeg', .9));
+        const id = await new Promise((res, rej) => { const q = d.transaction('photos', 'readwrite').objectStore('photos').add({ name: nome, blob: jpg, ts: agora - atras * dia - i * 6e5, saved: true }); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error) });
+        await salvarFicha({ id, m: { ...fichaDoNome(nome), svc, ct }, th: null });
       }
-      await openGallery();
-    }, fotos, JSON.parse(fs.readFileSync(path.resolve('manual-kmcheck/estudio/legenda.json'), 'utf8')).nome);
-    await print(p, '13-galeria', { marcas: [[1,"#gal-close"],[2,"#gal-clean"],[3,"#gal-share"],[4,"#gal-count"],[5,"#gal-del"],[6,"#gal-caption"]], espera: 1500 }); await p.close();
+      await openGrade();
+    }, fotos, NOME_LEG);
+    await print(p, '13-galeria', { marcas: [[1,"#gg-close"],[2,"#gg-sel"],[3,"#gal-clean"],[4,"#gg-q"],[5,"#gg-chips"],[6,"#gg-lista .gg-ft"]], espera: 2500 });
+    await p.evaluate(() => { ggModoSel(true); [...document.querySelectorAll('#gg-lista .gg-ft')].slice(0, 3).forEach(b => ggMarca(b, true)) });
+    await print(p, '14-galeria-selecao', { marcas: [[1,"#gg-todas"],[2,"#gg-lista .gg-ft.marcada"],[3,"#gg-comp"]], espera: 900 });
+    await p.evaluate(async () => { ggModoSel(false); await openCarrossel(0) });
+    await print(p, '15-galeria-foto', { marcas: [[1,"#gal-close"],[2,"#gal-comp1"],[3,"#gal-share"],[4,"#gal-count"],[5,"#gal-del"],[6,"#gal-caption"]], espera: 1500 });
+    await p.close();
+  },
+  /* cartão do KM do iPhone (Atividade ao Vivo): é desenhado pelo iOS, fora do app — os prints saem do modelo
+     estudio/cartao-km.html, com as mesmas medidas e cores da extensão KMCheckAtividade.swift */
+  async cartao() {
+    for (const [cena, nome, l, a] of [['c2', '70-cartao-bloqueio', 390, 844], ['c3', '71-cartao-ilha', 390, 844]]) {
+      const p = await browser.newPage();
+      await p.setViewport({ width: l, height: a, deviceScaleFactor: 3 });
+      await p.goto('file:///' + path.resolve('manual-kmcheck/estudio/cartao-km.html').split(path.sep).join('/') + '?manual=1&c=' + cena, { waitUntil: 'load' });
+      await print(p, nome, { espera: 400 }); await p.close();
+    }
   },
 
   async inicio() {
@@ -237,6 +282,9 @@ const cenas = {
     await printSecao(p, '55-config-conteudo', 'Conteúdo');
     await printSecao(p, '56-config-servicos', 'Descrição de serviços');
     await printSecao(p, '57-config-contratos', 'Contratos');
+    /* a seção do cartão do KM só aparece no app de iPhone: no estúdio ela é mostrada à força */
+    await p.evaluate(() => { document.getElementById('sec-atv').hidden = false });
+    await printSecao(p, '58-config-carplay', 'Tela bloqueada e CarPlay');
     await p.close();
   },
   async janelas() {

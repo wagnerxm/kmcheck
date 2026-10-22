@@ -10,7 +10,7 @@ export const DATA = 'outubro de 2026';
 export const passosRapidos = [
   { t: 'Baixe a rodovia', d: 'Em Gestão de Eixo, escolha UF e BR e toque em Baixar rodovia. Precisa de internet só nesse momento.' },
   { t: 'Confira o KM', d: 'A tela inicial mostra a rodovia, o KM e a estaca do ponto onde você está, pelo GPS.' },
-  { t: 'Prepare a foto', d: 'Toque em Registrar evidência. Marque o lado (LD ou LE) e, no botão i, o serviço e o contrato.' },
+  { t: 'Prepare a foto', d: 'Toque em Registrar evidência. Marque o lado (LD ou LE) e, em pista dupla, a pista (PD ou PC). No botão i, escolha o serviço e o contrato.' },
   { t: 'Tire a foto', d: 'Toque no obturador. A legenda com rodovia, KM, estaca, coordenadas e data é gravada na imagem.' },
   { t: 'Pronto', d: 'A foto vai para a galeria do celular e fica guardada também na galeria do app.' },
 ];
@@ -43,10 +43,11 @@ const TODOS = [
         ['Voltar', 'Fecha a câmera e volta para a tela inicial.'],
         ['Sinal do GPS', 'Verde é sinal forte, amarelo é fraco e vermelho é sem sinal.'],
         ['Trocar câmera', 'Alterna entre a câmera traseira e a frontal.'],
-        ['Legenda ao vivo', 'Rodovia, KM, lado, estaca, contrato, serviço, coordenadas e data.'],
+        ['Legenda ao vivo', 'Rodovia, KM, pista, lado, estaca, contrato, serviço, coordenadas e data.'],
+        ['Ajuda de pista e lado', 'Explica o que são PD, PC, LE e LD.'],
         ['Proporção', 'Formato da foto: 1:1, 4:3 ou 16:9.'],
         ['Logo', 'Liga ou desliga a logo da empresa na foto.'],
-        ['Lado da pista', 'LD (direito) ou LE (esquerdo). Toque de novo para tirar o lado.'],
+        ['Pista e lado', 'PD e PC marcam a pista em trecho de pista dupla. LE e LD marcam o lado. Toque de novo para tirar.'],
         ['Serviço e contrato', 'Escolha o serviço executado e o contrato da foto.'],
         ['Obturador', 'Tira a foto.'],
         ['Configurações', 'Atalho direto para os ajustes.'],
@@ -55,12 +56,21 @@ const TODOS = [
       ],
     }, {
       img: '11-camera-servico-contrato', titulo: 'Serviço e contrato',
-      texto: 'No botão i você escolhe o serviço e o contrato que vão na segunda linha da legenda. Dá para cadastrar novos aqui mesmo, sem sair da câmera. Contratos vinculados a uma rodovia entram sozinhos quando você chega no trecho.',
+      texto: 'No botão i você escolhe o serviço e o contrato que vão na segunda linha da legenda. Dá para cadastrar novos aqui mesmo, sem sair da câmera. Contratos vinculados a uma rodovia entram sozinhos quando você chega no trecho. A seta recolhe os contratos e deixa mais espaço para os serviços.',
+    }, {
+      img: '16-camera-pista-lado', titulo: 'Pista e lado',
+      texto: 'Olhe sempre a rodovia no sentido crescente do KM. PC é a pista crescente e PD a decrescente: só existem onde a pista é dupla. LD é o lado direito e LE o esquerdo. O que estiver marcado entra na legenda e no nome da foto.',
+    }, {
+      img: '17-camera-pista-dupla', titulo: 'Aviso de pista dupla',
+      texto: 'Ao entrar num trecho de pista dupla do SNV sem PC ou PD marcado, um balão pede a pista. Quando o trecho acaba, o app tira a pista da legenda e deixa desfazer. Se você andar 500 m depois de marcar a pista ou o lado, ele pergunta se ainda vale.',
+    }, {
+      img: '18-camera-gps-fraco', titulo: 'GPS fraco',
+      texto: 'Com a precisão do GPS pior que 15 m, aparece o aviso GPS fraco. A foto não é bloqueada, mas o KM pode sair alguns metros deslocado. Espere o número baixar, de preferência em céu aberto.',
     }, {
       img: '12-camera-deitada', titulo: 'Celular deitado', deitado: true,
       texto: 'Gire o celular e a câmera acompanha. A legenda e os botões se reorganizam para a foto na horizontal.',
     }],
-    dica: 'Sem GPS ou com o sinal muito impreciso, o app bloqueia a foto e avisa. Assim nenhuma evidência sai com localização errada.',
+    dica: 'Debaixo de ponte ou em túnel o GPS perde o sinal. Se você estava parado ou a pé, a foto sai com a última posição boa e a faixa fica âmbar. Sem nenhuma posição confiável, o app bloqueia a foto e avisa.',
   },
   {
     id: 'legenda', km: '04', titulo: 'A legenda da foto',
@@ -69,18 +79,33 @@ const TODOS = [
   },
   {
     id: 'galeria', km: '05', titulo: 'Galeria',
-    intro: 'Todas as fotos ficam guardadas também dentro do app, mesmo depois de salvas no celular. Use a galeria para conferir, salvar de novo ou compartilhar.',
+    intro: 'As fotos ficam guardadas também dentro do app, em grade, da mais nova para a mais antiga. Busque, filtre, abra, salve de novo ou envie várias de uma vez.',
     telas: [{
       img: '13-galeria', itens: [
         ['Voltar', 'Fecha a galeria.'],
+        ['Selecionar', 'Começa a marcar fotos para enviar juntas.'],
         ['Limpar galeria', 'Apaga do app só as fotos que já estão salvas no celular.'],
-        ['Salvar', 'Salva ou compartilha a foto aberta.'],
-        ['Posição', 'Número da foto e total de fotos no app.'],
+        ['Buscar', 'Serviço, contrato, BR ou KM. Um número sozinho acha o KM inteiro: 85 mostra de 85,000 a 85,999.'],
+        ['Filtros', 'Rodovia, KM, serviço, contrato e data. Toque no × para tirar o filtro.'],
+        ['Foto', 'Toque para abrir. A etiqueta verde mostra a rodovia. Segure para começar a selecionar.'],
+      ],
+    }, {
+      img: '14-galeria-selecao', titulo: 'Enviar várias fotos', itens: [
+        ['Todas', 'Marca todas as fotos do filtro atual. Toque de novo para desmarcar.'],
+        ['Foto marcada', 'Toque nas fotos para marcar ou desmarcar.'],
+        ['Compartilhar', 'Envia as marcadas de uma vez: WhatsApp, e-mail, Arquivos e outros.'],
+      ],
+    }, {
+      img: '15-galeria-foto', titulo: 'Foto aberta', itens: [
+        ['Voltar', 'Volta para a grade.'],
+        ['Compartilhar', 'Envia esta foto.'],
+        ['Salvar', 'Salva a foto no celular.'],
+        ['Posição', 'Número da foto dentro do filtro atual.'],
         ['Excluir', 'Apaga a foto do app. A cópia do celular continua lá.'],
         ['Nome e situação', 'Nome do arquivo e se a foto já está salva no celular.'],
       ],
     }],
-    dica: 'Arraste para os lados para trocar de foto. Dois toques ou o movimento de pinça dão zoom.',
+    dica: 'Na foto aberta, arraste para os lados para trocar de foto. Dois toques ou pinça dão zoom. O app guarda as 300 fotos mais recentes: as mais antigas que já estão no celular saem sozinhas. As que estão só no app nunca são apagadas.',
   },
   {
     id: 'carro', km: '06', titulo: 'Modo Carro',
@@ -185,6 +210,7 @@ const TODOS = [
         ['Transparência', 'Quanto da foto aparece por trás da tarja.'],
       ] },
       { img: '55-config-conteudo', titulo: 'Conteúdo da legenda', linhas: [
+        ['Exibir rodovia e KM', 'Primeira linha da legenda: rodovia, KM, pista, lado e estaca. Desligada, a foto sai sem o KM.'],
         ['Exibir estaca', 'Estaca ao lado do KM.'],
         ['Exibir SNV', 'Versão do SNV na linha da data.'],
         ['Nome da OAE', 'Ponte ou viaduto quando a foto é tirada sobre um.'],
@@ -195,7 +221,23 @@ const TODOS = [
       { img: '56-config-servicos', titulo: 'Descrição de serviços', linhas: [
         ['Serviços', 'Lista para escolha rápida na câmera.'],
       ] },
+      { img: '58-config-carplay', titulo: 'Tela bloqueada e CarPlay (iPhone)', linhas: [
+        ['KM no CarPlay e na tela bloqueada', 'Cartão com o KM ao vivo. Aparece sozinho acima de 20 km/h numa rodovia e some depois de 10 min parado.'],
+        ['Mostrar o cartão agora', 'Liga o cartão parado, para ver o KM ou testar. Fica até você desligar a chave ou arrastar o cartão.'],
+      ] },
     ],
+  },
+  {
+    id: 'cartao', titulo: 'KM na tela bloqueada e no CarPlay',
+    intro: 'Só no app de iPhone, com iOS 18 ou mais novo. Dirigindo numa rodovia baixada, o KM aparece num cartão na tela bloqueada e na Ilha Dinâmica, sem abrir o app. No iOS 26, o mesmo cartão aparece no painel do CarPlay, ao lado do mapa.',
+    telas: [{
+      img: '70-cartao-bloqueio', titulo: 'Na tela bloqueada',
+      texto: 'Placa, rodovia e KM com metros. A barra mostra quanto falta para o próximo KM, no sentido em que você anda. Embaixo vêm a estaca e o sentido. Em pista dupla, o aviso aparece no canto.',
+    }, {
+      img: '71-cartao-ilha', titulo: 'Na Ilha Dinâmica',
+      texto: 'Com outro app aberto, como o Mapas, a ilha mostra a placa e o KM. Toque e segure a ilha para abrir o cartão inteiro, como na imagem. Tocar no cartão abre o KM Check.',
+    }],
+    dica: 'O cartão liga sozinho acima de 20 km/h numa rodovia, com o app aberto, e some depois de 10 min parado. Para ver o KM parado, use Mostrar o cartão agora, nos Ajustes. Enquanto o cartão está na tela, a localização continua ligada e aparece a pílula azul no alto.',
   },
   {
     id: 'contratos', km: '10', titulo: 'Contratos',
@@ -220,6 +262,7 @@ const TODOS = [
       ['GPS impreciso ou desatualizado', 'Espere alguns segundos em céu aberto. Dentro de carro ou perto de prédios o sinal piora.'],
       ['Localização obrigatória', 'O app precisa da localização para gravar as coordenadas. No iPhone: Ajustes, Privacidade, Serviços de Localização, Safari, "Ao Usar o App". No Android: cadeado da barra de endereço, Permissões, Localização.'],
       ['A foto não foi para o celular', 'Ela continua guardada na galeria do app. Abra a galeria e toque em Salvar.'],
+      ['O cartão do KM não aparece no iPhone', 'Precisa do iOS 18 ou mais novo. Confira nos Ajustes do iPhone, em KM Check, se as Atividades ao Vivo estão ligadas, e nos Ajustes do app a chave KM no CarPlay e na tela bloqueada.'],
       ['Duas rodovias no mesmo trecho', 'Em Detalhes da rodovia, escolha qual vale ali. Manter as duas faz o app usar a mais próxima do GPS.'],
       ['Atualizar o app', 'O app se atualiza sozinho com internet. No iPhone, se não atualizar, feche o app de vez e abra de novo.'],
     ],
@@ -228,5 +271,5 @@ const TODOS = [
 ];
 
 /* ordem dos capítulos no manual; o número do KM de cada um sai daqui (KM 00 é o Guia rápido) */
-const ORDEM = ['inicio', 'eixo', 'config', 'contratos', 'camera', 'legenda', 'galeria', 'consulta', 'carro', 'problemas'];
+const ORDEM = ['inicio', 'eixo', 'config', 'contratos', 'camera', 'legenda', 'galeria', 'consulta', 'carro', 'cartao', 'problemas'];
 export const capitulos = ORDEM.map((id, i) => ({ ...TODOS.find(c => c.id === id), km: String(i + 1).padStart(2, '0') }));

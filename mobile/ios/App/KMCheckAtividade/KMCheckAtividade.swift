@@ -33,11 +33,9 @@ struct KMAtividadeWidget: Widget {
                     Placa(br: v.br, km: v.kmPlaca, largura: 50).padding(.leading, 4).padding(.top, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 5) {
-                        if v.e.dupla { ChipDupla() }
-                        if let s = v.sentidoTexto { Chip(texto: s) }
-                    }
-                    .padding(.trailing, 4).padding(.top, 4)
+                    /* o sentido já vai na linha de baixo (Rodape), junto da estaca */
+                    Group { if v.e.dupla && !v.apagado { ChipDupla() } }
+                        .padding(.trailing, 4).padding(.top, 4)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 1) {
