@@ -1,6 +1,6 @@
 // Service worker do Finance Mind. Escopo: só /financemind/ (o KM Check tem o dele na raiz).
 // Sobe o número a CADA alteração em qualquer arquivo desta pasta, senão os aparelhos seguem com a versão antiga.
-const CACHE = 'financemind-v2';
+const CACHE = 'financemind-v3';
 const ARQUIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'vendor/react.min.js', 'vendor/react-dom.min.js', 'vendor/htm.js', 'vendor/manrope.woff2'];
 
 self.addEventListener('install', e => {

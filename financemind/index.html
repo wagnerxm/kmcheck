@@ -445,7 +445,7 @@ const CATS_PADRAO = [
 ];
 const estadoInicial = () => ({
   v: 1, criadoEm: hoje(), atualizadoEm: 0,
-  cfg: { tema: 'auto', rendaMensal: 0, saldoInicial: 0, guardarMes: null, orcFlex: null, pequeno: 3000, simples: false, onboard: false },
+  cfg: { tema: 'claro', rendaMensal: 0, saldoInicial: 0, guardarMes: null, orcFlex: null, pequeno: 3000, simples: false, onboard: false },
   cats: CATS_PADRAO.map(c => ({ ...c, limite: 0 })),
   tx: [], recs: [], metas: [], espera: [], economizado: 0,
   hab: { dias: {}, semanas: {}, metasMes: {}, desafio: null, desafiosFeitos: [] },
@@ -463,7 +463,7 @@ function normalizarEstado(raw) {
   const S = { ...base, criadoEm: dataValida(raw.criadoEm) ? raw.criadoEm : base.criadoEm, atualizadoEm: Date.now() };
   const cf = raw.cfg && typeof raw.cfg === 'object' ? raw.cfg : {};
   S.cfg = {
-    tema: ['auto', 'claro', 'escuro'].includes(cf.tema) ? cf.tema : 'auto',
+    tema: cf.tema === 'escuro' ? 'escuro' : 'claro', // fundo claro por padrão, sem seguir o modo escuro do aparelho
     rendaMensal: inteiroPos(cf.rendaMensal), saldoInicial: Number.isInteger(cf.saldoInicial) && Math.abs(cf.saldoInicial) < 1e12 ? cf.saldoInicial : 0,
     guardarMes: cf.guardarMes == null ? null : (Number.isInteger(cf.guardarMes) && cf.guardarMes >= 0 ? cf.guardarMes : null),
     orcFlex: cf.orcFlex == null ? null : (Number.isInteger(cf.orcFlex) && cf.orcFlex >= 0 ? cf.orcFlex : null),
@@ -868,6 +868,8 @@ const { useState, useEffect, useMemo, useRef, useCallback, useContext } = React;
 const html = htm.bind(React.createElement);
 const Frag = React.Fragment;
 const CHAVE = 'financemind.v1';
+// aplica o tema antes do primeiro desenho (evita piscar escuro): claro por padrão
+try { const t = (JSON.parse(localStorage.getItem('financemind.v1')) || {}).cfg; document.documentElement.setAttribute('data-theme', t && t.tema === 'escuro' ? 'dark' : 'light'); } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
 const MENTOR = false; // o build do PWA troca por false: o mentor precisa do Claude (sem servidor/chave de API fora dele)
 
 const IC = {
@@ -993,7 +995,7 @@ function Provider({ children }) {
   // tema
   useEffect(() => {
     const t = A.cfg.tema, el = document.documentElement;
-    if (t === 'claro') el.setAttribute('data-theme', 'light'); else if (t === 'escuro') el.setAttribute('data-theme', 'dark');
+    el.setAttribute('data-theme', t === 'escuro' ? 'dark' : 'light');
   }, [A.cfg.tema]);
 
   // armazenamento pessoal: banco privado do usuário (data/users/<id>) + cópia local
@@ -1474,7 +1476,7 @@ function Dados() {
   };
   return html`<div className="page"><h1 className="ptitle">Dados e ajustes</h1>
     ${demo ? html`<div className="demo-banner"><span>Você está no modo demonstração. Exportar e importar ficam desativados.</span><button className="btn sm" onClick=${sairDemo}>Sair da demonstração</button></div>` : null}
-    <section className="card stack"><h2>Aparência</h2><${Seg} full rotulo="Tema" valor=${A.cfg.tema} onChange=${v => { upd(s => ({ ...s, cfg: { ...s.cfg, tema: v } })); if (v === 'auto') document.documentElement.removeAttribute('data-theme'); }} opcoes=${[{ v: 'auto', t: 'Automático' }, { v: 'claro', t: 'Claro' }, { v: 'escuro', t: 'Escuro' }]} /></section>
+    <section className="card stack"><h2>Aparência</h2><${Seg} full rotulo="Tema" valor=${A.cfg.tema} onChange=${v => upd(s => ({ ...s, cfg: { ...s.cfg, tema: v } }))} opcoes=${[{ v: 'claro', t: 'Fundo claro' }, { v: 'escuro', t: 'Fundo escuro' }]} /></section>
     <section className="card stack"><h2>Onde seus dados ficam</h2><p>${demo ? 'Dados de exemplo: nada é salvo.' : status.msg}</p><p className="xs mut">${A.tx.length} lançamentos · ${A.metas.length} metas. Os dados nunca são compartilhados com outras pessoas que abrirem este link.</p></section>
     <section className="card stack"><h2>Exportar</h2>
       <button className="btn" disabled=${!!demo} onClick=${() => exportar(`financemind-backup-${hojeS}.json`, JSON.stringify(S, null, 1))}><${Ico} n="down" s=${18} />Backup completo (JSON)</button>
