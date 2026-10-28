@@ -29,8 +29,6 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   .txt img{height:74px}
   .lin{display:flex;align-items:center;gap:26px;margin-top:30px}
   h1{font:900 54px/1.04 Inter;letter-spacing:-.04em;color:#14161a}
-  /* o "KM" no verde-lima do app (--gold do tema escuro); a sombra leve segura a leitura no fundo claro */
-  h1 em{font-style:normal;color:#b7d92d;text-shadow:0 1px 0 rgba(60,80,0,.35),0 4px 14px rgba(120,160,20,.25)}
   p{margin-top:16px;font:500 21px/1.45 Inter;color:#3b4559;max-width:520px}
   .lojas{position:absolute;left:64px;bottom:52px;display:flex;align-items:center;gap:14px}
   .loja{display:flex;align-items:center;gap:11px;padding:10px 20px 10px 15px;border-radius:14px;background:linear-gradient(168deg,#30333a,#111214);color:#fff;border:1px solid rgba(183,217,45,.4);box-shadow:0 14px 26px -14px rgba(0,0,0,.6)}
@@ -46,7 +44,7 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   .f2{width:240px;height:519px;right:282px;top:70px;transform:rotate(-7deg);z-index:1}
   .f2::before{content:'';position:absolute;inset:0;border-radius:46px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:3}
 </style></head><body><div class="veu"></div><div class="brilho"></div>
-  <div class="txt"><img src="${LOGO}"><div class="lin">${placa}<h1>O <em>KM</em> certo,<br>em cada<br>foto.</h1></div><p>Rodovia, KM e estaca pelo GPS, com a base oficial do SNV. Até sem internet.</p></div>
+  <div class="txt"><img src="${LOGO}"><div class="lin">${placa}<h1>O KM certo,<br>em cada<br>foto.</h1></div><p>Rodovia, KM e estaca pelo GPS, com a base oficial do SNV. Até sem internet.</p></div>
   <div class="lojas">
     <div class="loja"><svg viewBox="0 0 24 24"><path d="${APPLE}"/></svg><span><small>Baixe na</small><b>App Store</b></span></div>
     <div class="loja"><svg viewBox="0 0 24 24"><path d="${PLAY}"/></svg><span><small>Disponível no</small><b>Google Play</b></span></div>
