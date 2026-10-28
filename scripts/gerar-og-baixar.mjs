@@ -26,9 +26,10 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   .veu{position:absolute;inset:0;background:linear-gradient(180deg,rgba(238,240,241,1) 0,rgba(238,240,241,1) 10%,rgba(238,240,241,0) 22%),linear-gradient(90deg,rgba(238,240,241,.96) 0%,rgba(238,240,241,.88) 46%,rgba(238,240,241,.2) 78%)}
   .brilho{position:absolute;right:0;top:-40px;width:560px;height:720px;background:radial-gradient(50% 50% at 50% 50%,rgba(196,226,74,.32),transparent 70%)}
   .txt{position:absolute;left:64px;top:62px;width:600px}
-  .marca{display:flex;align-items:center;gap:20px}
-  .marca img{height:74px}
-  .marca b{font:900 52px/1 Inter;letter-spacing:-.035em;color:#14161a}
+  /* marca: a logo tem a largura da placa (coluna da esquerda) e o nome "KM Check" tem exatamente a altura da logo, alinhado com o título */
+  .marca{display:flex;align-items:flex-end;gap:28px}
+  .marca img{width:134px;display:block}
+  .marca svg{display:block;overflow:visible}
   .lin{display:flex;align-items:center;gap:28px;margin-top:40px}
   h1{font:900 56px/1.04 Inter;letter-spacing:-.04em;color:#14161a}
   h1 em{font-style:normal;color:#6f9a0e}
@@ -39,14 +40,14 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   .loja svg{width:30px;height:30px;fill:#fff}
   .loja small{display:block;font:500 12px Inter;color:#c9ced6}
   .loja b{display:block;font:800 20px/1.1 Inter;letter-spacing:-.01em}
-  .fone{position:absolute;border-radius:46px;background:#050607;padding:11px;box-shadow:0 40px 70px -20px rgba(0,0,0,.7),0 0 0 1.5px rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.06)}
-  .fone img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:36px}
-  .fone::after{content:'';position:absolute;top:22px;left:50%;width:92px;height:26px;margin-left:-46px;border-radius:14px;background:#000}
-  .f1{width:262px;height:566px;right:60px;top:34px;z-index:2}
-  .f2{width:240px;height:519px;right:282px;top:70px;transform:rotate(-7deg);z-index:1}
-  .f2::before{content:'';position:absolute;inset:0;border-radius:46px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:3}
+  .fone{position:absolute;border-radius:42px;background:#050607;padding:10px;box-shadow:0 40px 70px -20px rgba(0,0,0,.7),0 0 0 1.5px rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.06)}
+  .fone img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;border-radius:33px}
+  .fone::after{content:"";position:absolute;top:20px;left:50%;width:80px;height:23px;margin-left:-40px;border-radius:12px;background:#000}
+  .f1{width:236px;height:510px;right:44px;top:64px;z-index:2}
+  .f2{width:214px;height:463px;right:238px;top:140px;transform:rotate(-7deg);z-index:1}
+  .f2::before{content:'';position:absolute;inset:0;border-radius:42px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:3}
 </style></head><body><div class="veu"></div><div class="brilho"></div>
-  <div class="txt"><div class="marca"><img src="${LOGO}"><b>KM Check</b></div><div class="lin">${placa}<h1>Chega de<br>anotar o KM.<br><em>Fotografe!</em></h1></div></div>
+  <div class="txt"><div class="marca"><img id="logo" src="${LOGO}"><svg id="nome"></svg></div><div class="lin">${placa}<h1>Chega de<br>anotar o KM.<br><em>Fotografe!</em></h1></div></div>
   <div class="cta">Baixe agora <span>· grátis</span></div>
   <div class="lojas">
     <div class="loja"><svg viewBox="0 0 24 24"><path d="${APPLE}"/></svg><span><small>Baixe na</small><b>App Store</b></span></div>
@@ -55,6 +56,20 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   <div class="fone f2"><img src="${CAM}"></div><div class="fone f1"><img src="${INI}"></div>
 </body></html>`, { waitUntil: 'load', timeout: 90000 });
 await p.evaluateHandle('document.fonts.ready');
+// ajusta o nome para a altura exata da logo: mede a altura real das letras (do topo do "h"/"k" até a linha de base) no canvas
+const medida = await p.evaluate(async () => {
+  await document.getElementById('logo').decode();
+  const H = document.getElementById('logo').getBoundingClientRect().height, ls = -0.03;
+  const c = document.createElement('canvas').getContext('2d'); c.font = '900 100px Inter';
+  const r = c.measureText('KM Check').actualBoundingBoxAscent / 100, t = H / r;
+  c.font = `900 ${t}px Inter`; c.letterSpacing = (ls * t) + 'px'; const w = c.measureText('KM Check').width;
+  const svg = document.getElementById('nome'); svg.setAttribute('width', w); svg.setAttribute('height', H);
+  svg.innerHTML = `<defs><linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86e20e"/><stop offset="1" stop-color="#4fa80a"/></linearGradient>
+    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3e46"/><stop offset="1" stop-color="#16181c"/></linearGradient></defs>
+    <text x="0" y="${H}" font-family="Inter" font-weight="900" font-size="${t}" letter-spacing="${ls * t}"><tspan fill="url(#gv)">KM</tspan><tspan fill="url(#gg)"> Check</tspan></text>`;
+  return { H, t, w, fim: svg.getBoundingClientRect().right };
+});
+console.log('nome', medida);
 await new Promise(r => setTimeout(r, 600));
 await p.screenshot({ path: path.resolve('baixar/og.jpg'), type: 'jpeg', quality: 86 });
 await b.close();
