@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KM Check — Baixe Agora</title>
+<meta name="description" content="Grátis para iPhone e Android.">
+<meta name="theme-color" content="#eef0f1">
+<!-- cartão que o WhatsApp (e outros) montam ao colar o link kmcheck.com.br/baixar: imagem 1200x630 + título + frase.
+     O endereço da imagem precisa ser completo (com https://) para o WhatsApp buscar. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KM Check">
+<meta property="og:title" content="KM Check — Baixe Agora">
+<meta property="og:description" content="Grátis para iPhone e Android.">
+<meta property="og:url" content="https://kmcheck.com.br/baixar/">
+<meta property="og:image" content="https://kmcheck.com.br/baixar/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="KM Check: chega de anotar o KM. Fotografe!">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<script>
+/* celular: vai direto para a loja certa (iPhone → App Store, Android → Google Play). No computador fica a página com
+   os dois botões e o QR code. O WhatsApp lê só os <meta> acima, então o redirecionamento não estraga o cartão. */
+(function(){
+  var ua=navigator.userAgent||'', ios=/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1);
+  var dest = ios ? 'https://apps.apple.com/br/app/km-check/id6823640306'
+           : /Android/i.test(ua) ? 'https://play.google.com/store/apps/details?id=br.com.kmcheck.app' : '';
+  if(dest && !/[?&]ficar\b/.test(location.search)) location.replace(dest);   // ?ficar mostra a página no celular
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap">
+<style>
+:root{--bg:#eef0f1;--tinta:#14161a;--mut:#4a5263;--lima:#b7d92d;--lima2:#8eb31f;--card:#15171b;--linha:rgba(20,22,26,.10)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tinta);font-family:Inter,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding:max(20px,env(safe-area-inset-top)) 16px max(28px,env(safe-area-inset-bottom));
+  background:radial-gradient(80% 50% at 90% 0%,rgba(183,217,45,.16),transparent 60%),radial-gradient(60% 40% at 0% 100%,rgba(183,217,45,.10),transparent 60%),var(--bg)}
+.wrap{max-width:1020px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.hero{border-radius:26px;overflow:hidden;box-shadow:0 30px 60px -28px rgba(20,22,26,.45),0 0 0 1px var(--linha);background:#fff}
+.hero img{display:block;width:100%;height:auto;max-width:100%}
+.baixo{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
+.txt{min-width:0}
+.olho{font:800 12px Inter,sans-serif;letter-spacing:.32em;text-transform:uppercase;color:var(--lima2)}
+h1{font:900 clamp(26px,4.4vw,40px)/1.08 Inter,sans-serif;letter-spacing:-.03em;margin-top:8px;text-wrap:balance}
+.sub{color:var(--mut);font-size:clamp(15px,1.9vw,17px);line-height:1.5;margin-top:10px;max-width:46ch}
+.lojas{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.loja{display:flex;align-items:center;gap:12px;min-width:210px;padding:12px 20px 12px 16px;border-radius:16px;text-decoration:none;
+  color:#fff;background:linear-gradient(168deg,#30333a,#18191d 60%,#0f1012);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 26px -14px rgba(0,0,0,.6);
+  border:1px solid rgba(183,217,45,.28);transition:transform .15s}
+.loja:hover{transform:translateY(-2px)}
+.loja svg{width:28px;height:28px;flex:0 0 auto;fill:#fff}
+.loja small{display:block;font:500 11px Inter,sans-serif;color:#c9ced6}
+.loja b{display:block;font:800 17px Inter,sans-serif;letter-spacing:-.01em}
+.gratis{margin-top:14px;font:600 13px Inter,sans-serif;color:var(--mut)}
+.gratis i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lima);margin-right:7px;box-shadow:0 0 8px rgba(183,217,45,.8)}
+.qr{background:#fff;border-radius:22px;padding:18px;width:200px;text-align:center;box-shadow:0 20px 40px -24px rgba(20,22,26,.45),0 0 0 1px var(--linha)}
+.qr img{width:164px;height:164px;display:block;margin:0 auto}
+.qr p{font:600 12px/1.4 Inter,sans-serif;color:var(--mut);margin-top:10px}
+.rodape{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;color:var(--mut);border-top:1px solid var(--linha);padding-top:16px}
+.rodape a{color:var(--mut)}
+@media (max-width:720px){
+  .baixo{grid-template-columns:1fr}
+  .qr{display:none}   /* no celular o QR não serve (e o app já redireciona para a loja) */
+  .loja{flex:1 1 100%}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="hero"><img src="destaque.png" width="1024" height="500" alt="KM Check: o KM certo, em cada foto. Rodovia, KM, estaca e coordenadas gravados na foto."></div>
+  <section class="baixo">
+    <div class="txt">
+      <span class="olho">Baixe grátis</span>
+      <h1>Chega de anotar o KM. Fotografe!</h1>
+      <p class="sub">Rodovia, KM, estaca, coordenadas, data e hora na própria imagem, com a base oficial do SNV. Funciona sem internet depois de baixar a rodovia.</p>
+      <div class="lojas">
+        <a class="loja" href="https://apps.apple.com/br/app/km-check/id6823640306" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.7c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.83-1.22 1.18-2.41 1.2-2.47-.03-.01-2.3-.88-2.32-3.52zM14.2 6.24c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.31-.56.65-1.05 1.68-.92 2.68.97.08 1.96-.49 2.56-1.23z"/></svg>
+          <span><small>Para iPhone, na</small><b>App Store</b></span></a>
+        <a class="loja" href="https://play.google.com/store/apps/details?id=br.com.kmcheck.app" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 2.5 13.6 12l-9.4 9.5c-.34-.2-.6-.6-.6-1.1V3.6c0-.5.26-.9.6-1.1zm10.6 10.7 2.3 2.3-10.7 6.1 8.4-8.4zm3.6-3.4 2.6 1.5c.7.4.7 1.4 0 1.8l-2.6 1.5-2.5-2.6 2.5-2.2zM6.4 2.4l10.7 6.1-2.3 2.3-8.4-8.4z"/></svg>
+          <span><small>Para Android, no</small><b>Google Play</b></span></a>
+      </div>
+      <p class="gratis"><i></i>Gratuito · iPhone e Android</p>
+    </div>
+    <div class="qr"><img src="qr.svg" alt="QR code para baixar o KM Check"><p>Aponte a câmera do celular para baixar</p></div>
+  </section>
+  <footer class="rodape">
+    <span>KM Check · desenvolvido por Wagner Machado</span>
+    <span><a href="../privacidade/">Privacidade</a> · App independente, sem vínculo com o DNIT. Dados oficiais: <a href="https://www.gov.br/dnit/pt-br/assuntos/atlas-e-mapas/pnv-e-snv" rel="noopener">gov.br/dnit</a></span>
+  </footer>
+</main>
+</body>
+</html>
