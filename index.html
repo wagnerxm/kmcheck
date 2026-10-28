@@ -514,6 +514,9 @@ label.f{display:block;font-size:10px;letter-spacing:.18em;text-transform:upperca
 .bnova button{flex:0 0 auto;min-height:40px;padding:0 16px;border-radius:999px;border:0;background:#b7d92d;color:#111;
   font-family:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .bnova button:disabled{opacity:.6}
+/* seção do cartão do KM: .listrow tem display:flex, que passava por cima do atributo hidden */
+#sec-atv [hidden]{display:none}
+#sec-atv .atv-outro{cursor:default;border-bottom:0}
 /* tela inicial: pontinho âmbar no "Gestão de Eixo" quando alguma rodovia tem SNV mais novo */
 .gcard.snvnovo .gtitle::after{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffb81c;
   margin-left:7px;vertical-align:2px;box-shadow:0 0 8px rgba(255,184,28,.7)}
@@ -1730,15 +1733,19 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
       <input type="number" id="cfg-maxdist" value="300" min="20" max="10000" step="10">
     </div>
 
-    <!-- só no app de iPhone (iOS 18+): o cartão do KM da Atividade ao Vivo (atvConfere) -->
-    <div id="sec-atv" hidden>
+    <!-- cartão do KM da Atividade ao Vivo (atvConfere): a chave e o botão só no app de iPhone (iOS 18+); no Android e no
+         site a seção mostra só o aviso de que no carro é só CarPlay — o Android Auto ainda não aceita apps como o KM Check -->
+    <div id="sec-atv">
       <h2 class="sec">Tela bloqueada e CarPlay</h2>
       <div class="card listcard">
-        <label class="listrow">
-          <span class="ltext"><b>KM no CarPlay e na tela bloqueada</b><i>Cartão com o KM ao vivo na tela bloqueada, na Ilha Dinâmica e no CarPlay. Aparece sozinho acima de 20 km/h numa rodovia e some após 10 min parado.</i></span>
+        <label class="listrow atv-ios" hidden>
+          <span class="ltext"><b>KM no CarPlay e na tela bloqueada</b><i>Cartão com o KM ao vivo na tela bloqueada, na Ilha Dinâmica e no CarPlay. Aparece sozinho acima de 20 km/h numa rodovia e some após 10 min parado. Só no CarPlay: no Android Auto ainda não funciona.</i></span>
           <input type="checkbox" id="cfg-atividade" checked>
         </label>
-        <div class="listrow">
+        <div class="listrow atv-outro">
+          <span class="ltext"><b>KM no painel do carro</b><i>Só no iPhone, com o CarPlay, o KM aparece no painel do carro e na tela bloqueada. No Android Auto ainda não funciona, porque o Google ainda não libera apps como o KM Check no painel.</i></span>
+        </div>
+        <div class="listrow atv-ios" hidden>
           <span class="ltext"><b>Mostrar o cartão agora</b><i>Para ver o KM parado ou testar. Fica até você desligar a chave acima ou arrastar o cartão.</i></span>
           <button class="btn small gold" id="atv-agora" type="button" style="flex:0 0 auto">Mostrar</button>
         </div>
@@ -7645,7 +7652,8 @@ for(const [id, key, lbl] of [['cfg-logoop','logoop','lbl-logoop'],['cfg-logosz',
 
 /* cartão do KM (Atividade ao Vivo): a chave só aparece no app de iPhone; desligar tira o cartão da tela na hora */
 if(NATIVO && NATIVO.ios){
-  document.getElementById('sec-atv').hidden=false;
+  document.querySelectorAll('#sec-atv .atv-ios').forEach(e=>e.hidden=false);
+  document.querySelector('#sec-atv .atv-outro').hidden=true;
   document.getElementById('cfg-atividade').addEventListener('change', e=>{
     _atvUlt=0; _atvIds=''; _atvCentro=null; _atvManual=false;
     if(!e.target.checked) NATIVO.chama('atividadeEncerrar').catch(()=>{});

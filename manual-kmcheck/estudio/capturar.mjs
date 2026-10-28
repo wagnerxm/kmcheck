@@ -282,8 +282,8 @@ const cenas = {
     await printSecao(p, '55-config-conteudo', 'Conteúdo');
     await printSecao(p, '56-config-servicos', 'Descrição de serviços');
     await printSecao(p, '57-config-contratos', 'Contratos');
-    /* a seção do cartão do KM só aparece no app de iPhone: no estúdio ela é mostrada à força */
-    await p.evaluate(() => { document.getElementById('sec-atv').hidden = false });
+    /* a chave do cartão do KM só aparece no app de iPhone: no estúdio ela é mostrada à força (no lugar do aviso do Android) */
+    await p.evaluate(() => { document.querySelectorAll('#sec-atv .atv-ios').forEach(e => e.hidden = false); document.querySelector('#sec-atv .atv-outro').hidden = true });
     await printSecao(p, '58-config-carplay', 'Tela bloqueada e CarPlay');
     await p.close();
   },

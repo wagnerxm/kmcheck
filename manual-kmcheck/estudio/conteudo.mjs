@@ -224,12 +224,13 @@ const TODOS = [
       { img: '58-config-carplay', titulo: 'Tela bloqueada e CarPlay (iPhone)', linhas: [
         ['KM no CarPlay e na tela bloqueada', 'Cartão com o KM ao vivo. Aparece sozinho acima de 20 km/h numa rodovia e some depois de 10 min parado.'],
         ['Mostrar o cartão agora', 'Liga o cartão parado, para ver o KM ou testar. Fica até você desligar a chave ou arrastar o cartão.'],
+        ['No Android', 'A seção só avisa que o KM no painel do carro é do CarPlay. No Android Auto ainda não funciona, porque o Google ainda não libera apps como o KM Check no painel.'],
       ] },
     ],
   },
   {
     id: 'cartao', titulo: 'KM na tela bloqueada e no CarPlay',
-    intro: 'Só no app de iPhone, com iOS 18 ou mais novo. Dirigindo numa rodovia baixada, o KM aparece num cartão na tela bloqueada e na Ilha Dinâmica, sem abrir o app. No iOS 26, o mesmo cartão aparece no painel do CarPlay, ao lado do mapa.',
+    intro: 'Só no app de iPhone, com iOS 18 ou mais novo. Dirigindo numa rodovia baixada, o KM aparece num cartão na tela bloqueada e na Ilha Dinâmica, sem abrir o app. No iOS 26, o mesmo cartão aparece no painel do CarPlay, ao lado do mapa. No Android Auto ainda não funciona.',
     telas: [{
       img: '70-cartao-bloqueio', titulo: 'Na tela bloqueada',
       texto: 'Placa, rodovia e KM com metros. A barra mostra quanto falta para o próximo KM, no sentido em que você anda. Embaixo vêm a estaca e o sentido. Em pista dupla, o aviso aparece no canto.',
