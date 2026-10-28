@@ -26,7 +26,9 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   .veu{position:absolute;inset:0;background:linear-gradient(180deg,rgba(238,240,241,1) 0,rgba(238,240,241,1) 10%,rgba(238,240,241,0) 22%),linear-gradient(90deg,rgba(238,240,241,.96) 0%,rgba(238,240,241,.88) 46%,rgba(238,240,241,.2) 78%)}
   .brilho{position:absolute;right:0;top:-40px;width:560px;height:720px;background:radial-gradient(50% 50% at 50% 50%,rgba(196,226,74,.32),transparent 70%)}
   .txt{position:absolute;left:64px;top:62px;width:600px}
-  .txt img{height:74px}
+  .marca{display:flex;align-items:center;gap:20px}
+  .marca img{height:74px}
+  .marca b{font:900 52px/1 Inter;letter-spacing:-.035em;color:#14161a}
   .lin{display:flex;align-items:center;gap:28px;margin-top:40px}
   h1{font:900 56px/1.04 Inter;letter-spacing:-.04em;color:#14161a}
   h1 em{font-style:normal;color:#6f9a0e}
@@ -44,7 +46,7 @@ await p.setContent(`<!doctype html><html><head><link rel="stylesheet" href="http
   .f2{width:240px;height:519px;right:282px;top:70px;transform:rotate(-7deg);z-index:1}
   .f2::before{content:'';position:absolute;inset:0;border-radius:46px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.28));z-index:3}
 </style></head><body><div class="veu"></div><div class="brilho"></div>
-  <div class="txt"><img src="${LOGO}"><div class="lin">${placa}<h1>Chega de<br>anotar o KM.<br><em>Fotografe!</em></h1></div></div>
+  <div class="txt"><div class="marca"><img src="${LOGO}"><b>KM Check</b></div><div class="lin">${placa}<h1>Chega de<br>anotar o KM.<br><em>Fotografe!</em></h1></div></div>
   <div class="cta">Baixe agora <span>· grátis</span></div>
   <div class="lojas">
     <div class="loja"><svg viewBox="0 0 24 24"><path d="${APPLE}"/></svg><span><small>Baixe na</small><b>App Store</b></span></div>
