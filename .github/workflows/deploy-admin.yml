@@ -1,0 +1,92 @@
+# =============================================================================
+# deploy-admin.yml — Atualiza o painel do KM Check (admin/) no Contabo VPS
+#
+# Dispara em push na main que altere admin/server.mjs ou admin/panel.html (ou pelo botão manual).
+# Copia os dois arquivos para a pasta onde o serviço kmcheck-admin roda (lida do próprio systemd,
+# para não depender de caminho fixo), guarda cópia de segurança, confere a sintaxe e reinicia.
+# Se o painel não voltar a responder, restaura a cópia anterior e reinicia de novo.
+#
+# Usa os mesmos secrets do deploy-vps.yml: VPS_HOST, VPS_USER, VPS_SSH_KEY.
+# =============================================================================
+
+name: Deploy painel admin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin/server.mjs'
+      - 'admin/panel.html'
+      - '.github/workflows/deploy-admin.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Painel no Contabo
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: admin
+
+      - name: Conferir sintaxe antes de enviar
+        run: node --check admin/server.mjs
+
+      - name: Enviar arquivos para o VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "admin/server.mjs,admin/panel.html"
+          target: "/tmp/kmcheck-admin-novo"
+          strip_components: 1
+          overwrite: true
+
+      - name: Instalar e reiniciar
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          timeout: 300s
+          script: |
+            set -e
+            NOVO=/tmp/kmcheck-admin-novo
+            # pasta real do serviço (WorkingDirectory do systemd); o README sugere /opt/kmcheck-admin
+            DIR=$(systemctl show -p WorkingDirectory --value kmcheck-admin 2>/dev/null || true)
+            [ -n "$DIR" ] && [ -d "$DIR" ] || DIR=/opt/kmcheck-admin
+            if [ ! -f "$DIR/server.mjs" ]; then
+              echo "✗ Não achei o painel em $DIR (serviço kmcheck-admin). Nada foi alterado."; exit 1
+            fi
+            echo "→ Painel em $DIR"
+            STAMP=$(date +%Y%m%d-%H%M%S)
+            cp "$DIR/server.mjs" "$DIR/server.mjs.bak-$STAMP"
+            cp "$DIR/panel.html" "$DIR/panel.html.bak-$STAMP"
+            cp "$NOVO/server.mjs" "$DIR/server.mjs"
+            cp "$NOVO/panel.html" "$DIR/panel.html"
+            # porta do painel: a do .env, senão 3457 (padrão do server.mjs)
+            PORT=$(grep -s '^ADMIN_PORT=' "$DIR/.env" | cut -d= -f2 | tr -d '\r "' || true)
+            PORT=${PORT:-3457}
+            volta() {
+              echo "✗ $1 — restaurando a versão anterior"
+              cp "$DIR/server.mjs.bak-$STAMP" "$DIR/server.mjs"
+              cp "$DIR/panel.html.bak-$STAMP" "$DIR/panel.html"
+              systemctl restart kmcheck-admin; exit 1
+            }
+            node --check "$DIR/server.mjs" || volta "erro de sintaxe"
+            systemctl restart kmcheck-admin
+            OK=""
+            for i in $(seq 1 15); do
+              sleep 1
+              # a página do painel responde 200 sem login
+              if curl -fsS -o /dev/null "http://127.0.0.1:$PORT/"; then OK=1; break; fi
+            done
+            [ -n "$OK" ] || volta "o painel não respondeu na porta $PORT"
+            # deixa só as 5 cópias de segurança mais recentes de cada arquivo
+            ls -1t "$DIR"/server.mjs.bak-* 2>/dev/null | tail -n +6 | xargs -r rm -f
+            ls -1t "$DIR"/panel.html.bak-* 2>/dev/null | tail -n +6 | xargs -r rm -f
+            rm -rf "$NOVO"
+            echo "✓ Painel atualizado e respondendo na porta $PORT"
