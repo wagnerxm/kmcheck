@@ -417,10 +417,23 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
 
 /* Ping público — chamado pelo app mobile no boot.
    Recebe dados aprimorados: marca, modelo, OS, GPS, bases baixadas. */
+/* Por onde o app foi instalado. Versões novas mandam o campo "canal"; nas antigas deduz pela origem do pedido:
+   o app da App Store roda em capacitor://localhost e o da Play Store em https://localhost (WebView com "; wv)").
+   Site, PWA e navegador vêm do domínio do KM Check e só se separam pelo campo que o app novo envia. */
+const CANAIS = ['app-store', 'play-store', 'pwa', 'navegador'];
+function canalDe(canal, origin, ua) {
+  if (CANAIS.includes(canal)) return canal;
+  const o = String(origin || '');
+  if (/^capacitor:\/\/localhost/i.test(o)) return 'app-store';
+  if (/^https?:\/\/localhost(:\d+)?$/i.test(o) && /;\s*wv\)/.test(ua || '')) return 'play-store';
+  if (/Android/.test(ua || '') && /;\s*wv\)/.test(ua || '')) return 'play-store';
+  return null;
+}
+
 app.post('/api/admin/devices/ping', (req, res) => {
   try {
     const { device_id, app_version, platform, user_agent, screen,
-            brand, os_version, model, hw, location, bases_count, bases } = req.body || {};
+            brand, os_version, model, hw, location, bases_count, bases, canal } = req.body || {};
     if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });
     const ip = req.ip || req.socket.remoteAddress || '';
     const now = new Date().toISOString();
@@ -446,6 +459,7 @@ app.post('/api/admin/devices/ping', (req, res) => {
       bases_count: bases_count ?? existing?.bases_count ?? 0,
       bases: bases || existing?.bases || [],
       hw: hw || existing?.hw || null,
+      canal: canalDe(canal, req.get('origin'), user_agent) || existing?.canal || 'web',
       first_seen: existing?.first_seen || now,
       last_ping: now,
       ping_count: (existing?.ping_count || 0) + 1,
@@ -668,6 +682,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
   const weekAgo = new Date(now - 7 * 86400000).toISOString();
   let ios = 0, android = 0, other = 0, activeToday = 0, activeWeek = 0;
   let totalBases = 0;
+  const canais = { 'app-store': 0, 'play-store': 0, pwa: 0, navegador: 0, web: 0 };
   const versionCount = {}, brandCount = {}, modelCount = {};
   /* iOS/Android/ativos contam APARELHOS reais (reinstalações juntas, sem computadores nem testes) */
   for (const d of aparelhos) {
@@ -675,6 +690,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
     else android++;
     if (d.last_ping >= dayAgo) activeToday++;
     if (d.last_ping >= weekAgo) activeWeek++;
+    if (d.last_ping >= mes) canais[d.canal || 'web'] = (canais[d.canal || 'web'] || 0) + 1;
   }
   for (const d of devices) {
     if (d.categoria !== 'celular') other++;
@@ -690,7 +706,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
   res.json({
     devices,
     stats: {
-      total: devices.length, ios, android, other,
+      total: devices.length, ios, android, other, canais,
       usuarios_30d: aparelhos.filter(d => d.last_ping >= mes).length,
       aparelhos: aparelhos.length,
       codigos_celular: devices.filter(d => d.categoria === 'celular').length,
