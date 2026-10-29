@@ -1,12 +1,12 @@
 /* Trilha de fundo do vídeo de divulgação: sintetizada aqui mesmo (sem arquivo de terceiros, sem direitos autorais).
- * Eletrônica leve: pad de acordes, baixo, bumbo suave, chimbal e um arpejo de 16avos. 104 BPM, 52 s, com entrada
- * (só pad + arpejo até 4 s), pausa dos tambores na cena do cartão (36–44 s) e fade-out no fim.
+ * Eletrônica leve: pad de acordes, baixo, bumbo suave, chimbal e um arpejo de 16avos. 104 BPM, 44 s, com entrada
+ * (só pad + arpejo até 4 s) e fade-out no fim.
  * Uso: node manual-kmcheck/estudio/video/gerar-trilha.mjs   → manual-kmcheck/estudio/video/trilha.wav (44,1 kHz, estéreo) */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const SR = 44100, DUR = 52, BPM = 104, BEAT = 60 / BPM, N = SR * DUR;
+const SR = 44100, DUR = 44, BPM = 104, BEAT = 60 / BPM, N = SR * DUR;
 const L = new Float32Array(N), R = new Float32Array(N);
 const nota = n => 440 * 2 ** ((n - 69) / 12);                      // MIDI → Hz
 // progressão: Am · F · C · G (um compasso cada, 4 tempos) — tons MIDI das tríades (3ª oitava) e do baixo (2ª)
@@ -15,8 +15,8 @@ const BAIXO = [45, 41, 36, 43];
 const compasso = t => Math.floor(t / (BEAT * 4));
 const acorde = t => ACORDES[compasso(t) % 4], baixo = t => BAIXO[compasso(t) % 4];
 
-// seções: tambores entram em 4 s, saem em 36–44 s (cena do cartão), voltam até o fim
-const tambores = t => (t >= 4 && t < 36) || t >= 44;
+// seções: tambores entram em 4 s e seguem até o fim
+const tambores = t => t >= 4;
 const sidechain = t => { const f = (t % BEAT) / BEAT; return tambores(t) ? 0.55 + 0.45 * Math.min(1, f * 2.2) : 1; };
 
 // osciladores suaves: soma de harmônicas com amplitude 1/n² (perto de um triângulo) e leve desafinação (largura)
