@@ -2,7 +2,7 @@
 // Só muda quando sai uma versão nova nas lojas (1.0.0 → 1.0.1 → 1.1.0…).
 // CACHE: número interno, sobe a CADA alteração (é o que faz os aparelhos baixarem a versão nova).
 const VERSAO_APP = '1.0.1';
-const CACHE = 'kmcheck-v354';
+const CACHE = 'kmcheck-v355';
 const ASSETS = ['./', 'index.html', 'fflate.js', 'manifest.v143.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'logo-header.png', 'logo-kmcheck.png', 'fundo-sobre.webp', 'sw.js', 'data/rodovias/index.json'];
 // sw.js: o app lê a versão dele para mostrar no cabeçalho (offline ficava "VERSÃO …"); index.json: a lista de
 // rodovias funciona offline já na 1ª sessão (antes só depois de recarregar com o SW no controle)
@@ -73,6 +73,10 @@ self.addEventListener('fetch', e => {
   // Painel administrativo (kmcheck.com.br/admin e /api/...): fica fora do SW do app. Senão o cache do app
   // guardava os números do painel (mostrava dados velhos) e, com sinal fraco, abria o app no lugar do painel.
   if (url.pathname === '/admin' || url.pathname.startsWith('/admin/') || url.pathname.startsWith('/api/')) return;
+  // Página de download (kmcheck.com.br/baixar, o link que vai no WhatsApp): também fora do SW. O /baixar sem barra é um
+  // redirecionamento (301) e, como a resposta não é "ok", o SW caía no index.html do cache — quem já tinha o app
+  // aberto no navegador via o app no lugar da página de download.
+  if (url.pathname === '/baixar' || url.pathname.startsWith('/baixar/')) return;
   // política de privacidade: sem sinal, o fallback do documento entregava o app no lugar dela
   if (url.pathname.includes('/privacidade/')) return;
   // Ficha Check (demonstração) mora no mesmo site e tem SW próprio: sem sinal, o fallback do documento
