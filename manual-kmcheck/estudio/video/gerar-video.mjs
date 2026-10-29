@@ -113,7 +113,7 @@ const cl = x => Math.max(0, Math.min(1, x));
 const ez = x => 1 - Math.pow(1 - cl(x), 3);                 // ease-out cúbico
 const ezi = x => { x = cl(x); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2; };
 const fase = (t, a, b) => cl((t - a) / (b - a));
-const CENAS = [[0,7],[7,15],[15,23],[23,31],[31,38],[38,44]];
+const CENAS = [[0,7],[7,15],[15,23],[23,30],[30,38],[38,44]];
 const LEG = ${JSON.stringify(LEGENDA.map(c => c.texto))};
 const kmTxt = m => Math.floor(m/1000) + ',' + String(Math.round(m) % 1000).padStart(3,'0');
 
@@ -167,15 +167,15 @@ window.render = function (t) {
     const ch = $('#chip3'); const pc = ez(fase(u, 6.3, 6.9)); ch.style.opacity = pc; ch.style.transform = 'translateX(-50%) scale(' + (0.7 + 0.3 * pc) + ')';
     $$('#itens3 .item').forEach((it, i) => sobe(it, fase(u, 1.0 + i * 0.6, 1.5 + i * 0.6), 24));   // acompanham a legenda sendo escrita
   }
-  // 4 — Modo Carro com o KM subindo
-  if ((u = cena($('#s4'), t, ...CENAS[3])) !== null) {
+  // 5 — Modo Carro com o KM subindo
+  if ((u = cena($('#s4'), t, ...CENAS[4])) !== null) {
     sobe($('#s4 .txt'), fase(u, 0, 0.7)); const f = $('#f4'); foneEntra(f, u);
     const ex = f.querySelector('.extra'); let c = ex.querySelector('.contador');
     if (!c) { c = document.createElement('div'); c.className = 'contador'; ex.appendChild(c); }
     c.textContent = kmTxt(82360 + Math.round(ezi(fase(u, 1.0, 7.6)) * 56) * 10);   // 82,360 → 82,920 em passos de 10 m
   }
-  // 5 — câmera: clique, flash e a foto na galeria
-  if ((u = cena($('#s5'), t, ...CENAS[4])) !== null) {
+  // 4 — câmera: clique, flash e a foto na galeria
+  if ((u = cena($('#s5'), t, ...CENAS[3])) !== null) {
     sobe($('#s5 .txt'), fase(u, 0, 0.7)); const f = $('#f5'); foneEntra(f, u);
     const ex = f.querySelector('.extra'); let fl = ex.querySelector('.flash');
     if (!fl) { fl = document.createElement('div'); fl.className = 'flash'; ex.appendChild(fl); }
@@ -207,7 +207,7 @@ await p.evaluate(() => Promise.all([...document.images].map(i => i.decode().catc
 if (soStills) {
   const dir = path.join(RAIZ, '_previa'); fs.mkdirSync(dir, { recursive: true });
   for (const f of fs.readdirSync(dir)) if (f.startsWith('video-')) fs.unlinkSync(path.join(dir, f));
-  for (const t of [4, 12.5, 20.5, 27, 34.5, 42]) {
+  for (const t of [4, 12.5, 20.5, 26.5, 34, 42]) {
     await p.evaluate(t => render(t), t);
     await p.screenshot({ path: path.join(dir, `video-${String(t).replace('.', '_')}.jpg`), type: 'jpeg', quality: 90 });
   }
