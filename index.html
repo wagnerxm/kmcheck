@@ -8142,7 +8142,10 @@ function showInstallPrompt(){
         fetch(SNV_APIS[0]+'/admin/devices/ping',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({device_id:did,app_version:(va?va[1]+' ('+m[1]+')':m[1]),platform:plat,user_agent:ua,
             screen:screen.width+'x'+screen.height,brand,os_version:osVer,model,hw,
-            location:loc,bases_count:bases.length,bases})
+            location:loc,bases_count:bases.length,bases,
+            /* por onde o app foi instalado, para o painel separar loja de PWA: app da loja (Capacitor), PWA na tela
+               de início (display-mode standalone) ou aberto no navegador */
+            canal:NATIVO?(NATIVO.ios?'app-store':'play-store'):((matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)?'pwa':'navegador')})
         }).catch(()=>{});
       }catch(e){}},4000);
     }
