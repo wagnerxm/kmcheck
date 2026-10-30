@@ -1,6 +1,6 @@
 {
   "date": "2026-10-29",
-  "generated_at": "2026-10-29T22:06:59.752246+00:00",
+  "generated_at": "2026-10-30T02:14:51.137662+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -28,7 +28,6 @@
     "Austrian Football Bundesliga",
     "Bundesliga 2 - Germany",
     "Championship",
-    "Copa del Rey",
     "Denmark Superliga",
     "EFL Cup",
     "Ekstraklasa - Poland",
@@ -49,7 +48,6 @@
     "Super League - Greece",
     "Superettan - Sweden",
     "Swiss Superleague",
-    "UEFA Champions League Women",
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
