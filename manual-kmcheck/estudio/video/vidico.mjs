@@ -48,7 +48,10 @@ body{background:#eef0f1}
 .kmg small{display:block;font:800 24px Inter;letter-spacing:.3em;color:#c4e24a;margin-bottom:8px}
 .card{width:380px;height:270px;border-radius:24px;overflow:hidden;box-shadow:0 40px 70px -30px rgba(0,0,0,.6);border:4px solid #fff;position:relative}
 .card img{width:100%;height:100%;object-fit:cover}.card b{position:absolute;left:14px;bottom:12px;padding:6px 14px;border-radius:999px;background:#b7d92d;color:#111;font:800 22px Inter}
+/* contador do Modo Carro: cobre o número real da tela (mesma posição do print 20-carro-dia) dentro da janela do celular */
+.contCarro{position:absolute;left:12%;right:12%;top:37.6%;height:9.2%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#1f2226,#17191c);font:800 126px/1 Inter;letter-spacing:-.035em;color:#fff;opacity:0;z-index:4}
 #s7{z-index:9}.fim .logo{margin-top:280px}
+#s7 .link{display:none}#s7 .qr{margin-top:60px;width:340px;height:340px;padding:22px}
 `;
 
 const placaSvg = `<svg class="placa" width="220" height="261" viewBox="0 0 150 178"><rect x="2" y="2" width="146" height="174" rx="14" fill="#fff"/><rect x="10" y="10" width="130" height="158" rx="9" fill="#13305c"/><text x="75" y="52" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="31" fill="#fff">BR-226</text><line x1="24" y1="68" x2="126" y2="68" stroke="#fff" stroke-width="3"/><text x="75" y="110" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="34" fill="#fff">KM</text><text x="75" y="156" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="42" fill="#fff">082</text></svg>`;
@@ -57,7 +60,7 @@ const frase = (id, cls, html, extra = '') => `<div class="frase ${cls}" id="${id
 const corpo = `
 <div id="fundo"></div><div class="veu" id="veuLima"></div><div class="veu" id="veuClaro"></div><div class="veu" id="veuGraf"></div><div class="veu" id="veuBranco"></div>
 <div class="palco"><div class="fone" id="fone"><b class="bt mudo"></b><b class="bt vol1"></b><b class="bt vol2"></b><b class="bt lado"></b>
-  <div class="janela">${TELAS.map((k, i) => `<img id="t${i}" src="${IMG[k]}">`).join('')}<div class="brilho"></div></div><div class="flashF" id="flashF"></div><i class="ilha"></i></div></div>
+  <div class="janela">${TELAS.map((k, i) => `<img id="t${i}" src="${IMG[k]}">`).join('')}<div class="contCarro" id="kmv"></div><div class="brilho"></div></div><div class="flashF" id="flashF"></div><i class="ilha"></i></div></div>
 
 <div class="flu" id="icone0" style="left:390px;top:520px"><img src="${ICONE}" style="width:300px;display:block;border-radius:68px;box-shadow:0 40px 80px -30px rgba(0,0,0,.45)"></div>
 <img class="flu" id="logo0" src="${IMG.logo}" style="left:290px;top:880px;width:500px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.2))">
@@ -76,8 +79,6 @@ ${frase('f4', '', 'Tudo <em>organizado</em>.')}
 ${[[IMG.rod, 'KM 325,870', 660, 300, 6], [IMG.buraco, 'KM 326,410', 30, 1540, -5], [IMG.foto, 'KM 326,040', 670, 1600, 4]]
   .map(([src, km, x, y, r], i) => `<div class="flu" id="cd${i}" style="left:${x}px;top:${y}px"><div class="card" style="transform:rotate(${r}deg)"><img src="${src}"><b>${km}</b></div></div>`).join('')}
 ${frase('f5', 'clara', 'O KM acompanha o <em>carro</em>.')}
-<div class="flu" id="placa5" style="left:40px;top:1480px">${placaSvg}</div>
-<div class="flu" id="km5" style="left:600px;top:1540px"><div class="kmg"><small>QUILÔMETRO</small><span id="kmv">82,360</span></div></div>
 ${encerramento('s7', 'claro')}`;
 
 const script = `
@@ -114,9 +115,8 @@ window.render = function (t) {
   // 4 — galeria: fotos saltam e flutuam
   u = t - T(CN.s4[0]); texto('f4', u, 0.3, T(8)); for (let i = 0; i < 3; i++) { flu('cd' + i, u, T(1.5) + i * T(1), 1 + i * 0.3, 140); $('#cd' + i).style.opacity *= (1 - fase(u, T(7.5), T(8))); }
   // 5 — Modo Carro (fundo grafite): placa e KM saltam para fora
-  u = t - T(CN.s5[0]); texto('f5', u, 0.3, T(9)); flu('placa5', u, T(1.5), 0.8, 120); flu('km5', u, T(2.2), 0.8, 120);
-  if (u >= 0 && u < T(9)) $('#kmv').textContent = kmTxt(82360 + Math.round(ezi(fase(u, T(2.5), T(8))) * 56) * 10);
-  $('#placa5').style.opacity *= (1 - fase(u, T(8.5), T(9))); $('#km5').style.opacity *= (1 - fase(u, T(8.5), T(9)));
+  u = t - T(CN.s5[0]); texto('f5', u, 0.3, T(9)); { const k = $('#kmv'); const on = u >= 0.6 && u < T(9); k.style.opacity = on ? 1 : 0;   // só depois que a tela do Modo Carro assentou
+    if (on) k.textContent = kmTxt(82360 + Math.round(ezi(fase(u, T(1.5), T(8))) * 56) * 10); }
   // 7 — encerramento (lojas), fundo mais branco
   if ((u = corte($('#s7'), t, T(CN.s7[0]), ${DUR})) !== null) encerra('s7', u);
 };`;
@@ -126,7 +126,7 @@ for (const k of ['s1', 's2', 's3', 's4', 's5']) cues.push({ t: T(C[k][0]), tipo:
 for (let i = 0; i < 7; i++) cues.push({ t: T(15.5) + i * 0.3, tipo: 'tick', g: 1.3 });            // chips das rodovias
 cues.push({ t: T(24.5), tipo: 'obturador' }, { t: T(25.2), tipo: 'ding', g: 0.8 });               // foto → legenda salta
 for (let i = 0; i < 3; i++) cues.push({ t: T(32.5 + i), tipo: 'whoosh', g: 0.55 });               // fotos da galeria
-cues.push({ t: T(40.5), tipo: 'whoosh', g: 0.6 }, { t: T(41.2), tipo: 'whoosh', g: 0.6 });         // placa e KM
+for (let i = 0; i < 6; i++) cues.push({ t: T(40.5 + i), tipo: 'tick', g: 0.9 });                 // KM subindo
 cues.push({ t: T(48), tipo: 'hit', g: 1.0 }, { t: T(49), tipo: 'whoosh', g: 0.6 }, { t: T(51), tipo: 'whoosh', g: 0.5 });
 const secoes = [
   { de: 0, ate: T(7), piano: 0.8, baixo: 0.5, pad: 0.3 },
