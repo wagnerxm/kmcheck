@@ -2804,6 +2804,77 @@ function decideUso(sim){
   addEventListener('error',e=>{ if(e.message) envia(e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack) });
   addEventListener('unhandledrejection',e=>{ const r=e.reason; envia(r&&r.message?r.message:String(r),'promessa',0,0,r&&r.stack) });
 })();
+/* ===== uso em campo, para o painel =====
+   Com a MESMA autorização de dados de uso (nenhum aviso novo): o app junta, por dia, contagens e tempos do uso
+   real e manda ao painel quando há internet. Nada de conteúdo: sem foto, legenda, nome de contrato ou ponto exato.
+   - fila: cada dia fica guardado no aparelho (kc-tele) até o servidor confirmar — uso sem sinal deixa de se perder;
+   - sessões: minutos com o app na frente e quantas aberturas foram sem internet;
+   - regiões: grade de ~2 km (0,02°) por onde passou com o app aberto (a mesma da política de privacidade);
+   - funções: fotos (formato, lado e rodovia), Modo Carro (min), consultas, rodovias baixadas/atualizadas/apagadas,
+     importações;
+   - qualidade: precisão do GPS (faixas), tempo até o 1º sinal, minutos sem sinal, abertura da câmera e falhas ao
+     gravar a foto; quantidade de rodovias/contratos e espaço ocupado (só números).
+   O servidor grava cada dia por inteiro (substitui), então reenviar o mesmo dia não duplica nada. */
+const TELE=(()=>{
+  const K='kc-tele', MAXD=21, hojeBR=()=>new Date(Date.now()-3*3600e3).toISOString().slice(0,10);
+  let db={}; try{ db=JSON.parse(localStorage.getItem(K)||'{}')||{} }catch(e){}
+  const ok=()=>{ try{ return usoAutorizado() }catch(e){ return false } };
+  const dia=()=>{ const k=hojeBR(); return db[k]||(db[k]={min:0,ses:0,ab:[],c:{},reg:[],gb:[0,0,0,0,0],fix:[],semfix:0,cam:[],fv:{}}) };
+  let sujo=false;
+  function salva(){ if(!sujo) return; sujo=false; try{ const ks=Object.keys(db).sort(); for(const k of ks.slice(0,Math.max(0,ks.length-MAXD))) delete db[k]; localStorage.setItem(K,JSON.stringify(db)) }catch(e){} }
+  const marca=()=>{ sujo=true };
+  setInterval(salva,5000);
+  /* abertura do app (carregamento da página): o ping de boot marca p=1 se chegar ao servidor */
+  const t0=Date.now(); let abertura=null, sesIni=Date.now(), sesFix=false;
+  function abre(){ if(!ok()) return; const d=dia(); abertura={ts:new Date().toISOString(),on:navigator.onLine?1:0,p:0}; if(d.ab.length<80) d.ab.push(abertura); d.ses++; marca() }
+  abre();
+  addEventListener('visibilitychange',()=>{
+    if(document.hidden){ salva(); envia(true) }
+    else { sesIni=Date.now(); sesFix=false; if(ok()){ dia().ses++; marca() } }
+  });
+  /* a cada minuto com o app na frente: tempo de uso, Modo Carro e minutos sem sinal de GPS */
+  setInterval(()=>{ if(document.hidden||!ok()) return; const d=dia(); d.min++;
+    if(typeof _carOn!=='undefined' && _carOn) d.c.carro_min=(d.c.carro_min||0)+1;
+    if(!S.pos || (S.pos.t && Date.now()-S.pos.t>30000)) d.semfix++;
+    marca() },60000);
+  function conta(nome,n){ if(!ok()) return; const c=dia().c; c[nome]=(c[nome]||0)+(n||1); marca() }
+  function gps(acc,lat,lon){ if(!ok()) return; const d=dia();
+    if(isFinite(acc)) d.gb[acc<5?0:acc<10?1:acc<20?2:acc<50?3:4]++;
+    if(!sesFix){ sesFix=true; if(d.fix.length<40) d.fix.push(Date.now()-sesIni) }
+    if(isFinite(lat)&&isFinite(lon)){ const p=[+(Math.round(lat/.02)*.02).toFixed(2),+(Math.round(lon/.02)*.02).toFixed(2)];
+      if(d.reg.length<60 && !d.reg.some(q=>q[0]===p[0]&&q[1]===p[1])) d.reg.push(p) }
+    marca() }
+  function foto(info){ if(!ok()) return; const d=dia(), c=d.c; c.foto=(c.foto||0)+1;
+    const fmt=String(CFG.format||'').replace(':','x'); if(fmt) c['fmt_'+fmt]=(c['fmt_'+fmt]||0)+1;
+    try{ const l=getSide(); if(l) c['lado_'+l]=(c['lado_'+l]||0)+1 }catch(e){}
+    const m=String((info&&info.br)||'').match(/(\d{2,3})/), uf=String((info&&info.uf)||'').toUpperCase();
+    const via=m&&/^[A-Z]{2}$/.test(uf)?'BR-'+m[1].padStart(3,'0')+'/'+uf:'sem rodovia'; d.fv[via]=(d.fv[via]||0)+1;
+    marca() }
+  function camera(ms){ if(!ok()) return; const d=dia(); d.c.camera=(d.c.camera||0)+1; if(isFinite(ms)&&d.cam.length<40) d.cam.push(Math.round(ms)); marca() }
+  function pingOk(){ if(abertura){ abertura.p=1; marca() } }
+  let enviando=false;
+  async function envia(saindo){
+    if(enviando||!ok()||!navigator.onLine) return;
+    const did=localStorage.getItem('kc-device-id'); if(!did) return;   // o 1º ping cria o código do aparelho
+    const dias=Object.keys(db); if(!dias.length) return;
+    enviando=true;
+    try{
+      salva();
+      let snap={bases:(S.bases||[]).length};
+      try{ snap.contratos=getContracts().length }catch(e){}
+      if(!saindo && navigator.storage && navigator.storage.estimate) try{ const e=await navigator.storage.estimate(); snap.usado_mb=Math.round((e.usage||0)/1048576); snap.cota_mb=Math.round((e.quota||0)/1048576) }catch(e){}
+      const r=await fetch(SNV_APIS[0]+'/admin/devices/telemetria',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:!!saindo,
+        body:JSON.stringify({device_id:did,versao:window.__kcVersao||'',dias:db,snap,
+          plat:NATIVO?(NATIVO.ios?'iOS (app)':'Android (app)'):'',
+          canal:NATIVO?(NATIVO.ios?'app-store':'play-store'):((matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)?'pwa':'navegador')})});
+      /* confirmado: tira da fila os dias que já acabaram (o de hoje segue somando e é reenviado inteiro) */
+      if(r.ok){ const h=hojeBR(); for(const k of dias) if(k<h) delete db[k]; marca(); salva() }
+    }catch(e){} finally{ enviando=false }
+  }
+  setTimeout(envia,20000); setInterval(envia,10*60000);
+  addEventListener('online',()=>setTimeout(envia,3000));
+  return {conta,gps,foto,camera,pingOk,envia};
+})();
 document.getElementById('uso-sim').onclick=()=>decideUso(true);
 document.getElementById('uso-nao').onclick=()=>decideUso(false);
 document.getElementById('cfg-uso').checked=usoAutorizado();
@@ -3068,6 +3139,7 @@ function renderBases(){
     el.querySelectorAll('.del').forEach(btn=>btn.onclick=async()=>{
       if(!confirm('Remover '+btn.dataset.id+'?')) return;
       try{ await dbDel(btn.dataset.id) }catch(e){ toast('Erro ao remover: '+e.message); return }
+      TELE.conta('rodovia_apagada');
       S.bases=S.bases.filter(x=>x.id!==btn.dataset.id);
       setOverlaps(getOverlaps().filter(o=>o.a!==btn.dataset.id && o.b!==btn.dataset.id));
       renderBases();
@@ -3146,6 +3218,7 @@ async function atualizaBase(id, btn){
     if(!depois || depois<=antes || nb.id!==b.id) throw new Error('não veio a versão nova. Tente de novo com internet.');
     if(b.nome) nb.nome=b.nome;
     await dbPut(nb);
+    TELE.conta('rodovia_atualizada');
     S.bases=S.bases.map(x=>x.id===id?nb:x);
     renderBases();
     await checkOverlaps(nb); renderBases();
@@ -3400,6 +3473,7 @@ document.getElementById('dl-go').onclick=async()=>{
       b=await downloadRoadWfs(brPad, uf, msg=>{ status.textContent=msg }, kmi, kmf);
     }
     await dbPut(b);
+    TELE.conta('rodovia_baixada');
     S.bases=S.bases.filter(x=>x.id!==b.id); S.bases.push(b);
     setEstRefs(b.id, estRefs);
     renderBases();
@@ -4074,6 +4148,7 @@ async function installImported(j){
   const b={id, br:j.name, uf:j.uf, fonte:c.fonte, kmMin, kmMax, lat, lon, km};
   if(j.nome) b.nome=j.nome;
   await dbPut(b);
+  TELE.conta('importacao');
   S.bases=S.bases.filter(x=>x.id!==id); S.bases.push(b);
   if(j.est) setEstRefs(id, [j.est]);
   if(j.ct){
@@ -4153,6 +4228,7 @@ function startGps(){
     S.gpsDenied=false; _gpsGotFix=true; S.gpsErr=null;
     S.pos={lat:_la, lon:_lo, acc:p.coords.accuracy, alt:p.coords.altitude,
            spd:p.coords.speed, head:p.coords.heading, t:_ts};
+    TELE.gps(p.coords.accuracy,_la,_lo);
     try{ localStorage.setItem('kc-lastpos', JSON.stringify(S.pos)) }catch(e){}
     S.fix=S.bases.length?findKm(S.pos.lat,S.pos.lon):null;
     autoContract();   // dentro de um trecho vinculado, puxa o contrato sozinho
@@ -5467,8 +5543,9 @@ function camConstraints(){
    a uma geração velha e é descartado — antes ele ficava ligado em segundo plano (LED aceso, bateria)
    ou sobrescrevia o anterior sem parar (câmera "presa" no Android). */
 let _camGen=0, _camClosing=false;
+let _camT0=0;
 async function openCam(){
-  const gen=++_camGen;
+  const gen=++_camGen; _camT0=Date.now();
   /* cancela animação de saída pendente (closeCam sem instant) — evita que o
      animationend remova a classe 'on' DEPOIS de openCam tê-la adicionado */
   _camClosing=false;
@@ -5527,6 +5604,7 @@ async function openCam(){
     video.srcObject=S.stream;
     try{ await video.play() }catch(e){}
     if(gen!==_camGen) return;
+    TELE.camera(Date.now()-_camT0);   // tempo do toque até a imagem aparecer
     /* ── Enumera câmeras para fingerprint de modelo ── (não no app da loja: lá o modelo vem do sistema e
        as lojas tratam juntar sinais do aparelho como fingerprinting — a Apple proíbe) */
     if(!NATIVO) try{
@@ -5552,6 +5630,7 @@ async function openCam(){
     requestAnimationFrame(()=>requestAnimationFrame(layoutOverlays));
   }catch(e){
     if(gen!==_camGen) return;
+    TELE.conta('camera_falha');
     clearInterval(camTick); camTick=null;
     if(S.stream){S.stream.getTracks().forEach(t=>t.stop()); S.stream=null}
     camwrap.classList.remove('on');
@@ -5796,8 +5875,10 @@ document.getElementById('shutter').onclick=async()=>{
   }
   c.width=0; c.height=0;
   saveAndShare(new Blob([bytes], {type:'image/jpeg'}));
+  TELE.foto(info);
   }catch(err){
     console.error('[KMCheck] captura falhou:', err);
+    TELE.conta('foto_falha');
     toast('⚠ Erro ao tirar a foto.\nTente de novo.');
   }
   }finally{ _capturing=false; endFlash() }
@@ -7570,6 +7651,7 @@ qc.addEventListener('input',()=>{
 });
 let qres=[];
 document.getElementById('q-run').onclick=()=>{
+  TELE.conta('consulta_km');
   if(!S.bases.length){ toast('Instale uma rodovia primeiro.'); return }
   const {rows}=parseCoordLines(qc.value);
   if(!rows.length){ toast('Nenhuma coordenada válida.'); return }
@@ -7595,6 +7677,7 @@ document.getElementById('q-gps').onclick=()=>{
   else { restartGps(); toast('Aguardando posição do GPS…') }
 };
 document.getElementById('k-run').onclick=()=>{
+  TELE.conta('consulta_coord');
   const base=S.bases.find(b=>b.id===document.getElementById('k-base').value);
   if(!base){ toast('Instale uma rodovia primeiro.'); return }
   const km=parseNum(document.getElementById('k-km').value);   // parseNum: aceita 1.300,000
@@ -8169,7 +8252,7 @@ function showInstallPrompt(){
             /* por onde o app foi instalado, para o painel separar loja de PWA: app da loja (Capacitor), PWA na tela
                de início (display-mode standalone) ou aberto no navegador */
             canal:NATIVO?(NATIVO.ios?'app-store':'play-store'):((matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)?'pwa':'navegador')})
-        }).catch(()=>{});
+        }).then(r=>{ if(r.ok){ TELE.pingOk(); TELE.envia() } }).catch(()=>{});   // chegou: a abertura não precisa ir pela fila
       }catch(e){}},4000);
     }
   }).catch(()=>{});

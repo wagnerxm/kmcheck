@@ -73,7 +73,7 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 .marca img{width:34px;height:34px;margin:-3px 0;mix-blend-mode:lighten}
 .marca em{font-size:19px;letter-spacing:0;color:rgba(255,255,255,.7)}
 .abas{display:flex;gap:2px;padding:4px;border-radius:999px;margin-left:8px;position:relative}
-.abas button{position:relative;z-index:1;padding:8px 12px;border-radius:999px;color:rgba(255,255,255,.65);font-weight:500;white-space:nowrap}
+.abas button{position:relative;z-index:1;padding:8px 10px;font-size:13.5px;border-radius:999px;color:rgba(255,255,255,.65);font-weight:500;white-space:nowrap}
 .abas button.on{color:#fff}
 .abas button:hover{transform:none;color:#fff}
 .abas .marcador{position:absolute;top:4px;bottom:4px;left:0;border-radius:999px;background:rgba(255,255,255,.14);transition:transform .45s cubic-bezier(.16,1,.3,1),width .45s cubic-bezier(.16,1,.3,1)}
@@ -209,6 +209,13 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 #a-snv{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr)}
 /* ── Saúde: versões em uso, erros do app e armazenamento ── */
 #a-saude{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
+/* ── Campo: uso real (fotos, tempo, offline) e qualidade do GPS e da câmera ── */
+#a-campo{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
+#a-campo .stats{grid-column:1/-1}
+.qbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--trilho)}
+.qbar i{display:block;height:100%}
+.qlin{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--text2);padding:7px 0;border-top:1px solid rgba(255,255,255,.06)}
+.qlin b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
 /* ── Produto: funil, coortes e demanda × cobertura ── */
 #a-produto{grid-template-columns:5fr 7fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
 #a-produto .dem-card{grid-column:1/-1}
@@ -504,6 +511,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
       <button data-a="mapa"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Mapa</span></button>
       <button data-a="hora"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Horários</span></button>
       <button data-a="aparelhos"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg><span>Aparelhos</span></button>
+      <button data-a="campo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-3h4l1.5 3"/></svg><span>Campo</span></button>
       <button data-a="produto"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg><span>Produto</span></button>
       <button data-a="saude"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Saúde</span></button>
       <button data-a="sistema"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/></svg><span>Sistema</span></button>
@@ -652,6 +660,37 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
     </section>
 
     <!-- ──────── Cobertura SNV ──────── -->
+    <!-- ──────── Campo ──────── -->
+    <section class="aba" id="a-campo">
+      <div class="stats">
+        <div class="stat forte" title="Fotos tiradas no período (só de celulares na versão 358 ou mais nova)"><div class="label">Fotos</div><div class="value green" id="cp-fotos">—</div><div class="detail" id="cp-fotos-d"></div></div>
+        <div class="stat forte" title="Minutos com o app aberto na frente"><div class="label">Tempo de uso</div><div class="value" id="cp-tempo">—</div><div class="detail" id="cp-tempo-d"></div></div>
+        <div class="stat forte" title="Aberturas sem internet que chegaram depois, pela fila do aparelho — antes eram perdidas"><div class="label">Uso sem internet</div><div class="value yellow" id="cp-off">—</div><div class="detail" id="cp-off-d"></div></div>
+        <div class="stat forte"><div class="label">Modo Carro</div><div class="value blue" id="cp-carro">—</div><div class="detail" id="cp-carro-d"></div></div>
+        <div class="stat forte"><div class="label">Consultas</div><div class="value purple" id="cp-cons">—</div><div class="detail" id="cp-cons-d"></div></div>
+        <div class="stat forte"><div class="label">Rodovias</div><div class="value" id="cp-rod">—</div><div class="detail" id="cp-rod-d"></div></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Fotos <em>por dia</em></h2><p id="cp-cob">Celulares que já mandam o uso em campo (versão 358+).</p></div></div>
+        <div class="adocao"><svg id="cp-graf" preserveAspectRatio="none"></svg></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Fotos <em>por rodovia</em></h2><p>Rodovia da legenda no momento da foto.</p></div><button class="btn-secondary btn-sm" id="cp-csv">↓ CSV</button></div>
+        <div class="vlist" id="cp-vias"></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Qualidade <em>por modelo</em></h2><p>GPS bom = leituras com precisão melhor que 10 m. Tempos em mediana.</p></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:26%">Modelo</th><th style="width:10%">Celulares</th><th style="width:16%">GPS bom</th><th style="width:16%">1º sinal</th><th style="width:16%">Abrir câmera</th><th style="width:16%">Falhas na foto</th></tr></thead>
+          <tbody id="cp-mod"></tbody>
+        </table></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>GPS <em>e câmera</em></h2><p>Todas as leituras do período.</p></div></div>
+        <div id="cp-q"></div>
+      </div>
+    </section>
+
     <!-- ──────── Produto ──────── -->
     <section class="aba" id="a-produto">
       <div class="card forte">
@@ -905,6 +944,7 @@ function abre(nome){
   if(nome==='snv' && !_roadsLoaded) loadRoads();
   if(nome==='saude') loadSaude();
   if(nome==='produto') produto();
+  if(nome==='campo') campo();
   if(nome==='sistema') loadSistema();
   try{ localStorage.setItem('kca-aba',nome) }catch(e){}
 }
@@ -1069,12 +1109,13 @@ function produto(){
     ['Começaram a usar', novos.length, novos.length],
     ['Baixaram ao menos uma rodovia', novos.filter(a=>(a.nb||0)>0||(a.bases||[]).length).length, novos.length],
     ['Usaram perto de uma rodovia federal', novos.filter(usouPerto).length, novos.length],
+    ['Tiraram a primeira foto', novos.filter(a=>a.tele&&Object.values(a.tele).some(t=>(t.c.foto||0)>0)).length, novos.filter(a=>a.tele).length],
     ['Voltaram em outro dia', novos.filter(a=>Object.keys(a.dias).length>=2).length, novos.length],
     ['Usaram na 2ª semana', elegiveis.filter(a=>{ const k=diaDe(a.inst); return Object.keys(a.dias).some(d=>d>=somaDias(k,7)&&d<=somaDias(k,13)) }).length, elegiveis.length],
   ];
   $('#fu-sub').textContent = `Celulares que começaram nos últimos ${PER} dias e até onde chegaram.`;
   $('#fu').innerHTML = novos.length ? passos.map(([t,n,de],i)=>{ const p=de?Math.round(n/de*100):0;
-    return `<div class="fpasso"><span class="ft"><b>${t}</b>${i===4?` <span title="só conta quem começou há 14 dias ou mais">· de ${de} que começaram há 14+ dias</span>`:''}</span><span class="fn">${n}<small>${de?p+'%':'—'}</small></span><span class="fb"><i style="width:${p}%"></i></span></div>` }).join('')
+    return `<div class="fpasso"><span class="ft"><b>${t}</b>${i===3?` <span title="a contagem de fotos chega a partir da versão 358">· de ${de} na versão 358+</span>`:''}${i===5?` <span title="só conta quem começou há 14 dias ou mais">· de ${de} que começaram há 14+ dias</span>`:''}</span><span class="fn">${n}<small>${de?p+'%':'—'}</small></span><span class="fb"><i style="width:${p}%"></i></span></div>` }).join('')
     : '<p class="empty">Nenhum celular começou no período com essa origem.</p>';
   /* coortes: semana (segunda a domingo) do 1º acesso; cada coluna = semana k depois do começo de cada um */
   const segunda = k => { const d=new Date(k+'T12:00:00Z'), w=(d.getUTCDay()+6)%7; return somaDias(k,-w) };
@@ -1174,12 +1215,83 @@ function desenhaQr(url){
   sc.onload = vai; sc.onerror = () => { const q=$('#sy-qr'); if(q) q.remove() }; document.head.appendChild(sc);
 }
 
+
+/* ══════════════════════════════════════════════════
+   CAMPO — uso real e qualidade (resumo diário que o app ≥ 358 manda, inclusive do uso sem internet)
+   ══════════════════════════════════════════════════ */
+const mediana = a => { if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2 };
+const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+const seg = ms => ms==null ? '—' : ms<1000 ? Math.round(ms)+' ms' : (ms/1000).toFixed(ms<10000?1:0).replace('.',',')+' s';
+let _cpVias = [];
+function campo(){
+  const dias = chaves(0,PER).reverse(), set = new Set(dias);
+  const com = USO.filter(a=>a.tele && Object.keys(a.tele).some(k=>set.has(k)));
+  const T = { foto:0, falha:0, min:0, ses:0, carro:0, ckm:0, cco:0, baix:0, atu:0, apag:0, imp:0, semfix:0, off:0, gb:[0,0,0,0,0], fix:[], cam:[], fmt:{}, lado:{} };
+  const porDia = dias.map(()=>0), vias = {}, mods = new Map();
+  let aberturas = 0;
+  for (const a of com){
+    const md = mods.get(a.modelo||'?') || { cel:0, gb:[0,0,0,0,0], fix:[], cam:[], foto:0, falha:0 }; md.cel++;
+    for (const [k,t] of Object.entries(a.tele)){ if(!set.has(k)) continue; const c=t.c||{};
+      T.foto+=c.foto||0; T.falha+=c.foto_falha||0; T.min+=t.min||0; T.ses+=t.ses||0; T.carro+=c.carro_min||0; T.ckm+=c.consulta_km||0; T.cco+=c.consulta_coord||0;
+      T.baix+=c.rodovia_baixada||0; T.atu+=c.rodovia_atualizada||0; T.apag+=c.rodovia_apagada||0; T.imp+=c.importacao||0; T.semfix+=t.semfix||0; T.off+=t.off||0;
+      for (const [q,n] of Object.entries(c)){ if(q.startsWith('fmt_')) T.fmt[q.slice(4).replace('x',':')]=(T.fmt[q.slice(4).replace('x',':')]||0)+n; if(q.startsWith('lado_')) T.lado[q.slice(5)]=(T.lado[q.slice(5)]||0)+n }
+      t.gb.forEach((v,i)=>{ T.gb[i]+=v; md.gb[i]+=v }); T.fix.push(...t.fix); T.cam.push(...t.cam); md.fix.push(...t.fix); md.cam.push(...t.cam);
+      md.foto+=c.foto||0; md.falha+=c.foto_falha||0;
+      porDia[dias.indexOf(k)] += c.foto||0;
+      for (const [v,n] of Object.entries(t.fv||{})){ const x=vias[v]||(vias[v]={n:0,cel:new Set()}); x.n+=n; x.cel.add(a.id) }
+      aberturas += (a.dias[k]||{}).n||0;
+    }
+    mods.set(a.modelo||'?', md);
+  }
+  const ativosDias = com.reduce((s,a)=>s+Object.keys(a.tele).filter(k=>set.has(k)).length,0);
+  $('#cp-fotos').textContent = T.foto.toLocaleString('pt-BR');
+  $('#cp-fotos-d').textContent = ativosDias ? `${(T.foto/ativosDias).toFixed(1).replace('.',',')} por celular por dia de uso` : 'sem dados ainda';
+  $('#cp-tempo').textContent = T.min>=120 ? Math.round(T.min/60)+' h' : T.min+' min';
+  $('#cp-tempo-d').textContent = T.ses ? `${Math.round(T.min/T.ses)} min por sessão · ${T.ses} sessões` : '—';
+  $('#cp-off').textContent = aberturas ? pct(T.off,aberturas)+'%' : '—';
+  $('#cp-off-d').textContent = `${T.off} aberturas sem sinal recuperadas`;
+  $('#cp-carro').textContent = T.carro>=120 ? Math.round(T.carro/60)+' h' : T.carro+' min';
+  $('#cp-carro-d').textContent = T.min ? pct(T.carro,T.min)+'% do tempo de uso' : '—';
+  $('#cp-cons').textContent = T.ckm+T.cco; $('#cp-cons-d').textContent = `${T.ckm} coordenada→KM · ${T.cco} KM→coordenada`;
+  $('#cp-rod').textContent = T.baix+T.imp; $('#cp-rod-d').textContent = `${T.baix} baixadas · ${T.imp} importadas · ${T.atu} atualizadas · ${T.apag} apagadas`;
+  const total = USO.filter(a=>Object.keys(a.dias).some(k=>set.has(k))).length;
+  $('#cp-cob').textContent = `${com.length} de ${total} celulares ativos no período já mandam o uso em campo (versão 358+). ${Object.entries(T.fmt).map(([f,n])=>f+' '+pct(n,T.foto)+'%').join(' · ')}${Object.keys(T.lado).length?' · '+Object.entries(T.lado).map(([l,n])=>l+' '+pct(n,T.foto)+'%').join(' · '):''}`;
+  /* fotos por dia */
+  const svg=$('#cp-graf'), W=1000, H=240, max=Math.max(1,...porDia), bw=W/dias.length, g=Math.min(4,bw*.25); let h='';
+  for (let y=0;y<=4;y++){ const yy=H-20-(H-30)*y/4; h+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="rgba(255,255,255,.06)"/>` }
+  porDia.forEach((n,i)=>{ if(!n) return; const hh=(H-30)*n/max; h+=`<rect x="${(i*bw+g/2).toFixed(1)}" y="${(H-20-hh).toFixed(1)}" width="${(bw-g).toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="#b7d92d" data-i="${i}"/>` });
+  const passo=Math.ceil(dias.length/8); dias.forEach((k,i)=>{ if(i%passo===0||i===dias.length-1) h+=`<text x="${(i*bw+bw/2).toFixed(1)}" y="${H-4}" fill="rgba(255,255,255,.42)" font-size="11" text-anchor="middle">${ddmm(k)}</text>` });
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=h;
+  svg.onmousemove=e=>{ const r=e.target.closest('rect'); if(!r){ escondeDica(); return } const i=+r.dataset.i; mostraDica(`<b>${ddmm(dias[i])}</b><br>${porDia[i]} fotos`,e.clientX,e.clientY) };
+  svg.onmouseleave=escondeDica;
+  /* fotos por rodovia */
+  _cpVias = Object.entries(vias).map(([v,x])=>({v,n:x.n,cel:x.cel.size})).sort((a,b)=>b.n-a.n);
+  const mx = _cpVias[0]?.n||1;
+  $('#cp-vias').innerHTML = _cpVias.length ? _cpVias.map(x=>`<div class="vrow ${x.v==='sem rodovia'?'':'nova'}"><span title="${x.cel} celulares">${esc(x.v)}</span><span class="vtri"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><b>${x.n}</b></div>`).join('') : '<p class="empty">Sem fotos no período</p>';
+  /* qualidade por modelo */
+  const ms=[...mods.entries()].sort((a,b)=>b[1].cel-a[1].cel);
+  $('#cp-mod').innerHTML = ms.length ? ms.map(([m,x])=>{ const tg=x.gb.reduce((s,v)=>s+v,0);
+    return `<tr><td>${esc(m)}</td><td>${x.cel}</td><td>${tg?pct(x.gb[0]+x.gb[1],tg)+'%':'—'}</td><td>${seg(mediana(x.fix))}</td><td>${seg(mediana(x.cam))}</td><td>${x.foto+x.falha?pct(x.falha,x.foto+x.falha)+'%':'—'}</td></tr>` }).join('')
+    : '<tr><td colspan="6" class="empty">Sem dados ainda — chegam dos celulares na versão 358+</td></tr>';
+  /* resumo de GPS e câmera */
+  const tg=T.gb.reduce((s,v)=>s+v,0), cores=['#7fd88f','#b7d92d','#e2b54a','#e9806f','#ef5b4b'], nomes=['< 5 m','5–10 m','10–20 m','20–50 m','> 50 m'];
+  const p90 = a => { if(!a.length) return null; const b=[...a].sort((x,y)=>x-y); return b[Math.min(b.length-1,Math.floor(b.length*.9))] };
+  $('#cp-q').innerHTML = `<div class="qbar">${tg?T.gb.map((v,i)=>v?`<i style="width:${v/tg*100}%;background:${cores[i]}" title="${nomes[i]}: ${pct(v,tg)}%"></i>`:'').join(''):''}</div>
+    <div class="legenda" style="margin:8px 0 6px">${nomes.map((n,i)=>`<span><i style="background:${cores[i]}"></i>${n} ${tg?pct(T.gb[i],tg)+'%':''}</span>`).join('')}</div>
+    <div class="qlin"><span>Tempo até o 1º sinal</span><b>${seg(mediana(T.fix))} · 90% em até ${seg(p90(T.fix))}</b></div>
+    <div class="qlin"><span>Tempo sem sinal de GPS</span><b>${T.min?pct(T.semfix,T.min)+'% do tempo de uso':'—'}</b></div>
+    <div class="qlin"><span>Abrir a câmera</span><b>${seg(mediana(T.cam))} · 90% em até ${seg(p90(T.cam))}</b></div>
+    <div class="qlin"><span>Falhas ao gravar a foto</span><b>${T.foto+T.falha?T.falha+' ('+pct(T.falha,T.foto+T.falha)+'%)':'—'}</b></div>
+    <div class="qlin"><span>Rodovias apagadas</span><b>${T.apag}</b></div>`;
+}
+$('#cp-csv').onclick = () => baixaCsv('kmcheck-fotos-por-rodovia', ['Rodovia','Fotos','Celulares'], _cpVias.map(x=>[x.v,x.n,x.cel]));
+
 async function loadUso(){
   try{
     const r = await api('/api/admin/uso');
     Object.assign(VIAS, r.vias||{});
     USO = r.aparelhos||[]; AGORA_MS = Date.parse(r.agora)||Date.now(); FORA = r.fora||FORA;
-    desenha(); if(ABA==='saude') saude(); if(ABA==='produto') produto();
+    desenha(); if(ABA==='saude') saude(); if(ABA==='produto') produto(); if(ABA==='campo') campo();
   }catch(e){ toast('Erro ao carregar o uso: '+e.message) }
 }
 
@@ -1408,7 +1520,7 @@ function desenha(){
   $('#pl-pct').textContent=Math.round(fa*100)+'%'; $('#pl-a').textContent=r.android; $('#pl-i').textContent=r.ativos.length-r.android;
   calor(r); mapa(r); barras(r);
 }
-$$('#periodo button').forEach(b=>b.onclick=()=>{ $$('#periodo button').forEach(x=>x.classList.toggle('on',x===b)); PER=+b.dataset.d; FILTRO=null; if(USO.length) desenha(); if(ABA==='saude') saude(); if(ABA==='produto') produto() });
+$$('#periodo button').forEach(b=>b.onclick=()=>{ $$('#periodo button').forEach(x=>x.classList.toggle('on',x===b)); PER=+b.dataset.d; FILTRO=null; if(USO.length) desenha(); if(ABA==='saude') saude(); if(ABA==='produto') produto(); if(ABA==='campo') campo() });
 addEventListener('resize',()=>{ if(ABA==='resumo') linha(SERIE); poeMarcador() });
 
 /* ── cartões do Resumo levam às listas ── */
@@ -1774,6 +1886,8 @@ function renderDevDetail(r){
   html += infoItem('Primeiro acesso', fmtDate(d.first_seen));
   html += infoItem('Último acesso', fmtDate(d.last_ping));
   html += infoItem('Bases baixadas', (d.bases_count || 0) + ' rodovias');
+  if (d.snap) { html += infoItem('Contratos cadastrados', String(d.snap.contratos||0));
+    if (d.snap.cota_mb) html += infoItem('Espaço do app', `${d.snap.usado_mb} MB de ${d.snap.cota_mb>=1024?(d.snap.cota_mb/1024).toFixed(0)+' GB':d.snap.cota_mb+' MB'} disponíveis`) }
   if (d.interno) html += infoItem('Classificação', '<span class="tag" style="background:rgba(226,181,74,.16);color:#f0cf7d">Equipe / teste</span>');
   if (d.hw) {
     if (d.hw.chip) html += infoItem('Chip', esc(d.hw.chip) + (d.hw.bench != null ? ' (bench: ' + d.hw.bench + 'ms)' : ''));

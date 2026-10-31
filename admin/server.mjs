@@ -588,7 +588,9 @@ app.post('/api/admin/devices/ping', (req, res) => {
       ping_history: hist,
       uso: existing?.uso || {},
       ...(existing?.nickname ? { nickname: existing.nickname } : {}),
-      ...(existing?.interno ? { interno: existing.interno } : {})
+      ...(existing?.interno ? { interno: existing.interno } : {}),
+      ...(existing?.tele ? { tele: existing.tele } : {}),
+      ...(existing?.snap ? { snap: existing.snap } : {})
     };
     registraUso(_db.devices[device_id], now, location, app_version);
     podaUso(_db.devices[device_id]);
@@ -886,6 +888,72 @@ app.get('/api/admin/devices', auth, (req, res) => {
 });
 
 /* ================================================================
+   USO EM CAMPO — resumo por dia que o app guarda e manda quando tem internet
+   ================================================================ */
+/* O app reenvia o dia inteiro até ele acabar: aqui cada dia é SUBSTITUÍDO (nunca somado), então reenviar não
+   duplica. As aberturas que não conseguiram avisar na hora (sem sinal) entram no uso com o horário real, uma vez só. */
+const num = (v, max = 1e6) => { const n = Math.round(+v); return isFinite(n) && n > 0 ? Math.min(n, max) : 0 };
+const CONTADORES = /^(foto|foto_falha|camera|camera_falha|carro_min|consulta_km|consulta_coord|rodovia_baixada|rodovia_atualizada|rodovia_apagada|importacao|fmt_\d+x\d+|lado_(LD|LE|PC|PD))$/;
+function limpaDia(t) {
+  const c = {};
+  for (const [k, v] of Object.entries(t?.c || {})) if (CONTADORES.test(k)) c[k] = num(v);
+  const fv = {};
+  for (const [k, v] of Object.entries(t?.fv || {}).slice(0, 40)) if (/^(BR-\d{3}\/[A-Z]{2}|sem rodovia)$/.test(k)) fv[k] = num(v);
+  const reg = (Array.isArray(t?.reg) ? t.reg : []).slice(0, 60)
+    .filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]) && Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180)
+    .map(p => [Math.round(p[0] * 50) / 50, Math.round(p[1] * 50) / 50]);   // garante a grade de 0,02° (~2 km)
+  const lista = (a, n, max) => (Array.isArray(a) ? a : []).slice(0, n).map(x => num(x, max)).filter(x => x > 0);
+  return { min: num(t?.min, 1440), ses: num(t?.ses, 500), c, fv, reg,
+    gb: (Array.isArray(t?.gb) ? t.gb : []).slice(0, 5).map(x => num(x)).concat([0, 0, 0, 0, 0]).slice(0, 5),
+    fix: lista(t?.fix, 40, 600000), cam: lista(t?.cam, 40, 120000), semfix: num(t?.semfix, 1440),
+    ab: (Array.isArray(t?.ab) ? t.ab : []).slice(0, 80).filter(a => a && !isNaN(Date.parse(a.ts))).map(a => ({ ts: new Date(a.ts).toISOString(), on: a.on ? 1 : 0, p: a.p ? 1 : 0 })) };
+}
+app.post('/api/admin/devices/telemetria', (req, res) => {
+  try {
+    if (!dentroDoLimite('tele:' + (req.ip || ''), 40, 600000)) return res.status(429).json({ error: 'muitos envios' });
+    const b = req.body || {}, did = corta(b.device_id, 80);
+    if (!did || typeof b.dias !== 'object') return res.status(400).json({ error: 'dados incompletos' });
+    const now = new Date().toISOString(), hoje = horaBR(now).dia, corte = horaBR(new Date(Date.now() - DIAS_USO * 86400000).toISOString()).dia;
+    let d = _db.devices[did];
+    if (!d) {   // aparelho que só usou sem internet até agora: nasce aqui
+      d = _db.devices[did] = { device_id: did, platform: normPlat(corta(b.plat, 30)) || null, app_version: corta(b.versao, 40) || null,
+        canal: CANAIS.includes(b.canal) ? b.canal : 'web', first_seen: now, last_ping: null, ping_count: 0, ping_history: [], uso: {}, bases: [], bases_count: 0 };
+    }
+    const tele = d.tele || (d.tele = {});
+    for (const [dia, bruto] of Object.entries(b.dias).slice(0, 30)) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || dia < corte || dia > hoje) continue;
+      const t = limpaDia(bruto), velho = tele[dia] || {}, ja = new Set(velho._reg || []);
+      /* aberturas sem sinal: entram no uso (contagem, hora, região) e no histórico com o horário real */
+      for (const a of t.ab) {
+        if (a.p || ja.has(a.ts)) continue;
+        ja.add(a.ts);
+        registraUso(d, a.ts, t.reg[0] ? { lat: t.reg[0][0], lon: t.reg[0][1] } : null, corta(b.versao, 40) || d.app_version);
+        registraAcesso(d, a.ts, null);
+        d.ping_count = (d.ping_count || 0) + 1;
+        if (!d.last_ping || a.ts > d.last_ping) d.last_ping = a.ts;
+        if (a.ts < (d.first_seen || a.ts)) d.first_seen = a.ts;
+      }
+      /* regiões por onde o app passou no dia (antes só a da abertura) */
+      if (t.reg.length) {
+        const u = d.uso[dia] || (d.uso[dia] = { n: 0, h: {}, l: [] });
+        for (const p of t.reg) if (u.l.length < 24 && !u.l.some(q => q[0] === p[0] && q[1] === p[1])) u.l.push(p);
+      }
+      t._reg = [...ja].slice(-200);
+      delete t.ab;
+      tele[dia] = t;
+    }
+    for (const dia of Object.keys(tele)) if (dia < corte) delete tele[dia];
+    if (b.snap && typeof b.snap === 'object') d.snap = { bases: num(b.snap.bases, 5000), contratos: num(b.snap.contratos, 5000),
+      usado_mb: num(b.snap.usado_mb, 1e7), cota_mb: num(b.snap.cota_mb, 1e8), em: now };
+    saveDb();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Erro na telemetria:', e.message);
+    res.status(500).json({ error: 'erro interno' });
+  }
+});
+
+/* ================================================================
    ERROS DO APP — o app manda os erros de JavaScript (só com a autorização de dados de uso)
    ================================================================ */
 /* Limite simples por IP (memória): rota pública não pode virar porta para lotar o servidor */
@@ -1091,6 +1159,16 @@ app.get('/api/admin/uso', auth, (req, res) => {
     /* rodovias baixadas no aparelho (chave igual à do mapa: "BR-101/RN"), para o cruzamento demanda × cobertura */
     for (const b of d.bases || []) { const k = chaveBase(b); if (k && !(g.bases || (g.bases = [])).includes(k)) g.bases.push(k) }
     g.nb = Math.max(g.nb || 0, d.bases_count || 0);   // quantas bases (inclusive importadas) o aparelho tem
+    if (d.snap && (!g.snap || d.snap.em > g.snap.em)) g.snap = d.snap;
+    /* uso em campo por dia (somando os códigos do mesmo aparelho) */
+    for (const [dia, t] of Object.entries(d.tele || {})) {
+      const x = (g.tele || (g.tele = {}))[dia] || (g.tele[dia] = { min: 0, ses: 0, c: {}, fv: {}, gb: [0, 0, 0, 0, 0], fix: [], cam: [], semfix: 0, off: 0 });
+      x.min += t.min || 0; x.ses += t.ses || 0; x.semfix += t.semfix || 0; x.off += (t._reg || []).length;
+      for (const [k, v] of Object.entries(t.c || {})) x.c[k] = (x.c[k] || 0) + v;
+      for (const [k, v] of Object.entries(t.fv || {})) x.fv[k] = (x.fv[k] || 0) + v;
+      (t.gb || []).forEach((v, i) => { x.gb[i] += v || 0 });
+      x.fix.push(...(t.fix || []).slice(0, 20)); x.cam.push(...(t.cam || []).slice(0, 20));
+    }
     if (d.nickname && !g.nick) g.nick = d.nickname;
     /* junta os dias dos códigos do mesmo aparelho */
     for (const [dia, u] of Object.entries(d.uso || {})) {
