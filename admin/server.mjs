@@ -22,6 +22,7 @@ import compression from 'compression';
 import { readFileSync, writeFileSync, existsSync, renameSync, readdirSync, mkdirSync, unlinkSync, copyFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHmac, randomBytes } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -76,7 +77,7 @@ try {
   SQL = null;
   console.warn(`SQLite indisponível neste Node (${process.version}): os dados seguem em admin-data.json —`, e.message);
 }
-const META = ['dnit_roads', 'last_dnit_sync', 'erros'];
+const META = ['dnit_roads', 'last_dnit_sync', 'erros', 'status', 'auditoria', 'seguranca'];
 const _insAcesso = SQL && SQL.prepare('INSERT INTO acessos (device_id, ts, ip, versao, canal, lat, lon, bases) VALUES (?,?,?,?,?,?,?,?)');
 
 function lerJson() {
@@ -120,6 +121,9 @@ function loadDb() {
 
 let _db = loadDb();
 if (!_db.erros) _db.erros = {};
+if (!_db.status) _db.status = {};
+if (!_db.auditoria) _db.auditoria = [];
+if (!_db.seguranca) _db.seguranca = {};
 let _saveTimer = null;
 
 /* Grava tudo: no SQLite numa transação só; no JSON por arquivo temporário + rename (nunca fica pela metade) */
@@ -500,13 +504,18 @@ function auth(req, res, next) {
 app.post('/api/admin/auth/login', async (req, res) => {
   /* 10 tentativas a cada 15 min por IP: senha não sai por tentativa e erro */
   if (!dentroDoLimite('login:' + (req.ip || ''), 10, 900000)) return res.status(429).json({ error: 'Muitas tentativas. Tente de novo em 15 minutos.' });
-  const { user, password } = req.body || {};
+  const { user, password, codigo } = req.body || {};
   if (!user || !password)
     return res.status(400).json({ error: 'Informe user e password' });
-  if (user !== ADMIN_USER)
-    return res.status(401).json({ error: 'Credenciais inválidas' });
+  if (user !== ADMIN_USER) { audita(req, false, 'usuário errado'); return res.status(401).json({ error: 'Credenciais inválidas' }); }
   const ok = await bcrypt.compare(password, ADMIN_HASH);
-  if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
+  if (!ok) { audita(req, false, 'senha errada'); return res.status(401).json({ error: 'Credenciais inválidas' }); }
+  /* 2FA: com o código do app autenticador ligado, a senha sozinha não entra */
+  if (totpLigado()) {
+    if (!codigo) return res.status(401).json({ error: 'Informe o código do app autenticador', precisa_codigo: true });
+    if (!totpConfere(_db.seguranca.totp, codigo)) { audita(req, false, 'código 2FA errado'); return res.status(401).json({ error: 'Código inválido', precisa_codigo: true }); }
+  }
+  audita(req, true, totpLigado() ? 'senha + 2FA' : 'senha');
   const token = jwt.sign({ user, role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ token, user });
 });
@@ -749,6 +758,11 @@ function rodoviaDe(lat, lon) {
   if (_viaMemo.size > 50000) _viaMemo.clear();
   _viaMemo.set(chave, v); return v;
 }
+/* chave de uma base baixada no app, no formato do mapa ("BR-101/RN"); bases importadas (KMZ etc.) ficam de fora */
+function chaveBase(b) {
+  const n = String(b?.br || '').toUpperCase().match(/(\d{2,3})/), uf = String(b?.uf || '').toUpperCase();
+  return n && /^[A-Z]{2}$/.test(uf) ? 'BR-' + n[1].padStart(3, '0') + '/' + uf : null;
+}
 /* mapa "lat,lon" → [rodovia, km] de todas as regiões de uma lista de dias de uso */
 function viasDosDias(dias, alvo = {}) {
   for (const u of Object.values(dias || {})) for (const [la, lo] of u.l || []) {
@@ -905,7 +919,8 @@ app.post('/api/admin/erros', (req, res) => {
   const canal = CANAIS.includes(b.canal) ? b.canal : 'web'; e.canais[canal] = (e.canais[canal] || 0) + 1;
   const tela = corta(b.tela, 30); if (tela) e.telas[tela] = (e.telas[tela] || 0) + 1;
   const did = corta(b.device_id, 80); if (did && !e.aparelhos.includes(did) && e.aparelhos.length < 100) e.aparelhos.push(did);
-  if (e.resolvido) { e.reaberto = agora; delete e.resolvido; }   // voltou a acontecer depois de marcado como resolvido
+  if (e.n === 1) alerta(`🐞 Erro novo no app (${versao}, ${plat}): ${msg.slice(0, 160)}`, 'erro-novo', 600000);
+  if (e.resolvido) { e.reaberto = agora; delete e.resolvido; alerta(`🐞 Voltou um erro marcado como resolvido: ${msg.slice(0, 160)}`); }   // voltou a acontecer depois de marcado como resolvido
   /* guarda só as 300 falhas mais recentes */
   const ids = Object.keys(_db.erros);
   if (ids.length > MAX_ERROS) for (const k of ids.sort((a, b) => (_db.erros[a].ultima || '').localeCompare(_db.erros[b].ultima || '')).slice(0, ids.length - MAX_ERROS)) delete _db.erros[k];
@@ -924,6 +939,122 @@ app.patch('/api/admin/erros/:id', auth, (req, res) => {
   saveDb();
   res.json({ ok: true });
 });
+
+/* ================================================================
+   SEGURANÇA — 2FA (TOTP, RFC 6238) e registro de acessos ao painel
+   ================================================================ */
+/* Código de 6 dígitos que muda a cada 30 s (Google Authenticator, Microsoft Authenticator, 1Password…).
+   O segredo fica no banco do painel; para desligar sem o celular: ADMIN_2FA_OFF=1 no .env e reiniciar. */
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function b32decode(s) {
+  let bits = '', out = [];
+  for (const c of String(s).toUpperCase().replace(/[^A-Z2-7]/g, '')) bits += B32.indexOf(c).toString(2).padStart(5, '0');
+  for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2));
+  return Buffer.from(out);
+}
+function totpCodigo(segredo, passo) {
+  const buf = Buffer.alloc(8); buf.writeBigUInt64BE(BigInt(passo));
+  const h = createHmac('sha1', b32decode(segredo)).update(buf).digest(), o = h[h.length - 1] & 15;
+  return String(((h.readUInt32BE(o) & 0x7fffffff) % 1e6)).padStart(6, '0');
+}
+/* aceita o código do passo atual e do vizinho (relógio do celular adiantado/atrasado até 30 s) */
+function totpConfere(segredo, codigo) {
+  const c = String(codigo || '').replace(/\D/g, ''), p = Math.floor(Date.now() / 30000);
+  return !!segredo && c.length === 6 && [p - 1, p, p + 1].some(x => totpCodigo(segredo, x) === c);
+}
+const totpLigado = () => !!_db.seguranca.totp && process.env.ADMIN_2FA_OFF !== '1';
+function audita(req, ok, como) {
+  _db.auditoria.push({ ts: new Date().toISOString(), ip: String(req.ip || '').replace(/^::ffff:/, ''), ua: corta(req.get('user-agent'), 160), ok, como });
+  if (_db.auditoria.length > 300) _db.auditoria.splice(0, _db.auditoria.length - 300);
+  if (!ok) alerta(`⚠️ Tentativa de entrar no painel falhou (${como}) — IP ${String(req.ip || '').replace(/^::ffff:/, '')}`, 'login-falho', 3600000);
+  saveDb();
+}
+app.get('/api/admin/seguranca', auth, (req, res) => {
+  res.json({ totp: totpLigado(), totp_desligado_pelo_env: !!_db.seguranca.totp && process.env.ADMIN_2FA_OFF === '1',
+    auditoria: _db.auditoria.slice(-60).reverse() });
+});
+/* passo 1: gera um segredo novo (ainda não vale) e devolve para cadastrar no app autenticador */
+app.post('/api/admin/seguranca/2fa', auth, (req, res) => {
+  const seg = Array.from(randomBytes(20), b => B32[b & 31]).join('');
+  _db.seguranca.totp_novo = seg; saveDb();
+  res.json({ segredo: seg, url: `otpauth://totp/KM%20Check%20Painel:${encodeURIComponent(ADMIN_USER)}?secret=${seg}&issuer=KM%20Check&digits=6&period=30` });
+});
+/* passo 2: só liga depois de conferir um código gerado pelo celular (evita ficar trancado do lado de fora) */
+app.post('/api/admin/seguranca/2fa/confirmar', auth, (req, res) => {
+  const seg = _db.seguranca.totp_novo;
+  if (!seg) return res.status(400).json({ error: 'Gere o código primeiro' });
+  if (!totpConfere(seg, (req.body || {}).codigo)) return res.status(400).json({ error: 'Código não confere. Confira a hora do celular e tente de novo.' });
+  _db.seguranca.totp = seg; delete _db.seguranca.totp_novo; saveDb();
+  audita(req, true, '2FA ligado');
+  res.json({ ok: true });
+});
+app.delete('/api/admin/seguranca/2fa', auth, (req, res) => {
+  if (totpLigado() && !totpConfere(_db.seguranca.totp, (req.body || {}).codigo)) return res.status(400).json({ error: 'Informe um código válido para desligar' });
+  delete _db.seguranca.totp; delete _db.seguranca.totp_novo; saveDb();
+  audita(req, true, '2FA desligado');
+  res.json({ ok: true });
+});
+
+/* ================================================================
+   ALERTAS — Telegram (TELEGRAM_TOKEN e TELEGRAM_CHAT no .env; sem eles, nada é enviado)
+   ================================================================ */
+const _ultAlerta = new Map();
+async function alerta(texto, chave, intervaloMs = 0) {
+  const tk = process.env.TELEGRAM_TOKEN, chat = process.env.TELEGRAM_CHAT;
+  if (!tk || !chat) return false;
+  if (chave && intervaloMs) { const u = _ultAlerta.get(chave) || 0; if (Date.now() - u < intervaloMs) return false; _ultAlerta.set(chave, Date.now()) }
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${tk}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chat, text: '🛣️ KM Check — ' + texto, disable_web_page_preview: true }), signal: AbortSignal.timeout(10000) });
+    return r.ok;
+  } catch (e) { console.error('Telegram:', e.message); return false; }
+}
+app.post('/api/admin/alertas/teste', auth, async (req, res) => {
+  if (!process.env.TELEGRAM_TOKEN || !process.env.TELEGRAM_CHAT) return res.status(400).json({ error: 'Configure TELEGRAM_TOKEN e TELEGRAM_CHAT no .env do painel' });
+  res.json({ ok: await alerta('teste de alerta do painel ✅') });
+});
+
+/* ================================================================
+   STATUS DOS SERVIÇOS — confere a cada 5 min; guarda 7 dias e avisa quando cai ou volta
+   ================================================================ */
+const SERVICOS = {
+  api: { nome: 'API das rodovias', url: () => `${KMCHECK_API}/rodovias/versoes` },
+  site: { nome: 'Site e app (web)', url: () => `${KMCHECK_SITE}/sw.js` },
+};
+async function confereServicos() {
+  for (const [id, sv] of Object.entries(SERVICOS)) {
+    const t0 = Date.now(); let ok = false, extra = null;
+    try {
+      const r = await fetch(sv.url(), { signal: AbortSignal.timeout(10000), headers: { 'Cache-Control': 'no-cache' } });
+      ok = r.ok;
+      if (ok && id === 'site') { const m = (await r.text()).match(/kmcheck-v(\d+)/); if (m) extra = m[1]; }   // versão publicada do app
+    } catch {}
+    const ms = Date.now() - t0, st = _db.status[id] || (_db.status[id] = { hist: [] });
+    st.hist.push([Date.now(), ok ? 1 : 0, ms]);
+    const corte = Date.now() - 7 * 864e5; while (st.hist.length && st.hist[0][0] < corte) st.hist.shift();
+    if (extra) st.versao = extra;
+    /* duas falhas seguidas = fora do ar (uma só pode ser rede); avisa uma vez na queda e uma na volta */
+    const ult2 = st.hist.slice(-2), fora = ult2.length === 2 && ult2.every(h => !h[1]);
+    if (fora && !st.fora) { st.fora = new Date().toISOString(); alerta(`🔴 ${sv.nome} fora do ar`); }
+    if (ok && st.fora) { const min = Math.round((Date.now() - Date.parse(st.fora)) / 60000); delete st.fora; alerta(`🟢 ${sv.nome} voltou (ficou ~${min} min fora)`); }
+  }
+  saveDb();
+}
+setTimeout(confereServicos, 15000);
+setInterval(confereServicos, 5 * 60000).unref();
+app.get('/api/admin/status', auth, (req, res) => {
+  const out = {};
+  for (const [id, sv] of Object.entries(SERVICOS)) {
+    const h = (_db.status[id] || {}).hist || [], dia = Date.now() - 864e5, ult = h[h.length - 1];
+    const pct = l => l.length ? Math.round(l.filter(x => x[1]).length / l.length * 1000) / 10 : null;
+    const ok24 = h.filter(x => x[0] >= dia);
+    out[id] = { nome: sv.nome, ok: ult ? !!ult[1] : null, ms: ult ? ult[2] : null, verificado: ult ? new Date(ult[0]).toISOString() : null,
+      uptime24h: pct(ok24), uptime7d: pct(h), fora_desde: (_db.status[id] || {}).fora || null, versao: (_db.status[id] || {}).versao || null,
+      serie: ok24.map(x => [x[0], x[1], x[2]]) };
+  }
+  res.json({ servicos: out, painel_no_ar_desde: INICIO, alertas: !!(process.env.TELEGRAM_TOKEN && process.env.TELEGRAM_CHAT) });
+});
+const INICIO = new Date().toISOString();
 
 /* ================================================================
    SISTEMA — armazenamento e backup
@@ -955,8 +1086,11 @@ app.get('/api/admin/uso', auth, (req, res) => {
     g.ids.push(d.device_id);
     if (d.first_seen && (!g.inst || d.first_seen < g.inst)) g.inst = d.first_seen;
     if (!g.ult || (d.last_ping || '') > g.ult) {
-      Object.assign(g, { ult: d.last_ping, did: d.device_id, plat: d.platform, modelo: d.model || d.platform, v: d.app_version });
+      Object.assign(g, { ult: d.last_ping, did: d.device_id, plat: d.platform, modelo: d.model || d.platform, v: d.app_version, canal: d.canal || 'web' });
     }
+    /* rodovias baixadas no aparelho (chave igual à do mapa: "BR-101/RN"), para o cruzamento demanda × cobertura */
+    for (const b of d.bases || []) { const k = chaveBase(b); if (k && !(g.bases || (g.bases = [])).includes(k)) g.bases.push(k) }
+    g.nb = Math.max(g.nb || 0, d.bases_count || 0);   // quantas bases (inclusive importadas) o aparelho tem
     if (d.nickname && !g.nick) g.nick = d.nickname;
     /* junta os dias dos códigos do mesmo aparelho */
     for (const [dia, u] of Object.entries(d.uso || {})) {
