@@ -6286,8 +6286,8 @@ document.getElementById('rotlock-never').onclick=()=>{ localStorage.setItem('kc-
    apagar o próprio ícone da tela inicial — por isso o passo 2 ensina a remover o atalho antigo.
    "Exportar minhas fotos antigas" abre a galeria por cima (as fotos ficam no navegador e o app da loja não as lê);
    ao fechar a galeria, o bloqueio volta. No app da loja (NATIVO) nunca aparece.
-   BLOQUEIO_PUBLICO=false: por enquanto só no modo de testes (7 toques na versão do "Sobre") ou com ?bloqueio-teste. */
-const BLOQUEIO_PUBLICO=false;
+   BLOQUEIO_PUBLICO=true desde 2026-10-31 (v361): vale para todos fora do app da loja. */
+const BLOQUEIO_PUBLICO=true;
 var _bloqueado=false, _bqPausa=false;
 const LOJA_IOS='https://apps.apple.com/br/app/km-check/id6823640306', LOJA_ANDROID='https://play.google.com/store/apps/details?id=br.com.kmcheck.app';
 function bloqueioAtivo(){ return !NATIVO && (BLOQUEIO_PUBLICO || modoTeste() || /[?&]bloqueio-teste\b/.test(location.search)) }
