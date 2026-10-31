@@ -2782,6 +2782,28 @@ function decideUso(sim){
   document.getElementById('uso').hidden=true; document.getElementById('cfg-uso').checked=sim;
   mostraBoasVindas();   // as boas-vindas esperam essa pergunta ser respondida
 }
+/* ===== erros para o painel =====
+   Falhas de JavaScript vão para o painel (aba Saúde) — só com a autorização de dados de uso, a mesma do ping.
+   Vai só o técnico: mensagem, arquivo/linha, pilha, versão, tela aberta, plataforma, origem da instalação e o
+   código do aparelho. No máximo 5 por abertura e cada falha uma vez só (um erro em laço não vira enxurrada).
+   "Script error." é falha de outro domínio sem detalhe nenhum: não ajuda a corrigir, não vai. */
+(()=>{ const vistos=new Set(); let n=0;
+  function envia(msg,fonte,linha,col,pilha){ try{
+    if(!usoAutorizado()||n>=5||!navigator.onLine) return;
+    msg=String(msg||'').replace(/^Uncaught\s+/,'').slice(0,300); if(!msg||/^Script error\.?$/i.test(msg)) return;
+    fonte=String(fonte||'').replace(/[?#].*$/,'').replace(/^.*\//,'').slice(0,80)||'index.html';
+    const k=msg+'|'+fonte+'|'+linha; if(vistos.has(k)) return; vistos.add(k); n++;
+    const ua=navigator.userAgent, tela=(document.querySelector('.screen.on')||{}).id||'';
+    fetch(SNV_APIS[0]+'/admin/erros',{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,
+      body:JSON.stringify({msg,fonte,linha:linha|0,col:col|0,pilha:String(pilha||'').slice(0,1200),versao:window.__kcVersao||'',tela,
+        device_id:localStorage.getItem('kc-device-id')||'',
+        plat:NATIVO?(NATIVO.ios?'iOS':'Android'):(/iPhone|iPad/.test(ua)?'iOS':/Android/.test(ua)?'Android':'Outro'),
+        canal:NATIVO?(NATIVO.ios?'app-store':'play-store'):((matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)?'pwa':'navegador')})
+    }).catch(()=>{});
+  }catch(e){} }
+  addEventListener('error',e=>{ if(e.message) envia(e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack) });
+  addEventListener('unhandledrejection',e=>{ const r=e.reason; envia(r&&r.message?r.message:String(r),'promessa',0,0,r&&r.stack) });
+})();
 document.getElementById('uso-sim').onclick=()=>decideUso(true);
 document.getElementById('uso-nao').onclick=()=>decideUso(false);
 document.getElementById('cfg-uso').checked=usoAutorizado();
@@ -7839,6 +7861,7 @@ function showInstallPrompt(){
   fetch('sw.js').then(r=>r.text()).then(t=>{
     const m=t.match(/kmcheck-v(\d+)/), va=t.match(/VERSAO_APP = '([^']+)'/);
     /* na tela aparece a versão das lojas (1.0.0); o número do cache é interno */
+    if(m) window.__kcVersao=(va?va[1]+' ('+m[1]+')':m[1]);   // vai junto dos erros enviados ao painel
     if(m){ document.getElementById('app-ver').textContent='VERSÃO '+(va?va[1]:m[1]);
       document.getElementById('sobre-ver').firstChild.textContent='KM Check · versão '+(va?va[1]:m[1]) }
     /* ── Ping aprimorado para o painel admin — coleta dados do dispositivo, GPS e bases ── */

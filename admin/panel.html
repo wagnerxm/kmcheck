@@ -207,6 +207,25 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 /* ── Abas com tabela (Aparelhos e Cobertura SNV) ── */
 #a-aparelhos{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
 #a-snv{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr)}
+/* ── Saúde: versões em uso, erros do app e armazenamento ── */
+#a-saude{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
+#a-saude .stats{grid-column:1/-1}
+#a-saude .erros-card{grid-column:1/-1}
+.adocao{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.adocao svg{flex:1;min-height:140px;width:100%}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--text2)}
+.legenda i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.vlist{display:flex;flex-direction:column;gap:9px;overflow:auto;min-height:0}
+.vrow{display:grid;grid-template-columns:88px 1fr 46px;gap:10px;align-items:center;font-size:12.5px}
+.vrow .vtri{height:8px;border-radius:99px;background:var(--trilho);overflow:hidden}
+.vrow .vtri i{display:block;height:100%;border-radius:99px;background:var(--text3)}
+.vrow.nova .vtri i{background:var(--lima)}
+.vrow b{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.erros-card td.msg{white-space:normal;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.45;color:#ffd2ca}
+.erros-card tr.fechado td.msg{color:var(--text3);text-decoration:line-through}
+.erros-card tr.pilha td{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--text2);background:rgba(255,255,255,.03)}
+.erros-card tr.linha{cursor:pointer}
+.marca-int{margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--text2)}
 #a-snv .stats{grid-column:1/-1}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .stat{border-radius:20px;padding:14px 18px}
@@ -456,6 +475,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
       <button data-a="mapa"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Mapa</span></button>
       <button data-a="hora"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Horários</span></button>
       <button data-a="aparelhos"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg><span>Aparelhos</span></button>
+      <button data-a="saude"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Saúde</span></button>
       <button data-a="snv"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 10 4h4l6 16"/><path d="M12 8v2M12 13v2M12 18v1"/></svg><span class="longo">Cobertura SNV</span><span class="curto">SNV</span></button>
     </nav>
     <div class="dir">
@@ -549,6 +569,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
             <option value="aparelhos">Celulares (1 linha por aparelho)</option>
             <option value="computador">Computadores</option>
             <option value="teste">Testes</option>
+            <option value="interno">Equipe e testes (internos)</option>
             <option value="">Tudo</option>
           </select>
           <select id="dev-filter-canal" title="Por onde o app foi instalado">
@@ -599,6 +620,33 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
     </section>
 
     <!-- ──────── Cobertura SNV ──────── -->
+    <!-- ──────── Saúde ──────── -->
+    <section class="aba" id="a-saude">
+      <div class="stats">
+        <div class="stat forte" title="Celulares que usaram o app no período e cuja última abertura já foi na versão mais nova"><div class="label">Na versão mais nova</div><div class="value green" id="sa-nova">—</div><div class="detail" id="sa-nova-d"></div></div>
+        <div class="stat forte" title="Usaram no período, mas a última abertura foi numa versão antiga (cache velho ou app da loja desatualizado)"><div class="label">Desatualizados</div><div class="value yellow" id="sa-velhos">—</div><div class="detail" id="sa-velhos-d"></div></div>
+        <div class="stat forte" title="Falhas de JavaScript diferentes que aconteceram e não foram marcadas como resolvidas"><div class="label">Erros em aberto</div><div class="value red" id="sa-erros">—</div><div class="detail" id="sa-erros-d"></div></div>
+        <div class="stat forte" title="Onde o painel guarda os dados e o backup diário"><div class="label">Dados</div><div class="value" id="sa-dados" style="font-size:18px">—</div><div class="detail" id="sa-dados-d"></div></div>
+        <div class="stat forte"><div class="label">Backup</div><div class="value" id="sa-bk" style="font-size:18px">—</div><div class="detail"><button class="btn-secondary btn-sm" id="sa-baixar" style="margin-top:4px">↓ Baixar backup</button></div></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Adoção <em>de versão</em></h2><p>Celulares por versão em cada dia de uso. Mostra quando uma versão nova pegou e quem ficou para trás.</p></div></div>
+        <div class="adocao"><svg id="sa-graf" preserveAspectRatio="none"></svg><div class="legenda" id="sa-leg"></div></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Versão <em>atual</em></h2><p>Última versão aberta por cada celular ativo no período.</p></div></div>
+        <div class="vlist" id="sa-vers"></div>
+      </div>
+      <div class="card forte erros-card">
+        <div class="cab"><div><h2>Erros <em>do app</em></h2><p>Falhas de JavaScript enviadas pelos aparelhos que autorizaram os dados de uso. Clique para ver a pilha.</p></div>
+          <label style="font-size:12px;color:var(--text2);display:flex;gap:6px;align-items:center"><input type="checkbox" id="sa-res"> mostrar resolvidos</label></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:38%">Erro</th><th style="width:14%">Onde</th><th style="width:7%">Vezes</th><th style="width:8%">Aparelhos</th><th style="width:12%">Versões</th><th style="width:10%">Última vez</th><th style="width:11%"></th></tr></thead>
+          <tbody id="sa-tbody"><tr><td colspan="7" class="empty">Carregando…</td></tr></tbody>
+        </table></div>
+      </div>
+    </section>
+
     <section class="aba" id="a-snv">
       <div class="stats" id="road-stats">
         <div class="stat forte"><div class="label">Disponíveis no KM Check</div><div class="value green" id="rs-avail">—</div><div class="detail" id="rs-snv"></div></div>
@@ -762,7 +810,7 @@ function abre(nome){
   $$('#abas button').forEach(b=>b.classList.toggle('on',b.dataset.a===nome));
   $$('.aba').forEach(a=>a.classList.toggle('on',a.id==='a-'+nome));
   poeMarcador(); escondeDica();
-  $('.topo').classList.toggle('sem-periodo', nome==='aparelhos'||nome==='snv');
+  $('.topo').classList.toggle('sem-periodo', nome==='aparelhos'||nome==='snv');   // Saúde usa o período (adoção de versão)
   if(_cel.matches) scrollTo({top:0});
   if(ULT){
     if(nome==='resumo') setTimeout(()=>linha(SERIE),60);
@@ -770,6 +818,7 @@ function abre(nome){
     if(nome==='hora'){ $$('#calor .q i').forEach(i=>{ i.style.transitionDelay='0ms'; i.style.opacity=0; i.style.transform='scale(.4)' }); setTimeout(()=>calor(ULT),80) }
   }
   if(nome==='snv' && !_roadsLoaded) loadRoads();
+  if(nome==='saude') loadSaude();
   try{ localStorage.setItem('kca-aba',nome) }catch(e){}
 }
 $$('#abas button').forEach(b=>b.onclick=()=>abre(b.dataset.a));
@@ -799,12 +848,110 @@ const dica=$('#dica');
 function mostraDica(html,x,y){ dica.innerHTML=html; dica.classList.add('on'); const w=dica.offsetWidth; dica.style.left=Math.min(innerWidth-w-12,Math.max(12,x-w/2))+'px'; dica.style.top=Math.max(8,y-dica.offsetHeight-14)+'px' }
 function escondeDica(){ dica.classList.remove('on') }
 
+
+/* ══════════════════════════════════════════════════
+   SAÚDE — adoção de versão (dos dias de uso que o painel já tem), erros do app e armazenamento
+   ══════════════════════════════════════════════════ */
+async function marcaInterno(id, interno){
+  try{
+    const r = await api('/api/admin/devices/'+encodeURIComponent(id)+'/interno', { method:'PATCH', body: JSON.stringify({ interno }) });
+    toast(interno ? `Marcado como equipe/teste (${r.codigos} código${r.codigos>1?'s':''})` : 'Voltou a contar nos números', 'success');
+    $('#dev-modal').classList.remove('open');
+    loadDevices(); loadUso();
+  }catch(e){ toast('Erro: '+e.message) }
+}
+let ERROS = [], SIS = null;
+const CORES_V = ['#b7d92d','#9db4ff','#e2b54a','#c9b3ff','#7fd88f'];
+const rotV = v => { const m=String(v||'').match(/^(.*?)\s*\((\d+)\)\s*$/); return m ? 'v'+m[1]+' · '+m[2] : 'v'+(v||'?') };
+function saude(){
+  const dias = chaves(0, PER).reverse();   // do mais antigo para hoje
+  const porDia = dias.map(k => { const c = {}; for (const a of USO){ const u=a.dias[k]; if(u){ const v=u.v||a.v||'?'; c[v]=(c[v]||0)+1 } } return c });
+  /* versão atual de cada celular ativo no período (a do último dia em que usou) */
+  const atual = {}; let ativos = 0;
+  for (const a of USO){ let ult=null; for (const k of dias) if (a.dias[k]) ult=a.dias[k]; if(!ult) continue; ativos++; const v=ult.v||a.v||'?'; atual[v]=(atual[v]||0)+1 }
+  const vers = Object.keys(atual).sort((x,y)=>verNum(y)-verNum(x)), nova = vers[0];
+  const nNova = nova ? atual[nova] : 0;
+  $('#sa-nova').textContent = ativos ? Math.round(nNova/ativos*100)+'%' : '—';
+  $('#sa-nova-d').textContent = nova ? `${nNova} de ${ativos} em ${rotV(nova)}` : 'sem uso no período';
+  $('#sa-velhos').textContent = ativos - nNova;
+  const v2 = vers.slice(1).reduce((s,v)=>s+(verNum(nova)-verNum(v)>=5?atual[v]:0),0);
+  $('#sa-velhos-d').textContent = ativos-nNova ? `${v2} com 5+ versões de atraso` : 'todos atualizados';
+  /* lista */
+  $('#sa-vers').innerHTML = vers.length ? vers.map(v=>`<div class="vrow ${v===nova?'nova':''}"><span>${esc(rotV(v))}</span><span class="vtri"><i style="width:${(atual[v]/ativos*100).toFixed(1)}%"></i></span><b>${atual[v]}</b></div>`).join('') : '<p class="empty">Sem uso no período</p>';
+  /* gráfico: colunas empilhadas por dia, as 4 versões mais usadas no período + "outras" */
+  const tot = {}; porDia.forEach(c=>{ for(const [v,n] of Object.entries(c)) tot[v]=(tot[v]||0)+n });
+  const top = Object.keys(tot).sort((x,y)=>verNum(y)-verNum(x)).slice(0,4);
+  const series = [...top, 'outras'];
+  const svg = $('#sa-graf'), W = 1000, H = 260, max = Math.max(1, ...porDia.map(c=>Object.values(c).reduce((a,b)=>a+b,0)));
+  const bw = W/dias.length, g = Math.min(4, bw*.25);
+  let h = '';
+  for (let y=0;y<=4;y++){ const yy=H-20-(H-30)*y/4; h+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="rgba(255,255,255,.06)"/>` }
+  porDia.forEach((c,i)=>{ let base=H-20; const x=i*bw+g/2;
+    series.forEach((v,si)=>{ const n = v==='outras' ? Object.entries(c).filter(([k])=>!top.includes(k)).reduce((a,[,b])=>a+b,0) : (c[v]||0);
+      if(!n) return; const hh=(H-30)*n/max; base-=hh;
+      h+=`<rect x="${x.toFixed(1)}" y="${base.toFixed(1)}" width="${(bw-g).toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${CORES_V[si]||'#555'}" data-i="${i}"/>` }) });
+  const passo = Math.ceil(dias.length/8);
+  dias.forEach((k,i)=>{ if(i%passo===0||i===dias.length-1) h+=`<text x="${(i*bw+bw/2).toFixed(1)}" y="${H-4}" fill="rgba(255,255,255,.42)" font-size="11" text-anchor="middle">${ddmm(k)}</text>` });
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML = h;
+  svg.onmousemove = e => { const r=e.target.closest('rect'); if(!r){ escondeDica(); return } const i=+r.dataset.i, c=porDia[i];
+    mostraDica(`<b>${ddmm(dias[i])}</b><br>`+Object.entries(c).sort((a,b)=>verNum(b[0])-verNum(a[0])).map(([v,n])=>`${esc(rotV(v))}: ${n}`).join('<br>'), e.clientX, e.clientY) };
+  svg.onmouseleave = escondeDica;
+  $('#sa-leg').innerHTML = series.filter(v=>v!=='outras'||Object.keys(tot).length>top.length).map((v,i)=>`<span><i style="background:${CORES_V[i]}"></i>${v==='outras'?'outras':esc(rotV(v))}</span>`).join('');
+  desenhaErros();
+}
+function desenhaErros(){
+  const res = $('#sa-res').checked, abertos = ERROS.filter(e=>!e.resolvido);
+  $('#sa-erros').textContent = abertos.length;
+  const semana = Date.now()-7*864e5, nSem = abertos.filter(e=>Date.parse(e.ultima)>semana).length;
+  $('#sa-erros-d').textContent = abertos.length ? `${nSem} aconteceram nos últimos 7 dias` : 'nenhum em aberto';
+  const lista = res ? ERROS : abertos;
+  $('#sa-tbody').innerHTML = lista.length ? lista.map(e=>{
+    const vs = Object.entries(e.versoes||{}).sort((a,b)=>verNum(b[0])-verNum(a[0])).slice(0,2).map(([v])=>rotV(v)).join(', ');
+    const pl = Object.entries(e.plats||{}).map(([p,n])=>p+' '+n).join(' · ');
+    return `<tr class="linha ${e.resolvido?'fechado':''}" data-id="${esc(e.id)}"><td class="msg">${esc(e.msg)}${e.reaberto?' <span class="tag tag-red">voltou</span>':''}</td>
+      <td class="mono" title="${esc(pl)}">${esc(e.fonte||'?')}:${e.linha||0}</td><td>${e.n}</td><td>${e.n_aparelhos||0}</td>
+      <td>${esc(vs)}</td><td>${e.ultima?quando(e.ultima):'—'}</td>
+      <td><button class="btn-secondary btn-sm" data-res="${e.resolvido?0:1}">${e.resolvido?'Reabrir':'Resolvido'}</button></td></tr>
+      <tr class="pilha" data-p="${esc(e.id)}" hidden><td colspan="7">${esc((e.pilha||'(sem pilha)')+'\n\nPlataformas: '+pl+'\nTelas: '+Object.entries(e.telas||{}).map(([t,n])=>t+' '+n).join(' · ')+'\nPrimeira vez: '+fmtDate(e.primeira))}</td></tr>` }).join('')
+    : `<tr><td colspan="7" class="empty">${ERROS.length?'Nenhum erro em aberto':'Nenhum erro recebido ainda (o app novo começa a enviar a partir da v357)'}</td></tr>`;
+}
+$('#sa-tbody').addEventListener('click', async ev => {
+  const b = ev.target.closest('button[data-res]'), tr = ev.target.closest('tr.linha');
+  if (b){ ev.stopPropagation(); const id = tr.dataset.id;
+    try{ await api('/api/admin/erros/'+encodeURIComponent(id), { method:'PATCH', body: JSON.stringify({ resolvido: b.dataset.res==='1' }) }); await carregaErros() }catch(e){ toast('Erro: '+e.message) }
+    return }
+  if (tr){ const p = $(`#sa-tbody tr[data-p="${CSS.escape(tr.dataset.id)}"]`); if(p) p.hidden = !p.hidden }
+});
+$('#sa-res').onchange = desenhaErros;
+async function carregaErros(){ try{ ERROS = (await api('/api/admin/erros')).erros || [] }catch(e){ ERROS = [] } desenhaErros() }
+const kb = n => n==null?'—':n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
+async function loadSaude(){
+  if (USO.length) saude();
+  carregaErros();
+  try{
+    SIS = await api('/api/admin/sistema');
+    $('#sa-dados').textContent = SIS.armazenamento==='sqlite' ? 'SQLite' : 'Arquivo JSON';
+    $('#sa-dados-d').textContent = (SIS.acessos!=null ? SIS.acessos.toLocaleString('pt-BR')+' acessos · ' : '') + kb(SIS.tamanho) + ' · Node '+SIS.node;
+    $('#sa-bk').textContent = SIS.ultimo_backup ? (SIS.ultimo_backup.match(/\d{4}-\d{2}-\d{2}/)||[''])[0].split('-').reverse().join('/') : 'ainda não';
+  }catch(e){ $('#sa-dados').textContent='—' }
+}
+$('#sa-baixar').onclick = async () => {
+  try{
+    const r = await fetch(API+'/api/admin/backup', { headers:{ Authorization:'Bearer '+TOKEN } });
+    if(!r.ok) throw new Error((await r.json().catch(()=>({}))).error || 'HTTP '+r.status);
+    const nome = (r.headers.get('Content-Disposition')||'').match(/filename="?([^";]+)/)?.[1] || 'kmcheck-admin-backup';
+    const url = URL.createObjectURL(await r.blob()), a = document.createElement('a');
+    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    loadSaude();
+  }catch(e){ toast('Erro ao baixar o backup: '+e.message) }
+};
+
 async function loadUso(){
   try{
     const r = await api('/api/admin/uso');
     Object.assign(VIAS, r.vias||{});
     USO = r.aparelhos||[]; AGORA_MS = Date.parse(r.agora)||Date.now(); FORA = r.fora||FORA;
-    desenha();
+    desenha(); if(ABA==='saude') saude();
   }catch(e){ toast('Erro ao carregar o uso: '+e.message) }
 }
 
@@ -1033,7 +1180,7 @@ function desenha(){
   $('#pl-pct').textContent=Math.round(fa*100)+'%'; $('#pl-a').textContent=r.android; $('#pl-i').textContent=r.ativos.length-r.android;
   calor(r); mapa(r); barras(r);
 }
-$$('#periodo button').forEach(b=>b.onclick=()=>{ $$('#periodo button').forEach(x=>x.classList.toggle('on',x===b)); PER=+b.dataset.d; FILTRO=null; if(USO.length) desenha() });
+$$('#periodo button').forEach(b=>b.onclick=()=>{ $$('#periodo button').forEach(x=>x.classList.toggle('on',x===b)); PER=+b.dataset.d; FILTRO=null; if(USO.length) desenha(); if(ABA==='saude') saude() });
 addEventListener('resize',()=>{ if(ABA==='resumo') linha(SERIE); poeMarcador() });
 
 /* ── cartões do Resumo levam às listas ── */
@@ -1398,6 +1545,7 @@ function renderDevDetail(r){
   html += infoItem('Primeiro acesso', fmtDate(d.first_seen));
   html += infoItem('Último acesso', fmtDate(d.last_ping));
   html += infoItem('Bases baixadas', (d.bases_count || 0) + ' rodovias');
+  if (d.interno) html += infoItem('Classificação', '<span class="tag" style="background:rgba(226,181,74,.16);color:#f0cf7d">Equipe / teste</span>');
   if (d.hw) {
     if (d.hw.chip) html += infoItem('Chip', esc(d.hw.chip) + (d.hw.bench != null ? ' (bench: ' + d.hw.bench + 'ms)' : ''));
     else if (d.hw.bench != null) html += infoItem('Benchmark CPU', d.hw.bench + 'ms');
@@ -1408,6 +1556,8 @@ function renderDevDetail(r){
     if (d.hw.cam) html += infoItem('Câmeras', d.hw.cam.back + ' traseiras' + (d.hw.cam.telephoto ? ' (teleobjetiva = Pro)' : ''));
   }
   html += '</div>';
+  /* equipe, TestFlight, revisão da loja: tirar dos números (vale para todas as reinstalações do aparelho) */
+  html += `<div class="marca-int"><button class="btn-secondary btn-sm" onclick="marcaInterno('${esc(d.device_id)}',${d.interno?'false':'true'})">${d.interno?'Voltar a contar nos números':'Marcar como equipe / teste'}</button><span>${d.interno?'Este aparelho está fora das contagens.':'Use para os seus aparelhos, os do André, TestFlight e revisão da loja.'}</span></div>`;
 
   /* rodovias por onde passou: as regiões de cada dia de uso, ligadas à rodovia federal mais próxima */
   const porVia = new Map();

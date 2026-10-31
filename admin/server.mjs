@@ -19,7 +19,7 @@ import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, renameSync, readdirSync, mkdirSync, unlinkSync, copyFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -50,21 +50,105 @@ if (!ADMIN_HASH) {
   process.exit(1);
 }
 
-/* ── Banco JSON (persistido em disco) ──
-   Simples, sem dependência nativa, funciona em qualquer OS.
-   Estrutura: { devices: { [device_id]: {...} }, dnit_roads: [...] } */
+/* ── Armazenamento ──
+   SQLite embutido do próprio Node (node:sqlite, Node 22.13+): gravação atômica (o arquivo não corrompe se o
+   servidor cair no meio), histórico COMPLETO de acessos (o aparelho guarda só os 50 últimos) e backup diário,
+   sem dependência nativa para instalar. Os dados continuam em memória (_db) como antes — todo o resto do
+   servidor não muda; o SQLite é onde eles ficam guardados.
+   Se o Node do servidor não tiver o node:sqlite, segue no arquivo JSON, agora gravado de forma atômica
+   (arquivo temporário + rename). Na 1ª vez com SQLite, o admin-data.json é importado e guardado como cópia. */
 const DB_PATH = join(__dirname, 'admin-data.json');
+const SQL_PATH = join(__dirname, 'admin.db');
+const BACKUP_DIR = join(__dirname, 'backups');
+const BACKUPS_GUARDADOS = 14;
+let SQL = null;
+try {
+  const { DatabaseSync } = await import('node:sqlite');
+  SQL = new DatabaseSync(SQL_PATH);
+  SQL.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;
+    CREATE TABLE IF NOT EXISTS aparelhos (device_id TEXT PRIMARY KEY, dados TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS acessos (id INTEGER PRIMARY KEY, device_id TEXT NOT NULL, ts TEXT NOT NULL,
+      ip TEXT, versao TEXT, canal TEXT, lat REAL, lon REAL, bases INTEGER);
+    CREATE INDEX IF NOT EXISTS acessos_dev ON acessos(device_id, ts);
+    CREATE INDEX IF NOT EXISTS acessos_ts ON acessos(ts);
+    CREATE TABLE IF NOT EXISTS meta (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);`);
+} catch (e) {
+  SQL = null;
+  console.warn(`SQLite indisponível neste Node (${process.version}): os dados seguem em admin-data.json —`, e.message);
+}
+const META = ['dnit_roads', 'last_dnit_sync', 'erros'];
+const _insAcesso = SQL && SQL.prepare('INSERT INTO acessos (device_id, ts, ip, versao, canal, lat, lon, bases) VALUES (?,?,?,?,?,?,?,?)');
 
-function loadDb() {
+function lerJson() {
   if (existsSync(DB_PATH)) {
     try { return JSON.parse(readFileSync(DB_PATH, 'utf8')); }
-    catch { /* corrupto — recria */ }
+    catch (e) { console.error('admin-data.json ilegível:', e.message); }
   }
-  return { devices: {}, dnit_roads: [], last_dnit_sync: null };
+  return null;
+}
+function loadDb() {
+  const vazio = { devices: {}, dnit_roads: [], last_dnit_sync: null, erros: {} };
+  if (!SQL) return { ...vazio, ...(lerJson() || {}) };
+  const n = SQL.prepare('SELECT COUNT(*) AS n FROM aparelhos').get().n;
+  if (!n) {
+    const j = lerJson();
+    if (j && j.devices && Object.keys(j.devices).length) {
+      /* 1ª vez com SQLite: importa o JSON e os acessos que ele tinha (ping_history), e guarda o arquivo antigo */
+      const ins = SQL.prepare('INSERT OR REPLACE INTO aparelhos (device_id, dados) VALUES (?, ?)');
+      SQL.exec('BEGIN');
+      try {
+        for (const d of Object.values(j.devices)) {
+          ins.run(d.device_id, JSON.stringify(d));
+          for (const p of d.ping_history || []) if (p.ts)
+            _insAcesso.run(d.device_id, p.ts, p.ip || null, p.app_version || null, d.canal || null,
+              p.location?.lat ?? null, p.location?.lon ?? null, p.bases_count ?? null);
+        }
+        const im = SQL.prepare('INSERT OR REPLACE INTO meta (chave, valor) VALUES (?, ?)');
+        for (const k of META) if (j[k] !== undefined) im.run(k, JSON.stringify(j[k]));
+        SQL.exec('COMMIT');
+      } catch (e) { SQL.exec('ROLLBACK'); throw e; }
+      const copia = DB_PATH + '.importado-' + new Date().toISOString().slice(0, 10);
+      try { renameSync(DB_PATH, copia); } catch {}
+      console.log(`Importado para o SQLite: ${Object.keys(j.devices).length} aparelhos (JSON antigo guardado em ${copia})`);
+    }
+  }
+  const db = { ...vazio };
+  for (const r of SQL.prepare('SELECT dados FROM aparelhos').all()) { const d = JSON.parse(r.dados); db.devices[d.device_id] = d; }
+  for (const r of SQL.prepare('SELECT chave, valor FROM meta').all()) db[r.chave] = JSON.parse(r.valor);
+  return db;
 }
 
 let _db = loadDb();
+if (!_db.erros) _db.erros = {};
 let _saveTimer = null;
+
+/* Grava tudo: no SQLite numa transação só; no JSON por arquivo temporário + rename (nunca fica pela metade) */
+function gravaAgora() {
+  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+  try {
+    if (SQL) {
+      const ins = SQL.prepare('INSERT OR REPLACE INTO aparelhos (device_id, dados) VALUES (?, ?)');
+      const im = SQL.prepare('INSERT OR REPLACE INTO meta (chave, valor) VALUES (?, ?)');
+      SQL.exec('BEGIN');
+      try {
+        for (const d of Object.values(_db.devices)) ins.run(d.device_id, JSON.stringify(d));
+        for (const k of META) if (_db[k] !== undefined) im.run(k, JSON.stringify(_db[k]));
+        SQL.exec('COMMIT');
+      } catch (e) { SQL.exec('ROLLBACK'); throw e; }
+    } else {
+      const tmp = DB_PATH + '.tmp';
+      writeFileSync(tmp, JSON.stringify(_db));
+      renameSync(tmp, DB_PATH);
+    }
+  } catch (e) { console.error('Erro ao salvar os dados:', e.message); }
+}
+/* histórico completo: uma linha por acesso (só no SQLite; no JSON fica o ping_history de 50) */
+function registraAcesso(d, ts, ip) {
+  if (!_insAcesso) return;
+  try { _insAcesso.run(d.device_id, ts, ip || null, d.app_version || null, d.canal || null,
+    d.location?.lat ?? null, d.location?.lon ?? null, d.bases_count ?? null); }
+  catch (e) { console.error('Erro ao registrar acesso:', e.message); }
+}
 
 /* ── Migração: popular ping_history para dispositivos antigos ──
    Dispositivos que pingaram antes da v178 não têm ping_history.
@@ -86,7 +170,7 @@ let _saveTimer = null;
   }
   if (migrated) {
     console.log(`Migração: ${migrated} dispositivo(s) ganhou ping_history inicial`);
-    try { writeFileSync(DB_PATH, JSON.stringify(_db, null, 2)); } catch {}
+    gravaAgora();
   }
 }
 
@@ -121,27 +205,45 @@ function podaUso(d) {
     for (const p of (d.ping_history || [])) if (p.ts) registraUso(d, p.ts, p.location, p.app_version);
     n++;
   }
-  if (n) { console.log(`Migração: ${n} dispositivo(s) ganharam o resumo de uso por dia`); try { writeFileSync(DB_PATH, JSON.stringify(_db)); } catch {} }
+  if (n) { console.log(`Migração: ${n} dispositivo(s) ganharam o resumo de uso por dia`); gravaAgora(); }
 }
 
-/* Salva no disco com debounce (evita escrita a cada ping) */
+/* Salva com debounce (evita escrita a cada ping) */
 function saveDb() {
   if (_saveTimer) return;
-  _saveTimer = setTimeout(() => {
-    _saveTimer = null;
-    try { writeFileSync(DB_PATH, JSON.stringify(_db)); }
-    catch (e) { console.error('Erro ao salvar DB:', e.message); }
-  }, 30000);   // no máximo a cada 30 s (com muitos aparelhos regravar a cada ping travava o painel)
+  _saveTimer = setTimeout(gravaAgora, 30000);   // no máximo a cada 30 s (com muitos aparelhos regravar a cada ping travava o painel)
 }
+const saveDbNow = gravaAgora;
+function encerra() { gravaAgora(); try { SQL && SQL.close(); } catch {} process.exit(0); }
+process.on('SIGINT', encerra);
+process.on('SIGTERM', encerra);
 
-/* Salva imediatamente (para shutdown gracioso) */
-function saveDbNow() {
-  if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
-  try { writeFileSync(DB_PATH, JSON.stringify(_db, null, 2)); }
-  catch (e) { console.error('Erro ao salvar DB:', e.message); }
+/* ── Backup diário ──
+   Uma cópia por dia em backups/ (guarda as 14 mais recentes). No SQLite usa VACUUM INTO, que gera um
+   arquivo consistente mesmo com o servidor gravando. O painel baixa a mais recente (cópia fora do VPS). */
+function backupsExistentes() {
+  try { return readdirSync(BACKUP_DIR).filter(f => /^kmcheck-admin-\d{4}-\d{2}-\d{2}\.(db|json)$/.test(f)).sort(); }
+  catch { return []; }
 }
-process.on('SIGINT', () => { saveDbNow(); process.exit(0); });
-process.on('SIGTERM', () => { saveDbNow(); process.exit(0); });
+function fazBackup(forcar) {
+  try {
+    mkdirSync(BACKUP_DIR, { recursive: true });
+    const dia = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);   // dia em Brasília
+    const nome = `kmcheck-admin-${dia}.${SQL ? 'db' : 'json'}`, alvo = join(BACKUP_DIR, nome);
+    /* histórico de acessos: mesma validade do resumo por dia (DIAS_USO, ~7 meses), como diz a política de privacidade */
+    if (SQL) try { SQL.prepare('DELETE FROM acessos WHERE ts < ?').run(new Date(Date.now() - DIAS_USO * 86400000).toISOString()); } catch (e) { console.error('Erro ao podar acessos:', e.message); }
+    if (existsSync(alvo) && !forcar) return;
+    gravaAgora();
+    if (existsSync(alvo)) unlinkSync(alvo);
+    if (SQL) SQL.exec(`VACUUM INTO '${alvo.replace(/'/g, "''")}'`);
+    else copyFileSync(DB_PATH, alvo);
+    const todos = backupsExistentes();
+    for (const f of todos.slice(0, Math.max(0, todos.length - BACKUPS_GUARDADOS))) unlinkSync(join(BACKUP_DIR, f));
+    console.log('Backup feito:', nome);
+  } catch (e) { console.error('Erro no backup:', e.message); }
+}
+setTimeout(fazBackup, 60000);                       // 1 min depois de subir (não atrasa o início)
+setInterval(fazBackup, 3 * 3600000).unref();        // confere a cada 3 h; só grava 1 por dia
 
 /* ── Mapeamento de códigos de modelo Android → nomes amigáveis ──
    Foco no mercado brasileiro (Samsung, Xiaomi/Redmi/POCO, Motorola, Realme). */
@@ -396,6 +498,8 @@ function auth(req, res, next) {
    ================================================================ */
 
 app.post('/api/admin/auth/login', async (req, res) => {
+  /* 10 tentativas a cada 15 min por IP: senha não sai por tentativa e erro */
+  if (!dentroDoLimite('login:' + (req.ip || ''), 10, 900000)) return res.status(429).json({ error: 'Muitas tentativas. Tente de novo em 15 minutos.' });
   const { user, password } = req.body || {};
   if (!user || !password)
     return res.status(400).json({ error: 'Informe user e password' });
@@ -442,6 +546,8 @@ app.post('/api/admin/devices/ping', (req, res) => {
     const { device_id, app_version, platform, user_agent, screen,
             brand, os_version, model, hw, location, bases_count, bases, canal } = req.body || {};
     if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });
+    /* um app abre poucas vezes por hora; 120 em 10 min por IP só acontece com robô (várias pessoas na mesma rede cabem) */
+    if (!dentroDoLimite('ping:' + (req.ip || ''), 120, 600000)) return res.status(429).json({ error: 'muitos envios' });
     const ip = req.ip || req.socket.remoteAddress || '';
     const now = new Date().toISOString();
     const existing = _db.devices[device_id];
@@ -472,10 +578,12 @@ app.post('/api/admin/devices/ping', (req, res) => {
       ping_count: (existing?.ping_count || 0) + 1,
       ping_history: hist,
       uso: existing?.uso || {},
-      ...(existing?.nickname ? { nickname: existing.nickname } : {})
+      ...(existing?.nickname ? { nickname: existing.nickname } : {}),
+      ...(existing?.interno ? { interno: existing.interno } : {})
     };
     registraUso(_db.devices[device_id], now, location, app_version);
     podaUso(_db.devices[device_id]);
+    registraAcesso(_db.devices[device_id], now, ip);
     saveDb();
     res.json({ ok: true });
   } catch (e) {
@@ -485,6 +593,29 @@ app.post('/api/admin/devices/ping', (req, res) => {
 });
 
 /* Atualizar apelido/nome do usuário de um dispositivo — configuração manual do admin */
+/* Marca (ou desmarca) um aparelho como interno — equipe, TestFlight, revisão da loja. Vale para todos os
+   códigos do mesmo aparelho (reinstalações), para ele não voltar a contar por outro código. */
+app.patch('/api/admin/devices/:id/interno', auth, (req, res) => {
+  const d = _db.devices[req.params.id];
+  if (!d) return res.status(404).json({ error: 'Dispositivo não encontrado' });
+  const interno = !!(req.body || {}).interno;
+  let alvos;
+  if (interno) {
+    const lista = montaLista(), grupo = (lista.find(x => x.device_id === d.device_id) || {}).grupo;
+    alvos = grupo ? lista.filter(x => x.grupo === grupo).map(x => x.device_id) : [d.device_id];
+    /* guarda QUEM foi marcado junto (a chave), para desmarcar o grupo inteiro depois */
+    for (const id of alvos) if (_db.devices[id]) _db.devices[id].interno = d.device_id;
+  } else {
+    /* desmarcar: todos os códigos marcados juntos voltam a ser classificados normalmente */
+    const chave = d.interno;
+    alvos = Object.values(_db.devices).filter(x => x.interno && x.interno === chave).map(x => x.device_id);
+    if (!alvos.includes(d.device_id)) alvos.push(d.device_id);
+    for (const id of alvos) delete _db.devices[id].interno;
+  }
+  saveDb();
+  res.json({ ok: true, interno, codigos: alvos.length });
+});
+
 app.patch('/api/admin/devices/:id/nickname', auth, (req, res) => {
   const d = _db.devices[req.params.id];
   if (!d) return res.status(404).json({ error: 'Dispositivo não encontrado' });
@@ -541,6 +672,7 @@ app.get('/api/admin/devices/:id', auth, (req, res) => {
       até 21 dias depois de o antigo parar de aparecer, na mesma rede (IP ou /24) ou na mesma região (~30 km);
    3) "usuários" = aparelhos (já juntados) que usaram nos últimos 30 dias. */
 function categoria(d) {
+  if (d.interno) return 'interno';   // equipe, TestFlight, revisão da Apple: fora dos números
   const ua = d.user_agent || '';
   if (/Headless|Puppeteer|Lighthouse|bot\b|crawler|sdk_gphone|Android SDK built for|Emulator/i.test(ua)) return 'teste';
   if (d.platform === 'iOS' || /^Android/.test(d.platform || '')) return 'celular';
@@ -739,6 +871,79 @@ app.get('/api/admin/devices', auth, (req, res) => {
   });
 });
 
+/* ================================================================
+   ERROS DO APP — o app manda os erros de JavaScript (só com a autorização de dados de uso)
+   ================================================================ */
+/* Limite simples por IP (memória): rota pública não pode virar porta para lotar o servidor */
+const _limite = new Map();
+function dentroDoLimite(chave, max, janelaMs) {
+  const agora = Date.now(), l = _limite.get(chave);
+  if (!l || agora - l.ini > janelaMs) { _limite.set(chave, { ini: agora, n: 1 }); return true; }
+  return ++l.n <= max;
+}
+setInterval(() => { const corte = Date.now() - 3600000; for (const [k, l] of _limite) if (l.ini < corte) _limite.delete(k); }, 600000).unref();
+
+const corta = (v, n) => String(v ?? '').slice(0, n);
+/* mesma falha = mesma assinatura: tira números, endereços e trechos entre aspas, que mudam a cada vez */
+function assinaturaErro(msg, fonte, linha) {
+  const base = corta(msg, 300).replace(/https?:\/\/\S+/g, 'URL').replace(/(["'`]).*?\1/g, '"…"').replace(/\d+/g, 'N');
+  let h = 0; for (const c of base + '|' + fonte + '|' + linha) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return (h >>> 0).toString(36);
+}
+const MAX_ERROS = 300;
+app.post('/api/admin/erros', (req, res) => {
+  if (!dentroDoLimite('erro:' + (req.ip || ''), 30, 600000)) return res.status(429).json({ error: 'muitos envios' });
+  const b = req.body || {}, msg = corta(b.msg, 300).trim();
+  if (!msg) return res.status(400).json({ error: 'msg obrigatória' });
+  const fonte = corta(b.fonte, 80), linha = Math.max(0, parseInt(b.linha, 10) || 0), id = assinaturaErro(msg, fonte, linha);
+  const agora = new Date().toISOString(), versao = corta(b.versao, 40) || '?', plat = normPlat(corta(b.plat, 30)) || '?';
+  const e = _db.erros[id] || (_db.erros[id] = { id, msg, fonte, linha, col: 0, pilha: '', n: 0, primeira: agora, versoes: {}, plats: {}, canais: {}, telas: {}, aparelhos: [] });
+  e.n++; e.ultima = agora; e.msg = msg; e.col = Math.max(0, parseInt(b.col, 10) || 0);
+  if (b.pilha) e.pilha = corta(b.pilha, 1200);
+  e.versoes[versao] = (e.versoes[versao] || 0) + 1;
+  e.plats[plat] = (e.plats[plat] || 0) + 1;
+  const canal = CANAIS.includes(b.canal) ? b.canal : 'web'; e.canais[canal] = (e.canais[canal] || 0) + 1;
+  const tela = corta(b.tela, 30); if (tela) e.telas[tela] = (e.telas[tela] || 0) + 1;
+  const did = corta(b.device_id, 80); if (did && !e.aparelhos.includes(did) && e.aparelhos.length < 100) e.aparelhos.push(did);
+  if (e.resolvido) { e.reaberto = agora; delete e.resolvido; }   // voltou a acontecer depois de marcado como resolvido
+  /* guarda só as 300 falhas mais recentes */
+  const ids = Object.keys(_db.erros);
+  if (ids.length > MAX_ERROS) for (const k of ids.sort((a, b) => (_db.erros[a].ultima || '').localeCompare(_db.erros[b].ultima || '')).slice(0, ids.length - MAX_ERROS)) delete _db.erros[k];
+  saveDb();
+  res.json({ ok: true });
+});
+app.get('/api/admin/erros', auth, (req, res) => {
+  const lista = Object.values(_db.erros).map(e => ({ ...e, n_aparelhos: e.aparelhos.length, aparelhos: undefined }))
+    .sort((a, b) => (b.ultima || '').localeCompare(a.ultima || ''));
+  res.json({ erros: lista });
+});
+app.patch('/api/admin/erros/:id', auth, (req, res) => {
+  const e = _db.erros[req.params.id];
+  if (!e) return res.status(404).json({ error: 'Erro não encontrado' });
+  if ((req.body || {}).resolvido) { e.resolvido = new Date().toISOString(); delete e.reaberto; } else delete e.resolvido;
+  saveDb();
+  res.json({ ok: true });
+});
+
+/* ================================================================
+   SISTEMA — armazenamento e backup
+   ================================================================ */
+app.get('/api/admin/sistema', auth, (req, res) => {
+  const bk = backupsExistentes(), ult = bk[bk.length - 1];
+  let acessos = null, tamanho = null;
+  try { if (SQL) acessos = SQL.prepare('SELECT COUNT(*) AS n FROM acessos').get().n; } catch {}
+  try { tamanho = statSync(SQL ? SQL_PATH : DB_PATH).size; } catch {}
+  res.json({ armazenamento: SQL ? 'sqlite' : 'json', node: process.version, acessos, tamanho,
+    backups: bk.length, ultimo_backup: ult || null, ultimo_backup_tamanho: ult ? statSync(join(BACKUP_DIR, ult)).size : null });
+});
+/* baixa o backup mais recente (faz um agora se ainda não houver o de hoje) — a cópia fora do VPS */
+app.get('/api/admin/backup', auth, (req, res) => {
+  fazBackup();
+  const bk = backupsExistentes(), ult = bk[bk.length - 1];
+  if (!ult) return res.status(404).json({ error: 'Nenhum backup ainda' });
+  res.download(join(BACKUP_DIR, ult), ult);
+});
+
 /* Uso por aparelho real (só celulares, reinstalações juntas) — alimenta os gráficos do painel.
    Cada aparelho: código mais recente (para abrir a ficha), nome, modelo, quando apareceu e o uso por dia. */
 app.get('/api/admin/uso', auth, (req, res) => {
@@ -769,6 +974,7 @@ app.get('/api/admin/uso', auth, (req, res) => {
     aparelhos: [...grupos.values()],
     vias,
     fora: { computadores: s.filter(d => d.categoria === 'computador').length, testes: s.filter(d => d.categoria === 'teste').length,
+            internos: s.filter(d => d.categoria === 'interno').length,
             reinstalacoes: s.filter(d => d.categoria === 'celular').length - grupos.size }
   });
 });
