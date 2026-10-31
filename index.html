@@ -2753,19 +2753,23 @@ document.getElementById('search-toggle').onclick=()=>goToScreen('scr-query');
 const modoTeste=()=>document.documentElement.classList.contains('kc-teste');
 (function(){
   try{ if(localStorage.getItem('kc-teste')==='1') document.documentElement.classList.add('kc-teste') }catch(e){}
-  let n=0, t0=0;
-  document.getElementById('sobre-ver').addEventListener('click', ()=>{
+  /* atalhos: 7 toques na versão do "Sobre" ou 5 toques na logo do canto superior esquerdo (a versão do cabeçalho
+     abre a janela com a política de privacidade a cada toque, por isso a logo é o jeito prático no celular) */
+  const toques=(el, quantos)=>{ let n=0, t0=0; el.addEventListener('click', ()=>{
     const ag=Date.now(); n = ag-t0<700 ? n+1 : 1; t0=ag;
-    if(n<7) return; n=0;
+    if(n<quantos) return; n=0; alterna() }) };
+  toques(document.getElementById('sobre-ver'), 7);
+  toques(document.getElementById('logo-home'), 5);
+  function alterna(){
     const liga=!modoTeste();
     document.documentElement.classList.toggle('kc-teste', liga);
     try{ liga ? localStorage.setItem('kc-teste','1') : localStorage.removeItem('kc-teste') }catch(e){}
     /* ao ligar o teste, o cartão de boas-vindas volta (senão, quem já abriu o manual nunca mais o veria para testar) */
     if(liga) try{ localStorage.removeItem('kc-manual-visto') }catch(e){}
     const d=document.getElementById('dlg-sobre'); if(d.open) d.close();   // as boas-vindas aparecem por baixo da janela
+    if(typeof mostraBloqueio==='function') mostraBloqueio();   // antes das boas-vindas: bloqueado, elas não aparecem
     mostraBoasVindas();
-    if(typeof mostraBloqueio==='function') mostraBloqueio();
-  });
+  }
   document.getElementById('sobre-btn').addEventListener('click', ()=>{ mostraCodigo(); showDlg(document.getElementById('dlg-sobre')) });
   document.getElementById('sobre-x').addEventListener('click', ()=>document.getElementById('dlg-sobre').close());
   document.getElementById('dlg-sobre').addEventListener('click', e=>{ if(e.target.id==='dlg-sobre') e.target.close() });   // toque fora fecha
