@@ -14,6 +14,7 @@ const ICONE = 'data:image/png;base64,' + fs.readFileSync(path.join(RAIZ, 'icon-5
 const DUR = T(62);                                   // ≈ 36 s
 // cenas em batidas [início, fim]; s0 e s7 não têm celular
 const C = { sm: [0, 6], s1: [6, 13], s2: [13, 21], s3: [21, 30], s4: [30, 38], s5: [38, 47], s7: [47, 62] };
+const ESTILO = process.env.ESTILO || 'base';   // base | flip | zoom | slide
 const TELAS = ['inicio', 'eixo', 'cam', 'gal', 'carro'];                 // tela do iPhone nas cenas 1..5
 
 const css = `
@@ -106,7 +107,12 @@ const flu = (id, u, a, bob = 1, dist = 80) => { const e = $('#' + id); const p =
   e.style.transform = 'translateY(' + ((1 - p) * dist + Math.sin(u * 2.1 + dist) * 6 * bob) + 'px) scale(' + (0.7 + 0.3 * p) + ')'; };
 const texto = (id, u, a, b) => { $('#' + id).style.opacity = (u >= 0 && u < b) ? 1 : 0; $$('#' + id + ' .pal').forEach((w, i) => { const p = ez(fase(u, a + i * 0.09, a + 0.45 + i * 0.09)), q = fase(u, b - 0.35, b);
   w.style.opacity = p * (1 - q); w.style.transform = 'translateY(' + ((1 - p) * 50 - q * 40) + 'px)'; }); };
-const circulo = (id, u, a, dur = 0.75) => { $('#' + id).style.transform = 'scale(' + ez(fase(u, a, a + dur)) + ')'; };
+const ESTILO = '${ESTILO}';
+const circulo = (id, u, a, dur = 0.75) => { const e = $('#' + id); const p = ez(fase(u, a, a + dur));
+  if (ESTILO === 'flip') { e.style.borderRadius = '0'; e.style.transform = 'translateX(' + ((1 - p) * -3200) + 'px) skewX(-18deg)'; }
+  else if (ESTILO === 'slide') { e.style.borderRadius = '0'; e.style.transform = 'translateY(' + ((p - 1) * 3200) + 'px)'; }
+  else if (ESTILO === 'zoom') { const pulso = u >= a && u < a + 1.2 ? 1 + 0.08 * Math.sin((u - a) * 14) * (1 - fase(u, a, a + 1.2)) : 1; e.style.transform = 'scale(' + (p * pulso) + ')'; }
+  else e.style.transform = 'scale(' + p + ')'; };
 window.render = function (t) {
   $('#fundo').style.transform = 'scale(' + (1 + 0.04 * (t / ${DUR})) + ')';
   // M3 (0–6): linha risca, abre e revela a logo; o grafite fica até o fim da A3 e esmaece na entrada da tela inicial
@@ -120,12 +126,25 @@ window.render = function (t) {
   // o iPhone: entra na cena 1 e fica centralizado e reto; só gira (ida e volta) na troca de tela; sai no encerramento
   const sobeP = ez(fase(t, T(CN.s1[0]), T(CN.s1[0]) + 1.0)); const cena = CEL.findIndex(([a, b]) => t >= T(a) && t < T(b));
   const ini = cena > 0 ? T(CEL[cena][0]) : T(CN.s1[0]); const m = fase(t, ini, ini + 0.9);
-  const giro = cena > 0 ? Math.sin(m * Math.PI) * (cena % 2 ? -14 : 14) : (1 - sobeP) * 18;
-  const sai = ezi(fase(t, T(CN.s7[0]), T(CN.s7[0]) + 0.8));
+  const sai = ezi(fase(t, T(CN.s7[0]), T(CN.s7[0]) + 0.8)); let giro = 0, tx = 0, esc = 1, ty = (1 - sobeP) * 500 + sai * 600;
+  if (ESTILO === 'flip') {            // vira 180° na batida: a tela nova aparece "do outro lado" (troca no meio do giro)
+    giro = cena > 0 ? ezi(m) * 180 : (1 - sobeP) * 18;
+  } else if (ESTILO === 'zoom') {     // soco de câmera: punch-in rápido e volta, como corte na batida
+    const k = cena > 0 ? Math.sin(Math.min(1, m * 1.6) * Math.PI) : 0; esc = 1 + 0.12 * k; giro = cena > 0 ? 0 : (1 - sobeP) * 18;
+  } else if (ESTILO === 'slide') {    // sai por um lado e volta pelo outro com overshoot
+    const dir = cena % 2 ? 1 : -1; const q = ezb(m); tx = cena > 0 ? (m < 0.5 ? ezi(m * 2) * 1400 * dir : (1 - q) * -1400 * dir) : 0; giro = cena > 0 ? 0 : (1 - sobeP) * 18;
+  } else giro = cena > 0 ? Math.sin(m * Math.PI) * (cena % 2 ? -14 : 14) : (1 - sobeP) * 18;
   F.style.opacity = sobeP * (1 - sai);
-  F.style.transform = 'translateY(' + ((1 - sobeP) * 500 + sai * 600) + 'px) rotateY(' + giro + 'deg) scale(' + (1 - 0.3 * sai) + ')';
+  F.style.transform = 'translate(' + tx + 'px,' + ty + 'px) rotateY(' + giro + 'deg) scale(' + (esc * (1 - 0.3 * sai)) + ')';
   for (let i = 0; i < N; i++) { const [a] = CEL[i]; const p = i === 0 ? 1 : ezi(fase(t, T(a), T(a) + 0.55)); const prox = i + 1 < N ? ezi(fase(t, T(CEL[i + 1][0]), T(CEL[i + 1][0]) + 0.55)) : 0;
-    const x = (1 - p) * 560 - prox * 560; const e = $('#t' + i); e.style.transform = 'translateX(' + x + 'px)'; e.style.visibility = Math.abs(x) >= 560 ? 'hidden' : 'visible'; }
+    const e = $('#t' + i);
+    if (ESTILO === 'flip') {          // corte seco no meio do giro (quando o celular está de perfil)
+      const on = cena === i || (cena < 0 && i === 0); e.style.transform = 'scaleX(' + (giro > 90 ? -1 : 1) + ')'; e.style.visibility = on ? 'visible' : 'hidden'; e.style.opacity = 1;
+    } else if (ESTILO === 'zoom') {   // crossfade rápido com zoom de saída
+      const vis = p > 0 && prox < 1; e.style.visibility = vis ? 'visible' : 'hidden'; e.style.opacity = p * (1 - prox); e.style.transform = 'scale(' + (1 + 0.08 * (1 - p) + 0.08 * prox) + ')';
+    } else if (ESTILO === 'slide') {  // a tela desce de cima e empurra a anterior para baixo
+      const y = (p - 1) * 1204 + prox * 1204; e.style.transform = 'translateY(' + y + 'px)'; e.style.visibility = Math.abs(y) >= 1204 ? 'hidden' : 'visible';
+    } else { const x = (1 - p) * 560 - prox * 560; e.style.transform = 'translateX(' + x + 'px)'; e.style.visibility = Math.abs(x) >= 560 ? 'hidden' : 'visible'; } }
   let u;
   // 1 — tela inicial
   u = t - T(CN.s1[0]); texto('f1', u, 0.3, T(7));
@@ -153,9 +172,10 @@ for (let i = 0; i < 6; i++) cues.push({ t: T(39.5 + i), tipo: 'tick', g: 0.9 });
 cues.push({ t: T(47), tipo: 'hit', g: 1.0 }, { t: T(48), tipo: 'whoosh', g: 0.6 }, { t: T(50), tipo: 'whoosh', g: 0.5 });
 const secoes = [
   { de: 0, ate: T(6), pad: 0.6 },
-  { de: T(6), ate: T(47), piano: 1, baixo: 0.8, pad: 0.4, bat: 'leve' },
-  { de: T(47), ate: DUR, piano: 1, baixo: 0.8, pad: 0.5, arp: 0.4, bat: 'leve' },
+  { de: T(6), ate: T(47), piano: 1, baixo: 0.8, pad: 0.4, bat: ESTILO === 'base' ? 'leve' : 'cheia', arp: ESTILO === 'base' ? 0 : 0.5 },
+  { de: T(47), ate: DUR, piano: 1, baixo: 0.8, pad: 0.5, arp: 0.4, bat: ESTILO === 'base' ? 'leve' : 'cheia' },
 ];
 const audio = path.join(AQUI, 'vidico.wav');
 if (process.argv[2] !== 'stills') gerarAudio({ saida: audio, dur: DUR, secoes, cues, pausas: [[T(47) - 0.5, T(47)]] });
-await montar({ nome: 'km-check-vidico', dur: DUR, css, corpo, script, audio, stills: [2.6, T(10), T(17), T(25), T(34), T(43), T(55)] });
+if (ESTILO !== 'base') for (const k of ['s2', 's3', 's4', 's5']) cues.push({ t: T(C[k][0]) + 0.45, tipo: ESTILO === 'flip' ? 'whoosh' : 'clack', g: 0.6 });
+await montar({ nome: ESTILO === 'base' ? 'km-check-vidico' : 'km-check-' + ESTILO, dur: DUR, css, corpo, script, audio, stills: [2.6, T(10), T(17), T(25), T(34), T(43), T(55)] });
