@@ -1214,6 +1214,62 @@ dialog::backdrop{background:rgba(0,0,0,.68);animation:bdIn .2s ease-out}
 #dlg-rotlock .rl-actions button:active{background:rgba(255,255,255,.06)}
 #dlg-rotlock .rl-actions button:first-child{border-right:1px solid var(--glassborder);color:var(--mut);font-weight:400}
 #dlg-rotlock .rl-actions button:last-child{font-weight:700}
+/* bloqueio do PWA/navegador ("O KM Check agora é de loja"): tela inteira no tema claro com o fundo da rodovia e o cartão
+   escuro no centro (radar pulsando no ícone, título palavra a palavra, botão da loja pulsando com brilho e seta). Cores
+   próprias, fora do tema do app: a tela é igual no claro e no escuro. Quem pede "reduzir movimento" vê tudo parado. */
+#bloqueio{position:fixed;inset:0;z-index:2147483000;overflow:auto;font-family:var(--sans);color:#eef1f6;
+  background:#eef0f1 url(baixar/fundo.webp) center/cover no-repeat;
+  padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+#bloqueio[hidden]{display:none}
+#bloqueio::before{content:'';position:fixed;inset:0;background:linear-gradient(180deg,rgba(238,240,241,.92) 0%,rgba(238,240,241,.55) 45%,rgba(238,240,241,.9) 100%);pointer-events:none}
+#bloqueio>*{position:relative}
+.bq-topo{display:flex;justify-content:center;padding-top:8px;animation:bq-sobe .5s ease-out both}
+.bq-topo img{height:46px}
+.bq-centro{min-height:calc(100% - 110px);display:flex;align-items:center;justify-content:center;padding:18px 0}
+.bq-card{width:100%;max-width:340px;border-radius:24px;background:#141719;background-image:radial-gradient(90% 70% at 50% 0%,#2a2e35 0%,#141719 60%);text-align:center;overflow:hidden;
+  box-shadow:0 40px 80px -30px rgba(20,22,26,.6),0 0 0 1px rgba(255,255,255,.08);animation:bq-entra .55s cubic-bezier(.34,1.56,.64,1) .15s both}
+.bq-corpo{padding:28px 22px 18px}
+.bq-radar{position:relative;width:120px;height:120px;margin:0 auto 14px}
+.bq-radar img{width:84px;height:84px;position:absolute;left:18px;top:18px;border-radius:22px;box-shadow:0 14px 28px -12px rgba(0,0,0,.7);animation:bq-pula .7s cubic-bezier(.34,1.56,.64,1) .3s both}
+.bq-anel{display:block;position:absolute;inset:0;border-radius:50%;border:2px solid #b7d92d;opacity:0;animation:bq-radar 2.4s ease-out .8s infinite}
+.bq-anel:nth-child(2){animation-delay:1.6s}
+#bloqueio h2{font-size:24px;line-height:1.15;font-weight:800;letter-spacing:-.02em;margin:0 0 12px;color:#eef1f6;text-wrap:balance}
+.bq-pal{display:inline-block;animation:bq-sobe .35s ease-out backwards}
+.bq-pal:nth-child(1){animation-delay:.7s}.bq-pal:nth-child(2){animation-delay:.82s}.bq-pal:nth-child(3){animation-delay:.94s}.bq-pal:nth-child(4){animation-delay:1.06s}.bq-pal:nth-child(5){animation-delay:1.18s}
+.bq-lojas{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;animation:bq-sobe .4s ease-out 1.4s backwards}
+.bq-loja{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:#1b1f22;border:1px solid rgba(255,255,255,.1);font:700 12.5px var(--sans);color:#eef1f6}
+.bq-loja svg{width:16px;height:16px;fill:#eef1f6}
+.bq-txt{font-size:13px;line-height:1.45;color:#aab2bf;margin:12px 0 0;animation:bq-sobe .4s ease-out 1.6s backwards}
+.bq-txt b{color:#eef1f6}
+.bq-aviso{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(183,217,45,.1);border:1px solid rgba(183,217,45,.3);font:600 12px/1.4 var(--sans);color:#e3f0b0;animation:bq-sobe .4s ease-out 1.8s backwards}
+.bq-fotos{display:flex;align-items:center;gap:12px;width:100%;margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1.5px dashed rgba(183,217,45,.55);color:#eef1f6;text-align:left;font-family:var(--sans);cursor:pointer;-webkit-tap-highlight-color:transparent;animation:bq-sobe .4s ease-out 2s backwards}
+.bq-fotos:active{background:rgba(255,255,255,.09)}
+.bq-fotos svg{flex:0 0 auto;width:30px;height:30px;fill:none;stroke:#b7d92d;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.bq-fotos b{display:block;font:800 13.5px var(--sans);color:#b7d92d}
+.bq-fotos small{display:block;font:500 11.5px/1.35 var(--sans);color:#aab2bf;margin-top:2px}
+.bq-fotos i{margin-left:auto;font-style:normal;color:#b7d92d;font-weight:800;font-size:18px}
+.bq-acao{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;margin:0;padding:17px;background:#b7d92d;color:#111;font:900 18px var(--sans);letter-spacing:-.01em;cursor:pointer;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;
+  animation:bq-pulsaBtn 1.4s ease-in-out 2.2s infinite}
+.bq-acao::after{content:'';position:absolute;top:-30%;left:-60%;width:40%;height:160%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.75) 50%,transparent);transform:skewX(-18deg);animation:bq-brilho 2.2s ease-in-out 2.6s infinite}
+.bq-seta{display:inline-block;width:22px;height:22px;animation:bq-seta .9s ease-in-out infinite}
+.bq-seta svg{width:22px;height:22px;fill:none;stroke:#111;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.bq-rodape{text-align:center;font:500 11.5px/1.4 var(--sans);color:#3b4559;padding:6px 0 4px}
+.bq-rodape a{color:#6f9a0e;font-weight:700}
+.bq-sair{display:none}html.kc-teste .bq-sair{display:inline}
+/* passo 2: como remover o atalho antigo (o site não consegue apagar o ícone da tela inicial; só a pessoa) */
+.bq-p2{display:none}#bloqueio.p2 .bq-p1{display:none}#bloqueio.p2 .bq-p2{display:block}
+#bloqueio.p2 h2{font-size:21px}
+.bq-passos{text-align:left;margin:14px 0 0;padding-left:22px;font:500 13.5px/1.55 var(--sans);color:#d6dae0}
+.bq-passos li{margin-bottom:6px}.bq-passos b{color:#fff}
+.bq-ok{margin-top:14px;font:700 12.5px var(--sans);color:#b7d92d}
+@keyframes bq-entra{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes bq-pula{from{transform:translateY(-40px) scale(.5) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes bq-sobe{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes bq-radar{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+@keyframes bq-pulsaBtn{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(183,217,45,.55)}50%{transform:scale(1.035);box-shadow:0 0 0 14px rgba(183,217,45,0)}}
+@keyframes bq-brilho{0%{left:-60%}35%,100%{left:120%}}
+@keyframes bq-seta{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+@media (prefers-reduced-motion:reduce){#bloqueio *,#bloqueio *::after{animation:none!important}}
 /* diálogo: GPS obrigatório — mesmo visual de alerta iOS do dlg-rotlock */
 #dlg-gps{max-width:min(82vw,290px);padding:0;overflow:hidden;text-align:center}
 #dlg-gps .rl-body{padding:22px 20px 18px}
@@ -2004,6 +2060,34 @@ document.body.style.opacity='1';document.body.style.transition='opacity .12s eas
     <button id="rotlock-ok">Entendi</button>
   </div>
 </dialog>
+<!-- bloqueio do PWA/navegador: o KM Check passou para as lojas. Cobre o app inteiro; só sai baixando da loja (ou, no
+     modo de testes, pelo "Sair do teste"). "Exportar minhas fotos antigas" abre a galeria por cima, para salvar antes. -->
+<div id="bloqueio" role="dialog" aria-modal="true" aria-labelledby="bq-tit" hidden>
+  <div class="bq-topo"><img src="logo-kmcheck.png" alt="KM Check"></div>
+  <div class="bq-centro"><div class="bq-card">
+    <div class="bq-corpo">
+      <div class="bq-radar" aria-hidden="true"><i class="bq-anel"></i><i class="bq-anel"></i><img src="icon-192.png" alt=""></div>
+      <div class="bq-p1">
+        <h2 id="bq-tit"><span class="bq-pal">O</span> <span class="bq-pal">KM Check</span> <span class="bq-pal">agora</span> <span class="bq-pal">é</span> <span class="bq-pal">de loja!</span></h2>
+        <div class="bq-lojas">
+          <span class="bq-loja"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.37 12.7c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.87-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.83-1.22 1.18-2.41 1.2-2.47-.03-.01-2.3-.88-2.32-3.52zM14.2 6.24c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.31-.56.65-1.05 1.68-.92 2.68.97.08 1.96-.49 2.56-1.23z"/></svg>App Store</span>
+          <span class="bq-loja"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 2.5 13.6 12l-9.4 9.5c-.34-.2-.6-.6-.6-1.1V3.6c0-.5.26-.9.6-1.1zm10.6 10.7 2.3 2.3-10.7 6.1 8.4-8.4zm3.6-3.4 2.6 1.5c.7.4.7 1.4 0 1.8l-2.6 1.5-2.5-2.6 2.5-2.2zM6.4 2.4l10.7 6.1-2.3 2.3-8.4-8.4z"/></svg>Google Play</span>
+        </div>
+        <p class="bq-txt">Esta versão do navegador <b>foi desativada</b>. Baixe o app da loja: ele atualiza sozinho, abre sem o navegador e usa o GPS nativo.</p>
+        <div class="bq-aviso">Suas rodovias e fotos ficam guardadas aqui. Depois de instalar o app da loja, é só baixar a rodovia de novo.</div>
+        <button class="bq-fotos" id="bq-fotos" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg><span><b>Exportar minhas fotos antigas</b><small>Salve no celular as fotos que ficaram nesta versão, antes de trocar.</small></span><i>›</i></button>
+      </div>
+      <div class="bq-p2">
+        <h2>Instalou? Remova o atalho antigo</h2>
+        <ol class="bq-passos" data-so="ios"><li>Volte à <b>tela de início</b> do iPhone.</li><li>Segure o dedo no ícone antigo do KM Check.</li><li>Toque em <b>Remover app</b> → <b>Apagar da Tela de Início</b>.</li></ol>
+        <ol class="bq-passos" data-so="android"><li>Volte à <b>tela inicial</b> do celular.</li><li>Segure o dedo no ícone antigo do KM Check.</li><li>Arraste para <b>Remover</b> (ou toque em Desinstalar).</li></ol>
+        <div class="bq-ok">✓ O app novo da loja continua no lugar.</div>
+      </div>
+    </div>
+    <button class="bq-acao" id="bq-ir" type="button"><span class="bq-seta" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v13M6 11l6 6 6-6"/></svg></span><span id="bq-ir-txt">Baixar da loja</span></button>
+  </div></div>
+  <div class="bq-rodape">Já tem o app da loja? <a href="#" id="bq-remover">Como remover este atalho</a><span class="bq-sair"> · <a href="#" id="bq-sair">Sair do teste</a></span></div>
+</div>
 
 <!-- galeria de fotos registradas -->
 <!-- fotos em grade: busca e filtros; tocar numa foto abre o carrossel (#gallerywrap) por cima -->
@@ -2305,7 +2389,7 @@ if(!AbortSignal.timeout) AbortSignal.timeout=ms=>{const c=new AbortController();
 const _esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 /* Safari 15.0-15.3 não tem showModal — fallback para open attribute */
 let _dlgOrdem=0;   // ordem de abertura: com dois diálogos abertos, o "voltar" fecha o de cima (não o primeiro do HTML)
-function showDlg(dlg){ dlg.dataset.ordem=++_dlgOrdem; if(typeof dlg.showModal==='function') dlg.showModal(); else dlg.setAttribute('open','') }
+function showDlg(dlg){ if(window._bloqueado && !window._bqPausa) return; dlg.dataset.ordem=++_dlgOrdem; if(typeof dlg.showModal==='function') dlg.showModal(); else dlg.setAttribute('open','') }
 const _cachedPos=(()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(_validGps(p.lat,p.lon)) return p; } }catch(e){} return null; })();
 /* Limpa cache corrompido (0,0) que versões anteriores possam ter gravado */
 (()=>{ try{ const j=localStorage.getItem('kc-lastpos'); if(j){ const p=JSON.parse(j); if(p.lat===0&&p.lon===0) localStorage.removeItem('kc-lastpos'); } }catch(e){} })();
@@ -2680,6 +2764,7 @@ const modoTeste=()=>document.documentElement.classList.contains('kc-teste');
     if(liga) try{ localStorage.removeItem('kc-manual-visto') }catch(e){}
     const d=document.getElementById('dlg-sobre'); if(d.open) d.close();   // as boas-vindas aparecem por baixo da janela
     mostraBoasVindas();
+    if(typeof mostraBloqueio==='function') mostraBloqueio();
   });
   document.getElementById('sobre-btn').addEventListener('click', ()=>{ mostraCodigo(); showDlg(document.getElementById('dlg-sobre')) });
   document.getElementById('sobre-x').addEventListener('click', ()=>document.getElementById('dlg-sobre').close());
@@ -2742,6 +2827,7 @@ function vaiTour(i){
 let _bvR=0;
 BV_TRILHA.addEventListener('scroll', ()=>{ cancelAnimationFrame(_bvR); _bvR=requestAnimationFrame(()=>{ const i=Math.round(BV_TRILHA.scrollLeft/BV_TRILHA.clientWidth); if(i!==bvPag) atualizaTour(i) }) }, {passive:true});
 function mostraBoasVindas(){
+  if(window._bloqueado) return;   // PWA desativado: nada de boas-vindas (aparecia por cima da galeria do "Exportar fotos")
   let visto=false; try{ visto=localStorage.getItem('kc-manual-visto')==='1' }catch(e){}
   const naInicial=document.getElementById('scr-cam').classList.contains('on');
   /* liberado para todos na 1.0.0: aparece uma vez, depois do aviso de dados de uso */
@@ -2807,7 +2893,7 @@ document.getElementById('cfg-did').addEventListener('click', async()=>{
     try{ const st=await navigator.permissions.query({name:'geolocation'}); return st.state!=='prompt' }catch(e){ return true }
   };
   const tenta=async()=>{
-    if(await pronto() || Date.now()-t0>20000) setTimeout(()=>{ if(!usoDecidido()) document.getElementById('uso').hidden=false }, 600);
+    if(await pronto() || Date.now()-t0>20000) setTimeout(()=>{ if(!usoDecidido() && !window._bloqueado) document.getElementById('uso').hidden=false }, 600);
     else setTimeout(tenta, 800);
   };
   setTimeout(tenta, 900);
@@ -6086,6 +6172,46 @@ document.getElementById('cam-svc').onclick=()=>{ renderSvcGrid(); renderContract
 document.getElementById('svc-close').onclick=()=>document.getElementById('dlg-svc').close();
 document.getElementById('rotlock-ok').onclick=()=>document.getElementById('dlg-rotlock').close();
 document.getElementById('rotlock-never').onclick=()=>{ localStorage.setItem('kc-rotlock-never','1'); document.getElementById('dlg-rotlock').close(); };
+/* ================= bloqueio: "O KM Check agora é de loja" =================
+   O PWA (instalado pelo navegador) e o site aberto no navegador deixam de funcionar: ao abrir, a tela inteira vira o
+   convite para baixar da loja, sem "depois". O botão leva direto à loja do aparelho (link da App Store no iPhone, do
+   Google Play no Android; no computador, a página kmcheck.com.br/baixar com os dois e o QR). Nenhum site consegue
+   apagar o próprio ícone da tela inicial — por isso o passo 2 ensina a remover o atalho antigo.
+   "Exportar minhas fotos antigas" abre a galeria por cima (as fotos ficam no navegador e o app da loja não as lê);
+   ao fechar a galeria, o bloqueio volta. No app da loja (NATIVO) nunca aparece.
+   BLOQUEIO_PUBLICO=false: por enquanto só no modo de testes (7 toques na versão do "Sobre") ou com ?bloqueio-teste. */
+const BLOQUEIO_PUBLICO=false;
+var _bloqueado=false, _bqPausa=false;
+const LOJA_IOS='https://apps.apple.com/br/app/km-check/id6823640306', LOJA_ANDROID='https://play.google.com/store/apps/details?id=br.com.kmcheck.app';
+function bloqueioAtivo(){ return !NATIVO && (BLOQUEIO_PUBLICO || modoTeste() || /[?&]bloqueio-teste\b/.test(location.search)) }
+function mostraBloqueio(){
+  const b=document.getElementById('bloqueio'); if(!bloqueioAtivo()){ b.hidden=true; _bloqueado=false; return }
+  _bloqueado=true; _bqPausa=false;
+  document.querySelectorAll('dialog[open]').forEach(d=>{ try{ d.close() }catch(e){} });   // nada por cima do bloqueio
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  b.querySelectorAll('.bq-passos').forEach(o=>o.hidden = o.dataset.so!==(ios?'ios':'android'));
+  b.hidden=false;
+}
+function bqPasso2(){ document.getElementById('bloqueio').classList.add('p2'); document.getElementById('bq-ir-txt').textContent='Abrir a loja de novo' }
+document.getElementById('bq-ir').onclick=()=>{
+  const ua=navigator.userAgent||'', ios=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  bqPasso2();   // quando a pessoa voltar da loja, já encontra o passo de remover o atalho
+  /* location.href (e não window.open): de dentro do PWA instalado, o link da loja abre o app da App Store / Play Store */
+  location.href = ios ? LOJA_IOS : /Android/i.test(ua) ? LOJA_ANDROID : 'https://kmcheck.com.br/baixar/';
+};
+document.getElementById('bq-remover').onclick=e=>{ e.preventDefault(); bqPasso2() };
+document.getElementById('bq-fotos').onclick=async()=>{
+  /* sem fotos: avisa no próprio cartão (o toast ficaria escondido atrás do bloqueio) */
+  let n=1; try{ n=(await getPhotoMetas()).length }catch(e){}
+  if(!n){ document.querySelector('#bq-fotos small').textContent='Não há fotos guardadas nesta versão. Pode baixar da loja tranquilo.'; return }
+  _bqPausa=true; document.getElementById('bloqueio').hidden=true;
+  openGrade().catch(()=>{ toast('⚠ Não consegui abrir a galeria.'); mostraBloqueio() });
+};
+document.getElementById('bq-sair').onclick=e=>{   // só aparece no modo de testes: desliga o teste e libera o app
+  e.preventDefault(); document.documentElement.classList.remove('kc-teste'); try{ localStorage.removeItem('kc-teste') }catch(_){}
+  if(/[?&]bloqueio-teste\b/.test(location.search)) history.replaceState(null, '', location.pathname);
+  mostraBloqueio();
+};
 document.getElementById('svc-add2').onclick=()=>{
   const inp=document.getElementById('svc-new2');
   const s=inp.value.trim();
@@ -6670,6 +6796,7 @@ function fechaGrade(){
   for(const u of _ggUrls.values()) URL.revokeObjectURL(u);
   _ggUrls.clear(); _ggFila.length=0;
   document.getElementById('gg-lista').textContent='';
+  if(window._bloqueado && window._bqPausa) mostraBloqueio();
 }
 document.getElementById('gg-close').onclick=fechaGrade;
 const _diaDe=ts=>{ const d=new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') };
@@ -7790,6 +7917,7 @@ function showInstallPrompt(){
 
 /* ================= boot ================= */
 (async function(){
+  mostraBloqueio();   // PWA/navegador desativados: a tela de "agora é de loja" vem antes de tudo
   /* GPS liga ANTES de ler as rodovias: com muitas bases (registros de vários MB) ou o banco travado na abertura,
      o dbAll demorava e o GPS não ligava. O watchPosition não precisa das bases — o renderBases recalcula o KM. */
   startGps();
@@ -7803,7 +7931,7 @@ function showInstallPrompt(){
   renderServices();
   paintTags();
   loadLogo();
-  showInstallPrompt();
+  if(!_bloqueado) showInstallPrompt();
   if(window._lsBloqueado) toast('⚠ O navegador está bloqueando o armazenamento do site.\nAs configurações não serão guardadas ao fechar.', 6000);
   /* GPS inicia no boot — só watchPosition (contínuo, alta precisão).
      NÃO chama getCurrentPosition — em alguns Androids (Samsung, Xiaomi) ele
