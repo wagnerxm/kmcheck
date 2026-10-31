@@ -417,12 +417,19 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
 
 /* Ping público — chamado pelo app mobile no boot.
    Recebe dados aprimorados: marca, modelo, OS, GPS, bases baixadas. */
+/* "iOS (app)" → "iOS": o resto do painel compara a plataforma com "iOS"/"Android" (sem isso o iPhone da
+   App Store caía em "computador" e sumia da lista de celulares); a loja fica guardada no campo canal. */
+const normPlat = p => { const m = String(p || '').match(/^(iOS|Android) \(app\)$/); return m ? m[1] : p };
+
 /* Por onde o app foi instalado. Versões novas mandam o campo "canal"; nas antigas deduz pela origem do pedido:
    o app da App Store roda em capacitor://localhost e o da Play Store em https://localhost (WebView com "; wv)").
    Site, PWA e navegador vêm do domínio do KM Check e só se separam pelo campo que o app novo envia. */
 const CANAIS = ['app-store', 'play-store', 'pwa', 'navegador'];
-function canalDe(canal, origin, ua) {
+function canalDe(canal, origin, ua, platform) {
   if (CANAIS.includes(canal)) return canal;
+  /* o app da loja manda a plataforma como "iOS (app)" / "Android (app)" (ver o ping no index.html) */
+  const pa = String(platform || '').match(/^(iOS|Android) \(app\)$/);
+  if (pa) return pa[1] === 'iOS' ? 'app-store' : 'play-store';
   const o = String(origin || '');
   if (/^capacitor:\/\/localhost/i.test(o)) return 'app-store';
   if (/^https?:\/\/localhost(:\d+)?$/i.test(o) && /;\s*wv\)/.test(ua || '')) return 'play-store';
@@ -448,7 +455,7 @@ app.post('/api/admin/devices/ping', (req, res) => {
     _db.devices[device_id] = {
       device_id,
       app_version: app_version || existing?.app_version || null,
-      platform: platform || existing?.platform || null,
+      platform: normPlat(platform) || existing?.platform || null,
       user_agent: user_agent || existing?.user_agent || null,
       screen: screen || existing?.screen || null,
       ip_address: ip || existing?.ip_address || null,
@@ -459,7 +466,7 @@ app.post('/api/admin/devices/ping', (req, res) => {
       bases_count: bases_count ?? existing?.bases_count ?? 0,
       bases: bases || existing?.bases || [],
       hw: hw || existing?.hw || null,
-      canal: canalDe(canal, req.get('origin'), user_agent) || existing?.canal || 'web',
+      canal: canalDe(canal, req.get('origin'), user_agent, platform) || existing?.canal || 'web',
       first_seen: existing?.first_seen || now,
       last_ping: now,
       ping_count: (existing?.ping_count || 0) + 1,
@@ -625,6 +632,13 @@ function montaLista() {
   let dirty = false;
   const devices = Object.values(_db.devices)
     .map(d => {
+      /* registros gravados antes desta correção: "iOS (app)"/"Android (app)" viram plataforma + canal da loja */
+      const pa = String(d.platform || '').match(/^(iOS|Android) \(app\)$/);
+      if (pa) {
+        d.platform = pa[1];
+        if (!d.canal || d.canal === 'web') d.canal = pa[1] === 'iOS' ? 'app-store' : 'play-store';
+        dirty = true;
+      }
       /* Sempre recalcula modelo/marca/OS server-side — a lógica pode ter melhorado */
       const det = detectDevice(d.user_agent, d.screen, d.hw);
       if (det.brand && det.brand !== d.brand) { d.brand = det.brand; dirty = true; }
