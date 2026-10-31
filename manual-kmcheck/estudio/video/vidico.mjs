@@ -11,18 +11,30 @@ import { gerarAudio } from './audio.mjs';
 
 const FUNDO = 'data:image/webp;base64,' + fs.readFileSync(path.join(RAIZ, 'manual-kmcheck/estudio/fundo-video.webp')).toString('base64');
 const ICONE = 'data:image/png;base64,' + fs.readFileSync(path.join(RAIZ, 'icon-512.png')).toString('base64');
-const DUR = T(66);                                   // ≈ 38 s
+const DUR = T(72);                                   // ≈ 41,5 s
 // cenas em batidas [início, fim]; s0 e s7 não têm celular
-const C = { s0: [0, 7], s1: [7, 14], s2: [14, 22], s3: [22, 31], s4: [31, 39], s5: [39, 48], s7: [48, 66] };
+const C = { sm: [0, 6], s0: [6, 13], s1: [13, 20], s2: [20, 28], s3: [28, 37], s4: [37, 45], s5: [45, 54], s7: [54, 72] };
 const TELAS = ['inicio', 'eixo', 'cam', 'gal', 'carro'];                 // tela do iPhone nas cenas 1..5
 
 const css = `
 body{background:#eef0f1}
+#grafite{position:absolute;inset:0;background:radial-gradient(90% 70% at 20% 0%,#2e3137 0%,#17191d 45%,#0a0b0d 100%);z-index:2}
+#grao{position:absolute;inset:0;opacity:.06;z-index:2;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+.linhaV{position:absolute;left:539px;width:2px;background:linear-gradient(transparent,#c4e24a 30%,#c4e24a 70%,transparent);box-shadow:0 0 18px rgba(196,226,74,.9);z-index:8}
+#lTopo{top:0;height:0}#lBase{bottom:0;height:0}
+#luzv{position:absolute;left:50%;top:50%;width:1400px;height:1400px;margin:-700px 0 0 -700px;background:radial-gradient(50% 50% at 50% 50%,rgba(196,226,74,.16),transparent 65%);opacity:0;z-index:2}
+#logoM{position:absolute;left:220px;top:770px;width:640px;overflow:hidden;clip-path:inset(0 50% 0 50%);z-index:8}
+#logoM img{display:block;width:640px;filter:drop-shadow(0 30px 60px rgba(0,0,0,.7))}
+.brilhoL{position:absolute;left:0;top:0;width:640px;height:100%;-webkit-mask:url(${IMG.logo}) center/640px auto no-repeat;mask:url(${IMG.logo}) center/640px auto no-repeat;overflow:hidden;pointer-events:none}
+.brilhoL i{position:absolute;top:-20%;left:-60%;width:40%;height:140%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.95) 50%,transparent);opacity:0;mix-blend-mode:screen}
+#fioA3{position:absolute;inset:0;z-index:2;opacity:0}
+.abstrato{position:absolute;inset:0;background:radial-gradient(60% 40% at 15% 10%,rgba(183,217,45,.22),transparent 70%),radial-gradient(50% 35% at 90% 85%,rgba(183,217,45,.2),transparent 70%),radial-gradient(45% 30% at 85% 15%,rgba(20,22,26,.06),transparent 70%);z-index:1;opacity:0}
+#arcos{position:absolute;inset:0;z-index:1;opacity:0}
 #fundo{position:absolute;left:-3%;top:-3%;width:106%;height:106%;background:url(${FUNDO}) center/cover;transform-origin:50% 40%}
 .veu{position:absolute;left:540px;top:960px;width:3200px;height:3200px;margin:-1600px 0 0 -1600px;border-radius:50%;transform:scale(0);z-index:1}
 #veuLima{background:#b7d92d}#veuGraf{background:linear-gradient(160deg,#2a2d33,#111214)}
 #veuClaro{background:url(${FUNDO}) center/cover;background-size:1150px 2040px;background-position:center}
-#veuBranco{background:linear-gradient(rgba(255,255,255,.86),rgba(255,255,255,.86)),url(${FUNDO});background-size:auto,1150px 2040px;background-position:center,center}
+#veuBranco{background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)),url(${FUNDO});background-size:auto,1150px 2040px;background-position:center,center}
 .palco{position:absolute;inset:0;perspective:2200px;z-index:3}
 /* iPhone centralizado: (1080-560)/2 = 260 · (1920-1232)/2 = 344 */
 .fone{position:absolute;left:260px;top:344px;width:560px;height:1232px;border-radius:84px;background:#0b0c0e;padding:14px;transform-style:preserve-3d;transform-origin:50% 50%;
@@ -50,8 +62,8 @@ body{background:#eef0f1}
 .card img{width:100%;height:100%;object-fit:cover}.card b{position:absolute;left:14px;bottom:12px;padding:6px 14px;border-radius:999px;background:#b7d92d;color:#111;font:800 22px Inter}
 /* contador do Modo Carro: cobre o número real da tela (mesma posição do print 20-carro-dia) dentro da janela do celular */
 .contCarro{position:absolute;left:12%;right:12%;top:37.6%;height:9.2%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#1f2226,#17191c);font:800 126px/1 Inter;letter-spacing:-.035em;color:#fff;opacity:0;z-index:4}
-#s7{z-index:9}.fim .logo{margin-top:280px}
-#s7 .link{display:none}#s7 .qr{margin-top:60px;width:340px;height:340px;padding:22px}
+#s7{z-index:9}.fim .logo{margin-top:200px;width:460px}#s7 h2{font-size:72px}#s7 .fim{display:flex}#s7 .gratis{order:9;margin-top:40px}#s7 .lojas{order:8;margin-top:34px}
+#s7 .link{display:block;order:7;margin-top:30px;font:800 40px Inter;color:#14161a;letter-spacing:0}#s7 .link small{display:none}#s7 .qr{order:6;margin-top:40px;width:560px;height:560px;padding:22px}
 `;
 
 const placaSvg = `<svg class="placa" width="220" height="261" viewBox="0 0 150 178"><rect x="2" y="2" width="146" height="174" rx="14" fill="#fff"/><rect x="10" y="10" width="130" height="158" rx="9" fill="#13305c"/><text x="75" y="52" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="31" fill="#fff">BR-226</text><line x1="24" y1="68" x2="126" y2="68" stroke="#fff" stroke-width="3"/><text x="75" y="110" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="34" fill="#fff">KM</text><text x="75" y="156" text-anchor="middle" font-family="Inter,Arial" font-weight="800" font-size="42" fill="#fff">082</text></svg>`;
@@ -59,13 +71,24 @@ const frase = (id, cls, html, extra = '') => `<div class="frase ${cls}" id="${id
 
 const corpo = `
 <div id="fundo"></div><div class="veu" id="veuLima"></div><div class="veu" id="veuClaro"></div><div class="veu" id="veuGraf"></div><div class="veu" id="veuBranco"></div>
+<div class="abstrato" id="abstrato"></div>
+<svg id="arcos" viewBox="0 0 1080 1920" preserveAspectRatio="none"><defs><linearGradient id="ga" x1="0" x2="1"><stop offset="0" stop-color="#b7d92d" stop-opacity="0"/><stop offset=".5" stop-color="#b7d92d" stop-opacity=".55"/><stop offset="1" stop-color="#b7d92d" stop-opacity="0"/></linearGradient></defs>
+<path d="M-100,300 C300,120 700,420 1180,200" fill="none" stroke="url(#ga)" stroke-width="40" opacity=".35"/><path d="M-100,1700 C400,1500 700,1850 1180,1600" fill="none" stroke="url(#ga)" stroke-width="56" opacity=".3"/>
+<path d="M-100,360 C300,180 700,480 1180,260" fill="none" stroke="#b7d92d" stroke-width="2" opacity=".35"/><path d="M-100,1640 C400,1440 700,1790 1180,1540" fill="none" stroke="#b7d92d" stroke-width="2" opacity=".35"/>
+<g fill="#b7d92d" opacity=".5"><circle cx="120" cy="520" r="6"/><circle cx="980" cy="700" r="5"/><circle cx="160" cy="1320" r="5"/><circle cx="940" cy="1180" r="7"/><circle cx="80" cy="1000" r="4"/><circle cx="1010" cy="430" r="4"/></g>
+<g stroke="#9cb52a" stroke-width="1.5" opacity=".35"><line x1="120" y1="520" x2="80" y2="1000"/><line x1="980" y1="700" x2="940" y2="1180"/><line x1="80" y1="1000" x2="160" y2="1320"/></g></svg>
+<div id="grafite"></div><div id="grao"></div><div id="luzv"></div>
+<svg id="fioA3" viewBox="0 0 1080 1920" preserveAspectRatio="none"><defs><linearGradient id="gf" x1="0" x2="1"><stop offset="0" stop-color="#c4e24a" stop-opacity="0"/><stop offset=".5" stop-color="#c4e24a" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><filter id="bf"><feGaussianBlur stdDeviation="9"/></filter></defs>
+<path d="M-50,1300 C300,1360 700,1000 1130,800" fill="none" stroke="url(#gf)" stroke-width="16" opacity=".45" filter="url(#bf)"/><path d="M-50,1300 C300,1360 700,1000 1130,800" fill="none" stroke="url(#gf)" stroke-width="3"/></svg>
+<div class="linhaV" id="lTopo"></div><div class="linhaV" id="lBase"></div>
+<div id="logoM"><img src="${IMG.logo}"><div class="brilhoL"><i id="brilhoM"></i></div></div>
 <div class="palco"><div class="fone" id="fone"><b class="bt mudo"></b><b class="bt vol1"></b><b class="bt vol2"></b><b class="bt lado"></b>
   <div class="janela">${TELAS.map((k, i) => `<img id="t${i}" src="${IMG[k]}">`).join('')}<div class="contCarro" id="kmv"></div><div class="brilho"></div></div><div class="flashF" id="flashF"></div><i class="ilha"></i></div></div>
 
-<div class="flu" id="icone0" style="left:390px;top:520px"><img src="${ICONE}" style="width:300px;display:block;border-radius:68px;box-shadow:0 40px 80px -30px rgba(0,0,0,.45)"></div>
-<img class="flu" id="logo0" src="${IMG.logo}" style="left:290px;top:880px;width:500px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.2))">
-${frase('f0', '', 'O KM certo, em cada <em>foto</em>.', ' style="top:1200px;text-align:center;font-size:84px"')}
-<div class="sub" id="sub0" style="top:1420px;text-align:center">Registro fotográfico de rodovias, com o KM pelo GPS.</div>
+<div class="flu" id="icone0" style="left:390px;top:520px"><img src="${ICONE}" style="width:300px;display:block;border-radius:68px;box-shadow:0 50px 90px -30px rgba(0,0,0,.8),0 0 0 2px rgba(255,255,255,.12)"></div>
+<img class="flu" id="logo0" src="${IMG.logo}" style="left:290px;top:880px;width:500px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))">
+${frase('f0', 'clara', 'O KM certo, em cada <em>foto</em>.', ' style="top:1200px;text-align:center;font-size:84px"')}
+<div class="sub" id="sub0" style="top:1420px;text-align:center;color:#c3c8cf">Registro fotográfico de rodovias, com o KM pelo GPS.</div>
 
 ${frase('f1', '', 'Tudo que o campo precisa, <em>numa tela</em>.')}
 ${frase('f2', 'lima', 'Cadastre a rodovia <em>uma vez</em>.')}
@@ -79,7 +102,7 @@ ${frase('f4', '', 'Tudo <em>organizado</em>.')}
 ${[[IMG.rod, 'KM 325,870', 660, 300, 6], [IMG.buraco, 'KM 326,410', 30, 1540, -5], [IMG.foto, 'KM 326,040', 670, 1600, 4]]
   .map(([src, km, x, y, r], i) => `<div class="flu" id="cd${i}" style="left:${x}px;top:${y}px"><div class="card" style="transform:rotate(${r}deg)"><img src="${src}"><b>${km}</b></div></div>`).join('')}
 ${frase('f5', 'clara', 'O KM acompanha o <em>carro</em>.')}
-${encerramento('s7', 'claro')}`;
+${encerramento('s7', 'claro').replace('<small>Baixe agora em</small>kmcheck.com.br/baixar', 'Aponte a câmera e baixe')}`;
 
 const script = `
 const F = $('#fone'); const N = ${TELAS.length}; const CN = ${JSON.stringify(C)}; const CEL = ['s1','s2','s3','s4','s5'].map(k => CN[k]);
@@ -90,6 +113,13 @@ const texto = (id, u, a, b) => { $('#' + id).style.opacity = (u >= 0 && u < b) ?
 const circulo = (id, u, a, dur = 0.75) => { $('#' + id).style.transform = 'scale(' + ez(fase(u, a, a + dur)) + ')'; };
 window.render = function (t) {
   $('#fundo').style.transform = 'scale(' + (1 + 0.04 * (t / ${DUR})) + ')';
+  // M3 (0–6): linha risca, abre e revela a logo; o grafite fica até o fim da A3 e esmaece na entrada da tela inicial
+  { const r = ez(fase(t, 0, 0.9)), fimM = 1 - fase(t, T(5.4), T(6)); $('#lTopo').style.height = (r * 700) + 'px'; $('#lBase').style.height = (r * 700) + 'px';
+    const a = ez(fase(t, 0.9, 1.7)); const l = $('#logoM'); l.style.clipPath = 'inset(0 ' + (50 - 50 * a) + '% 0 ' + (50 - 50 * a) + '%)'; l.style.opacity = fimM;
+    $('#lTopo').style.opacity = (1 - fase(t, 1.2, 1.8)) * fimM; $('#lBase').style.opacity = (1 - fase(t, 1.2, 1.8)) * fimM;
+    $('#luzv').style.opacity = ez(fase(t, 1.0, 1.8)) * fimM; const b = $('#brilhoM'); const q = fase(t, 1.8, 2.5); b.style.opacity = q > 0 && q < 1 ? 1 : 0; b.style.transform = 'translateX(' + (q * 400) + '%) skewX(-15deg)';
+    const gf = 1 - ez(fase(t, T(CN.s1[0]) - 0.3, T(CN.s1[0]) + 0.5)); $('#grafite').style.opacity = gf; $('#grao').style.opacity = 0.06 * gf; $('#fioA3').style.opacity = ez(fase(t, T(CN.s0[0]), T(CN.s0[0]) + 0.8)) * gf;
+    const fb = ez(fase(t, T(CN.s7[0]) - 0.2, T(CN.s7[0]) + 0.5)); $('#abstrato').style.opacity = fb; $('#arcos').style.opacity = fb; }
   circulo('veuLima', t, T(CN.s2[0]) - 0.2); circulo('veuClaro', t, T(CN.s3[0]) - 0.2); circulo('veuGraf', t, T(CN.s5[0]) - 0.2); circulo('veuBranco', t, T(CN.s7[0]) - 0.2);
   // o iPhone: entra na cena 1 e fica centralizado e reto; só gira (ida e volta) na troca de tela; sai no encerramento
   const sobeP = ez(fase(t, T(CN.s1[0]), T(CN.s1[0]) + 1.0)); const cena = CEL.findIndex(([a, b]) => t >= T(a) && t < T(b));
@@ -102,8 +132,8 @@ window.render = function (t) {
     const x = (1 - p) * 560 - prox * 560; const e = $('#t' + i); e.style.transform = 'translateX(' + x + 'px)'; e.style.visibility = Math.abs(x) >= 560 ? 'hidden' : 'visible'; }
   let u;
   // 0 — slogan de abertura: ícone do app, logo e frase (sem celular)
-  { u = t; const fim = 1 - fase(u, T(6.4), T(7)); const ic = $('#icone0'); const p = ezb(fase(u, 0.2, 0.9)); ic.style.opacity = cl(u * 3) * fim; ic.style.transform = 'scale(' + (0.6 + 0.4 * p) + ') rotate(' + ((1 - p) * -8) + 'deg)';
-    const l = $('#logo0'); const q = ezb(fase(u, T(1.5), T(1.5) + 0.6)); l.style.opacity = cl((u - T(1.5)) * 3) * fim; l.style.transform = 'translateY(' + ((1 - q) * 60) + 'px) scale(' + (0.8 + 0.2 * q) + ')';
+  { u = t - T(CN.s0[0]); const fim = 1 - fase(u, T(6.4), T(7)); const ic = $('#icone0'); const p = ezb(fase(u, 0.2, 0.9)); ic.style.opacity = cl(u * 3) * fim * (u >= 0 ? 1 : 0); ic.style.transform = 'scale(' + (0.6 + 0.4 * p) + ') rotate(' + ((1 - p) * -8) + 'deg)';
+    const l = $('#logo0'); const q = ezb(fase(u, T(1.5), T(1.5) + 0.6)); l.style.opacity = cl((u - T(1.5)) * 3) * fim * (u >= 0 ? 1 : 0); l.style.transform = 'translateY(' + ((1 - q) * 60) + 'px) scale(' + (0.8 + 0.2 * q) + ')';
     texto('f0', u, T(2.5), T(7)); const s = $('#sub0'); s.style.opacity = ez(fase(u, T(4), T(4) + 0.5)) * fim; }
   // 1 — tela inicial
   u = t - T(CN.s1[0]); texto('f1', u, 0.3, T(7));
@@ -121,18 +151,20 @@ window.render = function (t) {
   if ((u = corte($('#s7'), t, T(CN.s7[0]), ${DUR})) !== null) encerra('s7', u);
 };`;
 
-const cues = [{ t: 0.05, tipo: 'hit', g: 0.8 }, { t: T(1.5), tipo: 'whoosh', g: 0.6 }];
+const cues = [{ t: 0.05, tipo: 'whoosh', g: 0.5 }, { t: 0.9, tipo: 'clack', g: 0.6 }, { t: 1.0, tipo: 'hit', g: 0.9 }, { t: 1.1, tipo: 'whoosh', g: 0.6 }, { t: 2.5, tipo: 'ding', g: 0.5 },
+  { t: T(6) + 0.05, tipo: 'hit', g: 0.8 }, { t: T(7.5), tipo: 'whoosh', g: 0.6 }];
 for (const k of ['s1', 's2', 's3', 's4', 's5']) cues.push({ t: T(C[k][0]), tipo: 'hit', g: 0.75 }, { t: T(C[k][0]) + 0.05, tipo: 'whoosh', g: 0.5 });
-for (let i = 0; i < 7; i++) cues.push({ t: T(15.5) + i * 0.3, tipo: 'tick', g: 1.3 });            // chips das rodovias
-cues.push({ t: T(24.5), tipo: 'obturador' }, { t: T(25.2), tipo: 'ding', g: 0.8 });               // foto → legenda salta
-for (let i = 0; i < 3; i++) cues.push({ t: T(32.5 + i), tipo: 'whoosh', g: 0.55 });               // fotos da galeria
-for (let i = 0; i < 6; i++) cues.push({ t: T(40.5 + i), tipo: 'tick', g: 0.9 });                 // KM subindo
-cues.push({ t: T(48), tipo: 'hit', g: 1.0 }, { t: T(49), tipo: 'whoosh', g: 0.6 }, { t: T(51), tipo: 'whoosh', g: 0.5 });
+for (let i = 0; i < 7; i++) cues.push({ t: T(21.5) + i * 0.3, tipo: 'tick', g: 1.3 });            // chips das rodovias
+cues.push({ t: T(30.5), tipo: 'obturador' }, { t: T(31.2), tipo: 'ding', g: 0.8 });               // foto → legenda salta
+for (let i = 0; i < 3; i++) cues.push({ t: T(38.5 + i), tipo: 'whoosh', g: 0.55 });               // fotos da galeria
+for (let i = 0; i < 6; i++) cues.push({ t: T(46.5 + i), tipo: 'tick', g: 0.9 });                 // KM subindo
+cues.push({ t: T(54), tipo: 'hit', g: 1.0 }, { t: T(55), tipo: 'whoosh', g: 0.6 }, { t: T(57), tipo: 'whoosh', g: 0.5 });
 const secoes = [
-  { de: 0, ate: T(7), piano: 0.8, baixo: 0.5, pad: 0.3 },
-  { de: T(7), ate: T(48), piano: 1, baixo: 0.8, pad: 0.4, bat: 'leve' },
-  { de: T(48), ate: DUR, piano: 1, baixo: 0.8, pad: 0.5, arp: 0.4, bat: 'leve' },
+  { de: 0, ate: T(6), pad: 0.6 },
+  { de: T(6), ate: T(13), piano: 0.8, baixo: 0.5, pad: 0.3 },
+  { de: T(13), ate: T(54), piano: 1, baixo: 0.8, pad: 0.4, bat: 'leve' },
+  { de: T(54), ate: DUR, piano: 1, baixo: 0.8, pad: 0.5, arp: 0.4, bat: 'leve' },
 ];
 const audio = path.join(AQUI, 'vidico.wav');
-if (process.argv[2] !== 'stills') gerarAudio({ saida: audio, dur: DUR, secoes, cues, pausas: [[T(48) - 0.5, T(48)]] });
-await montar({ nome: 'km-check-vidico', dur: DUR, css, corpo, script, audio, stills: [T(4.5), T(11), T(19), T(27), T(35), T(44), T(56)] });
+if (process.argv[2] !== 'stills') gerarAudio({ saida: audio, dur: DUR, secoes, cues, pausas: [[T(54) - 0.5, T(54)]] });
+await montar({ nome: 'km-check-vidico', dur: DUR, css, corpo, script, audio, stills: [1.3, 2.6, T(10), T(17), T(25), T(33), T(41), T(50), T(62)] });
