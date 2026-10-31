@@ -73,13 +73,13 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 .marca img{width:34px;height:34px;margin:-3px 0;mix-blend-mode:lighten}
 .marca em{font-size:19px;letter-spacing:0;color:rgba(255,255,255,.7)}
 .abas{display:flex;gap:2px;padding:4px;border-radius:999px;margin-left:8px;position:relative}
-.abas button{position:relative;z-index:1;padding:8px 15px;border-radius:999px;color:rgba(255,255,255,.65);font-weight:500;white-space:nowrap}
+.abas button{position:relative;z-index:1;padding:8px 10px;font-size:13.5px;border-radius:999px;color:rgba(255,255,255,.65);font-weight:500;white-space:nowrap}
 .abas button.on{color:#fff}
 .abas button:hover{transform:none;color:#fff}
 .abas .marcador{position:absolute;top:4px;bottom:4px;left:0;border-radius:999px;background:rgba(255,255,255,.14);transition:transform .45s cubic-bezier(.16,1,.3,1),width .45s cubic-bezier(.16,1,.3,1)}
 .dir{margin-left:auto;display:flex;align-items:center;gap:8px}
 .periodo{display:flex;gap:2px;padding:4px;border-radius:999px}
-.periodo button{padding:7px 13px;border-radius:999px;font-size:13px;font-weight:500;color:rgba(255,255,255,.65)}
+.periodo button{white-space:nowrap;padding:7px 13px;border-radius:999px;font-size:13px;font-weight:500;color:rgba(255,255,255,.65)}
 .periodo button.on{background:rgba(255,255,255,.14);color:#fff}
 .vivo{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.06);white-space:nowrap}
 .vivo b{color:#fff;font-weight:600}
@@ -207,6 +207,60 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 /* ── Abas com tabela (Aparelhos e Cobertura SNV) ── */
 #a-aparelhos{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
 #a-snv{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr)}
+/* ── Saúde: versões em uso, erros do app e armazenamento ── */
+#a-saude{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
+/* ── Campo: uso real (fotos, tempo, offline) e qualidade do GPS e da câmera ── */
+#a-campo{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
+#a-campo .stats{grid-column:1/-1}
+.qbar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--trilho)}
+.qbar i{display:block;height:100%}
+.qlin{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--text2);padding:7px 0;border-top:1px solid rgba(255,255,255,.06)}
+.qlin b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
+/* ── Produto: funil, coortes e demanda × cobertura ── */
+#a-produto{grid-template-columns:5fr 7fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr)}
+#a-produto .dem-card{grid-column:1/-1}
+.funil{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+.fpasso{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:4px 12px;align-items:center}
+.fpasso .ft{font-size:12.5px;color:var(--text2)} .fpasso .ft b{color:var(--text);font-weight:500}
+.fpasso .fb{grid-column:1;height:12px;border-radius:99px;background:var(--trilho);overflow:hidden}
+.fpasso .fb i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#7d9a12,var(--lima))}
+.fpasso .fn{grid-row:1/3;grid-column:2;text-align:right;font-size:20px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.fpasso .fn small{display:block;font-size:11px;color:var(--text3);letter-spacing:0}
+.coorte{border-collapse:separate;border-spacing:3px;table-layout:auto;font-size:12px}
+.coorte th{cursor:default;text-align:center;padding:4px 6px}
+.coorte td{border:0;text-align:center;padding:7px 6px;border-radius:7px;font-variant-numeric:tabular-nums}
+.coorte td.sem{color:var(--text3);text-align:left;white-space:nowrap}
+.dem-card td .vtri{display:inline-block;width:90px;height:7px;border-radius:99px;background:var(--trilho);overflow:hidden;vertical-align:middle;margin-right:8px}
+.dem-card td .vtri i{display:block;height:100%;background:var(--lima)}
+/* ── Sistema: status dos serviços, alertas, segurança ── */
+#a-sistema{grid-template-columns:7fr 5fr;grid-template-rows:auto minmax(0,1fr)}
+.svc{display:grid;grid-template-columns:14px 1fr auto;gap:4px 12px;align-items:center;padding:12px 0;border-top:1px solid rgba(255,255,255,.06)}
+.svc:first-child{border-top:0}
+.svc .pt{width:10px;height:10px;border-radius:50%;background:var(--text3)} .svc .pt.ok{background:var(--up);box-shadow:0 0 0 4px rgba(127,216,143,.15)} .svc .pt.fora{background:var(--red);box-shadow:0 0 0 4px rgba(239,123,107,.18)}
+.svc b{font-weight:500} .svc small{grid-column:2/-1;color:var(--text3);font-size:11.5px}
+.svc .up{font-variant-numeric:tabular-nums;color:var(--text2);font-size:12.5px;text-align:right}
+.svc svg{grid-column:2/-1;width:100%;height:26px}
+.passos-2fa{display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:var(--text2)}
+.passos-2fa code{font-family:ui-monospace,Menlo,monospace;background:rgba(255,255,255,.06);padding:4px 8px;border-radius:8px;color:var(--text);word-break:break-all;user-select:all}
+.passos-2fa input{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:#fff;width:120px;font-size:15px;letter-spacing:.2em}
+#sy-qr{background:#fff;padding:10px;border-radius:12px;width:max-content}
+#a-saude .stats{grid-column:1/-1}
+#a-saude .erros-card{grid-column:1/-1}
+.adocao{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.adocao svg{flex:1;min-height:140px;width:100%}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--text2)}
+.legenda i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.vlist{display:flex;flex-direction:column;gap:9px;overflow:auto;min-height:0}
+.vrow{display:grid;grid-template-columns:88px 1fr 46px;gap:10px;align-items:center;font-size:12.5px}
+.vrow .vtri{height:8px;border-radius:99px;background:var(--trilho);overflow:hidden}
+.vrow .vtri i{display:block;height:100%;border-radius:99px;background:var(--text3)}
+.vrow.nova .vtri i{background:var(--lima)}
+.vrow b{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.erros-card td.msg{white-space:normal;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.45;color:#ffd2ca}
+.erros-card tr.fechado td.msg{color:var(--text3);text-decoration:line-through}
+.erros-card tr.pilha td{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--text2);background:rgba(255,255,255,.03)}
+.erros-card tr.linha{cursor:pointer}
+.marca-int{margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--text2)}
 #a-snv .stats{grid-column:1/-1}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .stat{border-radius:20px;padding:14px 18px}
@@ -441,6 +495,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
     <div class="sub">Acesso do administrador</div>
     <div class="field"><label>Usuário</label><input type="text" id="lg-user" placeholder="admin" autocomplete="username"></div>
     <div class="field"><label>Senha</label><input type="password" id="lg-pass" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="field" id="lg-cod-f" hidden><label>Código do app autenticador</label><input type="text" id="lg-cod" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"></div>
     <button class="btn-login" id="lg-btn">Entrar</button>
     <div class="error" id="lg-err"></div>
   </div>
@@ -456,7 +511,11 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
       <button data-a="mapa"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Mapa</span></button>
       <button data-a="hora"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Horários</span></button>
       <button data-a="aparelhos"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg><span>Aparelhos</span></button>
-      <button data-a="snv"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 10 4h4l6 16"/><path d="M12 8v2M12 13v2M12 18v1"/></svg><span class="longo">Cobertura SNV</span><span class="curto">SNV</span></button>
+      <button data-a="campo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-3h4l1.5 3"/></svg><span>Campo</span></button>
+      <button data-a="produto"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg><span>Produto</span></button>
+      <button data-a="saude"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Saúde</span></button>
+      <button data-a="sistema"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/></svg><span>Sistema</span></button>
+      <button data-a="snv"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 10 4h4l6 16"/><path d="M12 8v2M12 13v2M12 18v1"/></svg><span class="longo">Cobertura</span><span class="curto">SNV</span></button>
     </nav>
     <div class="dir">
       <div class="periodo vidro" id="periodo"><button data-d="7">7 dias</button><button data-d="30" class="on">30 dias</button><button data-d="90">90 dias</button></div>
@@ -537,7 +596,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
         <div class="stat forte" title="Celulares que usaram o app nos últimos 30 dias. Reinstalações do mesmo celular contam uma vez; computadores e testes não contam."><div class="label">Usuários (30 dias)</div><div class="value green" id="ds-total">—</div><div class="detail" id="ds-detail"></div></div>
         <div class="stat forte"><div class="label">iPhone</div><div class="value blue" id="ds-ios">—</div><div class="detail">aparelhos</div></div>
         <div class="stat forte"><div class="label">Android</div><div class="value green" id="ds-android">—</div><div class="detail">aparelhos</div></div>
-        <div class="stat forte" title="Por onde instalaram (aparelhos usados nos últimos 30 dias). &quot;Site&quot; = versão antiga do app, que ainda não diz se é PWA ou navegador."><div class="label">Instalação</div><div class="value" id="ds-canal" style="font-size:14px;line-height:1.35;white-space:normal">—</div><div class="detail" id="ds-canal-d"></div></div>
+        <div class="stat forte" title="Por onde instalaram (aparelhos usados nos últimos 30 dias). &quot;PWA ou navegador&quot; = versão antiga do app, que ainda não dizia qual dos dois."><div class="label">Instalação</div><div class="value" id="ds-canal" style="font-size:14px;line-height:1.35;white-space:normal">—</div><div class="detail" id="ds-canal-d"></div></div>
         <div class="stat forte"><div class="label">Ativos hoje</div><div class="value yellow" id="ds-today">—</div><div class="detail" id="ds-week"></div></div>
         <div class="stat forte"><div class="label">Modelo + usado</div><div class="value purple" id="ds-model">—</div><div class="detail" id="ds-brand"></div></div>
         <div class="stat forte"><div class="label">Bases baixadas</div><div class="value" id="ds-bases">—</div><div class="detail" id="ds-version"></div></div>
@@ -549,6 +608,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
             <option value="aparelhos">Celulares (1 linha por aparelho)</option>
             <option value="computador">Computadores</option>
             <option value="teste">Testes</option>
+            <option value="interno">Equipe e testes (internos)</option>
             <option value="">Tudo</option>
           </select>
           <select id="dev-filter-canal" title="Por onde o app foi instalado">
@@ -557,7 +617,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
             <option value="play-store">Play Store</option>
             <option value="pwa">PWA (tela de início)</option>
             <option value="navegador">Navegador</option>
-            <option value="web">Site (versão antiga)</option>
+            <option value="web">PWA ou navegador (versão antiga)</option>
           </select>
           <select id="dev-filter-plat">
             <option value="">Todas plataformas</option>
@@ -569,6 +629,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
           </select>
           <input type="text" id="dev-search" placeholder="Buscar nome, modelo, rodovia…">
           <span class="spacer"></span>
+          <button class="btn-secondary btn-sm" id="dev-csv" title="Exporta a lista como está filtrada">↓ CSV</button>
           <button class="btn-secondary btn-sm" id="dev-refresh">↻ Atualizar</button>
         </div>
         <div id="dev-cards"></div>
@@ -599,6 +660,108 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
     </section>
 
     <!-- ──────── Cobertura SNV ──────── -->
+    <!-- ──────── Campo ──────── -->
+    <section class="aba" id="a-campo">
+      <div class="stats">
+        <div class="stat forte" title="Fotos tiradas no período (só de celulares na versão 358 ou mais nova)"><div class="label">Fotos</div><div class="value green" id="cp-fotos">—</div><div class="detail" id="cp-fotos-d"></div></div>
+        <div class="stat forte" title="Minutos com o app aberto na frente"><div class="label">Tempo de uso</div><div class="value" id="cp-tempo">—</div><div class="detail" id="cp-tempo-d"></div></div>
+        <div class="stat forte" title="Aberturas sem internet que chegaram depois, pela fila do aparelho — antes eram perdidas"><div class="label">Uso sem internet</div><div class="value yellow" id="cp-off">—</div><div class="detail" id="cp-off-d"></div></div>
+        <div class="stat forte"><div class="label">Modo Carro</div><div class="value blue" id="cp-carro">—</div><div class="detail" id="cp-carro-d"></div></div>
+        <div class="stat forte"><div class="label">Consultas</div><div class="value purple" id="cp-cons">—</div><div class="detail" id="cp-cons-d"></div></div>
+        <div class="stat forte"><div class="label">Rodovias</div><div class="value" id="cp-rod">—</div><div class="detail" id="cp-rod-d"></div></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Fotos <em>por dia</em></h2><p id="cp-cob">Celulares que já mandam o uso em campo (versão 358+).</p></div></div>
+        <div class="adocao"><svg id="cp-graf" preserveAspectRatio="none"></svg></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Fotos <em>por rodovia</em></h2><p>Rodovia da legenda no momento da foto.</p></div><button class="btn-secondary btn-sm" id="cp-csv">↓ CSV</button></div>
+        <div class="vlist" id="cp-vias"></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Qualidade <em>por modelo</em></h2><p>GPS bom = leituras com precisão melhor que 10 m. Tempos em mediana.</p></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:26%">Modelo</th><th style="width:10%">Celulares</th><th style="width:16%">GPS bom</th><th style="width:16%">1º sinal</th><th style="width:16%">Abrir câmera</th><th style="width:16%">Falhas na foto</th></tr></thead>
+          <tbody id="cp-mod"></tbody>
+        </table></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>GPS <em>e câmera</em></h2><p>Todas as leituras do período.</p></div></div>
+        <div id="cp-q"></div>
+      </div>
+    </section>
+
+    <!-- ──────── Produto ──────── -->
+    <section class="aba" id="a-produto">
+      <div class="card forte">
+        <div class="cab"><div><h2>Funil <em>de ativação</em></h2><p id="fu-sub">Celulares que começaram no período e até onde chegaram.</p></div>
+          <select id="fu-canal" class="btn-secondary btn-sm"><option value="">Todas as origens</option><option value="app-store">App Store</option><option value="play-store">Play Store</option><option value="pwa">PWA</option><option value="navegador">Navegador</option><option value="web">PWA ou navegador (antiga)</option></select></div>
+        <div class="funil" id="fu"></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Retenção <em>por coorte</em></h2><p>Por semana em que o celular começou: quantos voltaram a usar em cada semana depois. Usa a mesma origem do funil.</p></div></div>
+        <div class="table-wrap"><table class="coorte" id="co"></table></div>
+      </div>
+      <div class="card forte dem-card">
+        <div class="cab"><div><h2>Demanda <em>× cobertura</em></h2><p>Rodovias federais por onde os celulares passaram no período e quantos deles tinham a rodovia baixada no app. Muita gente sem a base = treinar a equipe ou facilitar o download.</p></div>
+          <button class="btn-secondary btn-sm" id="dem-csv">↓ CSV</button></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:18%">Rodovia</th><th style="width:14%">Celulares</th><th style="width:14%">Dias de uso</th><th style="width:30%">Com a base baixada</th><th style="width:24%">Trecho usado (km)</th></tr></thead>
+          <tbody id="dem-tbody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ──────── Sistema ──────── -->
+    <section class="aba" id="a-sistema">
+      <div class="card forte">
+        <div class="cab"><div><h2>Status <em>dos serviços</em></h2><p>Conferidos pelo servidor a cada 5 minutos. Disponibilidade das últimas 24 h e 7 dias; a linha é o tempo de resposta.</p></div></div>
+        <div id="sy-svc"></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Alertas <em>no Telegram</em></h2><p>Serviço fora do ar e de volta, erro novo no app e tentativas de entrar no painel.</p></div></div>
+        <div class="passos-2fa" id="sy-alertas"></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Acessos <em>ao painel</em></h2><p>Entradas e tentativas (últimas 60).</p></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:24%">Quando</th><th style="width:12%">Resultado</th><th style="width:20%">Como</th><th style="width:16%">IP</th><th style="width:28%">Navegador</th></tr></thead>
+          <tbody id="sy-aud"></tbody>
+        </table></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Verificação <em>em duas etapas</em></h2><p>Além da senha, um código de 6 dígitos do app autenticador do celular.</p></div></div>
+        <div class="passos-2fa" id="sy-2fa"></div>
+      </div>
+    </section>
+
+    <!-- ──────── Saúde ──────── -->
+    <section class="aba" id="a-saude">
+      <div class="stats">
+        <div class="stat forte" title="Celulares que usaram o app no período e cuja última abertura já foi na versão mais nova"><div class="label">Na versão mais nova</div><div class="value green" id="sa-nova">—</div><div class="detail" id="sa-nova-d"></div></div>
+        <div class="stat forte" title="Usaram no período, mas a última abertura foi numa versão antiga (cache velho ou app da loja desatualizado)"><div class="label">Desatualizados</div><div class="value yellow" id="sa-velhos">—</div><div class="detail" id="sa-velhos-d"></div></div>
+        <div class="stat forte" title="Falhas de JavaScript diferentes que aconteceram e não foram marcadas como resolvidas"><div class="label">Erros em aberto</div><div class="value red" id="sa-erros">—</div><div class="detail" id="sa-erros-d"></div></div>
+        <div class="stat forte" title="Onde o painel guarda os dados e o backup diário"><div class="label">Dados</div><div class="value" id="sa-dados" style="font-size:18px">—</div><div class="detail" id="sa-dados-d"></div></div>
+        <div class="stat forte"><div class="label">Backup</div><div class="value" id="sa-bk" style="font-size:18px">—</div><div class="detail"><button class="btn-secondary btn-sm" id="sa-baixar" style="margin-top:4px">↓ Baixar backup</button></div></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Adoção <em>de versão</em></h2><p>Celulares por versão em cada dia de uso. Mostra quando uma versão nova pegou e quem ficou para trás.</p></div></div>
+        <div class="adocao"><svg id="sa-graf" preserveAspectRatio="none"></svg><div class="legenda" id="sa-leg"></div></div>
+      </div>
+      <div class="card forte">
+        <div class="cab"><div><h2>Versão <em>atual</em></h2><p>Última versão aberta por cada celular ativo no período.</p></div></div>
+        <div class="vlist" id="sa-vers"></div>
+      </div>
+      <div class="card forte erros-card">
+        <div class="cab"><div><h2>Erros <em>do app</em></h2><p>Falhas de JavaScript enviadas pelos aparelhos que autorizaram os dados de uso. Clique para ver a pilha.</p></div>
+          <div style="display:flex;gap:10px;align-items:center"><label style="font-size:12px;color:var(--text2);display:flex;gap:6px;align-items:center"><input type="checkbox" id="sa-res"> mostrar resolvidos</label><button class="btn-secondary btn-sm" id="sa-csv">↓ CSV</button></div></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:38%">Erro</th><th style="width:14%">Onde</th><th style="width:7%">Vezes</th><th style="width:8%">Aparelhos</th><th style="width:12%">Versões</th><th style="width:10%">Última vez</th><th style="width:11%"></th></tr></thead>
+          <tbody id="sa-tbody"><tr><td colspan="7" class="empty">Carregando…</td></tr></tbody>
+        </table></div>
+      </div>
+    </section>
+
     <section class="aba" id="a-snv">
       <div class="stats" id="road-stats">
         <div class="stat forte"><div class="label">Disponíveis no KM Check</div><div class="value green" id="rs-avail">—</div><div class="detail" id="rs-snv"></div></div>
@@ -740,7 +903,15 @@ $('#lg-btn').onclick = async () => {
   if(!user||!password){ $('#lg-err').textContent='Preencha todos os campos'; return }
   $('#lg-btn').disabled = true; $('#lg-btn').textContent = 'Entrando…';
   try {
-    const r = await api('/api/admin/auth/login', { method:'POST', body: JSON.stringify({ user, password }) });
+    /* fetch direto: no login, 401 é senha errada (o api() trataria como sessão expirada) */
+    const codigo = $('#lg-cod').value.trim();
+    const resp = await fetch(API+'/api/admin/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user, password, codigo }) });
+    const r = await resp.json().catch(()=>({}));
+    if(!resp.ok){
+      if(r.precisa_codigo){ $('#lg-cod-f').hidden=false; setTimeout(()=>$('#lg-cod').focus(),50) }
+      throw new Error(r.error || 'Erro HTTP '+resp.status);
+    }
+    $('#lg-cod').value=''; $('#lg-cod-f').hidden=true;
     TOKEN = r.token;
     localStorage.setItem('kca-token', TOKEN);
     showDash();
@@ -751,6 +922,7 @@ $('#lg-btn').onclick = async () => {
   }
 };
 $('#lg-pass').onkeydown = e => { if(e.key==='Enter') $('#lg-btn').click() };
+$('#lg-cod').onkeydown = e => { if(e.key==='Enter') $('#lg-btn').click() };
 $('#lg-user').onkeydown = e => { if(e.key==='Enter') $('#lg-pass').focus() };
 $('#btn-logout').onclick = () => { TOKEN = null; localStorage.removeItem('kca-token'); showLogin() };
 
@@ -762,7 +934,7 @@ function abre(nome){
   $$('#abas button').forEach(b=>b.classList.toggle('on',b.dataset.a===nome));
   $$('.aba').forEach(a=>a.classList.toggle('on',a.id==='a-'+nome));
   poeMarcador(); escondeDica();
-  $('.topo').classList.toggle('sem-periodo', nome==='aparelhos'||nome==='snv');
+  $('.topo').classList.toggle('sem-periodo', nome==='aparelhos'||nome==='snv'||nome==='sistema');   // Saúde usa o período (adoção de versão)
   if(_cel.matches) scrollTo({top:0});
   if(ULT){
     if(nome==='resumo') setTimeout(()=>linha(SERIE),60);
@@ -770,6 +942,10 @@ function abre(nome){
     if(nome==='hora'){ $$('#calor .q i').forEach(i=>{ i.style.transitionDelay='0ms'; i.style.opacity=0; i.style.transform='scale(.4)' }); setTimeout(()=>calor(ULT),80) }
   }
   if(nome==='snv' && !_roadsLoaded) loadRoads();
+  if(nome==='saude') loadSaude();
+  if(nome==='produto') produto();
+  if(nome==='campo') campo();
+  if(nome==='sistema') loadSistema();
   try{ localStorage.setItem('kca-aba',nome) }catch(e){}
 }
 $$('#abas button').forEach(b=>b.onclick=()=>abre(b.dataset.a));
@@ -799,12 +975,323 @@ const dica=$('#dica');
 function mostraDica(html,x,y){ dica.innerHTML=html; dica.classList.add('on'); const w=dica.offsetWidth; dica.style.left=Math.min(innerWidth-w-12,Math.max(12,x-w/2))+'px'; dica.style.top=Math.max(8,y-dica.offsetHeight-14)+'px' }
 function escondeDica(){ dica.classList.remove('on') }
 
+
+/* ══════════════════════════════════════════════════
+   SAÚDE — adoção de versão (dos dias de uso que o painel já tem), erros do app e armazenamento
+   ══════════════════════════════════════════════════ */
+async function marcaInterno(id, interno){
+  try{
+    const r = await api('/api/admin/devices/'+encodeURIComponent(id)+'/interno', { method:'PATCH', body: JSON.stringify({ interno }) });
+    toast(interno ? `Marcado como equipe/teste (${r.codigos} código${r.codigos>1?'s':''})` : 'Voltou a contar nos números', 'success');
+    $('#dev-modal').classList.remove('open');
+    loadDevices(); loadUso();
+  }catch(e){ toast('Erro: '+e.message) }
+}
+let ERROS = [], SIS = null;
+const CORES_V = ['#b7d92d','#9db4ff','#e2b54a','#c9b3ff','#7fd88f'];
+const rotV = v => { const m=String(v||'').match(/^(.*?)\s*\((\d+)\)\s*$/); return m ? 'v'+m[1]+' · '+m[2] : 'v'+(v||'?') };
+function saude(){
+  const dias = chaves(0, PER).reverse();   // do mais antigo para hoje
+  const porDia = dias.map(k => { const c = {}; for (const a of USO){ const u=a.dias[k]; if(u){ const v=u.v||a.v||'?'; c[v]=(c[v]||0)+1 } } return c });
+  /* versão atual de cada celular ativo no período (a do último dia em que usou) */
+  const atual = {}; let ativos = 0;
+  for (const a of USO){ let ult=null; for (const k of dias) if (a.dias[k]) ult=a.dias[k]; if(!ult) continue; ativos++; const v=ult.v||a.v||'?'; atual[v]=(atual[v]||0)+1 }
+  const vers = Object.keys(atual).sort((x,y)=>verNum(y)-verNum(x)), nova = vers[0];
+  const nNova = nova ? atual[nova] : 0;
+  $('#sa-nova').textContent = ativos ? Math.round(nNova/ativos*100)+'%' : '—';
+  $('#sa-nova-d').textContent = nova ? `${nNova} de ${ativos} em ${rotV(nova)}` : 'sem uso no período';
+  $('#sa-velhos').textContent = ativos - nNova;
+  const v2 = vers.slice(1).reduce((s,v)=>s+(verNum(nova)-verNum(v)>=5?atual[v]:0),0);
+  $('#sa-velhos-d').textContent = ativos-nNova ? `${v2} com 5+ versões de atraso` : 'todos atualizados';
+  /* lista */
+  $('#sa-vers').innerHTML = vers.length ? vers.map(v=>`<div class="vrow ${v===nova?'nova':''}"><span>${esc(rotV(v))}</span><span class="vtri"><i style="width:${(atual[v]/ativos*100).toFixed(1)}%"></i></span><b>${atual[v]}</b></div>`).join('') : '<p class="empty">Sem uso no período</p>';
+  /* gráfico: colunas empilhadas por dia, as 4 versões mais usadas no período + "outras" */
+  const tot = {}; porDia.forEach(c=>{ for(const [v,n] of Object.entries(c)) tot[v]=(tot[v]||0)+n });
+  const top = Object.keys(tot).sort((x,y)=>verNum(y)-verNum(x)).slice(0,4);
+  const series = [...top, 'outras'];
+  const svg = $('#sa-graf'), W = 1000, H = 260, max = Math.max(1, ...porDia.map(c=>Object.values(c).reduce((a,b)=>a+b,0)));
+  const bw = W/dias.length, g = Math.min(4, bw*.25);
+  let h = '';
+  for (let y=0;y<=4;y++){ const yy=H-20-(H-30)*y/4; h+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="rgba(255,255,255,.06)"/>` }
+  porDia.forEach((c,i)=>{ let base=H-20; const x=i*bw+g/2;
+    series.forEach((v,si)=>{ const n = v==='outras' ? Object.entries(c).filter(([k])=>!top.includes(k)).reduce((a,[,b])=>a+b,0) : (c[v]||0);
+      if(!n) return; const hh=(H-30)*n/max; base-=hh;
+      h+=`<rect x="${x.toFixed(1)}" y="${base.toFixed(1)}" width="${(bw-g).toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${CORES_V[si]||'#555'}" data-i="${i}"/>` }) });
+  const passo = Math.ceil(dias.length/8);
+  dias.forEach((k,i)=>{ if(i%passo===0||i===dias.length-1) h+=`<text x="${(i*bw+bw/2).toFixed(1)}" y="${H-4}" fill="rgba(255,255,255,.42)" font-size="11" text-anchor="middle">${ddmm(k)}</text>` });
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML = h;
+  svg.onmousemove = e => { const r=e.target.closest('rect'); if(!r){ escondeDica(); return } const i=+r.dataset.i, c=porDia[i];
+    mostraDica(`<b>${ddmm(dias[i])}</b><br>`+Object.entries(c).sort((a,b)=>verNum(b[0])-verNum(a[0])).map(([v,n])=>`${esc(rotV(v))}: ${n}`).join('<br>'), e.clientX, e.clientY) };
+  svg.onmouseleave = escondeDica;
+  $('#sa-leg').innerHTML = series.filter(v=>v!=='outras'||Object.keys(tot).length>top.length).map((v,i)=>`<span><i style="background:${CORES_V[i]}"></i>${v==='outras'?'outras':esc(rotV(v))}</span>`).join('');
+  desenhaErros();
+}
+function desenhaErros(){
+  const res = $('#sa-res').checked, abertos = ERROS.filter(e=>!e.resolvido);
+  $('#sa-erros').textContent = abertos.length;
+  const semana = Date.now()-7*864e5, nSem = abertos.filter(e=>Date.parse(e.ultima)>semana).length;
+  $('#sa-erros-d').textContent = abertos.length ? `${nSem} aconteceram nos últimos 7 dias` : 'nenhum em aberto';
+  const lista = res ? ERROS : abertos;
+  $('#sa-tbody').innerHTML = lista.length ? lista.map(e=>{
+    const vs = Object.entries(e.versoes||{}).sort((a,b)=>verNum(b[0])-verNum(a[0])).slice(0,2).map(([v])=>rotV(v)).join(', ');
+    const pl = Object.entries(e.plats||{}).map(([p,n])=>p+' '+n).join(' · ');
+    return `<tr class="linha ${e.resolvido?'fechado':''}" data-id="${esc(e.id)}"><td class="msg">${esc(e.msg)}${e.reaberto?' <span class="tag tag-red">voltou</span>':''}</td>
+      <td class="mono" title="${esc(pl)}">${esc(e.fonte||'?')}:${e.linha||0}</td><td>${e.n}</td><td>${e.n_aparelhos||0}</td>
+      <td>${esc(vs)}</td><td>${e.ultima?quando(e.ultima):'—'}</td>
+      <td><button class="btn-secondary btn-sm" data-res="${e.resolvido?0:1}">${e.resolvido?'Reabrir':'Resolvido'}</button></td></tr>
+      <tr class="pilha" data-p="${esc(e.id)}" hidden><td colspan="7">${esc((e.pilha||'(sem pilha)')+'\n\nPlataformas: '+pl+'\nTelas: '+Object.entries(e.telas||{}).map(([t,n])=>t+' '+n).join(' · ')+'\nPrimeira vez: '+fmtDate(e.primeira))}</td></tr>` }).join('')
+    : `<tr><td colspan="7" class="empty">${ERROS.length?'Nenhum erro em aberto':'Nenhum erro recebido ainda (o app novo começa a enviar a partir da v357)'}</td></tr>`;
+}
+$('#sa-tbody').addEventListener('click', async ev => {
+  const b = ev.target.closest('button[data-res]'), tr = ev.target.closest('tr.linha');
+  if (b){ ev.stopPropagation(); const id = tr.dataset.id;
+    try{ await api('/api/admin/erros/'+encodeURIComponent(id), { method:'PATCH', body: JSON.stringify({ resolvido: b.dataset.res==='1' }) }); await carregaErros() }catch(e){ toast('Erro: '+e.message) }
+    return }
+  if (tr){ const p = $(`#sa-tbody tr[data-p="${CSS.escape(tr.dataset.id)}"]`); if(p) p.hidden = !p.hidden }
+});
+$('#sa-res').onchange = desenhaErros;
+async function carregaErros(){ try{ ERROS = (await api('/api/admin/erros')).erros || [] }catch(e){ ERROS = [] } desenhaErros() }
+const kb = n => n==null?'—':n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
+async function loadSaude(){
+  if (USO.length) saude();
+  carregaErros();
+  try{
+    SIS = await api('/api/admin/sistema');
+    $('#sa-dados').textContent = SIS.armazenamento==='sqlite' ? 'SQLite' : 'Arquivo JSON';
+    $('#sa-dados-d').textContent = (SIS.acessos!=null ? SIS.acessos.toLocaleString('pt-BR')+' acessos · ' : '') + kb(SIS.tamanho) + ' · Node '+SIS.node;
+    $('#sa-bk').textContent = SIS.ultimo_backup ? (SIS.ultimo_backup.match(/\d{4}-\d{2}-\d{2}/)||[''])[0].split('-').reverse().join('/') : 'ainda não';
+  }catch(e){ $('#sa-dados').textContent='—' }
+}
+$('#sa-baixar').onclick = async () => {
+  try{
+    const r = await fetch(API+'/api/admin/backup', { headers:{ Authorization:'Bearer '+TOKEN } });
+    if(!r.ok) throw new Error((await r.json().catch(()=>({}))).error || 'HTTP '+r.status);
+    const nome = (r.headers.get('Content-Disposition')||'').match(/filename="?([^";]+)/)?.[1] || 'kmcheck-admin-backup';
+    const url = URL.createObjectURL(await r.blob()), a = document.createElement('a');
+    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    loadSaude();
+  }catch(e){ toast('Erro ao baixar o backup: '+e.message) }
+};
+
+
+/* ══════════════════════════════════════════════════
+   CSV — separador ";" e BOM, para abrir certo no Excel em português
+   ══════════════════════════════════════════════════ */
+let _devVis = [];
+function baixaCsv(nome, cab, linhas){
+  const q = v => { const t=String(v??''); return /[;"\n\r]/.test(t) ? '"'+t.replace(/"/g,'""')+'"' : t };
+  const txt = '﻿'+[cab,...linhas].map(l=>l.map(q).join(';')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})), a=document.createElement('a');
+  a.href=url; a.download=nome+'-'+new Date().toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+const dataBR = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '';
+$('#dev-csv').onclick = () => baixaCsv('kmcheck-aparelhos',
+  ['Usuário','Device ID','Modelo','Marca','Sistema','Versão','Origem','Categoria','Tela','Bases','Rodovia','KM','Primeiro acesso','Último uso','Usos'],
+  _devVis.map(d=>{ const fx=getDevFix(d), na=fx&&fx.dist<=5000; return [d.nickname||'',d.device_id,d.model||'',normBrand(d.brand)||'',d.os_version||d.platform||'',d.app_version||'',CANAL_NOME[d.canal||'web']||d.canal,d.categoria||'',d.screen||'',d.bases_count||0,na?fx.br+'/'+fx.uf:'',na?fx.km.toFixed(1).replace('.',','):'',dataBR(d.first_seen),dataBR(d.last_ping),d.ping_count||0] }));
+$('#sa-csv').onclick = () => baixaCsv('kmcheck-erros',
+  ['Erro','Arquivo','Linha','Vezes','Aparelhos','Versões','Plataformas','Telas','Primeira vez','Última vez','Situação'],
+  ERROS.map(e=>[e.msg,e.fonte,e.linha,e.n,e.n_aparelhos||0,Object.keys(e.versoes||{}).join(', '),Object.entries(e.plats||{}).map(([p,n])=>p+' '+n).join(', '),Object.keys(e.telas||{}).join(', '),dataBR(e.primeira),dataBR(e.ultima),e.resolvido?'resolvido':e.reaberto?'voltou':'em aberto']));
+
+/* ══════════════════════════════════════════════════
+   PRODUTO — funil de ativação, retenção por coorte e demanda × cobertura (só com os dados que já chegam)
+   ══════════════════════════════════════════════════ */
+const diaDe = iso => diaBR(Date.parse(iso));
+const somaDias = (k,n) => new Date(Date.parse(k+'T12:00:00Z')+n*DIA).toISOString().slice(0,10);
+const usouPerto = a => Object.values(a.dias).some(u=>(u.l||[]).some(([la,lo])=>VIAS[la+','+lo]));
+let _dem = [];
+function produto(){
+  const canal = $('#fu-canal').value, hoje = diaBR(AGORA_MS), ini = diaBR(AGORA_MS-(PER-1)*DIA);
+  const base = USO.filter(a=>!canal||(a.canal||'web')===canal);
+  /* funil: quem começou no período (1º acesso dentro dele) */
+  const novos = base.filter(a=>a.inst && diaDe(a.inst)>=ini);
+  const elegiveis = novos.filter(a=>somaDias(diaDe(a.inst),13)<=hoje);
+  const passos = [
+    ['Começaram a usar', novos.length, novos.length],
+    ['Baixaram ao menos uma rodovia', novos.filter(a=>(a.nb||0)>0||(a.bases||[]).length).length, novos.length],
+    ['Usaram perto de uma rodovia federal', novos.filter(usouPerto).length, novos.length],
+    ['Tiraram a primeira foto', novos.filter(a=>a.tele&&Object.values(a.tele).some(t=>(t.c.foto||0)>0)).length, novos.filter(a=>a.tele).length],
+    ['Voltaram em outro dia', novos.filter(a=>Object.keys(a.dias).length>=2).length, novos.length],
+    ['Usaram na 2ª semana', elegiveis.filter(a=>{ const k=diaDe(a.inst); return Object.keys(a.dias).some(d=>d>=somaDias(k,7)&&d<=somaDias(k,13)) }).length, elegiveis.length],
+  ];
+  $('#fu-sub').textContent = `Celulares que começaram nos últimos ${PER} dias e até onde chegaram.`;
+  $('#fu').innerHTML = novos.length ? passos.map(([t,n,de],i)=>{ const p=de?Math.round(n/de*100):0;
+    return `<div class="fpasso"><span class="ft"><b>${t}</b>${i===3?` <span title="a contagem de fotos chega a partir da versão 358">· de ${de} na versão 358+</span>`:''}${i===5?` <span title="só conta quem começou há 14 dias ou mais">· de ${de} que começaram há 14+ dias</span>`:''}</span><span class="fn">${n}<small>${de?p+'%':'—'}</small></span><span class="fb"><i style="width:${p}%"></i></span></div>` }).join('')
+    : '<p class="empty">Nenhum celular começou no período com essa origem.</p>';
+  /* coortes: semana (segunda a domingo) do 1º acesso; cada coluna = semana k depois do começo de cada um */
+  const segunda = k => { const d=new Date(k+'T12:00:00Z'), w=(d.getUTCDay()+6)%7; return somaDias(k,-w) };
+  const SEM = 8, ultSeg = segunda(hoje), coortes = [];
+  for (let i=SEM-1;i>=0;i--){ const s0=somaDias(ultSeg,-7*i), s1=somaDias(s0,6);
+    const m = base.filter(a=>a.inst && diaDe(a.inst)>=s0 && diaDe(a.inst)<=s1); coortes.push({ s0, m }) }
+  let h = '<thead><tr><th style="text-align:left">Começaram</th><th>Celulares</th>'+Array.from({length:SEM},(_,k)=>`<th>${k===0?'Sem. 1':'+'+k}</th>`).join('')+'</tr></thead><tbody>';
+  for (const c of coortes){
+    h += `<tr><td class="sem">${ddmm(c.s0)} a ${ddmm(somaDias(c.s0,6))}</td><td>${c.m.length}</td>`;
+    for (let k=0;k<SEM;k++){
+      /* só conta quem já completou a semana k (pelo dia em que cada um começou) */
+      const eleg = c.m.filter(a=>somaDias(diaDe(a.inst),7*k+6)<=hoje||k===0);
+      if (!eleg.length || (k>0 && somaDias(c.s0,7*k)>hoje)) { h+='<td></td>'; continue }
+      const n = eleg.filter(a=>{ const s=somaDias(diaDe(a.inst),7*k), e=somaDias(s,6); return Object.keys(a.dias).some(d=>d>=s&&d<=e) }).length;
+      const p = Math.round(n/eleg.length*100);
+      h += `<td style="background:rgba(183,217,45,${(.06+p/100*.62).toFixed(2)});color:${p>55?'#0a0c0e':'#fff'}" title="${n} de ${eleg.length}">${p}%</td>`;
+    }
+    h += '</tr>';
+  }
+  $('#co').innerHTML = h+'</tbody>';
+  /* demanda × cobertura no período */
+  const dias = chaves(0,PER), por = new Map();
+  for (const a of USO){ const vistas = new Map();
+    for (const k of dias){ const u=a.dias[k]; if(!u) continue;
+      for (const [la,lo] of u.l||[]){ const v=VIAS[la+','+lo]; if(!v) continue; const x=vistas.get(v[0])||{dias:new Set(),min:Infinity,max:-Infinity}; x.dias.add(k); x.min=Math.min(x.min,v[1]); x.max=Math.max(x.max,v[1]); vistas.set(v[0],x) } }
+    for (const [id,x] of vistas){ const r=por.get(id)||{id,cel:0,com:0,dias:0,min:Infinity,max:-Infinity}; r.cel++; r.dias+=x.dias.size; if((a.bases||[]).includes(id)) r.com++; r.min=Math.min(r.min,x.min); r.max=Math.max(r.max,x.max); por.set(id,r) } }
+  _dem = [...por.values()].sort((x,y)=>y.cel-x.cel||y.dias-x.dias);
+  $('#dem-tbody').innerHTML = _dem.length ? _dem.map(r=>{ const p=Math.round(r.com/r.cel*100);
+    return `<tr><td><span class="tag tag-green">${esc(r.id)}</span></td><td>${r.cel}</td><td>${r.dias}</td><td><span class="vtri"><i style="width:${p}%"></i></span>${r.com} de ${r.cel} (${p}%)</td><td class="mono">${r.min.toFixed(0)} – ${r.max.toFixed(0)}</td></tr>` }).join('')
+    : '<tr><td colspan="5" class="empty">Sem uso perto de rodovias federais no período</td></tr>';
+}
+$('#fu-canal').onchange = produto;
+$('#dem-csv').onclick = () => baixaCsv('kmcheck-demanda', ['Rodovia','Celulares','Dias de uso','Com a base baixada','KM inicial','KM final'],
+  _dem.map(r=>[r.id,r.cel,r.dias,r.com,r.min.toFixed(1).replace('.',','),r.max.toFixed(1).replace('.',',')]));
+
+/* ══════════════════════════════════════════════════
+   SISTEMA — status dos serviços, alertas, acessos e 2FA
+   ══════════════════════════════════════════════════ */
+function linhaMs(serie){
+  if(!serie||serie.length<2) return '';
+  const W=600,H=26,max=Math.max(300,...serie.map(x=>x[2])), t0=serie[0][0], t1=serie[serie.length-1][0]||t0+1;
+  const pts=serie.map(x=>`${((x[0]-t0)/(t1-t0)*W).toFixed(1)},${(H-2-(x[2]/max)*(H-4)).toFixed(1)}`).join(' ');
+  const quedas=serie.filter(x=>!x[1]).map(x=>`<rect x="${((x[0]-t0)/(t1-t0)*W-1).toFixed(1)}" y="0" width="3" height="${H}" fill="rgba(239,123,107,.7)"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${quedas}<polyline points="${pts}" fill="none" stroke="rgba(183,217,45,.8)" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
+}
+async function loadSistema(){
+  try{
+    const st = await api('/api/admin/status');
+    $('#sy-svc').innerHTML = Object.values(st.servicos).map(s=>`<div class="svc"><span class="pt ${s.ok==null?'':s.ok?'ok':'fora'}"></span>
+      <b>${esc(s.nome)}${s.versao?` <span class="tag">publicado v${esc(s.versao)}</span>`:''}</b>
+      <span class="up">${s.uptime24h!=null?s.uptime24h+'% 24 h':'—'} · ${s.uptime7d!=null?s.uptime7d+'% 7 dias':'—'}</span>
+      <small>${s.ok==null?'aguardando a 1ª verificação (até 5 min depois de o painel reiniciar)':s.fora_desde?'fora do ar desde '+fmtDate(s.fora_desde):s.ok?'respondeu em '+s.ms+' ms · '+quando(s.verificado):'não respondeu na última verificação · '+quando(s.verificado)}</small>${linhaMs(s.serie)}</div>`).join('')
+      + `<div class="svc"><span class="pt ok"></span><b>Painel</b><span class="up">no ar</span><small>reiniciado ${quando(st.painel_no_ar_desde)}</small></div>`;
+    $('#sy-alertas').innerHTML = st.alertas
+      ? `<p><b style="color:var(--up)">Ligados.</b> Os avisos chegam no seu Telegram.</p><div><button class="btn-secondary btn-sm" id="sy-teste">Enviar alerta de teste</button></div>`
+      : `<p>Desligados. Para ligar (uma vez só):</p>
+         <p>1. No Telegram, abra o <b>@BotFather</b>, mande <code>/newbot</code>, escolha um nome e copie o <b>token</b> que ele devolve.</p>
+         <p>2. Mande qualquer mensagem para o seu bot novo e abra <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> no navegador. Copie o número em <code>"chat":{"id":…}</code>.</p>
+         <p>3. No VPS, no arquivo <code>.env</code> do painel, acrescente <code>TELEGRAM_TOKEN=…</code> e <code>TELEGRAM_CHAT=…</code> e rode <code>systemctl restart kmcheck-admin</code>.</p>`;
+    const bt=$('#sy-teste'); if(bt) bt.onclick=async()=>{ try{ const r=await api('/api/admin/alertas/teste',{method:'POST'}); toast(r.ok?'Alerta enviado — confira o Telegram':'O Telegram recusou: confira o token e o chat', r.ok?'success':'error') }catch(e){ toast('Erro: '+e.message) } };
+  }catch(e){ $('#sy-svc').innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>` }
+  try{
+    const sg = await api('/api/admin/seguranca');
+    $('#sy-aud').innerHTML = sg.auditoria.length ? sg.auditoria.map(a=>`<tr><td>${fmtDate(a.ts)}</td><td>${a.ok?'<span class="tag tag-green">entrou</span>':'<span class="tag tag-red">recusado</span>'}</td><td>${esc(a.como||'')}</td><td class="mono">${esc(a.ip)}</td><td title="${esc(a.ua)}">${esc(navDe(a.ua))}</td></tr>`).join('')
+      : '<tr><td colspan="5" class="empty">Nenhum acesso registrado ainda</td></tr>';
+    desenha2fa(sg);
+  }catch(e){}
+}
+const navDe = ua => { ua=ua||''; const so=/iPhone|iPad/.test(ua)?'iPhone':/Android/.test(ua)?'Android':/Mac OS/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':/Linux/.test(ua)?'Linux':'';
+  const nav=/Edg\//.test(ua)?'Edge':/Chrome\//.test(ua)?'Chrome':/Firefox\//.test(ua)?'Firefox':/Safari\//.test(ua)?'Safari':''; return [nav,so].filter(Boolean).join(' · ')||ua.slice(0,40) };
+function desenha2fa(sg){
+  const box = $('#sy-2fa');
+  if (sg.totp){
+    box.innerHTML = `<p><b style="color:var(--up)">Ligada.</b> O login pede o código do app autenticador.</p>
+      <p>Para desligar, informe um código atual: <input id="sy-cod-off" inputmode="numeric" maxlength="6" placeholder="000000"> <button class="btn-secondary btn-sm" id="sy-off">Desligar</button></p>
+      <p style="color:var(--text3)">Perdeu o celular? No VPS, acrescente <code>ADMIN_2FA_OFF=1</code> no <code>.env</code> do painel e reinicie.</p>`;
+    $('#sy-off').onclick = async()=>{ try{ await api('/api/admin/seguranca/2fa',{method:'DELETE',body:JSON.stringify({codigo:$('#sy-cod-off').value})}); toast('Verificação em duas etapas desligada','success'); loadSistema() }catch(e){ toast(e.message) } };
+    return;
+  }
+  box.innerHTML = `${sg.totp_desligado_pelo_env?'<p style="color:var(--yellow)">Está desligada pelo ADMIN_2FA_OFF=1 no .env.</p>':''}<p><b>Desligada.</b> Só a senha protege o painel.</p><div><button class="btn-secondary btn-sm" id="sy-on">Ligar a verificação em duas etapas</button></div>`;
+  $('#sy-on').onclick = async()=>{
+    try{
+      const r = await api('/api/admin/seguranca/2fa',{method:'POST'});
+      box.innerHTML = `<p>1. No celular, abra um app autenticador (Google Authenticator, Microsoft Authenticator…) e leia o QR code, ou digite a chave:</p>
+        <div id="sy-qr"></div><p><code>${esc(r.segredo.replace(/(.{4})/g,'$1 ').trim())}</code></p>
+        <p>2. Digite o código de 6 dígitos que aparecer: <input id="sy-cod" inputmode="numeric" maxlength="6" placeholder="000000"> <button class="btn-secondary btn-sm" id="sy-conf">Confirmar e ligar</button></p>`;
+      desenhaQr(r.url);
+      $('#sy-conf').onclick = async()=>{ try{ await api('/api/admin/seguranca/2fa/confirmar',{method:'POST',body:JSON.stringify({codigo:$('#sy-cod').value})}); toast('Verificação em duas etapas ligada','success'); loadSistema() }catch(e){ toast(e.message) } };
+    }catch(e){ toast('Erro: '+e.message) }
+  };
+}
+/* QR code: biblioteca carregada só quando precisa (sem ela, a chave digitada também funciona) */
+function desenhaQr(url){
+  const vai = () => { try{ new QRCode($('#sy-qr'), { text:url, width:168, height:168, correctLevel:QRCode.CorrectLevel.M }) }catch(e){ $('#sy-qr').remove() } };
+  if (window.QRCode) return vai();
+  const sc = document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  sc.onload = vai; sc.onerror = () => { const q=$('#sy-qr'); if(q) q.remove() }; document.head.appendChild(sc);
+}
+
+
+/* ══════════════════════════════════════════════════
+   CAMPO — uso real e qualidade (resumo diário que o app ≥ 358 manda, inclusive do uso sem internet)
+   ══════════════════════════════════════════════════ */
+const mediana = a => { if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2 };
+const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+const seg = ms => ms==null ? '—' : ms<1000 ? Math.round(ms)+' ms' : (ms/1000).toFixed(ms<10000?1:0).replace('.',',')+' s';
+let _cpVias = [];
+function campo(){
+  const dias = chaves(0,PER).reverse(), set = new Set(dias);
+  const com = USO.filter(a=>a.tele && Object.keys(a.tele).some(k=>set.has(k)));
+  const T = { foto:0, falha:0, min:0, ses:0, carro:0, ckm:0, cco:0, baix:0, atu:0, apag:0, imp:0, semfix:0, off:0, gb:[0,0,0,0,0], fix:[], cam:[], fmt:{}, lado:{} };
+  const porDia = dias.map(()=>0), vias = {}, mods = new Map();
+  let aberturas = 0;
+  for (const a of com){
+    const md = mods.get(a.modelo||'?') || { cel:0, gb:[0,0,0,0,0], fix:[], cam:[], foto:0, falha:0 }; md.cel++;
+    for (const [k,t] of Object.entries(a.tele)){ if(!set.has(k)) continue; const c=t.c||{};
+      T.foto+=c.foto||0; T.falha+=c.foto_falha||0; T.min+=t.min||0; T.ses+=t.ses||0; T.carro+=c.carro_min||0; T.ckm+=c.consulta_km||0; T.cco+=c.consulta_coord||0;
+      T.baix+=c.rodovia_baixada||0; T.atu+=c.rodovia_atualizada||0; T.apag+=c.rodovia_apagada||0; T.imp+=c.importacao||0; T.semfix+=t.semfix||0; T.off+=t.off||0;
+      for (const [q,n] of Object.entries(c)){ if(q.startsWith('fmt_')) T.fmt[q.slice(4).replace('x',':')]=(T.fmt[q.slice(4).replace('x',':')]||0)+n; if(q.startsWith('lado_')) T.lado[q.slice(5)]=(T.lado[q.slice(5)]||0)+n }
+      t.gb.forEach((v,i)=>{ T.gb[i]+=v; md.gb[i]+=v }); T.fix.push(...t.fix); T.cam.push(...t.cam); md.fix.push(...t.fix); md.cam.push(...t.cam);
+      md.foto+=c.foto||0; md.falha+=c.foto_falha||0;
+      porDia[dias.indexOf(k)] += c.foto||0;
+      for (const [v,n] of Object.entries(t.fv||{})){ const x=vias[v]||(vias[v]={n:0,cel:new Set()}); x.n+=n; x.cel.add(a.id) }
+      aberturas += (a.dias[k]||{}).n||0;
+    }
+    mods.set(a.modelo||'?', md);
+  }
+  const ativosDias = com.reduce((s,a)=>s+Object.keys(a.tele).filter(k=>set.has(k)).length,0);
+  $('#cp-fotos').textContent = T.foto.toLocaleString('pt-BR');
+  $('#cp-fotos-d').textContent = ativosDias ? `${(T.foto/ativosDias).toFixed(1).replace('.',',')} por celular por dia de uso` : 'sem dados ainda';
+  $('#cp-tempo').textContent = T.min>=120 ? Math.round(T.min/60)+' h' : T.min+' min';
+  $('#cp-tempo-d').textContent = T.ses ? `${Math.round(T.min/T.ses)} min por sessão · ${T.ses} sessões` : '—';
+  $('#cp-off').textContent = aberturas ? pct(T.off,aberturas)+'%' : '—';
+  $('#cp-off-d').textContent = `${T.off} aberturas sem sinal recuperadas`;
+  $('#cp-carro').textContent = T.carro>=120 ? Math.round(T.carro/60)+' h' : T.carro+' min';
+  $('#cp-carro-d').textContent = T.min ? pct(T.carro,T.min)+'% do tempo de uso' : '—';
+  $('#cp-cons').textContent = T.ckm+T.cco; $('#cp-cons-d').textContent = `${T.ckm} coordenada→KM · ${T.cco} KM→coordenada`;
+  $('#cp-rod').textContent = T.baix+T.imp; $('#cp-rod-d').textContent = `${T.baix} baixadas · ${T.imp} importadas · ${T.atu} atualizadas · ${T.apag} apagadas`;
+  const total = USO.filter(a=>Object.keys(a.dias).some(k=>set.has(k))).length;
+  $('#cp-cob').textContent = `${com.length} de ${total} celulares ativos no período já mandam o uso em campo (versão 358+). ${Object.entries(T.fmt).map(([f,n])=>f+' '+pct(n,T.foto)+'%').join(' · ')}${Object.keys(T.lado).length?' · '+Object.entries(T.lado).map(([l,n])=>l+' '+pct(n,T.foto)+'%').join(' · '):''}`;
+  /* fotos por dia */
+  const svg=$('#cp-graf'), W=1000, H=240, max=Math.max(1,...porDia), bw=W/dias.length, g=Math.min(4,bw*.25); let h='';
+  for (let y=0;y<=4;y++){ const yy=H-20-(H-30)*y/4; h+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="rgba(255,255,255,.06)"/>` }
+  porDia.forEach((n,i)=>{ if(!n) return; const hh=(H-30)*n/max; h+=`<rect x="${(i*bw+g/2).toFixed(1)}" y="${(H-20-hh).toFixed(1)}" width="${(bw-g).toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="#b7d92d" data-i="${i}"/>` });
+  const passo=Math.ceil(dias.length/8); dias.forEach((k,i)=>{ if(i%passo===0||i===dias.length-1) h+=`<text x="${(i*bw+bw/2).toFixed(1)}" y="${H-4}" fill="rgba(255,255,255,.42)" font-size="11" text-anchor="middle">${ddmm(k)}</text>` });
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=h;
+  svg.onmousemove=e=>{ const r=e.target.closest('rect'); if(!r){ escondeDica(); return } const i=+r.dataset.i; mostraDica(`<b>${ddmm(dias[i])}</b><br>${porDia[i]} fotos`,e.clientX,e.clientY) };
+  svg.onmouseleave=escondeDica;
+  /* fotos por rodovia */
+  _cpVias = Object.entries(vias).map(([v,x])=>({v,n:x.n,cel:x.cel.size})).sort((a,b)=>b.n-a.n);
+  const mx = _cpVias[0]?.n||1;
+  $('#cp-vias').innerHTML = _cpVias.length ? _cpVias.map(x=>`<div class="vrow ${x.v==='sem rodovia'?'':'nova'}"><span title="${x.cel} celulares">${esc(x.v)}</span><span class="vtri"><i style="width:${(x.n/mx*100).toFixed(1)}%"></i></span><b>${x.n}</b></div>`).join('') : '<p class="empty">Sem fotos no período</p>';
+  /* qualidade por modelo */
+  const ms=[...mods.entries()].sort((a,b)=>b[1].cel-a[1].cel);
+  $('#cp-mod').innerHTML = ms.length ? ms.map(([m,x])=>{ const tg=x.gb.reduce((s,v)=>s+v,0);
+    return `<tr><td>${esc(m)}</td><td>${x.cel}</td><td>${tg?pct(x.gb[0]+x.gb[1],tg)+'%':'—'}</td><td>${seg(mediana(x.fix))}</td><td>${seg(mediana(x.cam))}</td><td>${x.foto+x.falha?pct(x.falha,x.foto+x.falha)+'%':'—'}</td></tr>` }).join('')
+    : '<tr><td colspan="6" class="empty">Sem dados ainda — chegam dos celulares na versão 358+</td></tr>';
+  /* resumo de GPS e câmera */
+  const tg=T.gb.reduce((s,v)=>s+v,0), cores=['#7fd88f','#b7d92d','#e2b54a','#e9806f','#ef5b4b'], nomes=['< 5 m','5–10 m','10–20 m','20–50 m','> 50 m'];
+  const p90 = a => { if(!a.length) return null; const b=[...a].sort((x,y)=>x-y); return b[Math.min(b.length-1,Math.floor(b.length*.9))] };
+  $('#cp-q').innerHTML = `<div class="qbar">${tg?T.gb.map((v,i)=>v?`<i style="width:${v/tg*100}%;background:${cores[i]}" title="${nomes[i]}: ${pct(v,tg)}%"></i>`:'').join(''):''}</div>
+    <div class="legenda" style="margin:8px 0 6px">${nomes.map((n,i)=>`<span><i style="background:${cores[i]}"></i>${n} ${tg?pct(T.gb[i],tg)+'%':''}</span>`).join('')}</div>
+    <div class="qlin"><span>Tempo até o 1º sinal</span><b>${seg(mediana(T.fix))} · 90% em até ${seg(p90(T.fix))}</b></div>
+    <div class="qlin"><span>Tempo sem sinal de GPS</span><b>${T.min?pct(T.semfix,T.min)+'% do tempo de uso':'—'}</b></div>
+    <div class="qlin"><span>Abrir a câmera</span><b>${seg(mediana(T.cam))} · 90% em até ${seg(p90(T.cam))}</b></div>
+    <div class="qlin"><span>Falhas ao gravar a foto</span><b>${T.foto+T.falha?T.falha+' ('+pct(T.falha,T.foto+T.falha)+'%)':'—'}</b></div>
+    <div class="qlin"><span>Rodovias apagadas</span><b>${T.apag}</b></div>`;
+}
+$('#cp-csv').onclick = () => baixaCsv('kmcheck-fotos-por-rodovia', ['Rodovia','Fotos','Celulares'], _cpVias.map(x=>[x.v,x.n,x.cel]));
+
 async function loadUso(){
   try{
     const r = await api('/api/admin/uso');
     Object.assign(VIAS, r.vias||{});
     USO = r.aparelhos||[]; AGORA_MS = Date.parse(r.agora)||Date.now(); FORA = r.fora||FORA;
-    desenha();
+    desenha(); if(ABA==='saude') saude(); if(ABA==='produto') produto(); if(ABA==='campo') campo();
   }catch(e){ toast('Erro ao carregar o uso: '+e.message) }
 }
 
@@ -1033,7 +1520,7 @@ function desenha(){
   $('#pl-pct').textContent=Math.round(fa*100)+'%'; $('#pl-a').textContent=r.android; $('#pl-i').textContent=r.ativos.length-r.android;
   calor(r); mapa(r); barras(r);
 }
-$$('#periodo button').forEach(b=>b.onclick=()=>{ $$('#periodo button').forEach(x=>x.classList.toggle('on',x===b)); PER=+b.dataset.d; FILTRO=null; if(USO.length) desenha() });
+$$('#periodo button').forEach(b=>b.onclick=()=>{ $$('#periodo button').forEach(x=>x.classList.toggle('on',x===b)); PER=+b.dataset.d; FILTRO=null; if(USO.length) desenha(); if(ABA==='saude') saude(); if(ABA==='produto') produto(); if(ABA==='campo') campo() });
 addEventListener('resize',()=>{ if(ABA==='resumo') linha(SERIE); poeMarcador() });
 
 /* ── cartões do Resumo levam às listas ── */
@@ -1105,7 +1592,7 @@ async function loadDevices(){
     $('#ds-android').textContent = s.android;
     if(s.canais){ const c=s.canais;
       $('#ds-canal').innerHTML = `<span style="color:#5eb0ff">App Store ${c['app-store']||0}</span><br><span style="color:#5fd27f">Play Store ${c['play-store']||0}</span> · <span style="color:#c9e463">PWA ${c.pwa||0}</span>`;
-      $('#ds-canal-d').textContent = (c.navegador||0)+' no navegador'+(c.web?' · '+c.web+' site (versão antiga)':''); }
+      $('#ds-canal-d').textContent = (c.navegador||0)+' no navegador'+(c.web?' · '+c.web+' PWA ou navegador (versão antiga)':''); }
     $('#ds-today').textContent = s.active_today;
     $('#ds-week').textContent = s.active_week+' na semana';
     $('#ds-model').textContent = s.top_model ? s.top_model.name : '—';
@@ -1192,6 +1679,7 @@ function renderDevices(){
     if(va>vb) return _devSort.asc?1:-1;
     return 0;
   });
+  _devVis = data;   // o CSV exporta o que está na tela
   const tbody = $('#dev-tbody');
   /* no celular: um cartão por aparelho (tocar abre a ficha) */
   $('#dev-cards').innerHTML = data.length ? data.slice(0,300).map(d=>{ const fx=_snvReady?getDevFix(d):null, via=fx&&fx.dist<=5000?fx.br+'/'+fx.uf+' · km '+fx.km.toFixed(1):'';
@@ -1218,9 +1706,9 @@ function renderDevices(){
 }
 
 /* Por onde o app foi instalado (campo "canal" do ping; "web" = versão antiga, sem o campo) */
-const CANAL_NOME={'app-store':'App Store','play-store':'Play Store',pwa:'PWA',navegador:'Navegador',web:'Site'};
+const CANAL_NOME={'app-store':'App Store','play-store':'Play Store',pwa:'PWA',navegador:'Navegador',web:'PWA ou navegador'};
 const CANAL_COR={'app-store':'background:rgba(10,132,255,.16);color:#5eb0ff','play-store':'background:rgba(52,199,89,.16);color:#5fd27f',pwa:'background:rgba(183,217,45,.18);color:#c9e463',navegador:'background:rgba(255,255,255,.08);color:#aab2bd',web:'background:rgba(255,255,255,.05);color:#7d8590'};
-function tagCanal(d){ const c=d.canal||'web'; return `<span class="tag" style="${CANAL_COR[c]||''}" title="${c==='web'?'Versão antiga do app: ainda não diz se é PWA ou navegador':'Instalado por: '+(CANAL_NOME[c]||c)}">${CANAL_NOME[c]||esc(c)}</span>` }
+function tagCanal(d){ const c=d.canal||'web'; return `<span class="tag" style="${CANAL_COR[c]||''}" title="${c==='web'?'Abriu pelo site numa versão anterior à 356, que ainda não dizia se estava instalado (PWA) ou no navegador. Muda sozinho quando abrir a versão nova.':'Instalado por: '+(CANAL_NOME[c]||c)}">${CANAL_NOME[c]||esc(c)}</span>` }
 /* Ícones de plataforma (Apple e Android) */
 const _svgApple='<svg class="plat-icon" viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184 4 273.5c0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-62.1 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>';
 const _svgAndroid='<svg class="plat-icon" viewBox="0 0 24 24" fill="#b7d92d"><path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0012 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.983 5.983 0 006 7h12c0-2.17-1.16-4.06-2.97-5.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>';
@@ -1398,6 +1886,9 @@ function renderDevDetail(r){
   html += infoItem('Primeiro acesso', fmtDate(d.first_seen));
   html += infoItem('Último acesso', fmtDate(d.last_ping));
   html += infoItem('Bases baixadas', (d.bases_count || 0) + ' rodovias');
+  if (d.snap) { html += infoItem('Contratos cadastrados', String(d.snap.contratos||0));
+    if (d.snap.cota_mb) html += infoItem('Espaço do app', `${d.snap.usado_mb} MB de ${d.snap.cota_mb>=1024?(d.snap.cota_mb/1024).toFixed(0)+' GB':d.snap.cota_mb+' MB'} disponíveis`) }
+  if (d.interno) html += infoItem('Classificação', '<span class="tag" style="background:rgba(226,181,74,.16);color:#f0cf7d">Equipe / teste</span>');
   if (d.hw) {
     if (d.hw.chip) html += infoItem('Chip', esc(d.hw.chip) + (d.hw.bench != null ? ' (bench: ' + d.hw.bench + 'ms)' : ''));
     else if (d.hw.bench != null) html += infoItem('Benchmark CPU', d.hw.bench + 'ms');
@@ -1408,6 +1899,8 @@ function renderDevDetail(r){
     if (d.hw.cam) html += infoItem('Câmeras', d.hw.cam.back + ' traseiras' + (d.hw.cam.telephoto ? ' (teleobjetiva = Pro)' : ''));
   }
   html += '</div>';
+  /* equipe, TestFlight, revisão da loja: tirar dos números (vale para todas as reinstalações do aparelho) */
+  html += `<div class="marca-int"><button class="btn-secondary btn-sm" onclick="marcaInterno('${esc(d.device_id)}',${d.interno?'false':'true'})">${d.interno?'Voltar a contar nos números':'Marcar como equipe / teste'}</button><span>${d.interno?'Este aparelho está fora das contagens.':'Use para os seus aparelhos, os do André, TestFlight e revisão da loja.'}</span></div>`;
 
   /* rodovias por onde passou: as regiões de cada dia de uso, ligadas à rodovia federal mais próxima */
   const porVia = new Map();

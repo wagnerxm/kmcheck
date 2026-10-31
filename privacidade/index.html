@@ -33,7 +33,7 @@ footer{margin-top:48px;color:var(--tinta3);font-size:14px}
 <header><img src="../logo-kmcheck.png" alt="KM Check"></header>
 <span class="olho">KM Check</span>
 <h1>Política de Privacidade</h1>
-<p class="data">Última atualização: 14 de outubro de 2026</p>
+<p class="data">Última atualização: 31 de outubro de 2026</p>
 
 <div class="resumo">
 <b>Resumo</b>
@@ -65,7 +65,10 @@ footer{margin-top:48px;color:var(--tinta3);font-size:14px}
 <li>um código do aparelho (um pseudônimo: não traz o seu nome, o número do celular nem o IMEI), usado para contar quantos aparelhos usam o app sem contar o mesmo celular duas vezes. Na versão da loja Android, ele é calculado a partir do identificador que o Android fornece a cada app e vai embaralhado, sem como chegar ao identificador original; por isso continua o mesmo se você desinstalar e instalar o app de novo no mesmo celular. Na versão da App Store (iPhone), ele vem do identificador que o iOS fornece ao desenvolvedor, também embaralhado; o iPhone o troca se você apagar o app e instalar de novo. Nos aplicativos das lojas o app não mede o desempenho nem a placa de vídeo do aparelho: o modelo vem do próprio sistema. Não é usado para anúncios nem cruzado com dados de outros apps;</li>
 <li>versão do app, sistema operacional, marca e modelo do aparelho, tamanho da tela, navegador interno (user agent) e características técnicas usadas para reconhecer o modelo e o desempenho do aparelho (número de núcleos do processador, memória, placa de vídeo, câmeras disponíveis e um teste rápido de velocidade);</li>
 <li>a lista de rodovias baixadas no app;</li>
-<li>a região onde o app foi aberto, com precisão de cerca de 2 km (as coordenadas arredondadas para uma grade de 0,02°, nunca o ponto exato do GPS).</li>
+<li>a região onde o app foi aberto e as regiões por onde ele passou enquanto estava aberto, com precisão de cerca de 2 km (as coordenadas arredondadas para uma grade de 0,02°, nunca o ponto exato do GPS);</li>
+<li>um resumo do uso de cada dia, só com números: tempo com o app aberto, quantas vezes foi aberto (inclusive sem internet — o resumo fica guardado no aparelho e é enviado quando houver conexão), quantas fotos foram tiradas por formato, lado da pista e rodovia, minutos no Modo Carro, consultas, rodovias baixadas, atualizadas, apagadas ou importadas, quantidade de rodovias e de contratos cadastrados (sem os nomes), espaço ocupado pelo app e a qualidade técnica do uso (faixa de precisão do GPS, tempo até o primeiro sinal, tempo sem sinal, tempo para abrir a câmera e falhas ao gravar a foto). Não envia fotos, legendas, nomes de contratos ou serviços, nem o ponto exato;</li>
+<li>como o app foi instalado (loja de aplicativos, tela de início ou navegador);</li>
+<li>se o app tiver uma falha, o registro técnico do erro: a mensagem de erro, o trecho do código onde aconteceu, a versão do app, a tela que estava aberta e o código do aparelho. Ele não traz fotos, legendas, rodovias consultadas nem a localização.</li>
 </ul>
 <p>Usamos essas informações para dar suporte, entender em quais aparelhos e rodovias o app é usado e corrigir problemas. Você pode desligar o envio a qualquer momento tocando em <b>VERSÃO ⓘ</b>, no topo do app, que abre a janela <b>Sobre o KM Check</b>, na chave <b>Enviar dados de uso</b>.</p>
 <p><b>Download de rodovias.</b> Quando você baixa uma rodovia, o app pede ao nosso servidor (kmcheck.com.br e api.kmcheck.com.br) o traçado daquela rodovia. Se o nosso servidor não responder, o app pode buscar os mesmos dados públicos num servidor reserva do mesmo responsável (controlcheck.duckdns.org) ou diretamente no serviço público de mapas do DNIT (geoservicos.inde.gov.br). Esses pedidos informam apenas a rodovia e a UF. Os dados técnicos de uso nunca vão para esses endereços.</p>
@@ -75,7 +78,7 @@ footer{margin-top:48px;color:var(--tinta3);font-size:14px}
 <p>Não vendemos nem alugamos dados. Os dados técnicos de uso ficam no servidor do KM Check e não são repassados a terceiros. Usamos fornecedores apenas para hospedar o app e os dados: servidor contratado na Contabo e o GitHub Pages (GitHub), que entrega a versão web do app. O manual do usuário, quando aberto com internet, carrega fontes de texto do Google Fonts.</p>
 
 <h2>5. Por quanto tempo guardamos</h2>
-<p>O resumo do uso de cada dia é apagado automaticamente depois de cerca de 7 meses. O cadastro do aparelho (código, modelo, versão do app e último acesso) fica guardado enquanto o app for usado e é apagado quando você pedir. Os registros técnicos de acesso são guardados pelo tempo necessário à segurança dos servidores.</p>
+<p>O resumo do uso de cada dia e o histórico de acessos são apagados automaticamente depois de cerca de 7 meses. Os registros de erro guardam só as 300 falhas mais recentes. Os dados do painel têm uma cópia de segurança por dia, guardada no próprio servidor por 14 dias. O cadastro do aparelho (código, modelo, versão do app e último acesso) fica guardado enquanto o app for usado e é apagado quando você pedir. Os registros técnicos de acesso são guardados pelo tempo necessário à segurança dos servidores.</p>
 
 <h2>6. Os seus direitos (LGPD)</h2>
 <p>Pela Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você pode pedir a confirmação de que tratamos seus dados, o acesso a eles, a correção, a exclusão e informações sobre o compartilhamento, além de revogar a autorização a qualquer momento. Para isso, escreva para <a href="mailto:suporte@kmcheck.com.br">suporte@kmcheck.com.br</a>. Informe, se possível, o código do aparelho, que aparece no app (toque em <b>VERSÃO ⓘ</b>, no topo do app, que abre a janela <b>Sobre o KM Check</b> › Código do aparelho), para localizarmos os dados do seu celular.</p>
