@@ -1214,11 +1214,11 @@ app.get('/api/admin/snv-leve.json', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400').type('json').send(readFileSync(f));
 });
 
-/* Logo do painel (pasta img/, gerada por gerar-logo.mjs): só as imagens painel-*.png */
+/* Logo e fundo do painel (pasta img/): só as imagens painel-*.png e painel-*.webp (a arte da rodovia do fundo) */
 app.get('/api/admin/img/:f', (req, res) => {
-  const f = req.params.f;
-  if (!/^painel-[a-z0-9-]+\.png$/.test(f) || !existsSync(join(__dirname, 'img', f))) return res.status(404).end();
-  res.set('Cache-Control', 'public, max-age=604800').type('png').send(readFileSync(join(__dirname, 'img', f)));
+  const f = req.params.f, m = /^painel-[a-z0-9-]+\.(png|webp)$/.exec(f);
+  if (!m || !existsSync(join(__dirname, 'img', f))) return res.status(404).end();
+  res.set('Cache-Control', 'public, max-age=604800').type(m[1]).send(readFileSync(join(__dirname, 'img', f)));
 });
 
 /* Manifesto: permite pôr o painel na tela de início do celular e abrir em tela cheia, sem as barras do navegador */

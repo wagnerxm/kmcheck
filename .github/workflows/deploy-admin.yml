@@ -1,7 +1,7 @@
 # =============================================================================
 # deploy-admin.yml — Atualiza o painel do KM Check (admin/) no Contabo VPS
 #
-# Dispara em push na main que altere admin/server.mjs ou admin/panel.html (ou pelo botão manual).
+# Dispara em push na main que altere admin/server.mjs, admin/panel.html ou a arte do fundo (ou pelo botão manual).
 # Copia os dois arquivos para a pasta onde o serviço kmcheck-admin roda (lida do próprio systemd,
 # para não depender de caminho fixo), guarda cópia de segurança, confere a sintaxe e reinicia.
 # Se o painel não voltar a responder, restaura a cópia anterior e reinicia de novo.
@@ -17,6 +17,7 @@ on:
     paths:
       - 'admin/server.mjs'
       - 'admin/panel.html'
+      - 'admin/img/painel-fundo.webp'
       - '.github/workflows/deploy-admin.yml'
   workflow_dispatch:
 
@@ -39,7 +40,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "admin/server.mjs,admin/panel.html"
+          source: "admin/server.mjs,admin/panel.html,admin/img/painel-fundo.webp"
           target: "/tmp/kmcheck-admin-novo"
           strip_components: 1
           overwrite: true
@@ -67,6 +68,8 @@ jobs:
             cp "$DIR/panel.html" "$DIR/panel.html.bak-$STAMP"
             cp "$NOVO/server.mjs" "$DIR/server.mjs"
             cp "$NOVO/panel.html" "$DIR/panel.html"
+            # arte do fundo do painel (temas claro e escuro); a pasta img/ já existe com a logo
+            mkdir -p "$DIR/img" && cp "$NOVO/img/painel-fundo.webp" "$DIR/img/painel-fundo.webp"
             # porta do painel: a do .env, senão 3457 (padrão do server.mjs)
             PORT=$(grep -s '^ADMIN_PORT=' "$DIR/.env" | cut -d= -f2 | tr -d '\r "' || true)
             PORT=${PORT:-3457}
