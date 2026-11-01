@@ -845,6 +845,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
   let ios = 0, android = 0, other = 0, activeToday = 0, activeWeek = 0;
   let totalBases = 0;
   const canais = { 'app-store': 0, 'play-store': 0, pwa: 0, navegador: 0, web: 0 };
+  const canaisTotal = { 'app-store': 0, 'play-store': 0, pwa: 0, navegador: 0, web: 0 };   // desde sempre ("baixados"): o canal é o da última abertura
   const versionCount = {}, brandCount = {}, modelCount = {};
   /* iOS/Android/ativos contam APARELHOS reais (reinstalações juntas, sem computadores nem testes) */
   for (const d of aparelhos) {
@@ -853,6 +854,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
     if (d.last_ping >= dayAgo) activeToday++;
     if (d.last_ping >= weekAgo) activeWeek++;
     if (d.last_ping >= mes) canais[d.canal || 'web'] = (canais[d.canal || 'web'] || 0) + 1;
+    canaisTotal[d.canal || 'web'] = (canaisTotal[d.canal || 'web'] || 0) + 1;
   }
   for (const d of devices) {
     if (d.categoria !== 'celular') other++;
@@ -868,7 +870,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
   res.json({
     devices,
     stats: {
-      total: devices.length, ios, android, other, canais,
+      total: devices.length, ios, android, other, canais, canais_total: canaisTotal,
       usuarios_30d: aparelhos.filter(d => d.last_ping >= mes).length,
       aparelhos: aparelhos.length,
       codigos_celular: devices.filter(d => d.categoria === 'celular').length,
