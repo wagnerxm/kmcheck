@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "generated_at": "2026-10-31T20:44:15.313163+00:00",
+  "generated_at": "2026-11-01T01:36:36.805526+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -32,6 +32,7 @@
     "EFL Cup",
     "Ekstraklasa - Poland",
     "Eliteserien - Norway",
+    "FA Cup",
     "J League",
     "K League 1",
     "La Liga 2 - Spain",
@@ -50,12 +51,127 @@
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
-  "singles": [],
+  "singles": [
+    {
+      "id": 1,
+      "home": "Monterrey",
+      "away": "Tijuana",
+      "league": "Liga MX",
+      "league_key": "soccer_mexico_ligamx",
+      "time": "22:05",
+      "kickoff_at": "2026-11-01T01:05:00Z",
+      "market": "Resultado Final",
+      "sel": "Monterrey",
+      "sel_key": "home",
+      "odd": 2.68,
+      "book": "Pinnacle",
+      "edge": 9.0,
+      "score": 62,
+      "fairP": 0.463,
+      "odds": {
+        "888sport": 1.65,
+        "Betclic (FR)": 1.6,
+        "Betfair": 1.73,
+        "Betsson": 1.68,
+        "Coolbet": 1.73,
+        "LeoVegas (SE)": 1.57,
+        "Marathon": 1.64,
+        "Matchbook": 1.73,
+        "NordicBet": 1.68,
+        "PMU (FR)": 1.51,
+        "Pinnacle": 2.68,
+        "Tipico": 1.75,
+        "Unibet (NL)": 1.7,
+        "Unibet (SE)": 1.68
+      },
+      "models": {
+        "Consensus": 0.463
+      },
+      "zebra": true,
+      "zebra_tier": "bronze"
+    },
+    {
+      "id": 2,
+      "home": "Monterrey",
+      "away": "Tijuana",
+      "league": "Liga MX",
+      "league_key": "soccer_mexico_ligamx",
+      "time": "22:05",
+      "kickoff_at": "2026-11-01T01:05:00Z",
+      "market": "Resultado Final",
+      "sel": "Empate",
+      "sel_key": "draw",
+      "odd": 3.75,
+      "book": "Betfair",
+      "edge": 6.4,
+      "score": 57,
+      "fairP": 0.331,
+      "odds": {
+        "888sport": 3.25,
+        "Betclic (FR)": 3.35,
+        "Betfair": 3.75,
+        "Betsson": 3.4,
+        "Coolbet": 3.75,
+        "LeoVegas (SE)": 3.3,
+        "Marathon": 3.44,
+        "Matchbook": 3.7,
+        "NordicBet": 3.4,
+        "PMU (FR)": 3.1,
+        "Pinnacle": 3.26,
+        "Tipico": 3.6,
+        "Unibet (NL)": 3.4,
+        "Unibet (SE)": 3.5
+      },
+      "models": {
+        "Consensus": 0.331
+      },
+      "zebra": true,
+      "zebra_tier": "silver"
+    },
+    {
+      "id": 3,
+      "home": "Monterrey",
+      "away": "Tijuana",
+      "league": "Liga MX",
+      "league_key": "soccer_mexico_ligamx",
+      "time": "22:05",
+      "kickoff_at": "2026-11-01T01:05:00Z",
+      "market": "Resultado Final",
+      "sel": "Tijuana",
+      "sel_key": "away",
+      "odd": 6.0,
+      "book": "Betfair",
+      "edge": 4.0,
+      "score": 52,
+      "fairP": 0.207,
+      "odds": {
+        "888sport": 4.4,
+        "Betclic (FR)": 4.55,
+        "Betfair": 6.0,
+        "Betsson": 4.85,
+        "Coolbet": 5.0,
+        "LeoVegas (SE)": 4.6,
+        "Marathon": 4.95,
+        "Matchbook": 5.6,
+        "NordicBet": 4.85,
+        "PMU (FR)": 4.4,
+        "Pinnacle": 2.63,
+        "Tipico": 4.0,
+        "Unibet (NL)": 5.1,
+        "Unibet (SE)": 4.9
+      },
+      "models": {
+        "Consensus": 0.207
+      },
+      "zebra": false,
+      "zebra_tier": ""
+    }
+  ],
   "multiples": [],
   "kpis": {
-    "roi": 0,
-    "hitRate": 0,
-    "brier": 0,
-    "edge": 0
+    "roi": 7.8,
+    "hitRate": 55.2,
+    "brier": 0.218,
+    "edge": 6.5
   }
 }
