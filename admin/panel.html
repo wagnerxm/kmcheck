@@ -591,6 +591,22 @@ html body{background:transparent}
 .mc .z{opacity:0}.mc.dorme .z{animation:mcZ 2.6s ease-in-out infinite}.mc.dorme .z2{animation-delay:1.3s}
 @keyframes mcZ{0%{opacity:0;transform:translate(0,0)}30%{opacity:1}100%{opacity:0;transform:translate(14px,-22px)}}
 .mc .fone{transition:opacity .3s}
+/* ── ficha do aparelho: "Quem é?" — pistas para reconhecer a pessoa e dar um nome ── */
+.quem{border-radius:18px;padding:16px 18px;margin-bottom:18px;background:linear-gradient(140deg,rgba(183,217,45,.12),rgba(183,217,45,.02) 60%),rgba(255,255,255,.03);border:1px solid rgba(183,217,45,.22)}
+.quem h3{margin:0 0 4px;font-size:15px;font-weight:600}.quem>p{margin:0 0 12px;color:var(--text2);font-size:12.5px}
+.quem .nome{display:flex;gap:8px;margin-bottom:14px}
+.quem .nome input{flex:1;min-width:0;border-radius:12px;padding:10px 14px;font-size:14px}
+.quem .nome button{background:var(--lima);color:#0a0c0e;font-weight:600;border-radius:12px;padding:0 16px;white-space:nowrap}
+.pistas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pista{background:rgba(255,255,255,.04);border-radius:12px;padding:10px 12px;min-width:0}
+.pista .lbl{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px}
+.pista .val{font-size:13px;line-height:1.45}.pista .val small{color:var(--text3);font-size:11.5px}
+.juntos{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.juntos button{display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.04);font-size:13px}
+.juntos button:hover{background:rgba(255,255,255,.08);transform:none}.juntos small{color:var(--text3);font-size:11.5px;white-space:nowrap}
+.user-name.falta{border-color:rgba(226,181,74,.45)}.user-name.falta::placeholder{color:#e2b54a}
+.sem-nome{background:rgba(226,181,74,.16);color:#f0cf7d}
+@media(max-width:760px){.pistas{grid-template-columns:1fr}}
 @media(hover:none){ .dica{display:none} }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -1905,11 +1921,11 @@ function renderDevices(){
   const tbody = $('#dev-tbody');
   /* no celular: um cartão por aparelho (tocar abre a ficha) */
   $('#dev-cards').innerHTML = data.length ? data.slice(0,300).map(d=>{ const fx=_snvReady?getDevFix(d):null, via=fx&&fx.dist<=5000?fx.br+'/'+fx.uf+' · km '+fx.km.toFixed(1):'';
-    return `<div class="dcard" data-did="${esc(d.device_id)}"><span class="ic ${d.platform==='iOS'?'ios':''}">${icone}</span><span style="min-width:0"><b>${esc(d.nickname||d.model||shortId(d.device_id))}</b> ${tagCanal(d)}<small>${esc([d.nickname?d.model:'',d.os_version,'v'+(d.app_version||'?')].filter(Boolean).join(' · '))}</small>${via?'<small>'+via+'</small>':''}</span><span class="dir2">${d.last_ping?quando(d.last_ping):'—'}<br>${d.ping_count||0} usos</span></div>` }).join('')
+    return `<div class="dcard" data-did="${esc(d.device_id)}"><span class="ic ${d.platform==='iOS'?'ios':''}">${icone}</span><span style="min-width:0"><b>${esc(d.nickname||d.model||shortId(d.device_id))}</b> ${tagCanal(d)}${semNome(d)?' <span class="tag sem-nome">sem nome</span>':''}<small>${esc([d.nickname?d.model:'',d.os_version,'v'+(d.app_version||'?')].filter(Boolean).join(' · '))}</small>${via?'<small>'+via+'</small>':''}</span><span class="dir2">${d.last_ping?quando(d.last_ping):'—'}<br>${d.ping_count||0} usos</span></div>` }).join('')
     : '<p class="empty">Nenhum dispositivo encontrado</p>';
   if(!data.length){ tbody.innerHTML = '<tr><td colspan="14" class="empty">Nenhum dispositivo encontrado</td></tr>'; return }
   tbody.innerHTML = data.map(d=>`<tr>
-    <td><input class="user-name" type="text" value="${esc(d.nickname||'')}" placeholder="…" data-did="${esc(d.device_id)}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
+    <td><input class="user-name${semNome(d)?' falta':''}" type="text" value="${esc(d.nickname||'')}" placeholder="${semNome(d)?'sem nome':'…'}" data-did="${esc(d.device_id)}" onblur="saveNickname(this)" onkeydown="if(event.key==='Enter')this.blur()"></td>
     <td class="mono" title="${esc(d.device_id)}"><a class="dev-id-link" href="#" onclick="openDevDetail('${esc(d.device_id)}');return false">${shortId(d.device_id)}</a></td>
     <td>${esc(d.model)||'<span class=muted>—</span>'}${d.grupo_tamanho>1?' <span class="tag" title="Mesmo celular reinstalado: '+d.grupo_tamanho+' códigos juntados">'+(d.reinstalacao?'reinstalado':d.grupo_tamanho+' instalações')+'</span>':''}</td>
     <td>${platIcon(d.platform)} ${esc(normBrand(d.brand)||d.platform||'—')}</td>
@@ -1940,6 +1956,8 @@ function platIcon(p){
   return '<span class="plat-icon" style="font-size:13px">▢</span>';
 }
 
+/* ativo nos últimos 30 dias e ainda sem nome: pede identificação na lista */
+function semNome(d){ return !d.nickname && d.last_ping && Date.now()-Date.parse(d.last_ping) < 30*864e5 }
 /* Salvar apelido do usuário no servidor */
 async function saveNickname(el){
   const did = el.dataset.did, nick = el.value.trim();
@@ -2095,7 +2113,8 @@ async function openDevDetail(id){
 function renderDevDetail(r){
   const d = r.device, days = r.days || [], ips = r.all_ips || [];
   Object.assign(VIAS, r.vias || {});
-  let html = '<div class="dev-info">';
+  let html = blocoQuem(d, r.pistas);
+  html += '<div class="dev-info">';
   if (d.nickname) html += infoItem('Usuário', esc(d.nickname));
   html += infoItem('Device ID', '<span class="mono">'+esc(d.device_id)+'</span>');
   html += infoItem('Modelo', esc(d.model || '—'));
@@ -2163,6 +2182,40 @@ function renderDevDetail(r){
   }
   $('#dm-body').innerHTML = html;
 }
+/* "Quem é?": as pistas que o servidor juntou (onde, que rodovias, que horas, com quem anda) e o campo do nome */
+function blocoQuem(d, p){
+  const hh=h=>String(h).padStart(2,'0')+'h', fd=s=>s?s.slice(0,10).split('-').reverse().join('/'):'—';
+  let h=`<div class="quem"><h3>${d.nickname?'Este aparelho é de '+esc(d.nickname):'Quem é?'}</h3>
+    <p>${d.nickname?'Troque o nome se precisar. Ele vale para todas as reinstalações deste celular.':'O app não informa o nome de ninguém. Use as pistas abaixo para reconhecer a pessoa e dar um nome: ele aparece no lugar do modelo em todo o painel.'}</p>
+    <div class="nome"><input id="quem-nome" type="text" maxlength="60" placeholder="Ex.: André, Equipe BR-304…" value="${esc(d.nickname||'')}"><button id="quem-salva" data-did="${esc(d.device_id)}">Salvar nome</button></div>`;
+  if(p){
+    const pista=(lbl,val)=>`<div class="pista"><div class="lbl">${lbl}</div><div class="val">${val}</div></div>`;
+    h+='<div class="pistas">';
+    h+=pista('Onde costuma usar', p.regioes.length?p.regioes.map(x=>`${esc(x.nome)} <small>${x.dias} ${x.dias===1?'dia':'dias'}</small>`).join('<br>'):'<small>sem localização</small>');
+    h+=pista('Rodovias e trechos', p.vias.length?p.vias.map(v=>`${esc(v.id)} <small>km ${fmt(v.de)}${v.ate!==v.de?' a '+fmt(v.ate):''} · ${v.dias} ${v.dias===1?'dia':'dias'}</small>`).join('<br>'):'<small>nenhum uso perto de BR</small>');
+    h+=pista('Horário de costume', p.faixa?`${hh(p.faixa.ini)} às ${hh(p.faixa.fim)} <small>${p.faixa.pct}% das aberturas</small>`:'<small>—</small>');
+    const tot=p.semana.uteis+p.semana.fds;
+    h+=pista('Dias da semana', tot?`${p.semana.uteis} úteis · ${p.semana.fds} no fim de semana <small>(${Math.round(p.semana.uteis/tot*100)}% em dia útil)</small>`:'<small>—</small>');
+    h+=pista('Desde quando', `${fd(p.primeiro)} <small>${p.dias} ${p.dias===1?'dia':'dias'} de uso${p.codigos>1?' · '+p.codigos+' instalações':''}</small>`);
+    h+=pista('Como instalou', tagCanal(d)+' <small>'+esc(d.model||'')+'</small>');
+    h+='</div>';
+    if(p.parecidos.length) h+=`<div class="section-title" style="margin-top:14px">Anda junto com</div><div class="juntos">${p.parecidos.map(x=>`<button data-abre="${esc(x.device_id)}"><span>${esc(x.nome||x.modelo)}${x.nome?' <small>'+esc(x.modelo)+'</small>':' <small>sem nome</small>'}</span><small>mesmo lugar em ${x.dias} dias</small></button>`).join('')}</div>`;
+  }
+  return h+'</div>';
+}
+$('#dm-body').addEventListener('click',async e=>{
+  const ab=e.target.closest('[data-abre]'); if(ab){ openDevDetail(ab.dataset.abre); return }
+  const b=e.target.closest('#quem-salva'); if(!b) return;
+  const did=b.dataset.did, nick=$('#quem-nome').value.trim();
+  b.disabled=true;
+  try{ await api('/api/admin/devices/'+encodeURIComponent(did)+'/nickname',{method:'PATCH',body:JSON.stringify({nickname:nick})});
+    toast(nick?'Nome salvo: '+nick:'Nome apagado','success');
+    const dev=_devData.find(x=>x.device_id===did); if(dev) dev.nickname=nick||null;
+    const a=USO.find(x=>x.ids&&x.ids.includes(did)); if(a) a.nick=nick||null;
+    openDevDetail(did); if(typeof loadDevices==='function') loadDevices();
+  }catch(err){ toast('Erro ao salvar nome: '+err.message) }finally{ b.disabled=false }
+});
+$('#dm-body').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='quem-nome') $('#quem-salva').click() });
 function infoItem(label, value){ return `<div class="item"><div class="lbl">${label}</div><div class="val">${value}</div></div>` }
 $('#dm-close').onclick = () => $('#dev-modal').classList.remove('open');
 $('#dev-modal').onclick = e => { if (e.target === $('#dev-modal')) $('#dev-modal').classList.remove('open') };

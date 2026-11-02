@@ -650,10 +650,94 @@ app.patch('/api/admin/devices/:id/nickname', auth, (req, res) => {
   const d = _db.devices[req.params.id];
   if (!d) return res.status(404).json({ error: 'Dispositivo não encontrado' });
   const { nickname } = req.body || {};
-  d.nickname = (nickname || '').trim() || null;
+  const nome = String(nickname || '').trim().slice(0, 60) || null;
+  /* vale para todas as reinstalações do mesmo celular (o mesmo grupo), senão o nome some quando ele reinstala */
+  const lista = montaLista(), grupo = (lista.find(x => x.device_id === d.device_id) || {}).grupo;
+  const alvos = grupo ? lista.filter(x => x.grupo === grupo).map(x => x.device_id) : [d.device_id];
+  if (!alvos.includes(d.device_id)) alvos.push(d.device_id);
+  for (const id of alvos) if (_db.devices[id]) _db.devices[id].nickname = nome;
   saveDb();
-  res.json({ ok: true, nickname: d.nickname });
+  res.json({ ok: true, nickname: nome, codigos: alvos.length });
 });
+
+/* ── "Quem é?": pistas para o administrador reconhecer de quem é um aparelho ──
+   O app não manda nome de ninguém (nem a Apple nem o Google entregam isso sem pedir); aqui só se organiza
+   o que já existe: onde costuma usar (cidade mais próxima, da lista abaixo — sem serviço externo), em que
+   rodovias e trechos, em que horários e dias, e quais aparelhos andam junto (mesmo lugar no mesmo dia). */
+const CIDADES = [
+  ['Natal',-5.79,-35.21],['Parnamirim',-5.92,-35.26],['Macaíba',-5.86,-35.35],['São Gonçalo do Amarante',-5.79,-35.33],['Ceará-Mirim',-5.63,-35.43],
+  ['Mossoró',-5.19,-37.34],['Caicó',-6.46,-37.10],['Currais Novos',-6.26,-36.52],['Assu',-5.58,-36.91],['Pau dos Ferros',-6.11,-38.21],['Santa Cruz',-6.23,-36.02],
+  ['João Câmara',-5.54,-35.82],['Apodi',-5.66,-37.80],['Nova Cruz',-6.48,-35.43],['Touros',-5.20,-35.46],['Macau',-5.11,-36.63],['Angicos',-5.67,-36.60],
+  ['Lajes',-5.70,-36.24],['Santo Antônio',-6.31,-35.48],['Canguaretama',-6.38,-35.13],
+  ['João Pessoa',-7.12,-34.86],['Campina Grande',-7.23,-35.88],['Patos',-7.02,-37.28],['Sousa',-6.76,-38.23],['Cajazeiras',-6.89,-38.56],['Guarabira',-6.85,-35.49],
+  ['Pombal',-6.77,-37.80],['Monteiro',-7.89,-37.12],['Santa Rita',-7.11,-34.98],['Mamanguape',-6.84,-35.13],['Sumé',-7.67,-36.88],['Itaporanga',-7.30,-38.15],
+  ['Recife',-8.05,-34.88],['Jaboatão dos Guararapes',-8.11,-35.01],['Cabo de Santo Agostinho',-8.29,-35.03],['Caruaru',-8.28,-35.97],['Petrolina',-9.39,-40.50],
+  ['Garanhuns',-8.89,-36.49],['Serra Talhada',-7.99,-38.29],['Arcoverde',-8.42,-37.05],['Salgueiro',-8.07,-39.12],['Vitória de Santo Antão',-8.12,-35.29],
+  ['Goiana',-7.56,-35.00],['Palmares',-8.68,-35.59],['Ouricuri',-7.88,-40.08],['Araripina',-7.58,-40.50],['Gravatá',-8.20,-35.56],['Pesqueira',-8.36,-36.69],
+  ['Fortaleza',-3.73,-38.52],['Caucaia',-3.74,-38.65],['Maracanaú',-3.88,-38.63],['Juazeiro do Norte',-7.21,-39.31],['Crato',-7.23,-39.41],['Sobral',-3.69,-40.35],
+  ['Iguatu',-6.36,-39.30],['Quixadá',-4.97,-39.02],['Russas',-4.94,-37.98],['Aracati',-4.56,-37.77],['Limoeiro do Norte',-5.15,-38.10],['Crateús',-5.18,-40.67],
+  ['Tauá',-6.00,-40.29],['Canindé',-4.36,-39.31],['Icó',-6.40,-38.86],['Brejo Santo',-7.49,-38.99],
+  ['Maceió',-9.66,-35.73],['Arapiraca',-9.75,-36.66],['Palmeira dos Índios',-9.41,-36.63],['Delmiro Gouveia',-9.39,-37.99],['Penedo',-10.29,-36.58],['São Miguel dos Campos',-9.78,-36.09],
+  ['Aracaju',-10.91,-37.07],['Itabaiana',-10.68,-37.43],['Lagarto',-10.92,-37.65],['Estância',-11.27,-37.44],
+  ['Teresina',-5.09,-42.80],['Parnaíba',-2.90,-41.78],['Picos',-7.08,-41.47],['Floriano',-6.77,-43.02],
+  ['Salvador',-12.97,-38.50],['Feira de Santana',-12.27,-38.97],['Juazeiro',-9.41,-40.50],['Vitória da Conquista',-14.86,-40.84],['Paulo Afonso',-9.41,-38.21],
+  ['São Luís',-2.53,-44.30],['Imperatriz',-5.53,-47.49],['Belém',-1.46,-48.49],['Marabá',-5.37,-49.12],['Altamira',-3.20,-52.21],['Santarém',-2.44,-54.71],['Itaituba',-4.27,-55.98],
+  ['Palmas',-10.18,-48.33],['Brasília',-15.79,-47.88],['Goiânia',-16.68,-49.25],['Belo Horizonte',-19.92,-43.94],['Vitória',-20.32,-40.34],['Rio de Janeiro',-22.91,-43.17],
+  ['São Paulo',-23.55,-46.63],['Curitiba',-25.43,-49.27],['Florianópolis',-27.60,-48.55],['Porto Alegre',-30.03,-51.23],['Campo Grande',-20.45,-54.62],['Cuiabá',-15.60,-56.10],
+  ['Manaus',-3.12,-60.02],['Porto Velho',-8.76,-63.90],['Rio Branco',-9.97,-67.81],['Boa Vista',2.82,-60.67],['Macapá',0.03,-51.05]];
+function cidadePerto(la, lo) {
+  let best = null; const c = Math.cos(la * Math.PI / 180);
+  for (const [nome, a, b] of CIDADES) { const km = Math.hypot((la - a) * 111.2, (lo - b) * 111.2 * c); if (!best || km < best.km) best = { nome, km: Math.round(km) } }
+  return best;
+}
+function pistasDe(d) {
+  const lista = montaLista(), eu = lista.find(x => x.device_id === d.device_id) || d, grupo = eu.grupo || d.device_id;
+  const meus = lista.filter(x => x.grupo === grupo); if (!meus.length) meus.push(d);
+  /* junta os dias de uso das reinstalações do mesmo celular */
+  const dias = {};
+  for (const x of meus) for (const [dia, u] of Object.entries(x.uso || {})) {
+    const a = dias[dia] || (dias[dia] = { n: 0, h: {}, l: [] });
+    a.n += u.n || 0; for (const [h, n] of Object.entries(u.h || {})) a.h[h] = (a.h[h] || 0) + n;
+    for (const p of u.l || []) if (!a.l.some(q => q[0] === p[0] && q[1] === p[1])) a.l.push(p);
+  }
+  const nDias = Object.keys(dias).length;
+  /* regiões: em quantos dias passou perto de cada cidade (até 40 km "em", mais longe "região de") */
+  const cid = new Map(), vias = new Map();
+  for (const [dia, u] of Object.entries(dias)) {
+    const vc = new Set(), vv = new Set();
+    for (const [la, lo] of u.l) {
+      const c = cidadePerto(la, lo); if (c) { const k = c.km <= 40 ? c.nome : 'região de ' + c.nome; if (!vc.has(k)) { vc.add(k); cid.set(k, (cid.get(k) || 0) + 1) } }
+      const v = rodoviaDe(la, lo); if (v) { const x = vias.get(v.id) || { dias: 0, min: Infinity, max: -Infinity }; if (!vv.has(v.id)) { vv.add(v.id); x.dias++ } x.min = Math.min(x.min, v.km); x.max = Math.max(x.max, v.km); vias.set(v.id, x) }
+    }
+  }
+  /* horário: a janela de 3 horas com mais aberturas */
+  const H = Array(24).fill(0); for (const u of Object.values(dias)) for (const [h, n] of Object.entries(u.h)) H[+h] += n;
+  const tot = H.reduce((a, b) => a + b, 0); let ini = 0, max = -1;
+  for (let i = 0; i < 24; i++) { const s = H[i] + H[(i + 1) % 24] + H[(i + 2) % 24]; if (s > max) { max = s; ini = i } }
+  /* dias da semana */
+  let uteis = 0, fds = 0; for (const dia of Object.keys(dias)) { const w = new Date(dia + 'T12:00:00Z').getUTCDay(); if (w === 0 || w === 6) fds++; else uteis++ }
+  /* quem anda junto: outros celulares no mesmo lugar (célula de ~5 km) no mesmo dia */
+  const cel = (la, lo) => Math.round(la * 20) + ',' + Math.round(lo * 20), minhas = new Set();
+  for (const [dia, u] of Object.entries(dias)) for (const [la, lo] of u.l) minhas.add(dia + '|' + cel(la, lo));
+  const outros = new Map();
+  for (const x of lista) {
+    if (x.grupo === grupo || x.categoria !== 'celular') continue;
+    const o = outros.get(x.grupo) || { device_id: x.device_id, nome: null, modelo: x.model || x.platform || 'Aparelho', dias: new Set() };
+    if (x.nickname && !o.nome) o.nome = x.nickname;
+    for (const [dia, u] of Object.entries(x.uso || {})) for (const [la, lo] of u.l || []) if (minhas.has(dia + '|' + cel(la, lo))) o.dias.add(dia);
+    outros.set(x.grupo, o);
+  }
+  const parecidos = [...outros.values()].filter(o => o.dias.size >= 2).sort((a, b) => b.dias.size - a.dias.size).slice(0, 4)
+    .map(o => ({ device_id: o.device_id, nome: o.nome, modelo: o.modelo, dias: o.dias.size }));
+  const primeiro = meus.map(x => x.first_seen).filter(Boolean).sort()[0] || null;
+  return {
+    dias: nDias, codigos: meus.length, primeiro,
+    regioes: [...cid.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([nome, n]) => ({ nome, dias: n })),
+    vias: [...vias.entries()].sort((a, b) => b[1].dias - a[1].dias).slice(0, 4).map(([id, x]) => ({ id, dias: x.dias, de: Math.round(x.min), ate: Math.round(x.max) })),
+    faixa: tot ? { ini, fim: (ini + 3) % 24, pct: Math.round(max / tot * 100) } : null,
+    semana: { uteis, fds }, parecidos,
+  };
+}
 
 /* Detalhes de um dispositivo — histórico completo de pings, agrupado por dia */
 app.get('/api/admin/devices/:id', auth, (req, res) => {
@@ -683,6 +767,7 @@ app.get('/api/admin/devices/:id', auth, (req, res) => {
   }));
   res.json({
     device: d,
+    pistas: pistasDe(d),
     vias: viasDosDias(d.uso),
     fix: d.location ? rodoviaDe(d.location.lat, d.location.lon) : null,
     days,
