@@ -532,6 +532,23 @@ app.get('/api/admin/auth/check', auth, (req, res) => {
    Recebe dados aprimorados: marca, modelo, OS, GPS, bases baixadas. */
 /* "iOS (app)" → "iOS": o resto do painel compara a plataforma com "iOS"/"Android" (sem isso o iPhone da
    App Store caía em "computador" e sumia da lista de celulares); a loja fica guardada no campo canal. */
+/* Código interno da Apple → nome do iPhone. O app da App Store manda o código exato do aparelho
+   (ex.: "iPhone14,7"); pelo navegador a Apple esconde o modelo e o painel só consegue estimar pela tela/chip. */
+const APPLE = {
+  'iPhone10,1':'iPhone 8','iPhone10,4':'iPhone 8','iPhone10,2':'iPhone 8 Plus','iPhone10,5':'iPhone 8 Plus','iPhone10,3':'iPhone X','iPhone10,6':'iPhone X',
+  'iPhone11,2':'iPhone XS','iPhone11,4':'iPhone XS Max','iPhone11,6':'iPhone XS Max','iPhone11,8':'iPhone XR',
+  'iPhone12,1':'iPhone 11','iPhone12,3':'iPhone 11 Pro','iPhone12,5':'iPhone 11 Pro Max','iPhone12,8':'iPhone SE (2ª geração)',
+  'iPhone13,1':'iPhone 12 mini','iPhone13,2':'iPhone 12','iPhone13,3':'iPhone 12 Pro','iPhone13,4':'iPhone 12 Pro Max',
+  'iPhone14,4':'iPhone 13 mini','iPhone14,5':'iPhone 13','iPhone14,2':'iPhone 13 Pro','iPhone14,3':'iPhone 13 Pro Max','iPhone14,6':'iPhone SE (3ª geração)',
+  'iPhone14,7':'iPhone 14','iPhone14,8':'iPhone 14 Plus','iPhone15,2':'iPhone 14 Pro','iPhone15,3':'iPhone 14 Pro Max',
+  'iPhone15,4':'iPhone 15','iPhone15,5':'iPhone 15 Plus','iPhone16,1':'iPhone 15 Pro','iPhone16,2':'iPhone 15 Pro Max',
+  'iPhone17,3':'iPhone 16','iPhone17,4':'iPhone 16 Plus','iPhone17,1':'iPhone 16 Pro','iPhone17,2':'iPhone 16 Pro Max','iPhone17,5':'iPhone 16e',
+  'iPhone18,3':'iPhone 17','iPhone18,1':'iPhone 17 Pro','iPhone18,2':'iPhone 17 Pro Max','iPhone18,4':'iPhone Air',
+};
+const ehCodigoApple = m => /^(iPhone|iPad|iPod)\d+,\d+$/.test(String(m || ''));
+/* código desconhecido (aparelho lançado depois desta lista) fica como veio, ex. "iPhone19,1" — dá para reconhecer e incluir aqui */
+const nomeApple = c => APPLE[c] || (/^iPad/.test(c) ? 'iPad' : c);
+
 const normPlat = p => { const m = String(p || '').match(/^(iOS|Android) \(app\)$/); return m ? m[1] : p };
 
 /* Por onde o app foi instalado. Versões novas mandam o campo "canal"; nas antigas deduz pela origem do pedido:
@@ -576,7 +593,9 @@ app.post('/api/admin/devices/ping', (req, res) => {
       ip_address: ip || existing?.ip_address || null,
       brand: brand || existing?.brand || det.brand || null,
       os_version: os_version || existing?.os_version || det.os_version || null,
-      model: model || existing?.model || det.model || null,
+      /* app da App Store: guarda o código exato (model_id) e mostra o nome; ele vale mais que a estimativa pela tela */
+      model_id: ehCodigoApple(model) ? model : (existing?.model_id || null),
+      model: (ehCodigoApple(model) ? nomeApple(model) : model) || existing?.model || det.model || null,
       location: location || existing?.location || null,
       bases_count: bases_count ?? existing?.bases_count ?? 0,
       bases: bases || existing?.bases || [],
@@ -790,7 +809,10 @@ function montaLista() {
       /* Sempre recalcula modelo/marca/OS server-side — a lógica pode ter melhorado */
       const det = detectDevice(d.user_agent, d.screen, d.hw);
       if (det.brand && det.brand !== d.brand) { d.brand = det.brand; dirty = true; }
-      if (det.model && det.model !== d.model) { d.model = det.model; dirty = true; }
+      /* modelo exato do app da App Store (código da Apple) vence a estimativa pela tela — 12, 13 e 14 têm a mesma tela */
+      if (ehCodigoApple(d.model) && !d.model_id) { d.model_id = d.model; dirty = true; }
+      if (d.model_id) { const n = nomeApple(d.model_id); if (n !== d.model) { d.model = n; dirty = true; } }
+      else if (det.model && det.model !== d.model) { d.model = det.model; dirty = true; }
       if (det.os_version && det.os_version !== d.os_version) { d.os_version = det.os_version; dirty = true; }
       /* Traduz código cru do modelo Android → nome amigável.
          O Chrome moderno esconde o modelo no UA (mostra "K"), então detectDevice()
