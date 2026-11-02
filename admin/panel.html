@@ -551,6 +551,10 @@ html body{background:transparent}
   .abas{background:rgba(14,16,18,.72);border:1px solid rgba(255,255,255,.12)}
   .t-escuro .abas{background:rgba(8,10,12,.62)}
   .abas .marcador{background:var(--lima)}.abas button.on{color:#0d0f08}
+  /* barra de baixo rola na horizontal: 9 abas não cabem com folga numa tela de celular (os nomes se sobrepunham) */
+  .abas{overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-padding:0 12px}
+  .abas::-webkit-scrollbar{display:none}
+  .abas button{flex:0 0 auto;min-width:72px;padding:0 8px;font-size:11px}
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .forte,.abas{background-color:rgba(18,18,18,.94)} }
 @media(hover:none){ .dica{display:none} }
@@ -1010,6 +1014,7 @@ function abre(nome){
   $$('#abas button').forEach(b=>b.classList.toggle('on',b.dataset.a===nome));
   $$('.aba').forEach(a=>a.classList.toggle('on',a.id==='a-'+nome));
   poeMarcador(); escondeDica();
+  if(_cel.matches){ const bt=$('#abas button.on'); if(bt) bt.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'}) }   // celular: traz a aba aberta para a vista na barra que rola
   $('.topo').classList.toggle('sem-periodo', nome==='aparelhos'||nome==='snv'||nome==='sistema');   // Saúde usa o período (adoção de versão)
   if(_cel.matches) scrollTo({top:0});
   if(ULT){
