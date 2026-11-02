@@ -552,9 +552,9 @@ html body{background:transparent}
   .t-escuro .abas{background:rgba(8,10,12,.62)}
   .abas .marcador{background:var(--lima)}.abas button.on{color:#0d0f08}
   /* barra de baixo rola na horizontal: 9 abas não cabem com folga numa tela de celular (os nomes se sobrepunham) */
-  .abas{overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-padding:0 12px}
+  .abas{gap:10px;padding:5px 8px;overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-padding:0 12px}
   .abas::-webkit-scrollbar{display:none}
-  .abas button{flex:0 0 auto;min-width:72px;padding:0 8px;font-size:11px}
+  .abas button{flex:0 0 auto;min-width:72px;padding:0 10px;font-size:11px}
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .forte,.abas{background-color:rgba(18,18,18,.94)} }
 @media(hover:none){ .dica{display:none} }
