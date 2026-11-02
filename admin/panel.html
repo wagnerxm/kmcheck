@@ -558,6 +558,39 @@ html body{background:transparent}
   .abas button{flex:0 0 auto;min-width:72px;padding:0 10px;font-size:11px}
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .forte,.abas{background-color:rgba(18,18,18,.94)} }
+/* ===== MASCOTE: o Marco, a placa de marco quilométrico =====
+   No topo, a placa mostra quantos estão usando agora e o rosto mostra o estado (ok / alerta / dormindo);
+   no login, ele reage ao que se digita. Desenho em SVG (montado pelo JS), animado só com CSS. */
+.marco-mini{border:0;cursor:pointer;font:inherit;padding:2px 14px 2px 4px;gap:6px;transition:background .2s}
+.marco-mini:hover{background:rgba(255,255,255,.1);transform:none}
+.marco-mini:focus-visible{outline:2px solid var(--lima);outline-offset:2px}
+.marco-mini .mc-lugar{display:block;width:36px;height:45px;margin:-10px 0 -8px}
+.marco-mini .mc-lugar svg{width:100%;height:100%;display:block}
+.marco-balao{position:fixed;z-index:1150;width:min(330px,calc(100vw - 24px));padding:16px 18px;border-radius:18px;background:rgba(20,22,26,.96);border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 24px 50px -16px rgba(0,0,0,.8);opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top right;pointer-events:none;transition:opacity .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.marco-balao.on{opacity:1;transform:none;pointer-events:auto}
+.marco-balao b{font-size:15px}
+.marco-balao ul{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text2)}
+.marco-balao li{display:flex;gap:10px;align-items:flex-start}.marco-balao li i{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.marco-balao li a{color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.logo-marco{width:150px;height:188px;margin:-6px auto 2px}
+.logo-marco svg{width:100%;height:100%;display:block;overflow:visible}
+.mc .braco{transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.mc .olhos{transition:transform .12s linear}
+.mc .piscar{transform-box:fill-box;transform-origin:center;animation:mcPisca 4.5s infinite}
+@keyframes mcPisca{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+.mc.alerta .piscar{animation:mcAlerta 1.2s ease-in-out infinite}
+@keyframes mcAlerta{50%{opacity:.45}}
+.mc .corpo{transform-box:view-box;transform-origin:100px 230px}
+.mc.nao .corpo{animation:mcNao .6s ease-in-out}
+@keyframes mcNao{20%{transform:rotate(-7deg)}40%{transform:rotate(6deg)}60%{transform:rotate(-4deg)}80%{transform:rotate(2deg)}}
+.mc.pula .corpo{animation:mcPula .7s cubic-bezier(.3,1.6,.5,1)}
+@keyframes mcPula{40%{transform:translateY(-16px)}}
+.mc .respira{transform-box:view-box;transform-origin:100px 230px;animation:mcRespira 3.6s ease-in-out infinite}
+@keyframes mcRespira{50%{transform:scaleY(1.012) translateY(-1px)}}
+.mc .z{opacity:0}.mc.dorme .z{animation:mcZ 2.6s ease-in-out infinite}.mc.dorme .z2{animation-delay:1.3s}
+@keyframes mcZ{0%{opacity:0;transform:translate(0,0)}30%{opacity:1}100%{opacity:0;transform:translate(14px,-22px)}}
+.mc .fone{transition:opacity .3s}
 @media(hover:none){ .dica{display:none} }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -568,7 +601,7 @@ html body{background:transparent}
 <!-- ════════════════════ LOGIN ════════════════════ -->
 <div id="login">
   <div class="login-card forte">
-    <img class="logo" src="/api/admin/img/painel-icone-512.png" alt="KM Check">
+    <div class="logo-marco" id="lg-marco"></div>
     <h1><em>Painel</em></h1>
     <div class="sub">Acesso do administrador</div>
     <div class="field"><label>Usuário</label><input type="text" id="lg-user" placeholder="admin" autocomplete="username"></div>
@@ -597,7 +630,7 @@ html body{background:transparent}
     <div class="marca"><img src="/api/admin/img/painel-cabeca-128.png" alt="">KM Check <em>Painel</em></div>
     <div class="dir">
       <div class="periodo vidro" id="periodo"><button data-d="7">7 dias</button><button data-d="30" class="on">30 dias</button><button data-d="90">90 dias</button></div>
-      <div class="vivo" title="Celulares que abriram o app nos últimos 30 minutos"><span class="ponto" id="vivo-pt"></span><span><b id="agora-n">0</b><span class="txt"> usando agora</span></span></div>
+      <button class="vivo marco-mini" id="marco-mini" type="button" title="Celulares que abriram o app nos últimos 30 minutos · toque para o resumo" aria-expanded="false" aria-controls="marco-balao"><span class="mc-lugar" id="marco-topo"></span><span class="ponto" id="vivo-pt" hidden></span><span><b id="agora-n">0</b><span class="txt"> usando agora</span></span></button>
       <button class="sair" id="btn-tema" title="Alternar tema claro / escuro" aria-label="Alternar tema"><svg class="sol" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="lua" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       <button class="sair" id="btn-logout" title="Sair"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
     </div>
@@ -893,6 +926,7 @@ html body{background:transparent}
 </div>
 
 <div id="toast"></div>
+<div class="marco-balao" id="marco-balao" role="dialog" aria-label="Resumo do painel"></div>
 <div class="dica" id="dica"></div>
 
 <!-- Ficha do aparelho -->
@@ -959,6 +993,102 @@ async function api(path, opts={}){
   return json;
 }
 
+/* ══════════════════════════════════════════════════
+   MASCOTE — o Marco (placa de marco quilométrico)
+   ══════════════════════════════════════════════════ */
+let _mcSeq=0;
+function desenhoMarco(rotulo){const i='mc'+(_mcSeq++);
+return`<svg class="mc" viewBox="0 0 200 250" role="img" aria-label="${rotulo}">
+<defs>
+ <linearGradient id="${i}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1767d3"/><stop offset="1" stop-color="#0a4597"/></linearGradient>
+ <linearGradient id="${i}p" x1="0" x2="1"><stop offset="0" stop-color="#7d858f"/><stop offset=".5" stop-color="#c9cfd6"/><stop offset="1" stop-color="#6c737c"/></linearGradient>
+ <linearGradient id="${i}v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c222b"/><stop offset="1" stop-color="#05070a"/></linearGradient>
+ <filter id="${i}g" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <clipPath id="${i}c"><rect x="52" y="112" width="96" height="58"/></clipPath>
+</defs>
+<ellipse cx="100" cy="240" rx="46" ry="6" fill="#000" opacity=".45"/>
+<g class="corpo"><g class="respira">
+ <rect x="80" y="206" width="16" height="30" rx="7" fill="url(#${i}p)"/><rect x="104" y="206" width="16" height="30" rx="7" fill="url(#${i}p)"/>
+ <rect x="72" y="230" width="26" height="10" rx="5" fill="#2a3038"/><rect x="102" y="230" width="26" height="10" rx="5" fill="#2a3038"/>
+ <rect x="92" y="180" width="16" height="32" fill="url(#${i}p)"/>
+ <rect x="38" y="16" width="124" height="168" rx="16" fill="url(#${i}a)" stroke="#06326f" stroke-width="1.5"/>
+ <rect x="45" y="23" width="110" height="154" rx="11" fill="none" stroke="#fff" stroke-width="4.5"/>
+ <path d="M50 30 Q100 22 150 30" stroke="rgba(255,255,255,.18)" stroke-width="6" fill="none" stroke-linecap="round"/>
+ <text x="100" y="56" text-anchor="middle" font-family="Figtree,sans-serif" font-weight="700" font-size="24" fill="#fff">km</text>
+ <rect x="58" y="64" width="84" height="38" rx="17" fill="url(#${i}v)"/><path d="M68 70 h44" stroke="rgba(255,255,255,.15)" stroke-width="3" stroke-linecap="round"/>
+ <g class="olhos"><g class="piscar">
+  <g class="ol-ok" fill="#c6f432" filter="url(#${i}g)"><path d="M70 87 Q79 74 90 82 Q80 91 70 87Z"/><path d="M130 87 Q121 74 110 82 Q120 91 130 87Z"/></g>
+  <g class="ol-al" fill="#ffb02e" filter="url(#${i}g)" style="display:none"><circle cx="81" cy="84" r="6.5"/><circle cx="119" cy="84" r="6.5"/></g>
+  <g class="ol-dr" stroke="#c6f432" stroke-width="3" stroke-linecap="round" fill="none" opacity=".75" style="display:none"><path d="M72 84 q9 6 18 0"/><path d="M110 84 q9 6 18 0"/></g>
+ </g></g>
+ <g class="sob" stroke="#ffb02e" stroke-width="2.6" stroke-linecap="round" style="display:none"><path d="M71 72 l13 4"/><path d="M129 72 l-13 4"/></g>
+ <g clip-path="url(#${i}c)"><g class="num"><text x="100" y="162" text-anchor="middle" font-family="Figtree,sans-serif" font-weight="800" font-size="52" fill="#fff" letter-spacing="-1">10</text></g></g>
+ <!-- braços por cima da placa: assim tampam os olhos e fazem o joinha na frente -->
+ <g class="braco be" style="transform-origin:42px 128px;transform:rotate(125deg)"><rect x="42" y="123" width="44" height="10" rx="5" fill="url(#${i}p)"/><circle cx="86" cy="128" r="9" fill="#f2f4f7"/></g>
+ <g class="braco bd" style="transform-origin:158px 128px;transform:rotate(55deg)"><rect x="158" y="123" width="44" height="10" rx="5" fill="url(#${i}p)"/><circle cx="202" cy="128" r="9" fill="#f2f4f7"/>
+  <g class="fone" transform="translate(202 128) rotate(-55)"><rect x="-9" y="-30" width="18" height="30" rx="4" fill="#14181d"/><rect x="-6.5" y="-27" width="13" height="22" rx="2" fill="#c6f432"/><circle cx="0" cy="-17" r="3.6" fill="#14181d"/></g></g>
+</g></g>
+<g font-family="Figtree,sans-serif" font-weight="800" fill="#9aa2b2"><text class="z" x="160" y="22" font-size="18">z</text><text class="z z2" x="172" y="10" font-size="13">z</text></g>
+</svg>`}
+class Marco{
+  constructor(el,rotulo,num='10'){el.innerHTML=desenhoMarco(rotulo);this.s=el.querySelector('svg');this.q=x=>this.s.querySelector(x);this.n='10';this.e='ok';this.coberto=false;if(num!=='10')this.numero(num,true)}
+  braco(lado,ang,esc=1){this.q(lado==='e'?'.be':'.bd').style.transform=`rotate(${ang}deg) scaleX(${esc})`}   // esc estica o braço (para alcançar os olhos)
+  descanso(){this.braco('e',125);this.braco('d',55)}
+  estado(e){if(e===this.e)return;this.e=e;this.s.classList.toggle('alerta',e==='alerta');this.s.classList.toggle('dorme',e==='dorme');
+    this.q('.ol-ok').style.display=e==='ok'?'':'none';this.q('.ol-al').style.display=e==='alerta'?'':'none';this.q('.ol-dr').style.display=e==='dorme'?'':'none';this.q('.sob').style.display=e==='alerta'?'':'none'}
+  olhar(dx,dy){this.q('.olhos').style.transform=`translate(${Math.max(-7,Math.min(7,dx))}px,${Math.max(-3,Math.min(4,dy))}px)`}
+  olharPara(x,y){const r=this.s.getBoundingClientRect();if(!r.width)return;this.olhar((x-r.left-r.width/2)/r.width*18,(y-r.top-r.height*.34)/r.height*10)}
+  /* troca de número como placar: o atual sai por cima e o novo entra por baixo (ao contrário quando diminui) */
+  numero(v,seco){v=String(v);if(v===this.n)return;const g=this.q('.num'),velho=g.querySelector('text:last-child'),novo=velho.cloneNode();novo.textContent=v;novo.style.cssText='';
+    novo.setAttribute('font-size',v.length>2?40:52);
+    if(seco||matchMedia('(prefers-reduced-motion:reduce)').matches){g.replaceChildren(novo);this.n=v;return}
+    const sobe=isNaN(+v)||isNaN(+this.n)||+v>=+this.n,ease='transform .45s cubic-bezier(.2,.8,.2,1),opacity .45s';
+    novo.style.transform=`translateY(${sobe?60:-60}px)`;novo.style.transition=ease;velho.style.transition=ease;g.appendChild(novo);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{velho.style.transform=`translateY(${sobe?-60:60}px)`;velho.style.opacity=0;novo.style.transform='none'}));
+    setTimeout(()=>velho.remove(),500);this.n=v}
+  anima(c,ms){this.s.classList.remove(c);void this.s.getBBox();this.s.classList.add(c);setTimeout(()=>this.s.classList.remove(c),ms)}
+  acenar(vezes=3){let k=0;clearInterval(this._ac);this._ac=setInterval(()=>{this.braco('d',k%2?-70:-25);if(++k>vezes*2){clearInterval(this._ac);this.braco('d',this._fone?-30:55)}},260)}
+  cobrir(sim){this.coberto=sim;if(sim){this.braco('e',-50,1.3);this.braco('d',-130,1.3)}else{this.descanso();if(this._fone)this.braco('d',-30)}}
+  fone(sim){this._fone=sim;this.q('.fone').style.opacity=sim?1:0;this.braco('d',sim?-30:55)}
+}
+/* ── topo: contador ao vivo + estado ── */
+const MARCO=new Marco($('#marco-topo'),'Marco: pessoas usando agora','0');
+let MC_AGORA=0, MC_ERROS=0, MC_CANAIS=null;
+function marcoEstado(){MARCO.estado(!MC_AGORA?'dorme':MC_ERROS?'alerta':'ok');MARCO.numero(MC_AGORA)}
+async function marcoErros(){ try{ const l=(await api('/api/admin/erros')).erros||[]; MC_ERROS=l.filter(e=>!e.resolvido).length }catch(e){} marcoEstado() }
+async function marcoResumo(){
+  const h=new Date().getHours(), saud=h<5?'Boa noite':h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  let bk='Backup: verificando…'; const b=$('#marco-balao');
+  const monta=()=>{ const c=MC_CANAIS;
+    const it=[[MC_AGORA?'#c6f432':'#636b7b', MC_AGORA?`${MC_AGORA} ${MC_AGORA===1?'pessoa':'pessoas'} na estrada agora.`:'Ninguém usando o app agora.'],
+      [MC_ERROS?'#ef7b6b':'#c6f432', MC_ERROS?`${MC_ERROS} ${MC_ERROS===1?'erro aberto':'erros abertos'} · <a data-ir="saude">ver na Saúde</a>`:'Nenhum erro aberto.'],
+      ...(c?[['#9db4ff',`${c['app-store']||0} baixaram pela App Store · ${c['play-store']||0} pela Play Store.`]]:[]),
+      ['#c6f432',bk]];
+    b.innerHTML=`<b>${saud}!</b><ul>${it.map(([cor,t])=>`<li><i style="background:${cor}"></i><span>${t}</span></li>`).join('')}</ul>` };
+  monta();
+  try{ const si=await api('/api/admin/sistema'), u=si.ultimo_backup, d=u&&(u.match(/\d{4}-\d{2}-\d{2}/)||[''])[0];
+    const hoje=new Date().toISOString().slice(0,10); bk=!u||!d?'Ainda não há backup.':d===hoje?'Backup de hoje feito.':'Último backup em '+d.split('-').reverse().join('/')+'.' }catch(e){ bk='Backup: não consegui verificar.' }
+  if(b.classList.contains('on')) monta();
+}
+function marcoBalao(abrir){const b=$('#marco-balao'),bt=$('#marco-mini');if(abrir===undefined)abrir=!b.classList.contains('on');
+  if(abrir===b.classList.contains('on'))return;
+  if(abrir){const r=bt.getBoundingClientRect(),w=Math.min(330,innerWidth-24);b.style.left=Math.max(12,Math.min(innerWidth-w-12,r.right-w))+'px';b.style.top=(r.bottom+10)+'px';marcoResumo();MARCO.acenar(2)}
+  b.classList.toggle('on',abrir);bt.setAttribute('aria-expanded',abrir)}
+$('#marco-mini').onclick=e=>{e.stopPropagation();marcoBalao()};
+$('#marco-balao').addEventListener('click',e=>{const a=e.target.closest('[data-ir]');if(a){abre(a.dataset.ir);marcoBalao(false)}});
+document.addEventListener('click',e=>{if(!e.target.closest('#marco-balao,#marco-mini'))marcoBalao(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')marcoBalao(false)});
+addEventListener('scroll',()=>marcoBalao(false),{passive:true});addEventListener('resize',()=>marcoBalao(false));
+
+/* ── login: o Marco reage ao que se faz na tela ── */
+const MLG=new Marco($('#lg-marco'),'Marco, mascote do KM Check');MLG.fone(false);
+document.addEventListener('pointermove',e=>{ if($('#login').style.display==='none'||MLG.coberto||document.activeElement===$('#lg-user')) return; MLG.olharPara(e.clientX,e.clientY) },{passive:true});
+function mlgLer(){const i=$('#lg-user'),r=i.getBoundingClientRect(),m=document.createElement('span');m.style.cssText='position:absolute;visibility:hidden;white-space:pre;font:13px Figtree,sans-serif';m.textContent=i.value;document.body.appendChild(m);
+  const x=r.left+16+Math.min(m.offsetWidth,r.width-32);m.remove();MLG.olharPara(x,r.top+r.height/2)}
+$('#lg-user').addEventListener('focus',()=>{MLG.cobrir(false);mlgLer()});$('#lg-user').addEventListener('input',mlgLer);
+$('#lg-pass').addEventListener('focus',()=>{MLG.cobrir(true);MLG.olhar(0,0)});$('#lg-pass').addEventListener('blur',()=>MLG.cobrir(false));
+$('#lg-cod').addEventListener('focus',()=>MLG.fone(true));
+
 /* ── Login ── */
 function showLogin(){
   $('#login').style.display = 'flex';
@@ -967,13 +1097,14 @@ function showLogin(){
   $('#lg-pass').value = '';
   $('#lg-err').textContent = '';
   setTimeout(()=>$('#lg-pass').focus(), 100);
+  MLG.estado('ok'); MLG.numero('10',true); MLG.fone(false); setTimeout(()=>MLG.acenar(3),500);
 }
 function showDash(){
   $('#login').style.display = 'none';
   $('#dash').style.display = 'flex';
   let ini='resumo'; try{ ini=localStorage.getItem('kca-aba')||'resumo' }catch(e){}
   abre(document.getElementById('a-'+ini)?ini:'resumo');
-  loadUso(); loadAgora(); loadDevices();
+  loadUso(); loadAgora(); loadDevices(); marcoErros();
 }
 
 $('#lg-btn').onclick = async () => {
@@ -987,15 +1118,21 @@ $('#lg-btn').onclick = async () => {
     const resp = await fetch(API+'/api/admin/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user, password, codigo }) });
     const r = await resp.json().catch(()=>({}));
     if(!resp.ok){
-      if(r.precisa_codigo){ $('#lg-cod-f').hidden=false; setTimeout(()=>$('#lg-cod').focus(),50) }
+      if(r.precisa_codigo){ $('#lg-cod-f').hidden=false; MLG.cobrir(false); MLG.fone(true); setTimeout(()=>$('#lg-cod').focus(),50) }
       throw new Error(r.error || 'Erro HTTP '+resp.status);
     }
     $('#lg-cod').value=''; $('#lg-cod-f').hidden=true;
     TOKEN = r.token;
     localStorage.setItem('kca-token', TOKEN);
+    /* o Marco comemora: placa vira OK, joinha e um pulo, e só então o painel abre */
+    MLG.cobrir(false); MLG.fone(false); MLG.braco('d',-90); MLG.numero('OK'); MLG.anima('pula',700);
+    await new Promise(ok=>setTimeout(ok, matchMedia('(prefers-reduced-motion:reduce)').matches?0:850));
+    MLG.descanso();
     showDash();
   } catch(e){
     $('#lg-err').textContent = e.message;
+    /* errou a senha ou o código: balança a cabeça (o 1º pedido do código não é erro) */
+    if(!$('#lg-cod-f').hidden&&!$('#lg-cod').value){} else { MLG.cobrir(false); MLG.estado('alerta'); MLG.anima('nao',600); setTimeout(()=>MLG.estado('ok'),1800) }
   } finally {
     $('#lg-btn').disabled = false; $('#lg-btn').textContent = 'Entrar';
   }
@@ -1132,7 +1269,7 @@ $('#sa-tbody').addEventListener('click', async ev => {
   if (tr){ const p = $(`#sa-tbody tr[data-p="${CSS.escape(tr.dataset.id)}"]`); if(p) p.hidden = !p.hidden }
 });
 $('#sa-res').onchange = desenhaErros;
-async function carregaErros(){ try{ ERROS = (await api('/api/admin/erros')).erros || [] }catch(e){ ERROS = [] } desenhaErros() }
+async function carregaErros(){ try{ ERROS = (await api('/api/admin/erros')).erros || [] }catch(e){ ERROS = [] } desenhaErros(); MC_ERROS=ERROS.filter(e=>!e.resolvido).length; marcoEstado() }
 const kb = n => n==null?'—':n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
 async function loadSaude(){
   if (USO.length) saude();
@@ -1648,6 +1785,8 @@ async function loadAgora(){
   try{
     const r=await api('/api/admin/agora');
     $('#agora-n').textContent=r.usando; $('#vivo-pt').classList.toggle('quieto',!r.usando);
+    if(r.usando>MC_AGORA) MARCO.anima('pula',700);   // chegou gente: o Marco dá um pulinho
+    MC_AGORA=r.usando; marcoEstado();
     const evs=r.eventos||[];
     if(!_vistos){ $('#feed').innerHTML=evs.length?'':'<p class="aviso">Ninguém abriu o app ainda.</p>'; evs.forEach(e=>evento(e,false)); _vistos=new Set(evs.map(e=>e.ts+e.did)); return }
     const novos=evs.filter(e=>!_vistos.has(e.ts+e.did)).reverse();
@@ -1671,7 +1810,7 @@ async function loadDevices(){
     $('#ds-total').textContent = s.usuarios_30d ?? s.total;
     $('#ds-detail').textContent = s.aparelhos != null ? s.aparelhos+' aparelhos · '+s.reinstalacoes+' reinstalações juntadas' : s.active_week+' ativos na semana';
     /* lojas: total de baixados (desde sempre) + quantos usaram em 30 dias; PWA: quem ainda usa sem o app da loja */
-    if(s.canais){ const c=s.canais, t=s.canais_total||c;
+    if(s.canais){ const c=s.canais, t=s.canais_total||c; MC_CANAIS=t;
       $('#ds-as').textContent = t['app-store']||0; $('#ds-as-d').textContent = 'baixados · '+(c['app-store']||0)+' ativos';
       $('#ds-ps').textContent = t['play-store']||0; $('#ds-ps-d').textContent = 'baixados · '+(c['play-store']||0)+' ativos';
       $('#ds-pwa').textContent = (c.pwa||0)+(c.web||0);
@@ -2053,6 +2192,7 @@ if(matchMedia('(hover:hover)').matches && !matchMedia('(prefers-reduced-motion:r
   } else showLogin();
   /* atualiza sozinho: ao vivo a cada 20 s, gráficos e tabela a cada 60 s (só com a página à vista) */
   setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex') loadAgora() }, 20000);
+  setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex') marcoErros() }, 300000);   // erros abertos mudam o rosto do Marco
   setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex'){ loadUso(); if(ABA==='aparelhos') loadDevices() } }, 60000);
 })();
 </script>
