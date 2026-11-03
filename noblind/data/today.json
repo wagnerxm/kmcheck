@@ -1,6 +1,6 @@
 {
   "date": "2026-11-02",
-  "generated_at": "2026-11-02T19:54:39.562532+00:00",
+  "generated_at": "2026-11-03T00:07:50.799255+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -40,6 +40,7 @@
     "La Liga 2 - Spain",
     "League 1",
     "League 2",
+    "League of Ireland",
     "Ligue 2 - France",
     "Premier League - Russia",
     "Premiership - Scotland",
@@ -56,284 +57,135 @@
   "singles": [
     {
       "id": 2,
-      "home": "Mjällby AIF",
-      "away": "Kalmar FF",
-      "league": "Allsvenskan - Sweden",
-      "league_key": "soccer_sweden_allsvenskan",
-      "time": "15:00",
-      "kickoff_at": "2026-11-02T18:00:00Z",
+      "home": "Deportes Concepción",
+      "away": "Palestino",
+      "league": "Primera División - Chile",
+      "league_key": "soccer_chile_campeonato",
+      "time": "20:30",
+      "kickoff_at": "2026-11-02T23:30:00Z",
+      "market": "Resultado Final",
+      "sel": "Deportes Concepción",
+      "sel_key": "home",
+      "odd": 2.94,
+      "book": "Betfair",
+      "edge": 12.0,
+      "score": 72,
+      "fairP": 0.46,
+      "odds": {
+        "888sport": 1.44,
+        "Betfair": 2.94,
+        "Betsson": 2.7,
+        "LeoVegas (SE)": 2.45,
+        "Marathon": 2.66,
+        "NordicBet": 2.7,
+        "Pinnacle": 2.7,
+        "Tipico": 1.45,
+        "Unibet (SE)": 2.6
+      },
+      "models": {
+        "Consensus": 0.46
+      },
+      "zebra": true,
+      "zebra_tier": "bronze"
+    },
+    {
+      "id": 1,
+      "home": "Defensa y Justicia",
+      "away": "Independiente",
+      "league": "Liga Argentina",
+      "league_key": "soccer_argentina_primera_division",
+      "time": "19:01",
+      "kickoff_at": "2026-11-02T22:01:00Z",
       "market": "Resultado Final",
       "sel": "Empate",
       "sel_key": "draw",
-      "odd": 1.43,
+      "odd": 1.3,
       "book": "Pinnacle",
-      "edge": 21.4,
-      "score": 78,
-      "fairP": 0.913,
+      "edge": 14.5,
+      "score": 70,
+      "fairP": 0.914,
       "odds": {
-        "888sport": 1.12,
-        "Betclic (FR)": 1.06,
-        "Betfair": 1.01,
+        "Betclic (FR)": 1.09,
         "Betsson": 1.05,
-        "Coolbet": 1.05,
-        "LeoVegas (SE)": 1.03,
-        "NordicBet": 1.02,
-        "PMU (FR)": 1.01,
-        "Pinnacle": 1.43,
-        "Tipico": 1.02,
-        "Unibet (FR)": 1.01,
-        "Unibet (NL)": 1.02,
-        "Unibet (SE)": 1.02,
-        "Winamax (DE)": 1.02,
-        "Winamax (FR)": 1.01
+        "LeoVegas (SE)": 1.01,
+        "NordicBet": 1.05,
+        "Pinnacle": 1.3,
+        "Unibet (FR)": 1.02,
+        "Unibet (SE)": 1.04,
+        "Winamax (DE)": 1.03,
+        "Winamax (FR)": 1.02
       },
       "models": {
-        "Consensus": 0.913
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 4,
-      "home": "Stade de Reims",
-      "away": "Sochaux",
-      "league": "Ligue 2 - France",
-      "league_key": "soccer_france_ligue_two",
-      "time": "16:45",
-      "kickoff_at": "2026-11-02T19:45:00Z",
-      "market": "Resultado Final",
-      "sel": "Stade de Reims",
-      "sel_key": "home",
-      "odd": 1.79,
-      "book": "1xBet",
-      "edge": 12.2,
-      "score": 67,
-      "fairP": 0.68,
-      "odds": {
-        "1xBet": 1.79,
-        "888sport": 1.3,
-        "BetOnline.ag": 1.78,
-        "Betclic (FR)": 1.22,
-        "Betfair": 1.35,
-        "Betsson": 1.26,
-        "Codere (IT)": 1.73,
-        "Coolbet": 1.29,
-        "LeoVegas (SE)": 1.15,
-        "Marathon": 1.24,
-        "Matchbook": 1.36,
-        "NordicBet": 1.28,
-        "PMU (FR)": 1.16,
-        "Pinnacle": 1.78,
-        "Tipico": 1.25,
-        "Unibet (FR)": 1.22,
-        "Unibet (NL)": 1.22,
-        "Unibet (SE)": 1.22,
-        "William Hill": 1.75,
-        "Winamax (DE)": 1.27,
-        "Winamax (FR)": 1.23
-      },
-      "models": {
-        "Consensus": 0.68
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 6,
-      "home": "Östers IF",
-      "away": "Helsingborgs IF",
-      "league": "Superettan - Sweden",
-      "league_key": "soccer_sweden_superettan",
-      "time": "15:00",
-      "kickoff_at": "2026-11-02T18:00:00Z",
-      "market": "Resultado Final",
-      "sel": "Östers IF",
-      "sel_key": "home",
-      "odd": 1.21,
-      "book": "Pinnacle",
-      "edge": 14.3,
-      "score": 65,
-      "fairP": 0.969,
-      "odds": {
-        "Betfair": 1.01,
-        "Pinnacle": 1.21
-      },
-      "models": {
-        "Consensus": 0.969
+        "Consensus": 0.914
       },
       "zebra": false,
       "zebra_tier": ""
     },
     {
       "id": 3,
-      "home": "GAIS",
-      "away": "AIK",
-      "league": "Allsvenskan - Sweden",
-      "league_key": "soccer_sweden_allsvenskan",
-      "time": "15:02",
-      "kickoff_at": "2026-11-02T18:02:00Z",
-      "market": "Resultado Final",
-      "sel": "GAIS",
-      "sel_key": "home",
-      "odd": 1.22,
-      "book": "Pinnacle",
-      "edge": 12.2,
-      "score": 63,
-      "fairP": 0.941,
-      "odds": {
-        "888sport": 1.08,
-        "Betclic (FR)": 1.01,
-        "Betfair": 1.04,
-        "Coolbet": 1.01,
-        "NordicBet": 1.01,
-        "Pinnacle": 1.22,
-        "Tipico": 1.01,
-        "Unibet (FR)": 1.01,
-        "Winamax (DE)": 1.01,
-        "Winamax (FR)": 1.01
-      },
-      "models": {
-        "Consensus": 0.941
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 7,
-      "home": "Landskrona BoIS",
-      "away": "Örebro SK",
-      "league": "Superettan - Sweden",
-      "league_key": "soccer_sweden_superettan",
-      "time": "15:05",
-      "kickoff_at": "2026-11-02T18:05:00Z",
-      "market": "Resultado Final",
-      "sel": "Landskrona BoIS",
-      "sel_key": "home",
-      "odd": 1.19,
-      "book": "Pinnacle",
-      "edge": 13.1,
-      "score": 62,
-      "fairP": 0.972,
-      "odds": {
-        "Betfair": 1.01,
-        "Pinnacle": 1.19
-      },
-      "models": {
-        "Consensus": 0.972
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 1,
-      "home": "Atalanta BC",
-      "away": "Parma",
-      "league": "Serie A (Itália)",
-      "league_key": "soccer_italy_serie_a",
-      "time": "16:45",
-      "kickoff_at": "2026-11-02T19:45:00Z",
-      "market": "Resultado Final",
-      "sel": "Atalanta BC",
-      "sel_key": "home",
-      "odd": 1.4,
-      "book": "1xBet",
-      "edge": 9.1,
-      "score": 55,
-      "fairP": 0.805,
-      "odds": {
-        "1xBet": 1.4,
-        "888sport": 1.33,
-        "BetAnything": 1.4,
-        "BetOnline.ag": 1.39,
-        "Betclic (FR)": 1.32,
-        "Betfair": 1.39,
-        "Betsson": 1.34,
-        "Codere (IT)": 1.4,
-        "Coolbet": 1.36,
-        "GTbets": 1.38,
-        "LeoVegas (SE)": 1.4,
-        "Marathon": 1.36,
-        "NordicBet": 1.34,
-        "PMU (FR)": 1.3,
-        "Pinnacle": 1.38,
-        "Tipico": 1.35,
-        "Unibet (FR)": 1.3,
-        "Unibet (NL)": 1.4,
-        "Unibet (SE)": 1.4,
-        "William Hill": 1.36,
-        "Winamax (DE)": 1.36,
-        "Winamax (FR)": 1.05
-      },
-      "models": {
-        "Consensus": 0.805
-      },
-      "zebra": false,
-      "zebra_tier": "",
-      "home_pos": 13,
-      "home_pts": 12,
-      "home_form": "",
-      "home_gf": 16,
-      "home_gc": 17,
-      "home_gp": 10,
-      "home_w": 3,
-      "home_d": 3,
-      "home_l": 4,
-      "away_pos": 18,
-      "away_pts": 6,
-      "away_form": "",
-      "away_gf": 5,
-      "away_gc": 15,
-      "away_gp": 10,
-      "away_w": 1,
-      "away_d": 3,
-      "away_l": 6,
-      "analysis": "Atalanta BC (13º, 12pts) · Forma:  · 1.6 gols/jogo\nParma (18º, 6pts) · Forma:  · 0.5 gols/jogo",
-      "confidence": "alta"
-    },
-    {
-      "id": 5,
-      "home": "Stade de Reims",
-      "away": "Sochaux",
-      "league": "Ligue 2 - France",
-      "league_key": "soccer_france_ligue_two",
-      "time": "16:45",
-      "kickoff_at": "2026-11-02T19:45:00Z",
+      "home": "Deportes Concepción",
+      "away": "Palestino",
+      "league": "Primera División - Chile",
+      "league_key": "soccer_chile_campeonato",
+      "time": "20:30",
+      "kickoff_at": "2026-11-02T23:30:00Z",
       "market": "Resultado Final",
       "sel": "Empate",
       "sel_key": "draw",
-      "odd": 5.7,
-      "book": "Betfair",
-      "edge": 3.8,
-      "score": 50,
-      "fairP": 0.214,
+      "odd": 4.3,
+      "book": "Tipico",
+      "edge": 8.2,
+      "score": 65,
+      "fairP": 0.315,
       "odds": {
-        "1xBet": 3.53,
-        "888sport": 4.8,
-        "BetOnline.ag": 3.6,
-        "Betclic (FR)": 5.0,
-        "Betfair": 5.7,
-        "Betsson": 5.35,
-        "Codere (IT)": 3.55,
-        "Coolbet": 5.5,
-        "LeoVegas (SE)": 5.4,
-        "Marathon": 5.3,
-        "Matchbook": 5.5,
-        "NordicBet": 4.85,
-        "PMU (FR)": 5.4,
-        "Pinnacle": 3.74,
-        "Tipico": 5.5,
-        "Unibet (FR)": 4.05,
-        "Unibet (NL)": 5.6,
-        "Unibet (SE)": 5.6,
-        "William Hill": 3.4,
-        "Winamax (DE)": 4.7,
-        "Winamax (FR)": 4.5
+        "888sport": 3.6,
+        "Betfair": 2.94,
+        "Betsson": 2.75,
+        "LeoVegas (SE)": 2.6,
+        "Marathon": 2.73,
+        "NordicBet": 2.75,
+        "Pinnacle": 2.92,
+        "Tipico": 4.3,
+        "Unibet (SE)": 2.75
       },
       "models": {
-        "Consensus": 0.214
+        "Consensus": 0.315
       },
-      "zebra": false,
-      "zebra_tier": ""
+      "zebra": true,
+      "zebra_tier": "silver"
+    },
+    {
+      "id": 4,
+      "home": "Deportes Concepción",
+      "away": "Palestino",
+      "league": "Primera División - Chile",
+      "league_key": "soccer_chile_campeonato",
+      "time": "20:30",
+      "kickoff_at": "2026-11-02T23:30:00Z",
+      "market": "Resultado Final",
+      "sel": "Palestino",
+      "sel_key": "away",
+      "odd": 6.0,
+      "book": "888sport",
+      "edge": 5.9,
+      "score": 60,
+      "fairP": 0.225,
+      "odds": {
+        "888sport": 6.0,
+        "Betfair": 2.94,
+        "Betsson": 2.78,
+        "LeoVegas (SE)": 2.63,
+        "Marathon": 2.73,
+        "NordicBet": 2.78,
+        "Pinnacle": 2.83,
+        "Tipico": 5.2,
+        "Unibet (SE)": 2.8
+      },
+      "models": {
+        "Consensus": 0.225
+      },
+      "zebra": true,
+      "zebra_tier": "gold"
     }
   ],
   "multiples": [
@@ -342,97 +194,27 @@
       "type": "Dupla",
       "legs": [
         {
-          "home": "Mjällby AIF",
-          "away": "Kalmar FF",
-          "sel": "Empate",
-          "odd": 1.43,
-          "book": "Pinnacle"
+          "home": "Deportes Concepción",
+          "away": "Palestino",
+          "sel": "Deportes Concepción",
+          "odd": 2.94,
+          "book": "Betfair"
         },
         {
-          "home": "Stade de Reims",
-          "away": "Sochaux",
-          "sel": "Stade de Reims",
-          "odd": 1.79,
-          "book": "1xBet"
-        }
-      ],
-      "score": 72
-    },
-    {
-      "id": "m2",
-      "type": "Dupla",
-      "legs": [
-        {
-          "home": "Mjällby AIF",
-          "away": "Kalmar FF",
+          "home": "Defensa y Justicia",
+          "away": "Independiente",
           "sel": "Empate",
-          "odd": 1.43,
-          "book": "Pinnacle"
-        },
-        {
-          "home": "Östers IF",
-          "away": "Helsingborgs IF",
-          "sel": "Östers IF",
-          "odd": 1.21,
+          "odd": 1.3,
           "book": "Pinnacle"
         }
       ],
-      "score": 72
-    },
-    {
-      "id": "m3",
-      "type": "Dupla",
-      "legs": [
-        {
-          "home": "Mjällby AIF",
-          "away": "Kalmar FF",
-          "sel": "Empate",
-          "odd": 1.43,
-          "book": "Pinnacle"
-        },
-        {
-          "home": "GAIS",
-          "away": "AIK",
-          "sel": "GAIS",
-          "odd": 1.22,
-          "book": "Pinnacle"
-        }
-      ],
-      "score": 70
-    },
-    {
-      "id": "m4",
-      "type": "Tripla",
-      "legs": [
-        {
-          "home": "Mjällby AIF",
-          "away": "Kalmar FF",
-          "sel": "Empate",
-          "odd": 1.43,
-          "book": "Pinnacle"
-        },
-        {
-          "home": "Stade de Reims",
-          "away": "Sochaux",
-          "sel": "Stade de Reims",
-          "odd": 1.79,
-          "book": "1xBet"
-        },
-        {
-          "home": "Östers IF",
-          "away": "Helsingborgs IF",
-          "sel": "Östers IF",
-          "odd": 1.21,
-          "book": "Pinnacle"
-        }
-      ],
-      "score": 70
+      "score": 71
     }
   ],
   "kpis": {
-    "roi": 14.8,
-    "hitRate": 59.8,
-    "brier": 0.189,
-    "edge": 12.3
+    "roi": 12.2,
+    "hitRate": 58.1,
+    "brier": 0.199,
+    "edge": 10.2
   }
 }
