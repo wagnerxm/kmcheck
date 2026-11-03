@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-02",
-  "generated_at": "2026-11-03T00:07:50.799255+00:00",
+  "date": "2026-11-03",
+  "generated_at": "2026-11-03T03:47:04.727236+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -54,167 +54,12 @@
     "UEFA Nations League",
     "Veikkausliiga - Finland"
   ],
-  "singles": [
-    {
-      "id": 2,
-      "home": "Deportes Concepción",
-      "away": "Palestino",
-      "league": "Primera División - Chile",
-      "league_key": "soccer_chile_campeonato",
-      "time": "20:30",
-      "kickoff_at": "2026-11-02T23:30:00Z",
-      "market": "Resultado Final",
-      "sel": "Deportes Concepción",
-      "sel_key": "home",
-      "odd": 2.94,
-      "book": "Betfair",
-      "edge": 12.0,
-      "score": 72,
-      "fairP": 0.46,
-      "odds": {
-        "888sport": 1.44,
-        "Betfair": 2.94,
-        "Betsson": 2.7,
-        "LeoVegas (SE)": 2.45,
-        "Marathon": 2.66,
-        "NordicBet": 2.7,
-        "Pinnacle": 2.7,
-        "Tipico": 1.45,
-        "Unibet (SE)": 2.6
-      },
-      "models": {
-        "Consensus": 0.46
-      },
-      "zebra": true,
-      "zebra_tier": "bronze"
-    },
-    {
-      "id": 1,
-      "home": "Defensa y Justicia",
-      "away": "Independiente",
-      "league": "Liga Argentina",
-      "league_key": "soccer_argentina_primera_division",
-      "time": "19:01",
-      "kickoff_at": "2026-11-02T22:01:00Z",
-      "market": "Resultado Final",
-      "sel": "Empate",
-      "sel_key": "draw",
-      "odd": 1.3,
-      "book": "Pinnacle",
-      "edge": 14.5,
-      "score": 70,
-      "fairP": 0.914,
-      "odds": {
-        "Betclic (FR)": 1.09,
-        "Betsson": 1.05,
-        "LeoVegas (SE)": 1.01,
-        "NordicBet": 1.05,
-        "Pinnacle": 1.3,
-        "Unibet (FR)": 1.02,
-        "Unibet (SE)": 1.04,
-        "Winamax (DE)": 1.03,
-        "Winamax (FR)": 1.02
-      },
-      "models": {
-        "Consensus": 0.914
-      },
-      "zebra": false,
-      "zebra_tier": ""
-    },
-    {
-      "id": 3,
-      "home": "Deportes Concepción",
-      "away": "Palestino",
-      "league": "Primera División - Chile",
-      "league_key": "soccer_chile_campeonato",
-      "time": "20:30",
-      "kickoff_at": "2026-11-02T23:30:00Z",
-      "market": "Resultado Final",
-      "sel": "Empate",
-      "sel_key": "draw",
-      "odd": 4.3,
-      "book": "Tipico",
-      "edge": 8.2,
-      "score": 65,
-      "fairP": 0.315,
-      "odds": {
-        "888sport": 3.6,
-        "Betfair": 2.94,
-        "Betsson": 2.75,
-        "LeoVegas (SE)": 2.6,
-        "Marathon": 2.73,
-        "NordicBet": 2.75,
-        "Pinnacle": 2.92,
-        "Tipico": 4.3,
-        "Unibet (SE)": 2.75
-      },
-      "models": {
-        "Consensus": 0.315
-      },
-      "zebra": true,
-      "zebra_tier": "silver"
-    },
-    {
-      "id": 4,
-      "home": "Deportes Concepción",
-      "away": "Palestino",
-      "league": "Primera División - Chile",
-      "league_key": "soccer_chile_campeonato",
-      "time": "20:30",
-      "kickoff_at": "2026-11-02T23:30:00Z",
-      "market": "Resultado Final",
-      "sel": "Palestino",
-      "sel_key": "away",
-      "odd": 6.0,
-      "book": "888sport",
-      "edge": 5.9,
-      "score": 60,
-      "fairP": 0.225,
-      "odds": {
-        "888sport": 6.0,
-        "Betfair": 2.94,
-        "Betsson": 2.78,
-        "LeoVegas (SE)": 2.63,
-        "Marathon": 2.73,
-        "NordicBet": 2.78,
-        "Pinnacle": 2.83,
-        "Tipico": 5.2,
-        "Unibet (SE)": 2.8
-      },
-      "models": {
-        "Consensus": 0.225
-      },
-      "zebra": true,
-      "zebra_tier": "gold"
-    }
-  ],
-  "multiples": [
-    {
-      "id": "m1",
-      "type": "Dupla",
-      "legs": [
-        {
-          "home": "Deportes Concepción",
-          "away": "Palestino",
-          "sel": "Deportes Concepción",
-          "odd": 2.94,
-          "book": "Betfair"
-        },
-        {
-          "home": "Defensa y Justicia",
-          "away": "Independiente",
-          "sel": "Empate",
-          "odd": 1.3,
-          "book": "Pinnacle"
-        }
-      ],
-      "score": 71
-    }
-  ],
+  "singles": [],
+  "multiples": [],
   "kpis": {
-    "roi": 12.2,
-    "hitRate": 58.1,
-    "brier": 0.199,
-    "edge": 10.2
+    "roi": 0,
+    "hitRate": 0,
+    "brier": 0,
+    "edge": 0
   }
 }
