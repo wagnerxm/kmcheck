@@ -1,6 +1,6 @@
 {
   "date": "2026-11-04",
-  "generated_at": "2026-11-04T17:39:55.134603+00:00",
+  "generated_at": "2026-11-04T22:57:22.121579+00:00",
   "source": "the-odds-api",
   "leagues": [
     "Brasileirão B",
@@ -8,7 +8,6 @@
     "Libertadores",
     "Sudamericana",
     "Bundesliga",
-    "Champions League",
     "Conference League",
     "Europa League",
     "La Liga",
@@ -39,7 +38,6 @@
     "J League",
     "K League 1",
     "La Liga 2 - Spain",
-    "League 1",
     "League of Ireland",
     "Ligue 2 - France",
     "Premier League - Russia",
