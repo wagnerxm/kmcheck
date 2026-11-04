@@ -934,6 +934,39 @@ function montaLista() {
 
 /* Listar dispositivos — admin.
    Preenche campos detectáveis retroativamente (dispositivos que pingaram antes da v175). */
+/* ── Apps oficiais (App Store + Play Store) ao vivo ──
+   Cada celular conta uma vez, no dia em que abriu o app da loja pela 1ª vez: o mais antigo first_seen entre
+   os códigos do mesmo aparelho (reinstalações juntas) que vieram da loja. Quem trocou o PWA pela loja ganha
+   um código novo ao instalar, então entra no dia da troca. O painel só sabe quando o app é ABERTO. */
+function oficiaisDe(devices, aparelhos) {
+  const loja = c => c === 'app-store' || c === 'play-store';
+  const entrada = new Map();   // grupo → primeira abertura pela loja
+  for (const d of devices) if (d.categoria === 'celular' && loja(d.canal) && d.first_seen) {
+    const e = entrada.get(d.grupo); if (!e || d.first_seen < e) entrada.set(d.grupo, d.first_seen);
+  }
+  const hoje = horaBR(new Date().toISOString()).dia, itens = [];
+  for (const a of aparelhos) {
+    if (!loja(a.canal)) continue;
+    const quando = entrada.get(a.grupo) || a.first_seen; if (!quando) continue;
+    itens.push({ a, quando, dia: horaBR(quando).dia });
+  }
+  /* série acumulada dos últimos 30 dias (horário de Brasília), terminando hoje */
+  const dias = []; for (let i = 29; i >= 0; i--) dias.push(horaBR(new Date(Date.now() - i * 864e5).toISOString()).dia);
+  const serie = dias.map(dia => itens.filter(x => x.dia <= dia).length);
+  const doDia = dia => itens.filter(x => x.dia === dia);
+  const hj = doDia(hoje), ontem = doDia(dias[28]);
+  const chegadas = hj.sort((x, y) => y.quando.localeCompare(x.quando)).slice(0, 12).map(({ a, quando }) => {
+    const c = a.location && isFinite(a.location.lat) ? cidadePerto(a.location.lat, a.location.lon) : null;
+    return { did: a.device_id, nome: a.nickname || null, modelo: a.model || a.platform || 'Celular', canal: a.canal,
+             cidade: c && c.km <= 60 ? c.nome : null, hora: new Date(Date.parse(quando) - 3 * 36e5).toISOString().slice(11, 16) };
+  });
+  return {
+    total: itens.length, as: itens.filter(x => x.a.canal === 'app-store').length, ps: itens.filter(x => x.a.canal === 'play-store').length,
+    hoje: { as: hj.filter(x => x.a.canal === 'app-store').length, ps: hj.filter(x => x.a.canal === 'play-store').length },
+    ontem: ontem.length, semana: itens.length - serie[22], trinta: itens.length - serie[0] + doDia(dias[0]).length, serie, chegadas,
+  };
+}
+
 app.get('/api/admin/devices', auth, (req, res) => {
   /* sem o resumo por dia (vai pela rota /uso), para a lista não ficar pesada */
   const devices = montaLista().map(({ uso, ...d }) => ({ ...d, fix: d.location ? rodoviaDe(d.location.lat, d.location.lon) : null }));
@@ -977,7 +1010,7 @@ app.get('/api/admin/devices', auth, (req, res) => {
   res.json({
     devices,
     stats: {
-      total: devices.length, ios, android, other, canais, canais_total: canaisTotal,
+      total: devices.length, ios, android, other, canais, canais_total: canaisTotal, oficiais: oficiaisDe(devices, aparelhos),
       usuarios_30d: aparelhos.filter(d => d.last_ping >= mes).length,
       aparelhos: aparelhos.length,
       codigos_celular: devices.filter(d => d.categoria === 'celular').length,

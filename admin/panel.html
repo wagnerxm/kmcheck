@@ -207,7 +207,7 @@ input:focus,select:focus{border-color:rgba(255,255,255,.35)}
 .mini-x{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:5px}
 
 /* ── Abas com tabela (Aparelhos e Cobertura SNV) ── */
-#a-aparelhos{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+#a-aparelhos{grid-template-columns:1fr;grid-template-rows:auto auto minmax(0,1fr)}
 #a-snv{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr)}
 /* ── Saúde: versões em uso, erros do app e armazenamento ── */
 #a-saude{grid-template-columns:8fr 4fr;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
@@ -607,6 +607,37 @@ html body{background:transparent}
 .user-name.falta{border-color:rgba(226,181,74,.45)}.user-name.falta::placeholder{color:#e2b54a}
 .sem-nome{background:rgba(226,181,74,.16);color:#f0cf7d}
 @media(max-width:760px){.pistas{grid-template-columns:1fr}}
+/* ===== Apps oficiais ao vivo (aba Aparelhos): faixa fina de uma linha ===== */
+.oficiais{display:flex;align-items:center;gap:18px;padding:8px 18px 8px 10px;border-radius:20px;min-height:68px}
+.oficiais[hidden]{display:none}
+.oficiais.festa{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 0 0 1px rgba(183,217,45,.35),0 20px 50px -18px rgba(183,217,45,.35)}
+.of-mh{width:44px;height:55px;flex:none;margin:-6px 0}.of-mh svg{width:100%;height:100%;display:block;overflow:visible}
+.of-txt{min-width:0;flex:1}
+.of-txt b{font-size:18px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.of-txt b .mais{background:linear-gradient(90deg,#d6f06a,#b7d92d,#8fd14f,#d6f06a);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:ofBrilho 3s linear infinite}
+@keyframes ofBrilho{to{background-position:-200% 0}}
+.of-txt small{display:block;color:var(--text2);font-size:12.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.of-vivo{color:var(--lima)}.of-vivo i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lima);margin-right:5px;vertical-align:1px;animation:ofPulso 2s infinite}
+@keyframes ofPulso{70%{box-shadow:0 0 0 7px rgba(183,217,45,0)}0%{box-shadow:0 0 0 0 rgba(183,217,45,.6)}}
+.of-sep{width:1px;align-self:stretch;background:rgba(255,255,255,.1);margin:6px 0;flex:none}
+.of-num{display:flex;align-items:center;gap:8px;flex:none}
+.of-big{font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:1;height:1em;overflow:hidden;display:inline-flex}.of-big .c,.of-big span{line-height:1}
+.of-num small{color:var(--text3);font-size:11px;line-height:1.2}
+.of-delta{flex:none;padding:5px 12px;border-radius:999px;font-weight:700;font-size:13.5px;background:rgba(183,217,45,.16);color:var(--lima2);white-space:nowrap}
+.of-delta.zero{background:rgba(255,255,255,.07);color:var(--text2)}
+.of-delta.pop{animation:ofPop .6s cubic-bezier(.3,1.6,.5,1)}@keyframes ofPop{40%{transform:scale(1.25)}}
+.of-sp{width:150px;height:40px;flex:none;overflow:visible}
+.of-meta{width:150px;flex:none;font-size:11.5px;color:var(--text2)}.of-meta b{color:#ffd25e}
+.of-barra{height:6px;margin-top:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;position:relative}
+.of-barra i{position:absolute;inset:0 auto 0 0;width:0;border-radius:99px;background:linear-gradient(90deg,var(--lima),#ffd25e);transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+.of-aviso{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;z-index:1250;transform:translate(-50%,-150%);display:flex;align-items:center;gap:12px;padding:9px 16px 9px 9px;border-radius:999px;
+  background:rgba(14,16,18,.94);border:1px solid rgba(183,217,45,.4);box-shadow:0 20px 40px -12px rgba(0,0,0,.6);transition:transform .6s cubic-bezier(.3,1.4,.5,1);max-width:calc(100vw - 24px)}
+.of-aviso.on{transform:translate(-50%,0)}
+.of-aviso .ico{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--lima);color:#0a0c0e;font-weight:800;font-size:13px;flex:none}
+.of-aviso b{display:block;font-size:13.5px}.of-aviso small{color:var(--text2);font-size:12px}
+#of-confete{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1240}
+@media(max-width:900px){.oficiais{flex-wrap:wrap;row-gap:8px}.of-txt{flex:1 1 calc(100% - 70px)}.of-txt b,.of-txt small{white-space:normal}.of-num{margin-left:62px}.of-sp,.of-meta,.of-sep{display:none}}
+@media(max-width:760px){.oficiais{order:-1}}
 @media(hover:none){ .dica{display:none} }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -720,6 +751,17 @@ html body{background:transparent}
 
     <!-- ──────── Aparelhos ──────── -->
     <section class="aba" id="a-aparelhos">
+      <!-- apps oficiais (App Store + Play Store) ao vivo: quantos chegaram hoje, total, 30 dias e próxima meta -->
+      <div class="oficiais forte" id="oficiais" hidden>
+        <div class="of-mh" id="of-marco"></div>
+        <div class="of-txt"><b id="of-tit"></b><small id="of-sub"></small></div>
+        <div class="of-sep"></div>
+        <div class="of-num"><span class="odo of-big" id="of-total"></span><small>com app<br>oficial</small></div>
+        <span class="of-delta" id="of-delta"></span>
+        <div class="of-sep"></div>
+        <svg class="of-sp" id="of-sp" viewBox="0 0 150 40" preserveAspectRatio="none" role="img" aria-label="Usuários nos apps oficiais nos últimos 30 dias"></svg>
+        <div class="of-meta"><span id="of-meta-t"></span><div class="of-barra"><i id="of-meta-b"></i></div></div>
+      </div>
       <div class="stats" id="dev-stats">
         <div class="stat forte" title="Celulares que usaram o app nos últimos 30 dias. Reinstalações do mesmo celular contam uma vez; computadores e testes não contam."><div class="label">Usuários (30 dias)</div><div class="value green" id="ds-total">—</div><div class="detail" id="ds-detail"></div></div>
         <div class="stat forte" title="Celulares que instalaram o app pela App Store (desde sempre; reinstalações do mesmo celular contam uma vez). Embaixo: quantos usaram nos últimos 30 dias."><div class="label">App Store</div><div class="value blue" id="ds-as">—</div><div class="detail" id="ds-as-d">baixados</div></div>
@@ -1104,6 +1146,60 @@ function mlgLer(){const i=$('#lg-user'),r=i.getBoundingClientRect(),m=document.c
 $('#lg-user').addEventListener('focus',()=>{MLG.cobrir(false);mlgLer()});$('#lg-user').addEventListener('input',mlgLer);
 $('#lg-pass').addEventListener('focus',()=>{MLG.cobrir(true);MLG.olhar(0,0)});$('#lg-pass').addEventListener('blur',()=>MLG.cobrir(false));
 $('#lg-cod').addEventListener('focus',()=>MLG.fone(true));
+
+/* ══════════════════════════════════════════════════
+   APPS OFICIAIS AO VIVO — quem chegou pela App Store / Play Store
+   ══════════════════════════════════════════════════ */
+let OF_ULT=null, OF_MARCO=null;
+function oficiais(o){
+  if(!o) return; const el=$('#oficiais'); el.hidden=false;
+  if(!OF_MARCO){ OF_MARCO=new Marco($('#of-marco'),'Marco: usuários nos apps oficiais'); OF_MARCO.fone(false) }
+  const hoje=o.hoje.as+o.hoje.ps, pl=(n,a,b)=>n===1?a:b;
+  odo($('#of-total'),o.total); OF_MARCO.numero(o.total); OF_MARCO.estado(hoje?'ok':'dorme');
+  el.classList.toggle('festa',hoje>0);
+  const d=$('#of-delta'); d.className='of-delta'+(hoje?'':' zero'); d.textContent=hoje?`▲ +${hoje} hoje`:'nenhum hoje';
+  const ult=o.chegadas.slice(0,2).map(c=>esc(c.nome||c.modelo)+(c.cidade?' ('+esc(c.cidade)+')':'')).join(', ');
+  if(hoje){
+    $('#of-tit').innerHTML=`Hoje ganhamos <span class="mais">mais ${hoje} ${pl(hoje,'usuário','usuários')}!</span>`;
+    $('#of-sub').innerHTML=`<span class="of-vivo"><i></i>ao vivo</span> · ${o.hoje.as} pela App Store · ${o.hoje.ps} pela Play Store${ult?' · últimos: '+ult:''}`;
+  } else {
+    $('#of-tit').textContent='Nenhum download novo hoje, ainda.';
+    $('#of-sub').innerHTML=`<span class="of-vivo"><i></i>ao vivo</span> · ontem: +${o.ontem} · semana: +${o.semana} · o Marco avisa aqui quando o próximo chegar`;
+  }
+  /* minigráfico acumulado de 30 dias, com o ponto de hoje */
+  const sr=o.serie, mx=Math.max(1,...sr), mn=Math.min(...sr), y=v=>36-(v-mn)/Math.max(1,mx-mn)*30, x=i=>i*150/(sr.length-1);
+  const pts=sr.map((v,i)=>x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ');
+  $('#of-sp').innerHTML=`<defs><linearGradient id="of-g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b7d92d" stop-opacity=".35"/><stop offset="1" stop-color="#b7d92d" stop-opacity="0"/></linearGradient></defs><polygon points="0,40 ${pts} 150,40" fill="url(#of-g)"/><polyline points="${pts}" fill="none" stroke="#b7d92d" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle cx="150" cy="${y(sr[sr.length-1]).toFixed(1)}" r="3.5" fill="#d6f06a"/><title>+${o.trinta} em 30 dias</title>`;
+  /* próxima meta: de 5 em 5 até 50, depois de 10 em 10 */
+  const passo=o.total<50?5:10, meta=Math.floor(o.total/passo)*passo+passo, faltam=meta-o.total;
+  $('#of-meta-t').innerHTML=`Meta ${meta} · <b>faltam ${faltam}</b>`;
+  requestAnimationFrame(()=>{ $('#of-meta-b').style.width=((o.total-(meta-passo))/passo*100)+'%' });
+  /* chegou alguém novo: comemora (no painel aberto) ou avisa o que chegou desde a última visita */
+  let visto=null; try{ visto=+localStorage.getItem('kca-oficiais') }catch(e){}
+  if(OF_ULT!==null && o.total>OF_ULT) ofComemora(o, o.total-OF_ULT);
+  else if(OF_ULT===null && visto && o.total>visto) ofAviso(`+${o.total-visto} no app oficial desde a sua última visita`, `Agora são ${o.total} usuários com o KM Check oficial`);
+  OF_ULT=o.total; try{ localStorage.setItem('kca-oficiais', o.total) }catch(e){}
+}
+let _ofT; function ofAviso(t,sub){ let a=$('#of-aviso'); if(!a){ a=document.createElement('div'); a.id='of-aviso'; a.className='of-aviso'; a.setAttribute('role','status'); a.innerHTML='<span class="ico">+1</span><span><b></b><small></small></span>'; document.body.appendChild(a) }
+  a.querySelector('b').textContent=t; a.querySelector('small').textContent=sub; a.querySelector('.ico').textContent=(t.match(/\+\d+/)||['+1'])[0];
+  requestAnimationFrame(()=>a.classList.add('on')); clearTimeout(_ofT); _ofT=setTimeout(()=>a.classList.remove('on'),5000) }
+function ofComemora(o,n){
+  const c=o.chegadas[0], loja=c&&c.canal==='app-store'?'App Store':'Play Store', hoje=o.hoje.as+o.hoje.ps;
+  ofAviso(`Mais ${n===1?'um':n} no app oficial! Hoje já são +${hoje}`, c?`${c.nome||c.modelo}${c.cidade?' · '+c.cidade:''} · baixou pela ${loja}`:'');
+  const d=$('#of-delta'); d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop');
+  if(OF_MARCO){ OF_MARCO.anima('pula',700); OF_MARCO.acenar(3); OF_MARCO.numero('+'+hoje); setTimeout(()=>OF_MARCO.numero(o.total),2600) }
+  MARCO.anima('pula',700);
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  /* confete curto, nas cores da marca, saindo do Marco da faixa */
+  let cv=$('#of-confete'); if(!cv){ cv=document.createElement('canvas'); cv.id='of-confete'; document.body.appendChild(cv) }
+  const g=cv.getContext('2d'), dp=Math.min(2,devicePixelRatio||1); cv.width=innerWidth*dp; cv.height=innerHeight*dp; g.setTransform(dp,0,0,dp,0,0);
+  const r=$('#of-marco').getBoundingClientRect(), ox=r.width?r.left+r.width/2:innerWidth/2, oy=r.width?r.top+r.height*.3:120;
+  const cores=['#b7d92d','#d6f06a','#5eb0ff','#5fd27f','#ffd25e','#ffffff'];
+  let p=Array.from({length:80},(_,i)=>{const a=-Math.PI/2+(Math.random()-.5)*1.9,v=6+Math.random()*7;return{x:ox,y:oy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:Math.random()*6.3,vr:(Math.random()-.5)*.3,w:5+Math.random()*5,h:8+Math.random()*6,c:cores[i%6],t:0}});
+  (function passo(){ g.clearRect(0,0,innerWidth,innerHeight); p=p.filter(q=>q.t<140);
+    for(const q of p){ q.t++; q.vy+=.22; q.vx*=.99; q.x+=q.vx; q.y+=q.vy; q.r+=q.vr; g.save(); g.translate(q.x,q.y); g.rotate(q.r); g.globalAlpha=Math.max(0,1-q.t/140); g.fillStyle=q.c; g.fillRect(-q.w/2,-q.h/2,q.w,q.h*Math.abs(Math.cos(q.t/8))); g.restore() }
+    if(p.length) requestAnimationFrame(passo); else g.clearRect(0,0,innerWidth,innerHeight) })();
+}
 
 /* ── Login ── */
 function showLogin(){
@@ -1826,6 +1922,7 @@ async function loadDevices(){
     $('#ds-total').textContent = s.usuarios_30d ?? s.total;
     $('#ds-detail').textContent = s.aparelhos != null ? s.aparelhos+' aparelhos · '+s.reinstalacoes+' reinstalações juntadas' : s.active_week+' ativos na semana';
     /* lojas: total de baixados (desde sempre) + quantos usaram em 30 dias; PWA: quem ainda usa sem o app da loja */
+    oficiais(s.oficiais);
     if(s.canais){ const c=s.canais, t=s.canais_total||c; MC_CANAIS=t;
       $('#ds-as').textContent = t['app-store']||0; $('#ds-as-d').textContent = 'baixados · '+(c['app-store']||0)+' ativos';
       $('#ds-ps').textContent = t['play-store']||0; $('#ds-ps-d').textContent = 'baixados · '+(c['play-store']||0)+' ativos';
@@ -2246,7 +2343,7 @@ if(matchMedia('(hover:hover)').matches && !matchMedia('(prefers-reduced-motion:r
   /* atualiza sozinho: ao vivo a cada 20 s, gráficos e tabela a cada 60 s (só com a página à vista) */
   setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex') loadAgora() }, 20000);
   setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex') marcoErros() }, 300000);   // erros abertos mudam o rosto do Marco
-  setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex'){ loadUso(); if(ABA==='aparelhos') loadDevices() } }, 60000);
+  setInterval(()=>{ if(TOKEN && !document.hidden && $('#dash').style.display==='flex'){ loadUso(); if(ABA==='aparelhos') loadDevices() } }, 60000);   // a faixa dos apps oficiais vem junto com a lista
 })();
 </script>
 </body>
